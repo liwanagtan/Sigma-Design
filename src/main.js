@@ -14,13 +14,15 @@ import {
   renderAssets,
 } from './panels.js';
 import {
-  initFiles, loadFile, setCurrentFile, closeCurrentFile, discardCurrentFile, saveNow, getCurrentFileId, goHome,
+  initFiles, loadFile, setCurrentFile, closeCurrentFile, discardCurrentFile, saveNow, getCurrentFileId, goHome, fileKind,
 } from './files.js';
 import { initHome, renderHome, setHomeNotice } from './home.js';
+import { initTokensScreen, showTokensScreen, hideTokensScreen } from './tokens-screen.js';
 import { hideContextMenu } from './menu.js';
 
 const appEl = document.getElementById('app');
 const homeEl = document.getElementById('home');
+const tokensEl = document.getElementById('tokens');
 const canvas = document.getElementById('canvas');
 const world = document.getElementById('world');
 const overlay = document.getElementById('overlay');
@@ -98,6 +100,7 @@ async function leaveEditor({ discard = false } = {}) {
   } else {
     await closeCurrentFile();
   }
+  hideTokensScreen();
   unloadDocument();
   hideBanner();
 }
@@ -106,13 +109,14 @@ async function showHome() {
   await leaveEditor();
   state.screen = 'home';
   appEl.hidden = true;
+  tokensEl.hidden = true;
   homeEl.hidden = false;
   document.title = 'Sigma – Files';
   await renderHome();
 }
 
 async function showFile(id, { force = false, discard = false } = {}) {
-  if (!force && state.screen === 'editor' && getCurrentFileId() === id) return;
+  if (!force && state.screen !== 'home' && getCurrentFileId() === id) return;
   const file = await loadFile(id);
   if (!file) {
     setHomeNotice('That file could not be found. It may have been deleted.');
@@ -120,8 +124,18 @@ async function showFile(id, { force = false, discard = false } = {}) {
   }
   await leaveEditor({ discard });
   setCurrentFile(id);
-  state.screen = 'editor';
   homeEl.hidden = true;
+  if (fileKind(file.meta) === 'tokens') {
+    // Token files have no canvas: the design token editor fills the screen.
+    state.screen = 'tokens';
+    appEl.hidden = true;
+    tokensEl.hidden = false;
+    loadDocument(file.doc, file.views);
+    showTokensScreen();
+    return;
+  }
+  state.screen = 'editor';
+  tokensEl.hidden = true;
   appEl.hidden = false;
   loadDocument(file.doc, file.views);
   remeasureAllText();
@@ -175,6 +189,7 @@ setViewportElement(canvas);
 initPanels();
 initInteractions(canvas);
 initHome(homeEl);
+initTokensScreen(tokensEl);
 
 document.fonts?.ready.then(remeasureAllText);
 document.fonts?.addEventListener?.('loadingdone', remeasureAllText);

@@ -262,7 +262,7 @@ kbd { font-family: inherit; color: var(--muted); }
 .home-drop { position: absolute; inset: 8px; border: 2px dashed var(--accent); border-radius: 12px; background: rgba(13,153,255,0.06); display: grid; place-items: center; font-size: 14px; pointer-events: none; z-index: 10; }
 
 /* ---------- editor banner (changes from another tab) ---------- */
-.file-banner { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 4; display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 14px; background: #1e1e1e; color: #fff; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); white-space: nowrap; }
+.file-banner { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 4; display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 14px; background: #1e1e1e; color: #fff; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); white-space: nowrap; }
 .file-banner .btn { height: 26px; background: #fff; color: #1e1e1e; border: 0; }
 
 @media (max-width: 760px) {
@@ -381,3 +381,19 @@ fieldset.readonly .field-label { cursor: default; }
 .cell-reset { width: 22px; height: 22px; color: #6d28d9; }
 
 .assets-subgroup { color: var(--muted); font-weight: 500; padding: 8px 4px 6px; }
+
+/* ---------- token files on the home page ---------- */
+.nav-label { padding: 12px 10px 4px; color: var(--muted); font-size: 11px; font-weight: 600; }
+.nav-item { display: flex; align-items: center; gap: 8px; }
+.kind-badge { display: inline-block; padding: 0 6px; margin-right: 6px; border-radius: 4px; background: #f0e6ff; color: #6d28d9; font-weight: 600; font-size: 10px; line-height: 16px; }
+.thumb-placeholder { color: #b9a3e8; transform: scale(3); display: grid; }
+.home-files.list .thumb-placeholder { transform: scale(1.4); }
+
+/* ---------- token file screen ---------- */
+.tokens-screen { position: fixed; inset: 0; display: flex; flex-direction: column; background: #fff; }
+.tokens-header { display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 12px; border-bottom: 1px solid var(--border); flex: none; }
+.tokens-file-name { flex: 0 1 320px; }
+.tokens-kind { margin: 0; }
+.tokens-header-actions { margin-left: auto; display: flex; gap: 2px; }
+.tokens-editor { flex: 1; min-height: 0; display: flex; }
+.vars-modal.inline { flex: 1; display: flex; flex-direction: column; width: auto; height: auto; max-height: none; border-radius: 0; box-shadow: none; }

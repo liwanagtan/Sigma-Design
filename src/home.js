@@ -1,7 +1,7 @@
 // The files home: lists every Sigma file stored in this browser.
 import {
   listFiles, createFile, renameFile, duplicateFile, deleteFile, downloadFile, importFiles, pickFilesToImport,
-  storageSummary, openFile, fileHref,
+  storageSummary, openFile, fileHref, fileKind, newTokenDocument,
 } from './files.js';
 import { sampleDocument } from './sample.js';
 import { showContextMenu } from './menu.js';
@@ -22,7 +22,10 @@ const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').
 
 try {
   Object.assign(prefs, JSON.parse(localStorage.getItem(PREFS_KEY) || '{}'));
+  if (prefs.section === 'all') prefs.section = 'design'; // "All files" became "Design files"
 } catch {}
+
+const SECTIONS = { recents: 'Recents', design: 'Design files', tokens: 'Design tokens' };
 const savePrefs = () => {
   try {
     localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
@@ -51,7 +54,9 @@ export function initHome(el) {
       <div class="home-brand">${icons.logo}<span>Sigma</span></div>
       <nav class="home-nav">
         <button class="nav-item" data-section="recents">Recents</button>
-        <button class="nav-item" data-section="all">All files</button>
+        <div class="nav-label">Files</div>
+        <button class="nav-item" data-section="design">${NAV_DESIGN} Design files</button>
+        <button class="nav-item" data-section="tokens">${NAV_TOKENS} Design tokens</button>
       </nav>
       <div class="home-storage" id="home-storage"></div>
     </aside>
@@ -66,6 +71,7 @@ export function initHome(el) {
             <button class="icon-btn" data-layout="list" title="List view">${LIST_ICON}</button>
           </div>
           <button class="btn" id="home-import">Import</button>
+          <button class="btn" id="home-new-tokens">${icons.plus} New token file</button>
           <button class="btn primary" id="home-new">${icons.plus} New design file</button>
         </div>
       </header>
@@ -98,6 +104,7 @@ export function initHome(el) {
     renderHome();
   });
   root.querySelector('#home-new').addEventListener('click', () => newBlankFile());
+  root.querySelector('#home-new-tokens').addEventListener('click', () => newTokenFile());
   root.querySelector('#home-import').addEventListener('click', async () => {
     const ids = await pickFilesToImport();
     afterImport(ids);
@@ -109,7 +116,8 @@ export function initHome(el) {
     const action = e.target.closest('[data-empty-action]');
     if (action) {
       e.preventDefault();
-      return action.dataset.emptyAction === 'sample' ? newSampleFile() : newBlankFile();
+      const act = action.dataset.emptyAction;
+      return act === 'sample' ? newSampleFile() : act === 'tokens' ? newTokenFile() : newBlankFile();
     }
     if (more) {
       e.preventDefault();
@@ -162,6 +170,10 @@ export function setHomeNotice(msg) {
 }
 
 // ---------- actions ----------
+async function newTokenFile() {
+  openFile(await createFile(newTokenDocument()));
+}
+
 async function newBlankFile() {
   openFile(await createFile(sampleDocument({ blank: true })));
 }
@@ -225,13 +237,20 @@ async function startRename(id) {
 // ---------- render ----------
 export async function renderHome() {
   if (!root) return;
+  if (!SECTIONS[prefs.section]) prefs.section = 'recents';
   let files = await listFiles();
   const total = files.length;
+  const section = prefs.section;
+  if (section !== 'recents') files = files.filter((f) => fileKind(f) === section);
+  const inSection = files.length;
 
-  root.querySelectorAll('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.section === prefs.section));
+  root.querySelectorAll('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.section === section));
   root.querySelectorAll('[data-layout]').forEach((b) => b.classList.toggle('on', b.dataset.layout === prefs.layout));
-  const recents = prefs.section === 'recents';
-  root.querySelector('#home-title').textContent = recents ? 'Recents' : 'All files';
+  const recents = section === 'recents';
+  root.querySelector('#home-title').textContent = SECTIONS[section];
+  // The primary "New" button matches the section you're in.
+  root.querySelector('#home-new').classList.toggle('primary', section !== 'tokens');
+  root.querySelector('#home-new-tokens').classList.toggle('primary', section === 'tokens');
   const sortSel = root.querySelector('#home-sort');
   sortSel.hidden = recents;
   sortSel.value = prefs.sort;
@@ -262,6 +281,14 @@ export async function renderHome() {
       <p>Files are saved in this browser. You can also drag <b>.sigma.json</b> files here to import them.</p>
       <div class="home-empty-actions"><button class="btn primary" data-empty-action="blank">${icons.plus} New design file</button>
       <button class="btn" data-empty-action="sample">Open the sample file</button></div></div>`;
+  } else if (!inSection && section === 'tokens') {
+    list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No token files yet</div>
+      <p>A token file holds your design tokens — colors, spacing, type — for design files to use. It has no canvas.</p>
+      <div class="home-empty-actions"><button class="btn primary" data-empty-action="tokens">${icons.plus} New token file</button></div></div>`;
+  } else if (!inSection) {
+    list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No design files yet</div>
+      <div class="home-empty-actions"><button class="btn primary" data-empty-action="blank">${icons.plus} New design file</button>
+      <button class="btn" data-empty-action="sample">Open the sample file</button></div></div>`;
   } else if (!files.length) {
     list.innerHTML = `<div class="home-empty"><p>No files match “${esc(query)}”.</p></div>`;
   } else {
@@ -277,15 +304,20 @@ function card(f) {
     thumbURLs.push(url);
     thumb = `<img src="${url}" alt="" draggable="false">`;
   }
+  const tokens = fileKind(f) === 'tokens';
+  if (!thumb && tokens) thumb = `<span class="thumb-placeholder">${NAV_TOKENS}</span>`;
   const name = renaming === f.id
     ? `<input class="rename-input" value="${esc(f.name)}" spellcheck="false">`
     : `<div class="card-name" title="${esc(f.name)}">${esc(f.name)}</div>`;
-  return `<a class="file-card" href="${fileHref(f.id)}" data-id="${f.id}" draggable="false">
-    <div class="file-thumb" style="background:${esc(f.background || '#F5F5F5')}">${thumb}</div>
-    <div class="file-info">${name}<div class="file-time">Edited ${ago(f.updatedAt)}</div></div>
+  return `<a class="file-card${tokens ? ' tokens' : ''}" href="${fileHref(f.id)}" data-id="${f.id}" draggable="false">
+    <div class="file-thumb" style="background:${tokens ? '#FFFFFF' : esc(f.background || '#F5F5F5')}">${thumb}</div>
+    <div class="file-info">${name}<div class="file-time">${tokens ? '<span class="kind-badge">Tokens</span>' : ''}Edited ${ago(f.updatedAt)}</div></div>
     <div class="file-created">${new Date(f.createdAt).toLocaleDateString()}</div>
     <button class="icon-btn file-more" data-more title="More actions">${MORE_ICON}</button>
   </a>`;
 }
+
+const NAV_DESIGN = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4.5 1.5v11M9.5 1.5v11M1.5 4.5h11M1.5 9.5h11"/></svg>';
+const NAV_TOKENS = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 1.2l5 2.9v5.8L7 12.8 2 9.9V4.1z"/><circle cx="7" cy="7" r="1.6"/></svg>';
 
 const MORE_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="3.5" cy="8" r="1.25"/><circle cx="8" cy="8" r="1.25"/><circle cx="12.5" cy="8" r="1.25"/></svg>';

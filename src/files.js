@@ -117,8 +117,16 @@ export async function storageSummary() {
 }
 
 // ---------- mutations ----------
+// Files are design files (a canvas) or token files (design tokens only, no canvas).
+export const fileKind = (metaOrDoc) => (metaOrDoc?.kind === 'tokens' ? 'tokens' : 'design');
+
+export function newTokenDocument(name = 'Untitled tokens') {
+  return { kind: 'tokens', name, pages: [], currentPageId: null, variables: { collections: [] } };
+}
+
 const metaFor = (id, doc, extra = {}) => ({
   id,
+  kind: fileKind(doc),
   name: doc.name || 'Untitled',
   background: doc.pages?.[0]?.background || '#F5F5F5',
   createdAt: Date.now(),
@@ -267,7 +275,41 @@ function scheduleThumbnail() {
 const THUMB_W = 480, THUMB_H = 360;
 
 // Render the first page of the open document to a PNG blob (null for an empty page).
+// Token files: a palette of their color tokens (first mode), or nothing if they have none yet.
+async function renderTokenThumbnail() {
+  const colors = [];
+  for (const c of state.doc.variables?.collections || []) {
+    for (const v of c.variables || []) {
+      const val = v.valuesByMode?.[c.defaultModeId];
+      if (v.type === 'color' && typeof val === 'string') colors.push(val);
+    }
+  }
+  if (!colors.length) return null;
+  const cv = document.createElement('canvas');
+  cv.width = THUMB_W;
+  cv.height = THUMB_H;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, THUMB_W, THUMB_H);
+  const shown = colors.slice(0, 24);
+  const cols = Math.min(6, shown.length), rows = Math.ceil(shown.length / cols);
+  const pad = 32, gap = 12;
+  const size = Math.min((THUMB_W - pad * 2 - gap * (cols - 1)) / cols, (THUMB_H - pad * 2 - gap * (rows - 1)) / rows);
+  const x0 = (THUMB_W - (cols * size + (cols - 1) * gap)) / 2, y0 = (THUMB_H - (rows * size + (rows - 1) * gap)) / 2;
+  shown.forEach((hex, i) => {
+    const x = x0 + (i % cols) * (size + gap), y = y0 + Math.floor(i / cols) * (size + gap);
+    ctx.beginPath();
+    ctx.roundRect(x, y, size, size, size * 0.22);
+    ctx.fillStyle = hex; // #RRGGBB or #RRGGBBAA
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+    ctx.stroke();
+  });
+  return new Promise((resolve) => cv.toBlob(resolve, 'image/png'));
+}
+
 async function renderThumbnail() {
+  if (fileKind(state.doc) === 'tokens') return renderTokenThumbnail();
   const pg = state.doc?.pages?.[0];
   const nodes = pg?.children.filter((n) => n.visible) || [];
   if (!nodes.length) return null;

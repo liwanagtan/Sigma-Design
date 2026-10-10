@@ -103,7 +103,7 @@ function initFileHeader() {
       { label: 'Undo', shortcut: '⌘Z', action: undo },
       { label: 'Redo', shortcut: '⇧⌘Z', action: redo },
       '-',
-      { label: 'Variables…', action: () => openVariablesEditor() },
+      { label: 'Local design tokens…', action: () => openVariablesEditor() },
       { label: 'Keyboard shortcuts', shortcut: '?', action: showShortcuts },
     ]);
   });
@@ -505,7 +505,7 @@ function modeRows(nodes) {
     // "Auto" inherits; for an extended collection that nothing applies, it means "not applied".
     const inheritedName = col.modes.find((m) => m.id === (inherited || col.defaultModeId))?.name || '';
     const autoLabel = col.extends && !inherited ? 'Not applied' : `Auto (${inheritedName})`;
-    return `<label class="bind-row mode-row" title="Variable mode for ${esc(col.name)}"><span>${esc(col.name)}</span>` +
+    return `<label class="bind-row mode-row" title="Token mode for ${esc(col.name)}"><span>${esc(col.name)}</span>` +
       `<select class="select" data-mode-col="${col.id}" data-mode-target="${nodes ? 'layers' : 'page'}">` +
       (current === MIXED ? '<option selected disabled>Mixed</option>' : '') +
       `<option value="" ${current === '' ? 'selected' : ''}>${esc(autoLabel)}</option>` +
@@ -535,12 +535,12 @@ function boundVar(nodes, path) {
   const ids = new Set(nodes.map((n) => n.bindings?.[path] || null));
   if (ids.size !== 1) return MIXED;
   const id = [...ids][0];
-  return id ? findVariable(id)?.variable || { id, name: 'Missing variable' } : null;
+  return id ? findVariable(id)?.variable || { id, name: 'Missing token' } : null;
 }
 
 const varChip = (path, v) =>
   `<button class="var-chip" data-var-menu="${path}" title="${esc(v.name)} — click to change or detach">${VAR_ICON}<span>${esc(v.name.split('/').pop())}</span></button>`;
-const varButton = (path) => `<button class="icon-btn var-btn" data-var-menu="${path}" title="Apply variable">${VAR_ICON}</button>`;
+const varButton = (path) => `<button class="icon-btn var-btn" data-var-menu="${path}" title="Apply design token">${VAR_ICON}</button>`;
 const varControl = (nodes, path) => {
   const b = boundVar(nodes, path);
   return b && b !== MIXED ? varChip(path, b) : varButton(path);
@@ -575,10 +575,10 @@ function variableMenu(btn, path) {
       });
     }
   }
-  if (!items.length) items.push({ label: `No ${VAR_TYPES[type].toLowerCase()} variables yet`, disabled: true });
-  items.push('-', { label: 'Create variable from this value', action: () => variableFromValue(nodes, path, type) });
-  if (current) items.push({ label: 'Detach variable', action: () => applyVariable(nodes, path, null) });
-  items.push({ label: 'Open variables…', action: () => openVariablesEditor() });
+  if (!items.length) items.push({ label: `No ${VAR_TYPES[type].toLowerCase()} tokens yet`, disabled: true });
+  items.push('-', { label: 'Create token from this value', action: () => variableFromValue(nodes, path, type) });
+  if (current) items.push({ label: 'Detach token', action: () => applyVariable(nodes, path, null) });
+  items.push({ label: 'Open local design tokens…', action: () => openVariablesEditor() });
   const r = btn.getBoundingClientRect();
   showContextMenu(Math.max(8, r.right - 220), r.bottom + 4, items);
 }
@@ -591,7 +591,7 @@ function applyVariable(nodes, path, varId) {
 }
 
 function variableFromValue(nodes, path, type) {
-  const col = collections()[0] || createCollection('Variables');
+  const col = collections()[0] || createCollection('Tokens');
   let value = readPath(nodes[0], path);
   if (path === 'opacity') value = Math.round((value ?? 1) * 100);
   if (type === 'number') value = Number(value) || 0;
@@ -691,8 +691,8 @@ function buildProps() {
         `<button class="preset" data-preset="${i}"><span>${name}</span><span class="muted">${w}×${h}</span></button>`).join('')}</div>`);
     }
     const vcount = collections().reduce((n, c) => n + c.variables.length, 0);
-    html += section('Local variables', `<div class="muted">${vcount ? `${vcount} variable${vcount === 1 ? '' : 's'} in ${collections().length} collection${collections().length === 1 ? '' : 's'}` : 'Reusable colors, numbers, text and booleans.'}</div>` +
-      '<button class="btn wide" data-action="open-variables">Open variables</button>');
+    html += section('Local design tokens', `<div class="muted">${vcount ? `${vcount} token${vcount === 1 ? '' : 's'} in ${collections().length} collection${collections().length === 1 ? '' : 's'}` : 'Reusable colors, numbers, text and booleans, kept in this file.'}</div>` +
+      '<button class="btn wide" data-action="open-variables">Open local tokens</button>');
     html += section('Page', modeRows(null) + `<div class="color-row"><label class="swatch" style="--c:${page().background}"><input type="color" data-page-bg value="${page().background.toLowerCase()}"></label>` +
       `<input class="hex" data-page-hex value="${page().background.replace('#', '')}" spellcheck="false"></div>`);
     html += section('Export', `<div class="export-row">${exportControls()}</div><button class="btn wide" data-action="export-page">Export ${esc(page().name)}</button>`);

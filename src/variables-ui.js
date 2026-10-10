@@ -1,5 +1,6 @@
-// The "Local variables" editor: collections on the left, a table of variables × modes on the right.
-// Extended collections show their parent's variables; inherited values are greyed, overrides are highlighted.
+// The design token editor: collections on the left, a table of tokens × modes on the right.
+// Extended collections show their parent's tokens; inherited values are greyed, overrides are highlighted.
+// It opens as a modal for a design file's local tokens, or fills the screen for a token file.
 import { state, commit, emit, subscribe } from './store.js';
 import {
   collections, VAR_TYPES, createCollection, deleteCollection, addMode, removeMode, createVariable, deleteVariable,
@@ -11,7 +12,9 @@ import { icons } from './icons.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-let modal = null;
+let modal = null; // the element the editor renders into (modal backdrop, or the token file screen)
+let inline = false;
+const bound = new WeakSet();
 let activeId = null;
 
 const TYPE_ICON = {
@@ -24,8 +27,28 @@ const LINK_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" s
 const RESET_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M2.5 6a3.5 3.5 0 1 0 1-2.5M2.5 1.5v2h2"/></svg>';
 const DEFAULTS = { color: '#000000', number: 0, string: '', boolean: true };
 
+// Fill `host` with the editor (token files). Stays until unmountTokenEditor().
+export function mountTokenEditor(host) {
+  close();
+  modal = host;
+  inline = true;
+  host.innerHTML = '<div class="vars-modal inline"></div>';
+  if (!bound.has(host)) {
+    bind();
+    bound.add(host);
+  }
+  render();
+}
+
+export function unmountTokenEditor() {
+  if (!inline) return;
+  modal.innerHTML = '';
+  modal = null;
+  inline = false;
+}
+
 export function openVariablesEditor(focusCollectionId) {
-  if (!state.doc) return;
+  if (!state.doc || inline) return;
   if (focusCollectionId) activeId = focusCollectionId;
   if (!modal) {
     modal = document.createElement('div');
@@ -39,6 +62,7 @@ export function openVariablesEditor(focusCollectionId) {
 }
 
 function close() {
+  if (inline) return;
   modal?.remove();
   modal = null;
   window.removeEventListener('keydown', onKey, true);
@@ -54,7 +78,7 @@ function onKey(e) {
 // Re-render when the document changes (undo, edits elsewhere), unless the user is typing in the editor.
 subscribe((kind) => {
   if (!modal || kind !== 'doc') return;
-  if (!state.doc) return close();
+  if (!state.doc) return inline ? undefined : close();
   const a = document.activeElement;
   if (modal.contains(a) && a.tagName === 'INPUT' && a.type !== 'checkbox') return;
   render();
@@ -93,12 +117,12 @@ function cell(col, v, mode) {
   const overridden = ext && own !== undefined;
   const raw = ext ? rawValueIn(col, mode.id, v) : own;
   const data = `data-var="${v.id}" data-mode="${mode.id}"`;
-  const aliasBtn = `<button class="icon-btn cell-alias" ${data} data-alias-menu title="Use another variable (alias)">${LINK_ICON}</button>`;
+  const aliasBtn = `<button class="icon-btn cell-alias" ${data} data-alias-menu title="Use another token (alias)">${LINK_ICON}</button>`;
   const resetBtn = overridden ? `<button class="icon-btn cell-reset" ${data} data-reset-override title="Reset to inherited value">${RESET_ICON}</button>` : '';
   const cls = `var-cell${ext ? (overridden ? ' overridden' : ' inherited') : ''}`;
   if (isAlias(raw)) {
     const target = findVariable(raw.alias);
-    return `<div class="${cls}"><button class="alias-chip" ${data} data-alias-menu title="Aliased variable">→ ${esc(target ? target.variable.name : 'Missing variable')}</button>${resetBtn}</div>`;
+    return `<div class="${cls}"><button class="alias-chip" ${data} data-alias-menu title="Aliased token">→ ${esc(target ? target.variable.name : 'Missing token')}</button>${resetBtn}</div>`;
   }
   return `<div class="${cls}">${valueEditor(v.type, raw, data)}${aliasBtn}${resetBtn}</div>`;
 }
@@ -110,11 +134,11 @@ function render() {
     const count = isExtension(c) ? Object.keys(c.overrides || {}).length : c.variables.length;
     return `<button class="vars-col${c === col ? ' active' : ''}" data-col="${c.id}" style="padding-left:${10 + depth * 14}px">` +
       `<span class="vars-col-label">${depth ? '↳ ' : ''}${esc(c.name)}</span>` +
-      `<span class="muted" title="${isExtension(c) ? 'Overridden variables' : 'Variables'}">${count}</span></button>`;
+      `<span class="muted" title="${isExtension(c) ? 'Overridden tokens' : 'Tokens'}">${count}</span></button>`;
   }).join('');
   let main;
   if (!col) {
-    main = '<div class="vars-empty"><div class="home-empty-title">No variables yet</div><p>Variables store reusable colors, numbers, text and booleans. Create a collection to start.</p><button class="btn primary" data-act="new-collection">Create collection</button></div>';
+    main = '<div class="vars-empty"><div class="home-empty-title">No design tokens yet</div><p>Design tokens store reusable colors, numbers, text and booleans. Create a collection to start.</p><button class="btn primary" data-act="new-collection">Create collection</button></div>';
   } else {
     const ext = isExtension(col);
     const vars = ext ? inheritedVariables(col) : col.variables;
@@ -137,18 +161,18 @@ function render() {
         `<div class="var-name"><span class="var-type" title="${VAR_TYPES[v.type]}">${TYPE_ICON[v.type]}</span>` +
         (ext ? `<span class="var-name-text">${esc(v.name)}</span>` : `<input data-var-name="${v.id}" value="${esc(v.name)}" spellcheck="false">`) + '</div>' +
         col.modes.map((m) => cell(col, v, m)).join('') +
-        `<div>${ext ? '' : `<button class="icon-btn" data-delete-var="${v.id}" title="Delete variable">${icons.close}</button>`}</div></div>`).join('')).join('');
+        `<div>${ext ? '' : `<button class="icon-btn" data-delete-var="${v.id}" title="Delete token">${icons.close}</button>`}</div></div>`).join('')).join('');
     const parent = parentOf(col);
     main = `<div class="vars-toolbar"><div class="vars-title"><input class="vars-col-name" data-col-name="${col.id}" value="${esc(col.name)}" spellcheck="false">` +
-      (ext ? `<span class="ext-badge" title="Inherits variables and modes from ${esc(parent?.name || 'a missing collection')}">Extends ${esc(parent?.name || '?')}</span>` : '') + '</div>' +
+      (ext ? `<span class="ext-badge" title="Inherits tokens and modes from ${esc(parent?.name || 'a missing collection')}">Extends ${esc(parent?.name || '?')}</span>` : '') + '</div>' +
       `<div class="vars-actions"><button class="btn" data-act="extend" title="Create a collection that inherits this one and overrides only some values">Extend</button>` +
       `<button class="btn" data-act="delete-collection">Delete</button></div></div>` +
-      (ext ? '<div class="vars-hint">Greyed values are inherited. Edit a value to override it for this collection; ↺ resets it. Add variables and modes in the root collection.</div>' : '') +
-      `<div class="vars-table">${head}${body || '<div class="muted vars-none">No variables in this collection yet.</div>'}</div>` +
-      (ext ? '' : '<div class="vars-footer"><button class="btn" data-act="new-variable">+ Create variable</button></div>');
+      (ext ? '<div class="vars-hint">Greyed values are inherited. Edit a value to override it for this collection; ↺ resets it. Add tokens and modes in the root collection.</div>' : '') +
+      `<div class="vars-table">${head}${body || '<div class="muted vars-none">No tokens in this collection yet.</div>'}</div>` +
+      (ext ? '' : '<div class="vars-footer"><button class="btn" data-act="new-variable">+ Create token</button></div>');
   }
-  modal.querySelector('.modal').innerHTML =
-    `<div class="modal-head">Local variables<button class="icon-btn" data-close>${icons.close}</button></div>` +
+  modal.querySelector('.vars-modal').innerHTML =
+    (inline ? '' : `<div class="modal-head">Local design tokens<button class="icon-btn" data-close>${icons.close}</button></div>`) +
     `<div class="vars-body"><aside class="vars-side">${sidebar}<button class="vars-add" data-act="new-collection">+ New collection</button></aside>` +
     `<section class="vars-main">${main}</section></div>`;
 }
@@ -164,7 +188,7 @@ function writeCell(col, varId, modeId, value) {
 
 function bind() {
   modal.addEventListener('click', (e) => {
-    if (e.target === modal || e.target.closest('[data-close]')) return close();
+    if (!inline && (e.target === modal || e.target.closest('[data-close]'))) return close();
     const t = e.target.closest('button');
     if (!t) return;
     const col = active();
@@ -183,7 +207,7 @@ function bind() {
         return change(() => void (activeId = extendCollection(col).id));
       case 'delete-collection': {
         const exts = collections().filter((c) => c.extends === col.id).length;
-        const what = isExtension(col) ? 'its overrides' : `its ${col.variables.length} variables${exts ? ` and ${exts} extended collection${exts === 1 ? '' : 's'}` : ''}`;
+        const what = isExtension(col) ? 'its overrides' : `its ${col.variables.length} tokens${exts ? ` and ${exts} extended collection${exts === 1 ? '' : 's'}` : ''}`;
         if (col && confirm(`Delete “${col.name}” and ${what}? Bound layers keep their current values.`)) change(() => deleteCollection(col));
         return;
       }
@@ -235,7 +259,9 @@ function bind() {
   });
   modal.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.target.tagName === 'INPUT') e.target.blur();
-    e.stopPropagation();
+    // On the token file screen, let ⌘Z / ⇧⌘Z through to the screen's undo (unless typing).
+    if (inline && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && e.target.tagName !== 'INPUT') return;
+    e.stopPropagation(); // keep canvas shortcuts (Delete, arrows…) from acting on layers behind the modal
   });
 }
 
@@ -262,6 +288,6 @@ function aliasMenu(btn, col) {
   if (isAlias(current)) {
     items.push('-', { label: 'Detach alias', action: () => change(() => writeCell(col, variable.id, mode, previewValue(current.alias) ?? DEFAULTS[variable.type])) });
   }
-  if (!items.length) items.push({ label: `No other ${VAR_TYPES[variable.type].toLowerCase()} variables`, disabled: true });
+  if (!items.length) items.push({ label: `No other ${VAR_TYPES[variable.type].toLowerCase()} tokens`, disabled: true });
   showContextMenu(r.left, r.bottom + 4, items);
 }

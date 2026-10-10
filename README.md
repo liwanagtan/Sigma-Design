@@ -19,7 +19,9 @@ Then open http://localhost:5173.
 ## Features
 
 - **Files home:**
-  - lists every file saved in this browser, with thumbnails and "Edited … ago"
+  - two kinds of file: **design files** (a canvas) and **token files** (design tokens only, no canvas)
+  - Recents shows both; the **Design files** and **Design tokens** groups show one kind each
+  - lists every file saved in this browser, with thumbnails (token files show a palette of their colors) and "Edited … ago"
   - has Recents and All files views, search, sorting, and a grid or list layout
   - lets you rename, duplicate, delete and download files from the card menu, or import `.sigma.json` files by dragging them onto the page
   - gives each file its own link (`#/file/<id>`), so back/forward, bookmarks and "open in new tab" work
@@ -54,8 +56,9 @@ Then open http://localhost:5173.
   - **variants:** select components and right-click → **Combine as variants** to make a component set
   - variant names become properties (`Size=Large, State=Hover`); the set's panel renames properties and adds properties or variants
   - instances of a variant get a dropdown per variant property, and overrides carry over when switching
-- **Variables:**
-  - open the editor from the Σ menu or the panel (with nothing selected)
+- **Design tokens** (Sigma's name for Figma's variables):
+  - **New token file** creates a token file, which opens straight into a full-screen token editor
+  - a design file can also keep **local design tokens**; open them from the Σ menu or the panel (with nothing selected)
   - organise color, number, string and boolean variables into collections; use `/` in names to group them
   - each collection has modes (columns), and a cell can alias another variable
   - the ◈ button on a fill, stroke, number field, visibility or text content binds a variable; a bound field shows a purple chip
@@ -63,7 +66,7 @@ Then open http://localhost:5173.
   - **modes:** for any collection with several modes, the Layer section (or the Page section, with nothing selected) has a mode picker
   - "Auto" inherits the mode from the parent; children follow unless they pin their own mode
   - instances inherit a mode pinned on their main component and can pin a different one
-  - **extended collections:** **Extend** in the variables editor creates a collection that inherits all variables and modes and stores only the values you override
+  - **extended collections:** **Extend** in the token editor creates a collection that inherits all variables and modes and stores only the values you override
   - in an extension, inherited values are greyed and ↺ resets an override
   - apply an extension with the mode picker on a frame, page or instance to re-skin it (for example, a second brand); extensions can be extended again
   - copied layers remember their variables' names, so pasting into another file reconnects them to same-named variables there
@@ -98,7 +101,8 @@ Press `?` in the app to see every keyboard shortcut.
 | `src/layout.js` | Auto layout engine: hug/fill sizing, flow positioning, layout inference for ⇧A |
 | `src/components.js` | Components and instances (normalize step `syncInstances`) |
 | `src/variables.js` | Variables, aliases, modes and binding (normalize step `resolveVariables`) |
-| `src/variables-ui.js` | The Local variables editor |
+| `src/variables-ui.js` | The design token editor (a modal in design files, full-screen in token files) |
+| `src/tokens-screen.js` | The token file screen |
 | `tests/` | In-browser test runner (`tests/index.html`) and tests |
 | `src/text.js` | Text measurement and the in-place text editor |
 | `src/panels.js` | Toolbar, layers, pages and properties panels |
