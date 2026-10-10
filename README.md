@@ -54,6 +54,12 @@ Then open http://localhost:5173.
   - **variants:** select components and right-click → **Combine as variants** to make a component set
   - variant names become properties (`Size=Large, State=Hover`); the set's panel renames properties and adds properties or variants
   - instances of a variant get a dropdown per variant property, and overrides carry over when switching
+- **Variables:**
+  - open the editor from the Σ menu or the panel (with nothing selected)
+  - organise color, number, string and boolean variables into collections; use `/` in names to group them
+  - each collection has modes (columns), and a cell can alias another variable
+  - the ◈ button on a fill, stroke, number field, visibility or text content binds a variable; a bound field shows a purple chip
+  - typing a value over a bound field detaches the variable
 - **Resizing:** each layer can be **Fixed**, **Hug** contents (auto-layout frames and text) or **Fill** container (children of auto-layout frames), separately for width and height
 - **Lock aspect ratio:** the link button next to W/H. It applies to typed sizes and to resize handles (hold ⇧ to override).
 - **Layers panel:** tree view, rename (double-click or ⌘R), hide, lock, drag to reorder or nest
@@ -82,7 +88,8 @@ Press `?` in the app to see every keyboard shortcut.
 | `src/commands.js` | Editing commands (group, align, reorder, zoom, …) |
 | `src/layout.js` | Auto layout engine: hug/fill sizing, flow positioning, layout inference for ⇧A |
 | `src/components.js` | Components and instances (normalize step `syncInstances`) |
-| `src/variables.js` | Variables and modes (normalize step `resolveVariables`) |
+| `src/variables.js` | Variables, aliases, modes and binding (normalize step `resolveVariables`) |
+| `src/variables-ui.js` | The Local variables editor |
 | `tests/` | In-browser test runner (`tests/index.html`) and tests |
 | `src/text.js` | Text measurement and the in-place text editor |
 | `src/panels.js` | Toolbar, layers, pages and properties panels |

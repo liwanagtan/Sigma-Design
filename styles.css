@@ -319,3 +319,54 @@ fieldset.readonly .field-label { cursor: default; }
 
 .chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .chip { padding: 2px 6px; border-radius: 4px; background: #f0e6ff; color: #6d28d9; }
+
+/* ---------- variables ---------- */
+.var-btn { width: 20px; height: 20px; color: var(--muted); visibility: hidden; flex: none; }
+.field.bindable:hover .var-btn, .paint-row:hover .var-btn, .var-btn:focus-visible { visibility: visible; }
+.var-chip { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; height: 20px; padding: 0 6px; margin: 0 4px 0 0; border-radius: 4px; background: #f0e6ff; color: #5b21b6; font-weight: 500; overflow: hidden; }
+.var-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.var-chip:hover { background: #e4d4ff; }
+.color-row .hex .var-chip { margin: 4px 0; }
+.field .var-chip { flex: 1; min-width: 0; }
+.bind-inline { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
+.bind-inline .var-btn { visibility: visible; }
+.bind-inline.wide { margin-right: 24px; }
+
+.vars-modal { width: min(1100px, calc(100vw - 32px)); height: min(720px, 86vh); max-height: none; }
+.vars-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 200px 1fr; }
+.vars-side { border-right: 1px solid var(--border); padding: 8px; display: flex; flex-direction: column; gap: 2px; overflow: auto; }
+.vars-col { display: flex; justify-content: space-between; align-items: center; height: 30px; padding: 0 10px; border-radius: 6px; text-align: left; }
+.vars-col:hover { background: var(--hover); }
+.vars-col.active { background: var(--accent-soft); font-weight: 600; }
+.vars-add { height: 30px; padding: 0 10px; text-align: left; color: var(--accent); border-radius: 6px; }
+.vars-add:hover { background: var(--hover); }
+.vars-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.vars-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+.vars-toolbar .btn { height: 28px; }
+.vars-col-name { font-weight: 600; font-size: 13px; border: 1px solid transparent; background: none; border-radius: 4px; padding: 4px 6px; outline: none; min-width: 0; }
+.vars-col-name:hover { border-color: var(--border); }
+.vars-col-name:focus { border-color: var(--accent); }
+.vars-table { flex: 1; overflow: auto; padding: 0 8px 8px; }
+.vars-row { display: grid; align-items: center; gap: 8px; min-height: 36px; padding: 0 8px; border-bottom: 1px solid var(--border); }
+.vars-head { position: sticky; top: 0; background: #fff; z-index: 1; font-weight: 600; color: var(--muted); }
+.mode-head { display: flex; align-items: center; gap: 2px; }
+.mode-name { flex: 1; min-width: 0; border: 1px solid transparent; background: none; border-radius: 4px; padding: 3px 4px; font-weight: 600; color: var(--text); outline: none; }
+.mode-name:hover { border-color: var(--border); }
+.mode-name:focus { border-color: var(--accent); }
+.vars-group { padding: 12px 8px 4px; font-weight: 600; color: var(--muted); }
+.var-name { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.var-name input, .cell-input { flex: 1; min-width: 0; height: 26px; border: 1px solid transparent; background: none; border-radius: 4px; padding: 0 6px; outline: none; }
+.var-name input:hover, .cell-input:hover { border-color: var(--border); }
+.var-name input:focus, .cell-input:focus { border-color: var(--accent); background: #fff; }
+.var-type { color: var(--muted); display: grid; place-items: center; }
+.var-cell { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.var-cell .cell-input.hex { text-transform: uppercase; }
+.cell-alias { width: 22px; height: 22px; color: var(--muted); visibility: hidden; }
+.vars-row:hover .cell-alias { visibility: visible; }
+.alias-chip { display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 4px; background: #f0e6ff; color: #5b21b6; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cell-bool { display: flex; align-items: center; gap: 6px; }
+.vars-footer { padding: 10px 16px; border-top: 1px solid var(--border); }
+.vars-footer .btn { height: 28px; }
+.vars-empty { margin: auto; text-align: center; color: var(--muted); max-width: 360px; }
+.vars-empty .btn { height: 32px; padding: 0 14px; margin-top: 8px; }
+.vars-none { padding: 16px 8px; }

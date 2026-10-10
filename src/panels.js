@@ -19,6 +19,11 @@ import {
 import { exportNodes, saveFile, pickImages } from './io.js';
 import { createFile, openFile, goHome, pickFilesToImport } from './files.js';
 import { sampleDocument } from './sample.js';
+import {
+  collections, findVariable, typeForPath, previewValue, bindVariable, unbindVariable, shiftPaintBindings, createCollection,
+  createVariable, VAR_TYPES,
+} from './variables.js';
+import { openVariablesEditor } from './variables-ui.js';
 import { showContextMenu } from './menu.js';
 import { stopEditing } from './text.js';
 import { toWorld, nodeWorldSVG } from './render.js';
@@ -98,6 +103,7 @@ function initFileHeader() {
       { label: 'Undo', shortcut: '⌘Z', action: undo },
       { label: 'Redo', shortcut: '⇧⌘Z', action: redo },
       '-',
+      { label: 'Variables…', action: () => openVariablesEditor() },
       { label: 'Keyboard shortcuts', shortcut: '?', action: showShortcuts },
     ]);
   });
@@ -463,12 +469,98 @@ function normHex(str) {
   return /^[0-9a-f]{6}$/i.test(h) ? `#${h.toUpperCase()}` : null;
 }
 
+// Fields that can be bound to number variables, and the property path they bind.
+const FIELD_BIND = {
+  w: 'w', h: 'h', radius: 'radius', opacity: 'opacity', strokeWidth: 'strokeWidth', fontSize: 'fontSize',
+  lineHeight: 'lineHeight', letterSpacing: 'letterSpacing', gap: 'layout.gap',
+};
+
 function numField(key, label, nodes, { icon } = {}) {
   const f = FIELDS[key];
+  const path = FIELD_BIND[key];
+  const bound = path ? boundVar(nodes, path) : null;
+  const head = `<label class="field${path ? ' bindable' : ''}"><span class="field-label" data-scrub="${key}">${icon || label}</span>`;
+  if (bound && bound !== MIXED) return `${head}${varChip(path, bound)}</label>`;
   const v = common(nodes, f.get);
   const shown = v === MIXED ? '' : fmtNum(v);
-  return `<label class="field"><span class="field-label" data-scrub="${key}">${icon || label}</span>` +
-    `<input data-key="${key}" value="${esc(shown)}"${v === MIXED ? ' placeholder="Mixed"' : ''} spellcheck="false"></label>`;
+  return `${head}<input data-key="${key}" value="${esc(shown)}"${v === MIXED ? ' placeholder="Mixed"' : ''} spellcheck="false">` +
+    (path ? varButton(path) : '') + '</label>';
+}
+
+// ---------- variable bindings ----------
+const VAR_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M6 1l4.3 2.5v5L6 11 1.7 8.5v-5z"/><circle cx="6" cy="6" r="1.4"/></svg>';
+
+// The variable all `nodes` bind at `path`: a variable, MIXED, or null when unbound.
+function boundVar(nodes, path) {
+  const ids = new Set(nodes.map((n) => n.bindings?.[path] || null));
+  if (ids.size !== 1) return MIXED;
+  const id = [...ids][0];
+  return id ? findVariable(id)?.variable || { id, name: 'Missing variable' } : null;
+}
+
+const varChip = (path, v) =>
+  `<button class="var-chip" data-var-menu="${path}" title="${esc(v.name)} — click to change or detach">${VAR_ICON}<span>${esc(v.name.split('/').pop())}</span></button>`;
+const varButton = (path) => `<button class="icon-btn var-btn" data-var-menu="${path}" title="Apply variable">${VAR_ICON}</button>`;
+const varControl = (nodes, path) => {
+  const b = boundVar(nodes, path);
+  return b && b !== MIXED ? varChip(path, b) : varButton(path);
+};
+
+function readPath(node, path) {
+  return path.split('.').reduce((o, k) => (o == null ? o : o[k]), node);
+}
+
+function previewText(v) {
+  const val = previewValue(v.id);
+  if (v.type === 'boolean') return val ? 'True' : 'False';
+  if (v.type === 'string') return String(val ?? '').slice(0, 14);
+  return String(val ?? '');
+}
+
+function variableMenu(btn, path) {
+  const nodes = selectedNodes();
+  const type = typeForPath(path);
+  if (!type || !nodes.length) return;
+  const current = boundVar(nodes, path);
+  const items = [];
+  for (const col of collections()) {
+    const vars = col.variables.filter((v) => v.type === type);
+    if (!vars.length) continue;
+    if (items.length) items.push('-');
+    items.push({ label: col.name, disabled: true });
+    for (const v of vars) {
+      items.push({
+        label: v.name, shortcut: previewText(v), checked: current && current !== MIXED && current.id === v.id,
+        action: () => applyVariable(nodes, path, v.id),
+      });
+    }
+  }
+  if (!items.length) items.push({ label: `No ${VAR_TYPES[type].toLowerCase()} variables yet`, disabled: true });
+  items.push('-', { label: 'Create variable from this value', action: () => variableFromValue(nodes, path, type) });
+  if (current) items.push({ label: 'Detach variable', action: () => applyVariable(nodes, path, null) });
+  items.push({ label: 'Open variables…', action: () => openVariablesEditor() });
+  const r = btn.getBoundingClientRect();
+  showContextMenu(Math.max(8, r.right - 220), r.bottom + 4, items);
+}
+
+function applyVariable(nodes, path, varId) {
+  for (const n of nodes) {
+    editNode(n, ['bindings'], () => (varId ? bindVariable(n, path, varId) : unbindVariable(n, path)));
+  }
+  commit();
+}
+
+function variableFromValue(nodes, path, type) {
+  const col = collections()[0] || createCollection('Variables');
+  let value = readPath(nodes[0], path);
+  if (path === 'opacity') value = Math.round((value ?? 1) * 100);
+  if (type === 'number') value = Number(value) || 0;
+  if (type === 'boolean') value = value !== false;
+  if (type === 'string') value = String(value ?? '');
+  const name = type === 'color' ? 'color' : path.split('.').pop();
+  const v = createVariable(col, type, name);
+  for (const m of col.modes) v.valuesByMode[m.id] = value;
+  applyVariable(nodes, path, v.id);
 }
 
 // ---------- paints (multiple fills / strokes) ----------
@@ -491,9 +583,13 @@ function paintRows(kind, nodes) {
   return list.map((p, i) => ({ p, i })).reverse().map(({ p, i }) => {
     const id = `${kind}:${i}`;
     const hidden = p.visible === false;
+    const path = `${kind}.${i}.color`;
+    const bound = boundVar(nodes, path);
     return `<div class="color-row paint-row${hidden ? ' is-hidden' : ''}">` +
       `<label class="swatch" style="--c:${p.color}"><input type="color" data-paint-color="${id}" value="${p.color.toLowerCase()}"></label>` +
-      `<input class="hex" data-paint-hex="${id}" value="${esc(p.color.replace('#', ''))}" spellcheck="false">` +
+      (bound && bound !== MIXED
+        ? `<span class="hex">${varChip(path, bound)}</span>`
+        : `<input class="hex" data-paint-hex="${id}" value="${esc(p.color.replace('#', ''))}" spellcheck="false">${varButton(path)}`) +
       `<input class="op" data-paint-op="${id}" value="${Math.round(p.opacity * 100)}"><span class="op-suffix">%</span>` +
       `<button class="icon-btn" data-paint-act="toggle" data-paint="${id}" title="${hidden ? 'Show' : 'Hide'} ${PAINT_KINDS[kind]}">${hidden ? icons.eyeOff : icons.eye}</button>` +
       `<button class="icon-btn" data-paint-act="remove" data-paint="${id}" title="Remove ${PAINT_KINDS[kind]}">${icons.minus}</button></div>`;
@@ -505,14 +601,26 @@ function addPaintButton(kind) {
 }
 
 // Apply fn to paint `id` ("fills:2") on every selected node.
-function updatePaint(id, fn, { live = false } = {}) {
+// Apply fn to paint `id` ("fills:2") on every selected node; `field` is the paint property being edited.
+function updatePaint(id, field, fn, { live = false } = {}) {
   const [kind, i] = id.split(':');
   for (const n of selectedNodes()) {
     if (!n[kind]?.[+i]) continue;
-    editNode(n, [kind], () => fn(n[kind][+i], n[kind], +i));
+    editNode(n, [`${kind}.${i}.${field}`], () => fn(n[kind][+i]));
   }
   if (live) emit('doc');
   else commit();
+}
+
+function removePaint(id) {
+  const [kind, i] = id.split(':');
+  for (const n of selectedNodes()) {
+    if (!n[kind]?.[+i]) continue;
+    editNode(n, [`${kind}.${i}`], () => n[kind].splice(+i, 1));
+    // Bindings of later paints move down one slot.
+    if (n.bindings) editNode(n, ['bindings'], () => shiftPaintBindings(n, kind, +i));
+  }
+  commit();
 }
 
 function addPaint(kind) {
@@ -542,6 +650,9 @@ function buildProps() {
       html += section('Frame', `<div class="presets">${FRAME_PRESETS.map(([name, w, h], i) =>
         `<button class="preset" data-preset="${i}"><span>${name}</span><span class="muted">${w}×${h}</span></button>`).join('')}</div>`);
     }
+    const vcount = collections().reduce((n, c) => n + c.variables.length, 0);
+    html += section('Local variables', `<div class="muted">${vcount ? `${vcount} variable${vcount === 1 ? '' : 's'} in ${collections().length} collection${collections().length === 1 ? '' : 's'}` : 'Reusable colors, numbers, text and booleans.'}</div>` +
+      '<button class="btn wide" data-action="open-variables">Open variables</button>');
     html += section('Page', `<div class="color-row"><label class="swatch" style="--c:${page().background}"><input type="color" data-page-bg value="${page().background.toLowerCase()}"></label>` +
       `<input class="hex" data-page-hex value="${page().background.replace('#', '')}" spellcheck="false"></div>`);
     html += section('Export', `<div class="export-row">${exportControls()}</div><button class="btn wide" data-action="export-page">Export ${esc(page().name)}</button>`);
@@ -597,7 +708,8 @@ function buildProps() {
   if (!lockedGeometry) html += autoLayoutSection(nodes);
 
   // Layer
-  html += section('Layer', `<div class="grid2">${numField('opacity', '', nodes, { icon: '<span class="op-icon"></span>' })}<span></span></div>`);
+  html += section('Layer', `<div class="grid2">${numField('opacity', '', nodes, { icon: '<span class="op-icon"></span>' })}` +
+    `<div class="bind-inline"><span class="muted">Visibility</span>${varControl(nodes, 'visible')}</div></div>`);
 
   // Text
   if (types.size === 1 && types.has('text')) {
@@ -610,6 +722,7 @@ function buildProps() {
     t += `<div class="grid2">${numField('lineHeight', '', nodes, { icon: '<span class="mini">LH</span>' })}${numField('letterSpacing', '', nodes, { icon: '<span class="mini">|A|</span>' })}</div>`;
     t += `<div class="grid2"><div class="seg">${[['left', 'textLeft'], ['center', 'textCenter'], ['right', 'textRight']].map(([k, i]) => `<button class="icon-btn${ta === k ? ' on' : ''}" data-text-align="${k}" title="Align ${k}">${icons[i]}</button>`).join('')}</div>` +
       `<div class="seg">${[['width', 'autoWidth', 'Auto width'], ['height', 'autoHeight', 'Auto height'], ['fixed', 'fixedSize', 'Fixed size']].map(([k, i, tip]) => `<button class="icon-btn${ar === k ? ' on' : ''}" data-auto-resize="${k}" title="${tip}">${icons[i]}</button>`).join('')}</div></div>`;
+    t += `<div class="bind-inline wide"><span class="muted">Text content</span>${varControl(nodes, 'text')}</div>`;
     html += section('Text', t);
   }
 
@@ -947,14 +1060,14 @@ function initProps() {
     if (t.dataset.key) return applyField(t.dataset.key, t.value);
     if (t.dataset.paintHex) {
       const hex = normHex(t.value);
-      return hex ? updatePaint(t.dataset.paintHex, (p) => void (p.color = hex)) : emit('selection');
+      return hex ? updatePaint(t.dataset.paintHex, 'color', (p) => void (p.color = hex)) : emit('selection');
     }
     if (t.dataset.paintOp) {
       const v = evalNum(t.value);
       if (v === null) return emit('selection');
-      return updatePaint(t.dataset.paintOp, (p) => void (p.opacity = Math.min(100, Math.max(0, v)) / 100));
+      return updatePaint(t.dataset.paintOp, 'opacity', (p) => void (p.opacity = Math.min(100, Math.max(0, v)) / 100));
     }
-    if (t.dataset.paintColor) return updatePaint(t.dataset.paintColor, (p) => void (p.color = t.value.toUpperCase()));
+    if (t.dataset.paintColor) return updatePaint(t.dataset.paintColor, 'color', (p) => void (p.color = t.value.toUpperCase()));
     if (t.dataset.bool) return setProps({ [t.dataset.bool]: t.checked });
     if (t.dataset.vpropRename !== undefined) {
       renameVariantProperty(selectedNodes()[0], t.dataset.vpropRename, t.value);
@@ -996,7 +1109,7 @@ function initProps() {
   panel.addEventListener('input', (e) => {
     const t = e.target;
     if (t.dataset.paintColor) {
-      updatePaint(t.dataset.paintColor, (p) => void (p.color = t.value.toUpperCase()), { live: true });
+      updatePaint(t.dataset.paintColor, 'color', (p) => void (p.color = t.value.toUpperCase()), { live: true });
       t.parentElement.style.setProperty('--c', t.value);
     }
     if (t.hasAttribute('data-page-bg')) {
@@ -1031,8 +1144,9 @@ function initProps() {
     if (b.dataset.distribute) return distribute(b.dataset.distribute);
     if (b.dataset.textAlign) return setProps({ textAlign: b.dataset.textAlign });
     if (b.dataset.autoResize) return setProps({ autoResize: b.dataset.autoResize });
-    if (b.dataset.paintAct === 'toggle') return updatePaint(b.dataset.paint, (p) => void (p.visible = p.visible === false));
-    if (b.dataset.paintAct === 'remove') return updatePaint(b.dataset.paint, (p, list, i) => void list.splice(i, 1));
+    if (b.dataset.varMenu) return variableMenu(b, b.dataset.varMenu);
+    if (b.dataset.paintAct === 'toggle') return updatePaint(b.dataset.paint, 'visible', (p) => void (p.visible = p.visible === false));
+    if (b.dataset.paintAct === 'remove') return removePaint(b.dataset.paint);
     if (b.dataset.alMode) return setProps({ 'layout.mode': b.dataset.alMode });
     if (b.dataset.alAlign) {
       const [r, c] = b.dataset.alAlign.split(',');
@@ -1074,6 +1188,8 @@ function initProps() {
           { label: 'Instance swap', disabled: !other, action: () => { addComponentProp(comp, 'instance', { value: other.id }); commit(); } },
         ]);
       }
+      case 'open-variables':
+        return openVariablesEditor();
       case 'add-instance':
         return duplicateSelection();
       case 'add-variant':
