@@ -1,8 +1,10 @@
 import { mul, inv, translate, rotate, angleOf, normAngle, cornersOf, aabb, round } from './geom.js';
 
-const STORAGE_KEY = 'sigma.document.v1';
+// Where documents lived before the files home (Phase 1); read once for migration.
+export const LEGACY_STORAGE_KEY = 'sigma.document.v1';
 
 export const state = {
+  screen: 'home', // 'home' (file browser) | 'editor'
   doc: null,
   selection: [], // node ids
   tool: 'move',
@@ -63,6 +65,7 @@ let index = new Map(); // id -> { node, parent: node|null, page }
 
 export function reindex() {
   index = new Map();
+  if (!state.doc) return;
   for (const pg of state.doc.pages) {
     const walk = (nodes, parent) => {
       for (const n of nodes) {
@@ -319,7 +322,7 @@ export function commit() {
   if (past.length > 200) past.shift();
   future = [];
   lastSnapshot = snap;
-  scheduleSave();
+  scheduleSave({ edited: true });
   emit('doc');
 }
 
@@ -329,7 +332,7 @@ function restore(entry) {
   state.editingTextId = null;
   reindex();
   state.selection = (entry.selection || []).filter((id) => getNode(id));
-  scheduleSave();
+  scheduleSave({ edited: true });
   emit('doc');
 }
 
@@ -347,19 +350,36 @@ export function redo() {
   restore(next);
 }
 
-let warnedQuota = false;
-function scheduleSave() {
+// ---------- persistence ----------
+// The file layer (files.js) registers how documents are written. `edited` is true for real document
+// changes and false for view-only changes (pan/zoom), so browsing a file doesn't bump its edit time.
+let persist = null;
+let pendingEdit = false;
+
+export function setPersistence(fn) {
+  persist = fn;
+}
+
+function scheduleSave({ edited = false } = {}) {
+  if (edited) pendingEdit = true;
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ doc: state.doc, views: state.pageViews }));
-    } catch (err) {
-      if (!warnedQuota) {
-        warnedQuota = true;
-        window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'Autosave failed: document is too large for browser storage. Use Save file instead.' }));
-      }
-    }
-  }, 300);
+  saveTimer = setTimeout(() => void flushSave(), 300);
+}
+
+export function flushSave() {
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  if (!persist || !state.doc) return Promise.resolve();
+  const edited = pendingEdit;
+  pendingEdit = false;
+  return persist(state.doc, state.pageViews, { edited });
+}
+
+// Drop any unsaved change (used when reloading a file that another tab changed).
+export function cancelPendingSave() {
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  pendingEdit = false;
 }
 
 export function saveViewsSoon() {
@@ -367,6 +387,8 @@ export function saveViewsSoon() {
 }
 
 export function loadDocument(doc, views = {}) {
+  clearTimeout(saveTimer);
+  pendingEdit = false;
   state.doc = migrateDocument(doc);
   state.pageViews = views;
   state.selection = [];
@@ -376,19 +398,17 @@ export function loadDocument(doc, views = {}) {
   future = [];
   lastSnapshot = snapshot();
   reindex();
-  scheduleSave();
   emit('doc');
 }
 
-export function loadFromStorage() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return false;
-    const { doc, views } = JSON.parse(raw);
-    if (!doc?.pages?.length) return false;
-    loadDocument(doc, views || {});
-    return true;
-  } catch {
-    return false;
-  }
+export function unloadDocument() {
+  clearTimeout(saveTimer);
+  pendingEdit = false;
+  state.doc = null;
+  state.selection = [];
+  state.hoverId = null;
+  state.editingTextId = null;
+  past = [];
+  future = [];
+  lastSnapshot = null;
 }

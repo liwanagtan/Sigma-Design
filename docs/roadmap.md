@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **not started**. Each phase below should fit in one working session. Finish a phase, test it in the browser, commit, then move to the next. Work through the phases in order. **Phase 1 (Files home) is the priority** and doesn't depend on anything else.
+Status: **Phase 1 done**; next up is Phase 2. Each phase below should fit in one working session. Finish a phase, test it in the browser, commit, then move to the next. Work through the phases in order. **Phase 1 (Files home) is the priority** and doesn't depend on anything else.
 
 ## Scope
 
@@ -71,6 +71,13 @@ Today Sigma keeps a single document in one `localStorage` slot. **New file** and
 - The existing autosaved document shows up as a file after upgrading.
 - Two tabs on the same file show the reload banner.
 - Reloading a `#/file/<id>` link reopens that file.
+
+### What shipped (notes from implementation)
+
+- **No Back to files shortcut.** Figma doesn't have one either, so it's a Σ menu item. The browser Back button also works.
+- **Migrated thumbnails come later.** A file migrated from an earlier version gets its thumbnail the first time it's opened. Until then the card shows a placeholder in the page's background color.
+- **Imported file names.** An imported file is named after its filename, not the name stored inside it.
+- **View-only saves are separate.** Pan and zoom update only the stored view, never the document, so a tab that is only looking at a file can't overwrite another tab's edits. **Reload** in the "changed in another tab" banner discards this tab's copy rather than saving it first.
 
 ### Effect on Part B
 
@@ -270,7 +277,7 @@ doc.variables = {
 
 Update the **Status** line at the top and tick the phase off below as you go:
 
-- [ ] Phase 1: Files home (priority)
+- [x] Phase 1: Files home (priority)
 - [ ] Phase 2: Foundations
 - [ ] Phase 3: Components and instances
 - [ ] Phase 4: Component properties

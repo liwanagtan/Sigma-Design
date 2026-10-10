@@ -59,9 +59,10 @@ export function initInteractions(el) {
     state.altDown = false;
     updateCursor();
   });
-  document.addEventListener('copy', (e) => !isTyping(e) && copySelection(e));
-  document.addEventListener('cut', (e) => !isTyping(e) && cutSelection(e));
-  document.addEventListener('paste', (e) => !isTyping(e) && paste(e));
+  const inEditor = (e) => state.screen === 'editor' && state.doc && !isTyping(e);
+  document.addEventListener('copy', (e) => inEditor(e) && copySelection(e));
+  document.addEventListener('cut', (e) => inEditor(e) && cutSelection(e));
+  document.addEventListener('paste', (e) => inEditor(e) && paste(e));
   // Safari pinch gestures
   let gestureZoom = 1;
   el.addEventListener('gesturestart', (e) => {
@@ -881,6 +882,7 @@ function onContextMenu(e) {
 const TOOL_KEYS = { v: 'move', h: 'hand', f: 'frame', a: 'frame', r: 'rect', o: 'ellipse', l: 'line', t: 'text' };
 
 function onKeyDown(e) {
+  if (state.screen !== 'editor' || !state.doc) return;
   if (e.key === 'Alt') {
     state.altDown = true;
     if (!drag) updateHover(lastScreen, e);
@@ -1002,6 +1004,7 @@ function onKeyDown(e) {
 }
 
 function onKeyUp(e) {
+  if (state.screen !== 'editor') return;
   if (e.code === 'Space') {
     state.spaceDown = false;
     updateCursor();

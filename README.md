@@ -16,6 +16,11 @@ Then open http://localhost:5173.
 
 ## Features
 
+- **Files home:**
+  - lists every file saved in this browser, with thumbnails and "Edited … ago"
+  - has Recents and All files views, search, sorting, and a grid or list layout
+  - lets you rename, duplicate, delete and download files from the card menu, or import `.sigma.json` files by dragging them onto the page
+  - gives each file its own link (`#/file/<id>`), so back/forward, bookmarks and "open in new tab" work
 - **Infinite canvas:** pan by scrolling or Space-dragging, zoom with ⌘-scroll or pinch, ⇧0 / ⇧1 / ⇧2
 - **Tools:** Move (V), Hand (H), Frame (F), Rectangle (R), Ellipse (O), Line (L), Text (T), Place image (⇧⌘K, drag-and-drop or paste)
 - **Selection:**
@@ -42,7 +47,11 @@ Then open http://localhost:5173.
 - **Properties:** position, size, rotation, corner radius, opacity, typography, align and distribute. Number fields accept math like `100/2`, and you can drag a field's label to scrub its value.
 - **Editing:** undo/redo, copy/paste (also between tabs), duplicate (⌘D or ⌥-drag), arrow-key nudging, z-order (⌘[ / ⌘])
 - **Export:** PNG, JPG or SVG at 0.5x–4x, for the selection or the whole page
-- **Files:** the document autosaves to localStorage. Use the main menu to save or open a `.sigma.json` file.
+- **Saving:**
+  - files autosave to IndexedDB, in this browser only
+  - the Σ menu has Back to files, New design file, Import file… and Download a copy
+  - if the same file is open in two tabs, the other tab shows a reload banner
+  - the first time you open this version, a document saved by an earlier version is moved in as a file
 
 Press `?` in the app to see every keyboard shortcut.
 
@@ -59,6 +68,9 @@ Press `?` in the app to see every keyboard shortcut.
 | `src/layout.js` | Auto layout engine: hug/fill sizing, flow positioning, layout inference for ⇧A |
 | `src/text.js` | Text measurement and the in-place text editor |
 | `src/panels.js` | Toolbar, layers, pages and properties panels |
-| `src/io.js` | Clipboard, images, export, file open/save |
+| `src/io.js` | Clipboard, images, export, download |
+| `src/db.js` | Small IndexedDB wrapper: `files` store (metadata and thumbnails) and `docs` store (documents) |
+| `src/files.js` | File records, autosave of the open file, thumbnails, cross-tab messages, migration |
+| `src/home.js` | The files home page |
 
 Every node stores `x, y, w, h, rotation` relative to its parent and rotates about its center. All transforms go through `setWorldMatrix`, which turns a desired on-canvas matrix back into local properties. This is what lets moving, rotating and reparenting work at any nesting depth.

@@ -1,14 +1,13 @@
 import {
   state, page, view, commit, select, selectedNodes, getNode, getParent, pageOf, createNode, cloneNode,
-  insertNode, removeNodes, worldMatrix, worldBounds, setWorldMatrix, loadDocument, walk, migratePaints,
+  insertNode, removeNodes, worldMatrix, worldBounds, setWorldMatrix, walk, migratePaints,
 } from './store.js';
 import { mul, translate, unionBoxes, intersects } from './geom.js';
 import { nodeWorldSVG, strokeOverhang } from './render.js';
 import { frameAt } from './hit.js';
-import { sortByZ, viewportSize, zoomToFit } from './commands.js';
+import { sortByZ, viewportSize } from './commands.js';
 import { toWorld } from './render.js';
 import { measureText } from './text.js';
-import { sampleDocument } from './sample.js';
 
 export function toast(msg) {
   window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
@@ -198,7 +197,8 @@ export function download(blob, filename) {
 
 const safeName = (s) => (s || 'Untitled').replace(/[\\/:*?"<>|]+/g, '-').trim();
 
-export function buildSVG(nodes) {
+// `ordered`: nodes are already in z-order (e.g. a page's children), so skip sorting.
+export function buildSVG(nodes, { ordered = false } = {}) {
   let box = unionBoxes(nodes.map(worldBounds));
   // Grow the canvas so center/outside strokes aren't cropped.
   let pad = 0;
@@ -207,7 +207,7 @@ export function buildSVG(nodes) {
   });
   pad = Math.ceil(pad);
   box = { x: box.x - pad, y: box.y - pad, w: box.w + pad * 2, h: box.h + pad * 2 };
-  const body = sortByZ(nodes).map(nodeWorldSVG).join('');
+  const body = (ordered ? nodes : sortByZ(nodes)).map(nodeWorldSVG).join('');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${box.w}" height="${box.h}" viewBox="${box.x} ${box.y} ${box.w} ${box.h}">${body}</svg>`;
   return { svg, box };
 }
@@ -246,35 +246,4 @@ export async function exportNodes(nodes, { format = 'png', scale = 1 } = {}) {
 export function saveFile() {
   const blob = new Blob([JSON.stringify(state.doc)], { type: 'application/json' });
   download(blob, `${safeName(state.doc.name)}.sigma.json`);
-}
-
-export function openFile() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json,application/json';
-  input.onchange = async () => {
-    const file = input.files[0];
-    if (!file) return;
-    try {
-      const doc = JSON.parse(await file.text());
-      if (!doc?.pages?.length) throw new Error('Not a Sigma file');
-      loadDocument(doc);
-      requestAnimationFrame(() => zoomToFit());
-    } catch (err) {
-      toast(`Couldn't open file: ${err.message}`);
-    }
-  };
-  input.click();
-}
-
-export function newFile() {
-  if (!confirm('Start a new file? The current file will be replaced (save it first if you want to keep it).')) return;
-  loadDocument(sampleDocument({ blank: true }));
-  requestAnimationFrame(() => zoomToFit());
-}
-
-export function openSample() {
-  if (!confirm('Open the sample file? The current file will be replaced (save it first if you want to keep it).')) return;
-  loadDocument(sampleDocument());
-  requestAnimationFrame(() => zoomToFit());
 }

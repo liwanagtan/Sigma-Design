@@ -9,7 +9,9 @@ import {
   viewportSize, sortByZ, toggleVisible, toggleLocked, addAutoLayout, removeAutoLayout,
 } from './commands.js';
 import { isAutoLayout, getSizing } from './layout.js';
-import { exportNodes, saveFile, openFile, newFile, openSample, pickImages } from './io.js';
+import { exportNodes, saveFile, pickImages } from './io.js';
+import { createFile, openFile, goHome, pickFilesToImport } from './files.js';
+import { sampleDocument } from './sample.js';
 import { showContextMenu } from './menu.js';
 import { stopEditing } from './text.js';
 import { toWorld } from './render.js';
@@ -68,10 +70,15 @@ function initFileHeader() {
     const r = e.currentTarget.getBoundingClientRect();
     const sel = selectedNodes();
     showContextMenu(r.left, r.bottom + 4, [
-      { label: 'New file', action: newFile },
-      { label: 'Open file…', action: openFile },
-      { label: 'Save file…', shortcut: '', action: saveFile },
-      { label: 'Open sample file', action: openSample },
+      { label: 'Back to files', action: goHome },
+      '-',
+      { label: 'New design file', action: async () => openFile(await createFile(sampleDocument({ blank: true }))) },
+      { label: 'Import file…', action: async () => {
+        const [id] = await pickFilesToImport();
+        if (id) openFile(id);
+      } },
+      { label: 'Open sample file', action: async () => openFile(await createFile(sampleDocument())) },
+      { label: 'Download a copy (.sigma.json)', action: saveFile },
       '-',
       { label: 'Place image…', shortcut: '⇧⌘K', action: () => pickImages() },
       { label: sel.length ? 'Export selection as PNG' : 'Export page as PNG', shortcut: '⇧⌘E', action: () => exportNodes(sel.length ? sel : page().children, { format: 'png', scale: 2 }) },
@@ -92,7 +99,7 @@ function initFileHeader() {
     if (e.key === 'Enter' || e.key === 'Escape') input.blur();
   });
   window.addEventListener('keydown', (e) => {
-    if (e.key === '?' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName) && !document.activeElement?.isContentEditable) showShortcuts();
+    if (e.key === '?' && state.screen === 'editor' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName) && !document.activeElement?.isContentEditable) showShortcuts();
   });
 }
 
