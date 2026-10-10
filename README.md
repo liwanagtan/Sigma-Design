@@ -48,6 +48,9 @@ Then open http://localhost:5173.
   - an instance can override appearance and text, such as fills, strokes, text and visibility; size and position come from the main component
   - the Instance section in the panel has Go to main component, Reset overrides and Detach (⌥⌘B)
   - a component can never end up containing an instance of itself
+  - **component properties** are defined on the main component: Boolean (show or hide a layer), Text and Instance swap
+  - to link a layer, select it inside the main component and use the Component properties section
+  - each instance gets a control per property, plus a Swap picker for the component itself
 - **Resizing:** each layer can be **Fixed**, **Hug** contents (auto-layout frames and text) or **Fill** container (children of auto-layout frames), separately for width and height
 - **Lock aspect ratio:** the link button next to W/H. It applies to typed sizes and to resize handles (hold ⇧ to override).
 - **Layers panel:** tree view, rename (double-click or ⌘R), hide, lock, drag to reorder or nest

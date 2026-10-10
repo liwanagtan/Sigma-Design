@@ -9,7 +9,7 @@
 //     an edit hook whenever an overridable property of an instance layer is edited
 // Overrides are keyed by layer name (not id), which is what lets them survive variant switches.
 import {
-  state, walk, getNode, ancestors, addEditHook, uid, createNode, insertNode, setWorldMatrix,
+  state, walk, getNode, getParent, ancestors, addEditHook, editNode, uid, createNode, insertNode, setWorldMatrix,
   reindex, isFrameLike,
 } from './store.js';
 import { translate } from './geom.js';
@@ -41,6 +41,20 @@ export function owningInstance(node) {
   return owner;
 }
 export const isInsideInstance = (n) => !!n && !!owningInstance(n);
+
+// The closest instance that contains `node` (excluding node itself).
+export function nearestInstance(node) {
+  return ancestors(node).find((a) => a.type === 'instance') || null;
+}
+
+// The main component a layer belongs to (not looking past instances), or null.
+export function containingComponent(node) {
+  for (const a of ancestors(node)) {
+    if (a.type === 'instance') return null;
+    if (a.type === 'component') return a;
+  }
+  return null;
+}
 
 export function componentMap(doc = state.doc) {
   const map = new Map();
@@ -93,7 +107,29 @@ function applyRootProps(target, main, rootOverride) {
   for (const k of ROOT_PROPS) target[k] = clone(k in rootOverride ? rootOverride[k] : main[k]);
 }
 
-function deriveChildren(srcList, ownerId, parentPath, overrides, prev, comps) {
+// Component property definitions for a main component. Variants share the definitions of their set.
+export function propsOf(main) {
+  if (!main) return {};
+  const set = getParent(main.id);
+  return (set?.type === 'componentSet' ? set.props : main.props) || {};
+}
+
+// Property values for one instance: its own values over the definitions' defaults.
+function propValuesFor(main, inst) {
+  const defs = propsOf(main);
+  const out = {};
+  for (const [pid, def] of Object.entries(defs)) out[pid] = def.default;
+  for (const [pid, v] of Object.entries(inst.propValues || {})) if (pid in defs && v !== undefined) out[pid] = v;
+  return out;
+}
+
+const prefixKeys = (ov, path) =>
+  Object.fromEntries(Object.entries(ov || {}).map(([k, v]) => [k ? `${path}/${k}` : path, v]));
+
+// Build the derived copies of `srcList` for an instance.
+//   overrides: the outermost instance's overrides, keyed by path from its root
+//   values: property values for layers that belong directly to this main component (null below nested instances)
+function deriveChildren(srcList, ownerId, parentPath, overrides, prev, comps, values, chain) {
   const counts = new Map();
   return srcList.map((src) => {
     const c = (counts.get(src.name) || 0) + 1;
@@ -111,16 +147,34 @@ function deriveChildren(srcList, ownerId, parentPath, overrides, prev, comps) {
     n.pathKey = path;
     const ov = overrides[path];
     if (ov) for (const [k, v] of Object.entries(ov)) n[k] = clone(v);
-    if (n.type === 'text' && ov && TEXT_PROPS.some((k) => k in ov)) remeasure(n);
+    let textChanged = !!ov && TEXT_PROPS.some((k) => k in ov);
+    // Component property bindings win over overrides; editing a bound layer edits the property instead.
+    if (values && src.propRefs) {
+      for (const [prop, pid] of Object.entries(src.propRefs)) {
+        if (values[pid] === undefined) continue;
+        n[prop] = clone(values[pid]);
+        if (prop === 'text') textChanged = true;
+      }
+    }
+    if (n.type === 'text' && textChanged) remeasure(n);
 
     if (src.children) {
-      const swapped = n.type === 'instance' && n.componentId !== src.componentId && comps.get(n.componentId);
-      if (swapped) {
-        // A nested instance swapped to another component: rebuild it from that component.
-        applyRootProps(n, swapped, ov || {});
-        n.children = deriveChildren(swapped.children, id, path, overrides, prev, comps);
+      if (n.type === 'instance') {
+        const main = comps.get(n.componentId);
+        // `chain` holds the components being expanded, so a swap can never expand a component inside itself.
+        const rebuild = main && !chain.includes(main.id) && (n.componentId !== src.componentId ||
+          JSON.stringify(n.propValues || {}) !== JSON.stringify(src.propValues || {}));
+        if (rebuild) {
+          // Swapped to another component, or given other property values: rebuild from its main,
+          // keeping the overrides it had inside its parent component.
+          if (n.componentId !== src.componentId) applyRootProps(n, main, ov || {});
+          const merged = { ...prefixKeys(n.overrides, path), ...overrides };
+          n.children = deriveChildren(main.children, id, path, merged, prev, comps, propValuesFor(main, n), [...chain, main.id]);
+        } else {
+          n.children = deriveChildren(src.children, id, path, overrides, prev, comps, null, chain);
+        }
       } else {
-        n.children = deriveChildren(src.children, id, path, overrides, prev, comps);
+        n.children = deriveChildren(src.children, id, path, overrides, prev, comps, values, chain);
       }
     }
     return n;
@@ -137,7 +191,7 @@ function applyMain(inst, main, comps) {
   inst.synced = Object.fromEntries(ROOT_FOLLOW.map((k) => [k, main[k]]));
   const prev = new Map();
   walk(inst.children || [], (c) => void prev.set(c.id, c));
-  inst.children = deriveChildren(main.children, inst.id, '', overrides, prev, comps);
+  inst.children = deriveChildren(main.children, inst.id, '', overrides, prev, comps, propValuesFor(main, inst), [main.id]);
 }
 
 // Normalize step: rebuild every instance from its main component.
@@ -210,8 +264,22 @@ addEditHook({
       const entry = ((inst.overrides ||= {})[path] ||= {});
       for (const k of props) entry[k] = clone(node[k]);
     };
-    if (owner && node.pathKey) record(owner, node.pathKey, (k) => CHILD_OVERRIDABLE.has(k));
-    else if (node.type === 'instance') record(node, '', (k) => ROOT_PROPS.includes(k));
+    if (owner && node.pathKey) {
+      // A layer bound to a component property: the edit sets the property value on its instance.
+      const nearest = nearestInstance(node);
+      const bound = roots.filter((k) => node.propRefs?.[k] && nearest);
+      for (const k of bound) {
+        const pid = node.propRefs[k];
+        if (nearest === owner) (owner.propValues ||= {})[pid] = clone(node[k]);
+        else {
+          const entry = ((owner.overrides ||= {})[nearest.pathKey] ||= {});
+          entry.propValues = { ...(nearest.propValues || {}), [pid]: clone(node[k]) };
+        }
+      }
+      record(owner, node.pathKey, (k) => CHILD_OVERRIDABLE.has(k) && !bound.includes(k));
+    } else if (node.type === 'instance') {
+      record(node, '', (k) => ROOT_PROPS.includes(k));
+    }
   },
 });
 
@@ -326,3 +394,81 @@ export function mainComponentOf(inst) {
   return inst?.componentId ? getNode(inst.componentId) : null;
 }
 
+
+// ---------- component properties ----------
+export const PROP_TYPES = { boolean: 'Boolean', text: 'Text', instance: 'Instance swap' };
+// Which layer property each property type binds to.
+export const PROP_TARGET = { boolean: 'visible', text: 'text', instance: 'componentId' };
+
+// Properties are defined on the component (or on its component set, for variants).
+function propsHost(comp) {
+  const set = getParent(comp.id);
+  return set?.type === 'componentSet' ? set : comp;
+}
+
+export function addComponentProp(comp, type, { name, value } = {}) {
+  const host = propsHost(comp);
+  const props = (host.props ||= {});
+  const base = name || PROP_TYPES[type];
+  let label = base;
+  for (let i = 2; Object.values(props).some((p) => p.name === label); i++) label = `${base} ${i}`;
+  const id = uid();
+  props[id] = { name: label, type, default: value };
+  return id;
+}
+
+export function removeComponentProp(comp, pid) {
+  const host = propsHost(comp);
+  delete host.props?.[pid];
+  walk([host], (n) => {
+    if (n.type === 'instance' && n !== host) return false;
+    if (!n.propRefs) return;
+    for (const [k, v] of Object.entries(n.propRefs)) if (v === pid) delete n.propRefs[k];
+    if (!Object.keys(n.propRefs).length) delete n.propRefs;
+  });
+}
+
+// Path of `node` below `root`, using the same naming rules as derived layers.
+function pathFrom(root, node) {
+  const parts = [];
+  for (let cur = node; cur && cur !== root; cur = getParent(cur.id)) {
+    const siblings = getParent(cur.id)?.children || [];
+    let k = 0;
+    for (const s of siblings) {
+      if (s.name === cur.name) k++;
+      if (s === cur) break;
+    }
+    parts.unshift(escKey(cur.name) + (k > 1 ? `#${k}` : ''));
+  }
+  return parts.join('/');
+}
+
+// Bind a layer's property (visible / text / componentId) to a component property, or unbind with null.
+// Existing instance overrides of that layer property become the instances' property values, so
+// nothing changes visually (like Figma).
+export function bindLayerProp(layer, target, pid) {
+  if (!pid) {
+    if (layer.propRefs) {
+      delete layer.propRefs[target];
+      if (!Object.keys(layer.propRefs).length) delete layer.propRefs;
+    }
+    return;
+  }
+  (layer.propRefs ||= {})[target] = pid;
+  const comp = containingComponent(layer);
+  if (!comp) return;
+  const path = pathFrom(comp, layer);
+  for (const inst of instancesOf(comp.id)) {
+    const entry = inst.overrides?.[path];
+    if (!entry || !(target in entry)) continue;
+    (inst.propValues ||= {})[pid] = entry[target];
+    delete entry[target];
+    if (!Object.keys(entry).length) delete inst.overrides[path];
+  }
+}
+
+export function setInstanceProp(inst, pid, value) {
+  editNode(inst, ['propValues'], () => {
+    inst.propValues = { ...(inst.propValues || {}), [pid]: value };
+  });
+}

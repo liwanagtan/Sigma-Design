@@ -12,6 +12,8 @@ import {
 import { isAutoLayout, getSizing } from './layout.js';
 import {
   isInsideInstance, owningInstance, canPlaceInside, listComponents, instancesOf, mainComponentOf, overrideCount,
+  containingComponent, propsOf, PROP_TYPES, PROP_TARGET, addComponentProp, removeComponentProp, bindLayerProp,
+  setInstanceProp,
 } from './components.js';
 import { exportNodes, saveFile, pickImages } from './io.js';
 import { createFile, openFile, goHome, pickFilesToImport } from './files.js';
@@ -679,7 +681,8 @@ function componentSection(nodes) {
     return section('Main component',
       `<textarea class="desc" data-desc rows="2" placeholder="Add a description…" spellcheck="false">${esc(single.description || '')}</textarea>` +
       `<div class="muted">${count} instance${count === 1 ? '' : 's'} in this file</div>`,
-      `<button class="icon-btn" data-action="add-instance" title="Create an instance next to it">${icons.plus}</button>`);
+      `<button class="icon-btn" data-action="add-instance" title="Create an instance next to it">${icons.plus}</button>`) +
+      propertiesSection(single);
   }
   if (single?.type === 'instance' && !isInsideInstance(single)) {
     const main = mainComponentOf(single);
@@ -687,6 +690,7 @@ function componentSection(nodes) {
     const body = (main
       ? `<button class="link-row" data-action="go-main" title="Go to main component"><span class="licon purple">${layerIcon(main)}</span><span class="link-name">${esc(main.name)}</span><span class="muted">Go to main ›</span></button>`
       : '<div class="warn">The main component is missing. Detach the instance to keep editing it freely.</div>') +
+      instanceControls(single, main) +
       `<div class="btn-row"><button class="btn" data-action="reset-overrides" ${n ? '' : 'disabled'}>Reset ${n ? `${n} ` : ''}override${n === 1 ? '' : 's'}</button>` +
       '<button class="btn" data-action="detach" title="⌥⌘B">Detach</button></div>';
     return section('Instance', body);
@@ -696,9 +700,100 @@ function componentSection(nodes) {
     const n = single ? overrideCount(owner, single.pathKey) : 0;
     return section('Instance layer',
       `<div class="muted">Part of “${esc(owner.name)}”. Appearance and text can be overridden here; size and position come from the main component.</div>` +
+      (single?.type === 'instance' ? instanceControls(single, mainComponentOf(single)) : '') +
       (single ? `<button class="btn wide" data-action="reset-overrides" ${n ? '' : 'disabled'}>Reset overrides</button>` : ''));
   }
+  if (single && containingComponent(single)) return bindingSection(single, containingComponent(single));
   return '';
+}
+
+function componentOptions(selectedId, { exclude } = {}) {
+  return listComponents()
+    .filter(({ node }) => !exclude || !exclude(node))
+    .map(({ node }) => `<option value="${node.id}" ${node.id === selectedId ? 'selected' : ''}>${esc(node.name)}</option>`).join('');
+}
+
+// Property definitions on a main component (or its component set).
+function propertiesSection(comp) {
+  const defs = Object.entries(propsOf(comp));
+  const rows = defs.map(([pid, def]) => {
+    let value;
+    if (def.type === 'boolean') value = `<label class="prop-toggle"><input type="checkbox" data-prop-default="${pid}" ${def.default ? 'checked' : ''}> Default</label>`;
+    else if (def.type === 'text') value = `<input class="prop-input" data-prop-default="${pid}" value="${esc(def.default ?? '')}" spellcheck="false" placeholder="Default text">`;
+    else value = `<select class="select" data-prop-default="${pid}">${componentOptions(def.default, { exclude: (c) => c.id === comp.id })}</select>`;
+    return `<div class="prop-def"><div class="prop-head"><input class="prop-name" data-prop-name="${pid}" value="${esc(def.name)}" spellcheck="false">` +
+      `<span class="prop-type">${PROP_TYPES[def.type]}</span>` +
+      `<button class="icon-btn" data-remove-prop="${pid}" title="Remove property">${icons.minus}</button></div>${value}</div>`;
+  }).join('');
+  return section('Properties', rows || '<div class="muted">Add properties to let instances toggle layers, change text or swap nested instances.</div>',
+    `<button class="icon-btn" data-action="add-prop" title="Add a component property">${icons.plus}</button>`);
+}
+
+// Bind a layer inside a main component to the component's properties.
+function bindingSection(layer, comp) {
+  const defs = Object.entries(propsOf(comp));
+  const row = (target, type, label) => {
+    const current = layer.propRefs?.[target] || '';
+    const opts = defs.filter(([, d]) => d.type === type)
+      .map(([pid, d]) => `<option value="${pid}" ${pid === current ? 'selected' : ''}>${esc(d.name)}</option>`).join('');
+    return `<label class="bind-row"><span>${label}</span><select class="select" data-bind="${target}" data-bind-type="${type}">` +
+      `<option value="">Not linked</option>${opts}<option value="__new__">+ Create ${PROP_TYPES[type].toLowerCase()} property</option></select></label>`;
+  };
+  let body = row('visible', 'boolean', 'Show layer');
+  if (layer.type === 'text') body += row('text', 'text', 'Text');
+  if (layer.type === 'instance') body += row('componentId', 'instance', 'Instance');
+  return section('Component properties', body);
+}
+
+// Property values and component swap for an instance.
+function instanceControls(inst, main) {
+  if (!main) return '';
+  const values = inst.propValues || {};
+  const rows = Object.entries(propsOf(main)).map(([pid, def]) => {
+    const v = values[pid] ?? def.default;
+    let control;
+    if (def.type === 'boolean') control = `<input type="checkbox" data-instance-prop="${pid}" ${v ? 'checked' : ''}>`;
+    else if (def.type === 'text') control = `<input class="prop-input" data-instance-prop="${pid}" value="${esc(v ?? '')}" spellcheck="false">`;
+    else control = `<select class="select" data-instance-prop="${pid}">${componentOptions(v, { exclude: (c) => !canPlaceInside({ type: 'instance', componentId: c.id }, getParent(inst.id)) })}</select>`;
+    return `<label class="bind-row"><span>${esc(def.name)}</span>${control}</label>`;
+  }).join('');
+  const swap = `<label class="bind-row"><span>Swap</span><select class="select" data-swap>${componentOptions(inst.componentId)}</select></label>`;
+  return rows + swap;
+}
+
+function onComponentPropChange(t) {
+  const node = selectedNodes()[0];
+  if (!node) return;
+  if (t.dataset.propName) {
+    const def = propsOf(node)[t.dataset.propName];
+    if (def && t.value.trim()) def.name = t.value.trim();
+    return commit();
+  }
+  if (t.dataset.propDefault) {
+    const def = propsOf(node)[t.dataset.propDefault];
+    if (def) def.default = t.type === 'checkbox' ? t.checked : t.value;
+    return commit();
+  }
+  if (t.dataset.bind) {
+    const comp = containingComponent(node);
+    const target = t.dataset.bind;
+    let pid = t.value || null;
+    if (pid === '__new__') {
+      const type = t.dataset.bindType;
+      const value = type === 'boolean' ? node.visible !== false : type === 'text' ? node.text : node.componentId;
+      pid = addComponentProp(comp, type, { name: type === 'boolean' ? `Show ${node.name}` : node.name, value });
+    }
+    bindLayerProp(node, target, pid);
+    return commit();
+  }
+  if (t.dataset.instanceProp) {
+    setInstanceProp(node, t.dataset.instanceProp, t.type === 'checkbox' ? t.checked : t.value);
+    return commit();
+  }
+  if (t.hasAttribute('data-swap')) {
+    editNode(node, ['componentId'], () => void (node.componentId = t.value));
+    return commit();
+  }
 }
 
 // ---------- assets ----------
@@ -821,6 +916,9 @@ function initProps() {
     }
     if (t.dataset.paintColor) return updatePaint(t.dataset.paintColor, (p) => void (p.color = t.value.toUpperCase()));
     if (t.dataset.bool) return setProps({ [t.dataset.bool]: t.checked });
+    if (t.dataset.propName || t.dataset.propDefault || t.dataset.bind || t.dataset.instanceProp || t.hasAttribute('data-swap')) {
+      return onComponentPropChange(t);
+    }
     if (t.hasAttribute('data-desc')) {
       for (const n of selectedNodes()) editNode(n, ['description'], () => void (n.description = t.value.trim()));
       return commit();
@@ -907,7 +1005,21 @@ function initProps() {
       zoomToSelection();
       return;
     }
+    if (b.dataset.removeProp) {
+      removeComponentProp(nodes[0], b.dataset.removeProp);
+      return commit();
+    }
     switch (b.dataset.action) {
+      case 'add-prop': {
+        const comp = nodes[0];
+        const r = b.getBoundingClientRect();
+        const other = listComponents().find(({ node }) => node.id !== comp.id)?.node;
+        return showContextMenu(r.left - 140, r.bottom + 4, [
+          { label: 'Boolean', action: () => { addComponentProp(comp, 'boolean', { value: true }); commit(); } },
+          { label: 'Text', action: () => { addComponentProp(comp, 'text', { value: 'Text' }); commit(); } },
+          { label: 'Instance swap', disabled: !other, action: () => { addComponentProp(comp, 'instance', { value: other.id }); commit(); } },
+        ]);
+      }
       case 'add-instance':
         return duplicateSelection();
       case 'go-main':
