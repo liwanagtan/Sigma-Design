@@ -19,7 +19,8 @@ export const isInstance = (n) => n?.type === 'instance';
 export const isComponent = (n) => n?.type === 'component';
 
 // Instance root properties copied from the main component unless overridden on the instance.
-const ROOT_PROPS = ['fills', 'strokes', 'strokeWidth', 'strokeAlign', 'radius', 'clip', 'layout', 'opacity', 'name'];
+// `bindings` makes variables on the main component's own box re-resolve in each instance's mode.
+const ROOT_PROPS = ['fills', 'strokes', 'strokeWidth', 'strokeAlign', 'radius', 'clip', 'layout', 'opacity', 'name', 'modes', 'bindings'];
 // Root size/sizing follows the main component until the instance itself is resized.
 const ROOT_FOLLOW = ['w', 'h', 'sizingH', 'sizingV'];
 // Properties of layers inside an instance that can be overridden. Everything else (position, size,

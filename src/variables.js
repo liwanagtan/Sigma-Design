@@ -126,6 +126,14 @@ export function resolveVariables() {
   }
 }
 
+// The mode a layer would use for `col` if it didn't set one itself (from ancestors, the page, or the default).
+export function inheritedMode(node, col, ancestorsOf, pageOfNode) {
+  for (const a of ancestorsOf(node)) if (a.modes?.[col.id]) return a.modes[col.id];
+  return pageOfNode(node)?.modes?.[col.id] || col.defaultModeId;
+}
+
+export const multiModeCollections = () => collections().filter((c) => c.modes.length > 1);
+
 // Resolved value of a variable in each collection's default mode (for previews in menus and the editor).
 export function previewValue(varId) {
   reindexVariables();
@@ -175,7 +183,8 @@ addEditHook({
     if (!changed) return;
     if (!Object.keys(node.bindings).length) delete node.bindings;
     const owner = owningInstance(node);
-    if (owner && node.pathKey) ((owner.overrides ||= {})[node.pathKey] ||= {}).bindings = structuredClone(node.bindings || {});
+    const record = owner && node.pathKey ? [owner, node.pathKey] : node.type === 'instance' ? [node, ''] : null;
+    if (record) ((record[0].overrides ||= {})[record[1]] ||= {}).bindings = structuredClone(node.bindings || {});
   },
 });
 

@@ -60,6 +60,9 @@ Then open http://localhost:5173.
   - each collection has modes (columns), and a cell can alias another variable
   - the ◈ button on a fill, stroke, number field, visibility or text content binds a variable; a bound field shows a purple chip
   - typing a value over a bound field detaches the variable
+  - **modes:** for any collection with several modes, the Layer section (or the Page section, with nothing selected) has a mode picker
+  - "Auto" inherits the mode from the parent; children follow unless they pin their own mode
+  - instances inherit a mode pinned on their main component and can pin a different one
 - **Resizing:** each layer can be **Fixed**, **Hug** contents (auto-layout frames and text) or **Fill** container (children of auto-layout frames), separately for width and height
 - **Lock aspect ratio:** the link button next to W/H. It applies to typed sizes and to resize handles (hold ⇧ to override).
 - **Layers panel:** tree view, rename (double-click or ⌘R), hide, lock, drag to reorder or nest

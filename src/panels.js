@@ -21,7 +21,7 @@ import { createFile, openFile, goHome, pickFilesToImport } from './files.js';
 import { sampleDocument } from './sample.js';
 import {
   collections, findVariable, typeForPath, previewValue, bindVariable, unbindVariable, shiftPaintBindings, createCollection,
-  createVariable, VAR_TYPES,
+  createVariable, VAR_TYPES, multiModeCollections, inheritedMode,
 } from './variables.js';
 import { openVariablesEditor } from './variables-ui.js';
 import { showContextMenu } from './menu.js';
@@ -487,6 +487,44 @@ function numField(key, label, nodes, { icon } = {}) {
     (path ? varButton(path) : '') + '</label>';
 }
 
+// ---------- variable modes ----------
+// One picker per collection that has several modes: "Auto" inherits, or pin a specific mode.
+// nodes = null edits the current page.
+function modeRows(nodes) {
+  const cols = multiModeCollections();
+  if (!cols.length) return '';
+  return cols.map((col) => {
+    let current, inherited;
+    if (nodes) {
+      current = common(nodes, (n) => n.modes?.[col.id] || '');
+      inherited = inheritedMode(nodes[0], col, ancestors, (n) => state.doc.pages.find((p) => p.id === state.doc.currentPageId));
+    } else {
+      current = page().modes?.[col.id] || '';
+      inherited = col.defaultModeId;
+    }
+    const inheritedName = col.modes.find((m) => m.id === inherited)?.name || '';
+    return `<label class="bind-row mode-row" title="Variable mode for ${esc(col.name)}"><span>${esc(col.name)}</span>` +
+      `<select class="select" data-mode-col="${col.id}" data-mode-target="${nodes ? 'layers' : 'page'}">` +
+      (current === MIXED ? '<option selected disabled>Mixed</option>' : '') +
+      `<option value="" ${current === '' ? 'selected' : ''}>Auto (${esc(inheritedName)})</option>` +
+      col.modes.map((m) => `<option value="${m.id}" ${current === m.id ? 'selected' : ''}>${esc(m.name)}</option>`).join('') +
+      '</select></label>';
+  }).join('');
+}
+
+function setMode(target, colId, modeId) {
+  const apply = (obj) => {
+    const modes = { ...(obj.modes || {}) };
+    if (modeId) modes[colId] = modeId;
+    else delete modes[colId];
+    if (Object.keys(modes).length) obj.modes = modes;
+    else delete obj.modes;
+  };
+  if (target === 'page') apply(page());
+  else for (const n of selectedNodes()) editNode(n, ['modes'], () => apply(n));
+  commit();
+}
+
 // ---------- variable bindings ----------
 const VAR_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M6 1l4.3 2.5v5L6 11 1.7 8.5v-5z"/><circle cx="6" cy="6" r="1.4"/></svg>';
 
@@ -653,7 +691,7 @@ function buildProps() {
     const vcount = collections().reduce((n, c) => n + c.variables.length, 0);
     html += section('Local variables', `<div class="muted">${vcount ? `${vcount} variable${vcount === 1 ? '' : 's'} in ${collections().length} collection${collections().length === 1 ? '' : 's'}` : 'Reusable colors, numbers, text and booleans.'}</div>` +
       '<button class="btn wide" data-action="open-variables">Open variables</button>');
-    html += section('Page', `<div class="color-row"><label class="swatch" style="--c:${page().background}"><input type="color" data-page-bg value="${page().background.toLowerCase()}"></label>` +
+    html += section('Page', modeRows(null) + `<div class="color-row"><label class="swatch" style="--c:${page().background}"><input type="color" data-page-bg value="${page().background.toLowerCase()}"></label>` +
       `<input class="hex" data-page-hex value="${page().background.replace('#', '')}" spellcheck="false"></div>`);
     html += section('Export', `<div class="export-row">${exportControls()}</div><button class="btn wide" data-action="export-page">Export ${esc(page().name)}</button>`);
     return html;
@@ -709,7 +747,7 @@ function buildProps() {
 
   // Layer
   html += section('Layer', `<div class="grid2">${numField('opacity', '', nodes, { icon: '<span class="op-icon"></span>' })}` +
-    `<div class="bind-inline"><span class="muted">Visibility</span>${varControl(nodes, 'visible')}</div></div>`);
+    `<div class="bind-inline"><span class="muted">Visibility</span>${varControl(nodes, 'visible')}</div></div>` + modeRows(nodes));
 
   // Text
   if (types.size === 1 && types.has('text')) {
@@ -1069,6 +1107,7 @@ function initProps() {
     }
     if (t.dataset.paintColor) return updatePaint(t.dataset.paintColor, 'color', (p) => void (p.color = t.value.toUpperCase()));
     if (t.dataset.bool) return setProps({ [t.dataset.bool]: t.checked });
+    if (t.dataset.modeCol) return setMode(t.dataset.modeTarget, t.dataset.modeCol, t.value);
     if (t.dataset.vpropRename !== undefined) {
       renameVariantProperty(selectedNodes()[0], t.dataset.vpropRename, t.value);
       return commit();

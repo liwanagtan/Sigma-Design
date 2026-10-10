@@ -113,3 +113,55 @@ test('variables: bindings in a main component reach its instances; detaching the
   eq(bg.bindings['fills.0.color'], brand.id);
   eq(state.doc.variables.collections.length, 1);
 });
+
+test('modes: the page mode applies unless a layer pins its own', () => {
+  const a = createNode('rect', { name: 'A', fills: [makePaint('#000000')] });
+  const b = createNode('rect', { name: 'B', fills: [makePaint('#000000')] });
+  const doc = useDoc([a, b]);
+  const col = createCollection('Theme');
+  const dark = addMode(col, 'Dark');
+  const bg = createVariable(col, 'color', 'bg');
+  bg.valuesByMode[col.defaultModeId] = '#FFFFFF';
+  bg.valuesByMode[dark.id] = '#111111';
+  bindVariable(a, 'fills.0.color', bg.id);
+  bindVariable(b, 'fills.0.color', bg.id);
+  doc.pages[0].modes = { [col.id]: dark.id };
+  b.modes = { [col.id]: col.defaultModeId };
+  resolveVariables();
+  eq([a.fills[0].color, b.fills[0].color], ['#111111', '#FFFFFF']);
+});
+
+test('modes: instances inherit a mode pinned on their main component and can pin their own', () => {
+  const bg = createNode('rect', { name: 'Bg', fills: [makePaint('#000000')] });
+  const comp = createNode('component', { name: 'Card', children: [bg] });
+  useDoc([comp]);
+  const col = createCollection('Theme');
+  const dark = addMode(col, 'Dark');
+  const v = createVariable(col, 'color', 'bg');
+  v.valuesByMode[col.defaultModeId] = '#FFFFFF';
+  v.valuesByMode[dark.id] = '#111111';
+  bindVariable(bg, 'fills.0.color', v.id);
+  comp.modes = { [col.id]: dark.id };
+  const inst = createInstance(comp);
+  const lightInst = createInstance(comp, { x: 300 });
+  editNode(lightInst, ['modes'], (n) => void (n.modes = { [col.id]: col.defaultModeId }));
+  syncInstances();
+  resolveVariables();
+  eq([inst.children[0].fills[0].color, lightInst.children[0].fills[0].color], ['#111111', '#FFFFFF']);
+});
+
+test("modes: variables on a main component's own fill re-resolve in each instance's mode", () => {
+  const comp = createNode('component', { name: 'Tag', fills: [makePaint('#000000')], children: [] });
+  useDoc([comp]);
+  const col = createCollection('Theme');
+  const dark = addMode(col, 'Dark');
+  const v = createVariable(col, 'color', 'surface');
+  v.valuesByMode[col.defaultModeId] = '#FFFFFF';
+  v.valuesByMode[dark.id] = '#111111';
+  bindVariable(comp, 'fills.0.color', v.id);
+  const inst = createInstance(comp);
+  editNode(inst, ['modes'], (n) => void (n.modes = { [col.id]: dark.id }));
+  syncInstances();
+  resolveVariables();
+  eq([comp.fills[0].color, inst.fills[0].color], ['#FFFFFF', '#111111']);
+});
