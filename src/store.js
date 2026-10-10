@@ -21,16 +21,37 @@ export const state = {
   layoutSkip: new Set(), // ids auto layout must not reposition (being dragged/drawn)
 };
 
-// Passes that derive geometry from the document (auto layout), run before render and commit.
+// Passes that derive props from the document, run in registration order before every render and
+// commit: sync instances → resolve variables → fit groups → auto layout → fit groups (see main.js).
 const normalizers = [];
 export function addNormalizer(fn) {
   normalizers.push(fn);
 }
 export function normalizeDocument() {
-  fixGroups();
+  if (!state.doc) return;
   for (const fn of normalizers) fn();
-  fixGroups();
 }
+
+// ---------- edits ----------
+// Every user edit to layer properties goes through editNode(), so features can react in one place:
+// instance overrides (components) and detaching variables when a bound value is typed over.
+// `keys` are property paths such as 'text', 'visible', 'fills', 'fills.0.color', 'layout.gap'.
+// Hooks: { before(node, keys) → false blocks the edit, after(node, keys) }.
+const editHooks = [];
+export function addEditHook(hook) {
+  editHooks.push(hook);
+}
+export function editNode(node, keys, mutate) {
+  for (const h of editHooks) if (h.before?.(node, keys) === false) return false;
+  mutate(node);
+  for (const h of editHooks) h.after?.(node, keys);
+  return true;
+}
+
+// ---------- node kinds ----------
+// Frame-like nodes have a box, fills, clipping, optional auto layout and children.
+export const FRAME_TYPES = new Set(['frame', 'component', 'componentSet', 'instance']);
+export const isFrameLike = (n) => !!n && FRAME_TYPES.has(n.type);
 
 // ---------- ids ----------
 export function uid() {
@@ -182,8 +203,14 @@ export function migratePaints(n) {
   if (!n.strokeAlign) n.strokeAlign = n.type === 'line' ? 'center' : 'inside';
 }
 
+// Bump DOC_VERSION and add a step below whenever the saved format changes.
+export const DOC_VERSION = 2;
+
 export function migrateDocument(doc) {
-  for (const pg of doc.pages) walk(pg.children, migratePaints);
+  // v1 → v2: single fill/stroke → paint lists, and a variables container.
+  for (const pg of doc.pages) walk(pg.children, migratePaints); // idempotent; also fixes pasted legacy nodes
+  if (!doc.variables) doc.variables = { collections: [] };
+  doc.version = DOC_VERSION;
   return doc;
 }
 
@@ -196,7 +223,7 @@ export function createNode(type, props = {}) {
     stroke: null, strokeOpacity: 1, strokeWidth: 1, strokeAlign: 'inside',
     radius: 0,
   };
-  if (type === 'frame') Object.assign(base, { fill: '#FFFFFF', children: [], clip: true });
+  if (isFrameLike({ type })) Object.assign(base, { fill: '#FFFFFF', children: [], clip: true });
   if (type === 'group') Object.assign(base, { fill: null, children: [] });
   if (type === 'line') Object.assign(base, { fill: null, stroke: '#000000', h: 0 });
   if (type === 'image') Object.assign(base, { fill: null, src: '' });

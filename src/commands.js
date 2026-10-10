@@ -1,7 +1,7 @@
 import {
   state, page, view, emit, commit, select, selectedNodes, getNode, getParent, siblingsOf, walk,
   createNode, cloneNode, insertNode, detach, removeNodes, reindex, worldMatrix, worldBounds, worldCorners,
-  setWorldMatrix, saveViewsSoon,
+  setWorldMatrix, saveViewsSoon, isFrameLike, editNode,
 } from './store.js';
 import { mul, inv, apply, translate, aabb, unionBoxes, round, IDENTITY } from './geom.js';
 import { measureText } from './text.js';
@@ -101,7 +101,7 @@ export function duplicateSelection() {
   for (const n of sortByZ(selectedNodes())) {
     const c = cloneNode(n);
     const parent = getParent(n.id);
-    if (!parent && n.type === 'frame') c.x = n.x + n.w + 40;
+    if (!parent && isFrameLike(n)) c.x = n.x + n.w + 40;
     insertNode(c, parent, siblingsOf(n).indexOf(n) + 1);
     ids.push(c.id);
   }
@@ -141,7 +141,7 @@ export function addAutoLayout() {
   const nodes = selectedNodes();
   if (!nodes.length) return;
   let f;
-  if (nodes.length === 1 && nodes[0].type === 'frame' && !isAutoLayout(nodes[0])) {
+  if (nodes.length === 1 && ['frame', 'component'].includes(nodes[0].type) && !isAutoLayout(nodes[0])) {
     f = nodes[0];
   } else {
     f = wrapSelection('frame', { commitAfter: false });
@@ -224,7 +224,7 @@ export function reorder(dir) {
 }
 
 function moveWorld(n, dx, dy) {
-  setWorldMatrix(n, mul(translate(dx, dy), worldMatrix(n)));
+  editNode(n, ['x', 'y'], () => setWorldMatrix(n, mul(translate(dx, dy), worldMatrix(n))));
 }
 
 export function align(where) {
@@ -304,14 +304,14 @@ export function selectChildren() {
 export function toggleVisible(nodes = selectedNodes()) {
   if (!nodes.length) return;
   const v = !nodes.every((n) => n.visible);
-  for (const n of nodes) n.visible = v;
+  for (const n of nodes) editNode(n, ['visible'], () => void (n.visible = v));
   commit();
 }
 
 export function toggleLocked(nodes = selectedNodes()) {
   if (!nodes.length) return;
   const l = !nodes.every((n) => n.locked);
-  for (const n of nodes) n.locked = l;
+  for (const n of nodes) editNode(n, ['locked'], () => void (n.locked = l));
   if (l) state.selection = state.selection.filter((id) => !getNode(id)?.locked);
   commit();
 }
@@ -348,55 +348,57 @@ export function scaleKids(kids, kids0, sx, sy) {
 // Update props on all selected nodes (from the properties panel).
 export function setProps(props, { live = false, nodes = selectedNodes() } = {}) {
   for (const n of nodes) {
-    for (const [k, v] of Object.entries(props)) {
-      if (k.startsWith('layout.')) {
-        if (n.layout) n.layout[k.slice(7)] = v;
-        continue;
-      }
-      if (k === 'sizingH' || k === 'sizingV') {
-        const axis = k === 'sizingH' ? 'w' : 'h';
-        if (v === 'hug' && !(isAutoLayout(n) || n.type === 'text')) continue;
-        if (v === 'fill' && !isAutoLayout(getParent(n.id))) continue;
-        if (axis === 'h' && n.type === 'line') continue;
-        setSizing(n, axis, v);
-        continue;
-      }
-      if (k === 'radius' && !['rect', 'frame', 'image'].includes(n.type)) continue;
-      if (k === 'strokeAlign' && n.type === 'line') continue;
-      if (k.startsWith('font') || ['lineHeight', 'letterSpacing', 'textAlign', 'autoResize', 'text'].includes(k)) {
-        if (n.type !== 'text') continue;
-      }
-      if (k === 'autoResize' && v !== 'width' && n.sizingH === 'hug') n.sizingH = 'fixed';
-      if (k === 'absolute' && !isAutoLayout(getParent(n.id))) continue;
-      if (k === 'h' && n.type === 'line') continue;
-      if (k === 'w' || k === 'h') {
-        // Resize about the top-left corner in parent space (keeps x/y stable even if rotated).
-        const M = worldMatrix(n);
-        const next = Math.max(0.01, v);
-        const other = k === 'w' ? 'h' : 'w';
-        const ratio = n[k] > 0 ? next / n[k] : 1;
-        const lock = n.lockAspect && n.type !== 'line' && n[other] > 0;
-        if (n.type === 'group' && n[k] > 0) {
-          scaleKids(n.children, JSON.parse(JSON.stringify(n.children)), k === 'w' || lock ? ratio : 1, k === 'h' || lock ? ratio : 1);
+    editNode(n, Object.keys(props), () => {
+      for (const [k, v] of Object.entries(props)) {
+        if (k.startsWith('layout.')) {
+          if (n.layout) n.layout[k.slice(7)] = v;
+          continue;
         }
-        n[k] = next;
-        if (lock) n[other] = Math.max(0.01, round(n[other] * ratio));
-        setWorldMatrix(n, M);
-        if (n.type === 'text') {
-          n.autoResize = lock || k === 'h' ? 'fixed' : n.autoResize === 'width' ? 'height' : n.autoResize;
+        if (k === 'sizingH' || k === 'sizingV') {
+          const axis = k === 'sizingH' ? 'w' : 'h';
+          if (v === 'hug' && !(isAutoLayout(n) || n.type === 'text')) continue;
+          if (v === 'fill' && !isAutoLayout(getParent(n.id))) continue;
+          if (axis === 'h' && n.type === 'line') continue;
+          setSizing(n, axis, v);
+          continue;
         }
-        // Typing a size makes that axis fixed (no longer hug/fill), like Figma.
-        if (k === 'w' || lock) n.sizingH = 'fixed';
-        if (k === 'h' || lock) n.sizingV = 'fixed';
-        continue;
+        if (k === 'radius' && !(isFrameLike(n) || ['rect', 'image'].includes(n.type))) continue;
+        if (k === 'strokeAlign' && n.type === 'line') continue;
+        if (k.startsWith('font') || ['lineHeight', 'letterSpacing', 'textAlign', 'autoResize', 'text'].includes(k)) {
+          if (n.type !== 'text') continue;
+        }
+        if (k === 'autoResize' && v !== 'width' && n.sizingH === 'hug') n.sizingH = 'fixed';
+        if (k === 'absolute' && !isAutoLayout(getParent(n.id))) continue;
+        if (k === 'h' && n.type === 'line') continue;
+        if (k === 'w' || k === 'h') {
+          // Resize about the top-left corner in parent space (keeps x/y stable even if rotated).
+          const M = worldMatrix(n);
+          const next = Math.max(0.01, v);
+          const other = k === 'w' ? 'h' : 'w';
+          const ratio = n[k] > 0 ? next / n[k] : 1;
+          const lock = n.lockAspect && n.type !== 'line' && n[other] > 0;
+          if (n.type === 'group' && n[k] > 0) {
+            scaleKids(n.children, JSON.parse(JSON.stringify(n.children)), k === 'w' || lock ? ratio : 1, k === 'h' || lock ? ratio : 1);
+          }
+          n[k] = next;
+          if (lock) n[other] = Math.max(0.01, round(n[other] * ratio));
+          setWorldMatrix(n, M);
+          if (n.type === 'text') {
+            n.autoResize = lock || k === 'h' ? 'fixed' : n.autoResize === 'width' ? 'height' : n.autoResize;
+          }
+          // Typing a size makes that axis fixed (no longer hug/fill), like Figma.
+          if (k === 'w' || lock) n.sizingH = 'fixed';
+          if (k === 'h' || lock) n.sizingV = 'fixed';
+          continue;
+        }
+        if (k === 'rotation') {
+          n.rotation = v;
+          continue;
+        }
+        n[k] = v;
       }
-      if (k === 'rotation') {
-        n.rotation = v;
-        continue;
-      }
-      n[k] = v;
-    }
-    if (n.type === 'text') measureText(n);
+      if (n.type === 'text') measureText(n);
+    });
   }
   if (live) emit('doc');
   else commit();

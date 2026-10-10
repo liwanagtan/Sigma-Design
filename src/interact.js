@@ -1,7 +1,7 @@
 import {
   state, page, view, emit, commit, select, selectedNodes, getNode, getParent, walk, createNode, insertNode,
   detach, cloneNode, worldMatrix, worldBounds, setWorldMatrix, isAncestor, siblingsOf, reparent,
-  saveViewsSoon, undo, redo,
+  saveViewsSoon, undo, redo, isFrameLike,
 } from './store.js';
 import {
   mul, inv, apply, translate, rotate, rotateAbout, angleOf, unionBoxes, intersects, contains, distToSegment,
@@ -278,7 +278,7 @@ function onPointerDown(e) {
     }
     if (!already) {
       // Dragging on the empty background of a top-level frame with content starts a marquee inside it.
-      const isFrameBg = target.type === 'frame' && !getParent(target.id) && target.children.length &&
+      const isFrameBg = isFrameLike(target) && !getParent(target.id) && target.children.length &&
         path[path.length - 1] === target;
       if (isFrameBg && !insideSelectionBox(sp)) {
         drag = { type: 'pending-frame', frame: target, start: sp, startWorld: wp, shift: e.shiftKey };
@@ -463,7 +463,7 @@ function updateMarquee(wp) {
   for (const n of candidates) {
     if (!n.visible || n.locked) continue;
     const b = worldBounds(n);
-    if (!drag.context && n.type === 'frame' && n.children.length && !contains(box, b)) {
+    if (!drag.context && isFrameLike(n) && n.children.length && !contains(box, b)) {
       for (const c of n.children) if (c.visible && !c.locked && intersects(box, worldBounds(c))) hits.push(c.id);
     } else if (intersects(box, b)) {
       hits.push(n.id);
@@ -636,7 +636,7 @@ function finishDraw(d, wp, e) {
     const before = flowInsertBefore(parent, apply(inv(worldMatrix(parent)), c), new Set([n.id]));
     detach(n);
     insertNode(n, parent, before ? parent.children.indexOf(before) : parent.children.length);
-  } else if (n.type === 'frame' && d.node) {
+  } else if (['frame', 'component'].includes(n.type) && d.node) {
     // Adopt siblings that are fully inside the new frame.
     const fb = worldBounds(n);
     const list = siblingsOf(n);

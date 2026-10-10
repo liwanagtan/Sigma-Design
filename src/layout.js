@@ -1,6 +1,6 @@
 // Auto layout engine (Figma-style): frames with `layout` arrange their children in a row or column,
 // and every layer can be Fixed / Hug contents / Fill container on each axis.
-import { state } from './store.js';
+import { state, isFrameLike } from './store.js';
 import { round } from './geom.js';
 import { measureText } from './text.js';
 
@@ -13,7 +13,7 @@ export const DEFAULT_LAYOUT = {
   alignC: 'start', // counter axis: start | center | end
 };
 
-export const isAutoLayout = (n) => !!(n && n.type === 'frame' && n.layout && n.layout.mode);
+export const isAutoLayout = (n) => !!(isFrameLike(n) && n.layout && n.layout.mode);
 
 export const inFlow = (n) => n.visible !== false && !n.absolute;
 

@@ -1,5 +1,5 @@
 import {
-  state, page, view, getNode, getParent, selectedNodes, localMatrix, worldMatrix, worldCorners, worldBounds,
+  state, page, view, getNode, getParent, selectedNodes, localMatrix, worldMatrix, worldCorners, worldBounds, isFrameLike,
 } from './store.js';
 import { css, mul, apply, unionBoxes, cornersOf } from './geom.js';
 import { textStyle } from './text.js';
@@ -63,7 +63,10 @@ export function nodeSVG(n, opts = {}) {
   const r = Math.min(n.radius || 0, n.w / 2, n.h / 2);
   let inner = '';
   switch (n.type) {
-    case 'frame': {
+    case 'frame':
+    case 'component':
+    case 'componentSet':
+    case 'instance': {
       const cid = `clip-${n.id}`;
       const kids = n.children.map((c) => nodeSVG(c, opts)).join('');
       inner = fillLayers(n, (a) => `<rect width="${n.w}" height="${n.h}" rx="${r}" ${a}/>`);
@@ -177,7 +180,7 @@ export function renderOverlay(svg) {
   // Frame labels
   frameLabels = [];
   for (const n of page().children) {
-    if (n.type !== 'frame' || !n.visible) continue;
+    if (!isFrameLike(n) || !n.visible) continue;
     const W = worldMatrix(n);
     const tl = toScreen(apply(W, { x: 0, y: 0 }));
     const tr = toScreen(apply(W, { x: n.w, y: 0 }));

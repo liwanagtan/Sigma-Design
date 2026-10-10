@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sigma tests</title>
+  <style>
+    body { font: 13px/1.5 Inter, system-ui, sans-serif; margin: 24px; color: #1e1e1e; background: #fff; }
+    h1 { font-size: 18px; }
+    h1.pass { color: #14ae5c; }
+    h1.fail { color: #f24822; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 2px 0; }
+    li.fail { color: #f24822; }
+    pre { background: #fff4f2; padding: 8px; white-space: pre-wrap; color: #1e1e1e; }
+  </style>
+</head>
+<body>
+  <div id="out">Running…</div>
+  <script type="module">
+    import { run } from './harness.js';
+    import './core.test.js';
+    run(document.getElementById('out'));
+  </script>
+</body>
+</html>

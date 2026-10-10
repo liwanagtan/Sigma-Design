@@ -1,4 +1,4 @@
-import { page, worldMatrix, getParent, selectedNodes } from './store.js';
+import { page, worldMatrix, getParent, selectedNodes, isFrameLike } from './store.js';
 import { apply, inv } from './geom.js';
 import { view } from './store.js';
 
@@ -11,12 +11,12 @@ function hitNode(n, pt, exclude) {
   const L = localPoint(n, pt);
   const inside = L.x >= 0 && L.y >= 0 && L.x <= n.w && L.y <= n.h;
   if (n.children) {
-    if (n.type === 'frame' && n.clip && !inside) return null;
+    if (isFrameLike(n) && n.clip && !inside) return null;
     for (let i = n.children.length - 1; i >= 0; i--) {
       const r = hitNode(n.children[i], pt, exclude);
       if (r) return [n, ...r];
     }
-    return n.type === 'frame' && inside ? [n] : null;
+    return isFrameLike(n) && inside ? [n] : null;
   }
   const tol = 4 / view().zoom;
   switch (n.type) {
@@ -55,7 +55,7 @@ export function pickFromPath(path, { deep = false } = {}) {
     const i = path.indexOf(p);
     if (i >= 0 && i < path.length - 1) return path[i + 1];
   }
-  if (path[0].type === 'frame' && path.length > 1) return path[1];
+  if (isFrameLike(path[0]) && path.length > 1) return path[1];
   return path[0];
 }
 
@@ -67,7 +67,7 @@ export function frameAt(pt, exclude = new Set()) {
       if (!n.visible || n.locked || exclude.has(n.id) || !n.children) continue;
       const L = localPoint(n, pt);
       const inside = L.x >= 0 && L.y >= 0 && L.x <= n.w && L.y <= n.h;
-      if (n.type === 'frame') {
+      if (isFrameLike(n)) {
         if (!inside) continue;
         return search(n.children) || n;
       }

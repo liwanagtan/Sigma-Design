@@ -62,7 +62,7 @@ function pasteSigma(json) {
   if (!data?.sigma || !Array.isArray(data.nodes)) return false;
   const sel = selectedNodes();
   let parent = null;
-  if (sel.length === 1 && sel[0].type === 'frame') parent = sel[0];
+  if (sel.length === 1 && ['frame', 'component'].includes(sel[0].type)) parent = sel[0];
   else if (data.parentId && getNode(data.parentId) && pageOf(data.parentId) === page()) parent = getNode(data.parentId);
 
   const created = [];
@@ -90,7 +90,7 @@ function pasteText(text) {
   const vb = visibleWorldBox();
   const n = createNode('text', { text, name: text.slice(0, 40) });
   measureText(n);
-  const parent = selectedNodes().length === 1 && selectedNodes()[0].type === 'frame' ? selectedNodes()[0] : null;
+  const parent = selectedNodes().length === 1 && ['frame', 'component'].includes(selectedNodes()[0].type) ? selectedNodes()[0] : null;
   insertNode(n, parent);
   const target = parent ? worldBounds(parent) : vb;
   setWorldMatrix(n, translate(target.x + target.w / 2 - n.w / 2, target.y + target.h / 2 - n.h / 2));

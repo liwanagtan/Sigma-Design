@@ -10,6 +10,8 @@ ES modules need a web server, so opening `index.html` directly won't work. Use t
 python3 serve.py
 ```
 
+Automated tests run in the browser: with the server running, open http://localhost:5173/tests/.
+
 Any static server works too (`python3 -m http.server 5173`), but after updating the code you may need a hard reload (⌘⇧R).
 
 Then open http://localhost:5173.
@@ -66,6 +68,9 @@ Press `?` in the app to see every keyboard shortcut.
 | `src/hit.js` | Hit testing and Figma-style selection depth |
 | `src/commands.js` | Editing commands (group, align, reorder, zoom, …) |
 | `src/layout.js` | Auto layout engine: hug/fill sizing, flow positioning, layout inference for ⇧A |
+| `src/components.js` | Components and instances (normalize step `syncInstances`) |
+| `src/variables.js` | Variables and modes (normalize step `resolveVariables`) |
+| `tests/` | In-browser test runner (`tests/index.html`) and tests |
 | `src/text.js` | Text measurement and the in-place text editor |
 | `src/panels.js` | Toolbar, layers, pages and properties panels |
 | `src/io.js` | Clipboard, images, export, download |

@@ -1,6 +1,6 @@
 import {
   state, page, view, emit, commit, select, selectedNodes, getNode, getParent, siblingsOf, ancestors, isAncestor,
-  uid, detach, insertNode, worldMatrix, setWorldMatrix, createNode, undo, redo, makePaint,
+  uid, detach, insertNode, worldMatrix, setWorldMatrix, createNode, undo, redo, makePaint, isFrameLike, editNode,
 } from './store.js';
 import { translate } from './geom.js';
 import { icons, layerIcon } from './icons.js';
@@ -335,8 +335,10 @@ function startRename(id) {
   if (!row) return;
   row.scrollIntoView({ block: 'nearest' });
   inlineRename(row.querySelector('.name'), n.name, (name) => {
-    n.name = name;
-    n.autoName = false;
+    editNode(n, ['name'], () => {
+      n.name = name;
+      n.autoName = false;
+    });
     commit();
   });
 }
@@ -456,7 +458,7 @@ function numField(key, label, nodes, { icon } = {}) {
 const PAINT_KINDS = { fills: 'fill', strokes: 'stroke' };
 const canHavePaint = (n, kind) => (kind === 'fills' ? !['line', 'group'].includes(n.type) : !['group', 'text'].includes(n.type));
 const defaultPaintColor = (n, kind) =>
-  kind === 'strokes' ? '#000000' : n.type === 'text' ? '#000000' : n.type === 'frame' ? '#FFFFFF' : '#D9D9D9';
+  kind === 'strokes' ? '#000000' : n.type === 'text' ? '#000000' : isFrameLike(n) ? '#FFFFFF' : '#D9D9D9';
 
 function samePaints(nodes, kind) {
   const first = JSON.stringify(nodes[0]?.[kind] || []);
@@ -489,8 +491,8 @@ function addPaintButton(kind) {
 function updatePaint(id, fn, { live = false } = {}) {
   const [kind, i] = id.split(':');
   for (const n of selectedNodes()) {
-    const p = n[kind]?.[+i];
-    if (p) fn(p, n[kind], +i);
+    if (!n[kind]?.[+i]) continue;
+    editNode(n, [kind], () => fn(n[kind][+i], n[kind], +i));
   }
   if (live) emit('doc');
   else commit();
@@ -501,10 +503,12 @@ function addPaint(kind) {
   if (!nodes.length) return;
   const replace = !samePaints(nodes, kind);
   for (const n of nodes) {
-    const list = replace ? [] : (n[kind] || []);
-    // The first paint gets the layer's default color; extra ones start as a translucent black overlay.
-    list.push(list.length ? makePaint('#000000', 0.2) : makePaint(defaultPaintColor(n, kind)));
-    n[kind] = list;
+    editNode(n, [kind], () => {
+      const list = replace ? [] : (n[kind] || []);
+      // The first paint gets the layer's default color; extra ones start as a translucent black overlay.
+      list.push(list.length ? makePaint('#000000', 0.2) : makePaint(defaultPaintColor(n, kind)));
+      n[kind] = list;
+    });
   }
   commit();
 }
@@ -560,9 +564,9 @@ function buildProps() {
     };
     layout += `<div class="grid2">${sizingSelect('w')}${showH ? sizingSelect('h') : '<span></span>'}</div>`;
   }
-  const hasRadius = has((n) => ['rect', 'frame', 'image'].includes(n.type));
+  const hasRadius = has((n) => isFrameLike(n) || ['rect', 'image'].includes(n.type));
   layout += `<div class="grid2">${numField('rotation', '', nodes, { icon: icons.rotation })}${hasRadius ? numField('radius', '', nodes, { icon: icons.radius }) : ''}</div>`;
-  if (types.size === 1 && types.has('frame')) {
+  if (nodes.every(isFrameLike)) {
     const clip = common(nodes, (n) => !!n.clip);
     layout += `<label class="check-row"><input type="checkbox" data-bool="clip" ${clip === true ? 'checked' : ''}> Clip content</label>`;
   }
@@ -768,8 +772,10 @@ function initProps() {
       for (const n of nodes) {
         if (!n.layout) continue;
         const horiz = n.layout.mode === 'horizontal';
-        n.layout.alignP = horiz ? c : r;
-        n.layout.alignC = horiz ? r : c;
+        editNode(n, ['layout.alignP', 'layout.alignC'], () => {
+          n.layout.alignP = horiz ? c : r;
+          n.layout.alignC = horiz ? r : c;
+        });
       }
       return commit();
     }
@@ -793,7 +799,7 @@ function initProps() {
         return removeAutoLayout();
       case 'lock-aspect': {
         const on = !nodes.every((n) => n.lockAspect);
-        for (const n of nodes) n.lockAspect = on;
+        for (const n of nodes) editNode(n, ['lockAspect'], () => void (n.lockAspect = on));
         return commit();
       }
       case 'add-fills':

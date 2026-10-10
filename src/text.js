@@ -1,4 +1,4 @@
-import { state, getNode, emit, commit, removeNodes, worldMatrix, view, select } from './store.js';
+import { state, getNode, emit, commit, removeNodes, worldMatrix, view, select, editNode } from './store.js';
 import { mul, css } from './geom.js';
 
 export function textStyle(n) {
@@ -84,10 +84,12 @@ export function startEditing(id, { selectAll = true } = {}) {
   sel.addRange(range);
 
   editor.addEventListener('input', () => {
-    n.text = editor.innerText.replace(/\n$/, '');
-    // Text layers are named after their content until renamed by hand.
-    if (n.autoName !== false) n.name = n.text.split('\n')[0].trim().slice(0, 60) || 'Text';
-    measureText(n);
+    editNode(n, ['text'], () => {
+      n.text = editor.innerText.replace(/\n$/, '');
+      // Text layers are named after their content until renamed by hand.
+      if (n.autoName !== false) n.name = n.text.split('\n')[0].trim().slice(0, 60) || 'Text';
+      measureText(n);
+    });
     positionEditor();
     emit('doc');
   });
