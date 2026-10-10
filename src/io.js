@@ -9,6 +9,7 @@ import { sortByZ, viewportSize } from './commands.js';
 import { toWorld } from './render.js';
 import { measureText } from './text.js';
 import { createInstance, canPlaceInside } from './components.js';
+import { findVariable, allVariables } from './variables.js';
 
 export function toast(msg) {
   window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
@@ -20,10 +21,19 @@ let internalClip = null;
 function serializeSelection() {
   const nodes = sortByZ(selectedNodes());
   if (!nodes.length) return null;
+  // Remember which variables the layers use, so a paste into another file can reconnect them by name.
+  const variables = {};
+  walk(nodes, (n) => {
+    for (const id of Object.values(n.bindings || {})) {
+      const hit = findVariable(id);
+      if (hit) variables[id] = { name: hit.variable.name, type: hit.variable.type, collection: hit.collection.name };
+    }
+  });
   return JSON.stringify({
     sigma: 1,
     parentId: getParent(nodes[0].id)?.id || null,
     nodes: nodes.map((n) => ({ node: n, wm: worldMatrix(n) })),
+    variables,
   });
 }
 
@@ -79,6 +89,7 @@ function pasteSigma(json) {
     }
     const c = cloneNode(node);
     walk([c], migratePaints);
+    walk([c], (n) => remapBindings(n, data.variables || {}));
     insertNode(c, parent);
     setWorldMatrix(c, wm);
     created.push(c);
@@ -94,6 +105,21 @@ function pasteSigma(json) {
   select(created.map((c) => c.id));
   commit();
   return true;
+}
+
+// Bindings to variables this file doesn't have are reconnected to a variable with the same name and type
+// (preferring the same collection name), or dropped; the layer keeps its current value either way.
+function remapBindings(n, known) {
+  if (!n.bindings) return;
+  for (const [path, id] of Object.entries(n.bindings)) {
+    if (findVariable(id)) continue;
+    const info = known[id];
+    const candidates = info ? allVariables(info.type).filter(({ variable }) => variable.name === info.name) : [];
+    const match = candidates.find(({ collection }) => collection.name === info.collection) || candidates[0];
+    if (match) n.bindings[path] = match.variable.id;
+    else delete n.bindings[path];
+  }
+  if (!Object.keys(n.bindings).length) delete n.bindings;
 }
 
 function pasteText(text) {

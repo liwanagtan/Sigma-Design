@@ -1036,11 +1036,25 @@ export function renderAssets() {
     if (!byPage.has(c.page)) byPage.set(c.page, []);
     byPage.get(c.page).push(c);
   }
-  list.innerHTML = [...byPage].map(([pg, items]) =>
-    `<div class="assets-group"><div class="assets-group-title">${esc(pg.name)}</div><div class="assets-grid">` +
-    items.map(({ node, insert }) => `<div class="asset" draggable="true" data-component="${insert.id}" title="${esc(node.name)} — click to insert, or drag onto the canvas">` +
-      `<div class="asset-thumb">${componentThumb(insert)}</div><div class="asset-name">${esc(node.name)}${node.type === 'componentSet' ? ` <span class="muted">· ${node.children.length}</span>` : ''}</div></div>`).join('') +
-    '</div></div>').join('');
+  // Within a page, "/" in component names groups them, e.g. "Buttons/Primary".
+  const tile = ({ node, insert }) => {
+    const leaf = node.name.slice(node.name.lastIndexOf('/') + 1);
+    const desc = node.description || insert.description;
+    return `<div class="asset" draggable="true" data-component="${insert.id}" title="${esc(node.name)}${desc ? `\n${esc(desc)}` : ''}\nClick to insert, or drag onto the canvas">` +
+      `<div class="asset-thumb">${componentThumb(insert)}</div><div class="asset-name">${esc(leaf)}${node.type === 'componentSet' ? ` <span class="muted">· ${node.children.length}</span>` : ''}</div></div>`;
+  };
+  list.innerHTML = [...byPage].map(([pg, items]) => {
+    const groups = new Map();
+    for (const it of items) {
+      const i = it.node.name.lastIndexOf('/');
+      const g = i > 0 ? it.node.name.slice(0, i) : '';
+      if (!groups.has(g)) groups.set(g, []);
+      groups.get(g).push(it);
+    }
+    return `<div class="assets-group"><div class="assets-group-title">${esc(pg.name)}</div>` +
+      [...groups].map(([g, list]) => (g ? `<div class="assets-subgroup">${esc(g)}</div>` : '') + `<div class="assets-grid">${list.map(tile).join('')}</div>`).join('') +
+      '</div>';
+  }).join('');
 }
 
 function componentThumb(n) {

@@ -204,6 +204,9 @@ function applyMain(inst, main, comps) {
   inst.children = deriveChildren(main.children, inst.id, '', overrides, prev, comps, propValuesFor(main, inst), [main.id]);
 }
 
+// Instances whose main component and own settings haven't changed since the last pass are skipped.
+const lastSync = new WeakMap(); // instance -> key it was last synced with
+
 // Normalize step: rebuild every instance from its main component.
 export function syncInstances() {
   if (!state.doc) return;
@@ -211,6 +214,14 @@ export function syncInstances() {
   if (!comps.size && !hasInstances()) return;
   const done = new Set();
   const visiting = new Set();
+  const mainKeys = new Map();
+  const mainKey = (main) => {
+    if (!mainKeys.has(main.id)) {
+      const set = getParent(main.id);
+      mainKeys.set(main.id, JSON.stringify(main) + (set?.type === 'componentSet' ? JSON.stringify([set.name, set.props]) : ''));
+    }
+    return mainKeys.get(main.id);
+  };
 
   const syncTree = (nodes) => walk(nodes, (n) => {
     if (n.type !== 'instance') return;
@@ -235,11 +246,24 @@ export function syncInstances() {
     delete inst.missingMain;
     if (visiting.has(main.id)) return; // an instance of a component inside itself; guarded elsewhere
     syncComponent(main);
+    // Everything a re-sync depends on. Components swapped in (by override or property) aren't part of
+    // the main's key, so those instances always re-sync.
+    const keyOf = () => mainKey(main) + JSON.stringify([
+      inst.componentId, inst.overrides, inst.propValues, inst.w, inst.h, inst.sizingH, inst.sizingV, inst.modes,
+      inst.children?.length,
+    ]);
+    if (lastSync.get(inst) === keyOf() && !hasSwaps(inst, comps)) return;
     applyMain(inst, main, comps);
+    lastSync.set(inst, keyOf());
   }
 
   for (const pg of state.doc.pages) syncTree(pg.children);
   reindex();
+}
+
+function hasSwaps(inst, comps) {
+  return Object.values(inst.overrides || {}).some((o) => 'componentId' in o || 'propValues' in o) ||
+    Object.values(inst.propValues || {}).some((v) => comps.has(v));
 }
 
 function hasInstances() {

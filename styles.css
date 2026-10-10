@@ -379,3 +379,5 @@ fieldset.readonly .field-label { cursor: default; }
 .var-cell.inherited .cell-input, .var-cell.inherited .cell-bool, .var-cell.inherited .alias-chip { opacity: 0.5; }
 .var-cell.overridden { background: #f5efff; border-radius: 6px; padding: 2px 4px; margin: -2px -4px; }
 .cell-reset { width: 22px; height: 22px; color: #6d28d9; }
+
+.assets-subgroup { color: var(--muted); font-weight: 500; padding: 8px 4px 6px; }

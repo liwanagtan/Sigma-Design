@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Phases 1–8 done**; next up is Phase 9. Each phase below should fit in one working session. Finish a phase, test it in the browser, commit, then move to the next. Work through the phases in order. **Phase 1 (Files home) is the priority** and doesn't depend on anything else.
+Status: **All phases (1–9) done.** See "Follow-ups" at the end for what's left. Each phase below should fit in one working session. Finish a phase, test it in the browser, commit, then move to the next. Work through the phases in order. **Phase 1 (Files home) is the priority** and doesn't depend on anything else.
 
 ## Scope
 
@@ -285,4 +285,14 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 6: Variables (core)
 - [x] Phase 7: Modes
 - [x] Phase 8: Extended collections
-- [ ] Phase 9: Integration and polish
+- [x] Phase 9: Integration and polish
+
+## Follow-ups
+
+Things noticed while building, not yet done:
+
+- **Rendering performance.** With 200 card instances (about 400 text layers), a frame takes about 17 ms: normalize about 2 ms (instances whose main and settings haven't changed are skipped), scene about 5 ms (only changed top-level layers are re-rendered), and the rest is the browser's layout of HTML text. The next step would be drawing text as SVG `<text>` instead of `foreignObject`.
+- **Orphaned overrides.** Renaming a layer inside a main component orphans existing overrides keyed by its old name, as in Figma. The instance panel could show "N overrides no longer apply".
+- **Constraints.** Resizing an instance only reflows auto-layout children; fixed-position children stay pinned top-left. Basic constraints (left / right / left-and-right / center / scale) are still open.
+- **Exposed nested properties.** An outer instance can't show its nested instances' properties in its own panel; you select the nested instance instead.
+- **Libraries.** Components and variables are local to a file. Pasting an instance into a file without its main keeps the look but marks it "main component missing".

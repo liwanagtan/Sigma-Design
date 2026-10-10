@@ -66,6 +66,9 @@ Then open http://localhost:5173.
   - **extended collections:** **Extend** in the variables editor creates a collection that inherits all variables and modes and stores only the values you override
   - in an extension, inherited values are greyed and ↺ resets an override
   - apply an extension with the mode picker on a frame, page or instance to re-skin it (for example, a second brand); extensions can be extended again
+  - copied layers remember their variables' names, so pasting into another file reconnects them to same-named variables there
+  - a binding to a variable the other file doesn't have is dropped, and the layer keeps its value
+- **Sample file:** **Open sample file** includes a **Design system** page: Light/Dark color variables, a "Brand B" extension, spacing variables, a Button component set with a Label property, and a Card shown in all three contexts
 - **Resizing:** each layer can be **Fixed**, **Hug** contents (auto-layout frames and text) or **Fill** container (children of auto-layout frames), separately for width and height
 - **Lock aspect ratio:** the link button next to W/H. It applies to typed sizes and to resize handles (hold ⇧ to override).
 - **Layers panel:** tree view, rename (double-click or ⌘R), hide, lock, drag to reorder or nest

@@ -114,8 +114,41 @@ export function nodeSVG(n, opts = {}) {
 }
 
 // ---------- scene ----------
+// One <g> per top-level layer, rebuilt only when that layer's data changed. While dragging one object,
+// only it is re-rendered instead of the whole page.
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const sceneCache = new Map(); // top-level node id -> { key, el }
+// Image data URLs can be huge; compare them by length and tail instead of copying them every frame.
+const keyReplacer = (k, v) => (k === 'src' && typeof v === 'string' ? `${v.length}:${v.slice(-48)}` : v);
+
 export function renderScene(worldEl) {
-  worldEl.innerHTML = page().children.map((n) => nodeSVG(n)).join('');
+  const editing = state.editingTextId || '';
+  const seen = new Set();
+  let prev = null;
+  for (const n of page().children) {
+    const key = editing + JSON.stringify(n, keyReplacer);
+    let entry = sceneCache.get(n.id);
+    if (!entry || entry.key !== key) {
+      const holder = document.createElementNS(SVG_NS, 'g');
+      holder.innerHTML = nodeSVG(n);
+      const el = holder.firstElementChild || document.createElementNS(SVG_NS, 'g'); // hidden layers render nothing
+      if (entry) entry.el.replaceWith(el);
+      entry = { key, el };
+      sceneCache.set(n.id, entry);
+    }
+    const expected = prev ? prev.nextSibling : worldEl.firstChild;
+    if (entry.el !== expected) worldEl.insertBefore(entry.el, expected);
+    prev = entry.el;
+    seen.add(n.id);
+  }
+  for (const [id, entry] of sceneCache) {
+    if (!seen.has(id)) {
+      entry.el.remove();
+      sceneCache.delete(id);
+    }
+  }
+  // Anything else left in the group (e.g. from before the cache existed) goes.
+  while (prev ? prev.nextSibling : worldEl.firstChild) (prev ? prev.nextSibling : worldEl.firstChild).remove();
 }
 
 export function applyViewTransform(worldEl) {
