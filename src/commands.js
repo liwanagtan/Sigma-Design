@@ -8,6 +8,7 @@ import { measureText } from './text.js';
 import { isAutoLayout, guessLayout, setSizing } from './layout.js';
 import {
   isInsideInstance, owningInstance, createInstance, detachInstance, resetOverrides, mainComponentOf, canPlaceInside,
+  parseVariantName, formatVariantName, variantsOf, variantDefs,
 } from './components.js';
 
 const hint = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
@@ -493,4 +494,75 @@ export function placeInstance(main, worldPt, parent = null) {
   select([n.id]);
   commit();
   return n;
+}
+
+// ---------- variants ----------
+const SET_PADDING = 20;
+
+// Grow/shrink a component set around its variants, keeping them in place on the canvas.
+export function fitComponentSet(set) {
+  if (!set.children.length) return;
+  const pts = [];
+  for (const c of set.children) pts.push(...worldCorners(c));
+  const IW = inv(worldMatrix(set));
+  const b = aabb(pts.map((p) => apply(IW, p)));
+  const dx = b.x - SET_PADDING, dy = b.y - SET_PADDING;
+  for (const c of set.children) {
+    c.x = round(c.x - dx);
+    c.y = round(c.y - dy);
+  }
+  set.x = round(set.x + dx);
+  set.y = round(set.y + dy);
+  set.w = round(b.w + SET_PADDING * 2);
+  set.h = round(b.h + SET_PADDING * 2);
+}
+
+// Combine selected components into a component set; their names become variant properties.
+export function combineAsVariants() {
+  const nodes = sortByZ(selectedNodes());
+  if (nodes.length < 1 || !nodes.every((n) => n.type === 'component')) return hint('Select components to combine as variants.');
+  if (nodes.some((n) => getParent(n.id)?.type === 'componentSet')) return hint('Some of these are already variants in a set.');
+  const parent = getParent(nodes[0].id);
+  if (nodes.some((n) => getParent(n.id) !== parent)) return hint('Variants must share the same parent.');
+  const setName = nodes[0].name.includes('=') ? nextName('componentSet') : nodes[0].name;
+  const used = new Set();
+  for (const n of nodes) {
+    let props = parseVariantName(n.name);
+    if (!Object.keys(props).length) props = { 'Property 1': n.name };
+    let name = formatVariantName(props);
+    for (let i = 2; used.has(name); i++) name = formatVariantName({ ...props, 'Property 1': `${props['Property 1'] || 'Variant'} ${i}` });
+    used.add(name);
+    n.name = name;
+  }
+  const set = wrapSelection('frame', { commitAfter: false });
+  set.type = 'componentSet';
+  set.name = setName;
+  // Component properties move up to the set, which shares them across variants.
+  const props = Object.assign({}, ...nodes.map((n) => n.props || {}));
+  if (Object.keys(props).length) set.props = props;
+  for (const n of nodes) delete n.props;
+  set.fills = [];
+  set.clip = false;
+  fitComponentSet(set);
+  select([set.id]);
+  commit();
+}
+
+// Add a variant by duplicating the last one with a new value for the first property.
+export function addVariant(set) {
+  const variants = variantsOf(set);
+  const last = variants[variants.length - 1];
+  if (!last) return;
+  const props = parseVariantName(last.name);
+  const key = Object.keys(props)[0] || 'Property 1';
+  const taken = new Set(variantDefs(set)[key] || []);
+  let value = `Variant ${variants.length + 1}`;
+  for (let i = variants.length + 2; taken.has(value); i++) value = `Variant ${i}`;
+  const c = cloneNode(last);
+  c.name = formatVariantName({ ...props, [key]: value });
+  c.x = last.x + last.w + SET_PADDING;
+  insertNode(c, set);
+  fitComponentSet(set);
+  select([c.id]);
+  commit();
 }

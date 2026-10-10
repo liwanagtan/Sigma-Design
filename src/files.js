@@ -1,7 +1,9 @@
 // File management: every Sigma file is a record in IndexedDB (see db.js). This module owns
 // the currently open file, autosave, thumbnails, cross-tab notifications and migration.
 import { db } from './db.js';
-import { state, uid, setPersistence, flushSave, LEGACY_STORAGE_KEY, migrateDocument } from './store.js';
+import {
+  state, uid, setPersistence, flushSave, hasUnsavedChanges, LEGACY_STORAGE_KEY, migrateDocument,
+} from './store.js';
 import { buildSVG, download, toast } from './io.js';
 
 const TAB_ID = uid();
@@ -10,6 +12,29 @@ const channel = 'BroadcastChannel' in window ? new BroadcastChannel('sigma-files
 let currentFileId = null;
 let currentDeleted = false; // the open file was deleted in another tab: stop writing it
 let saving = Promise.resolve();
+let inFlight = 0; // autosaves started but not yet written
+
+// IndexedDB writes can't finish while a page unloads, so unsaved work is also stashed synchronously in
+// localStorage when the page is hidden or closed, and applied the next time the file is opened.
+const PENDING_KEY = 'sigma.pending';
+
+function stashPending() {
+  if (!currentFileId || currentDeleted || !state.doc) return;
+  if (!hasUnsavedChanges() && !inFlight) return;
+  try {
+    localStorage.setItem(PENDING_KEY, JSON.stringify({ id: currentFileId, doc: state.doc, views: state.pageViews, t: Date.now() }));
+  } catch {
+    // Too large for localStorage (e.g. big images); the regular autosave is still attempted.
+  }
+}
+
+function readPending() {
+  try {
+    return JSON.parse(localStorage.getItem(PENDING_KEY) || 'null');
+  } catch {
+    return null;
+  }
+}
 let thumbTimer = null;
 
 export const getCurrentFileId = () => currentFileId;
@@ -34,6 +59,8 @@ export async function initFiles(handlers = {}) {
     handlers.onRemoteChange?.(msg);
   });
   navigator.storage?.persist?.().catch(() => {});
+  window.addEventListener('pagehide', stashPending);
+  document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && stashPending());
   await migrateLegacyDocument();
 }
 
@@ -68,6 +95,17 @@ export async function listFiles() {
 export async function loadFile(id) {
   const [meta, rec] = await Promise.all([db.get('files', id), db.get('docs', id)]);
   if (!meta || !rec?.doc) return null;
+  const pending = readPending();
+  if (pending?.id === id) {
+    if (pending.t > meta.updatedAt) {
+      // Changes from the last session that didn't reach IndexedDB before the page closed.
+      meta.updatedAt = pending.t;
+      await db.putFile(meta, { id, doc: pending.doc, views: pending.views || {} });
+      localStorage.removeItem(PENDING_KEY);
+      return { meta, doc: pending.doc, views: pending.views || {} };
+    }
+    localStorage.removeItem(PENDING_KEY);
+  }
   return { meta, doc: rec.doc, views: rec.views || {} };
 }
 
@@ -168,6 +206,7 @@ export function setCurrentFile(id) {
 function persistCurrent(doc, views, { edited }) {
   const id = currentFileId;
   if (!id || currentDeleted) return saving;
+  inFlight++;
   saving = saving.then(async () => {
     const meta = await db.get('files', id);
     if (!meta) {
@@ -191,6 +230,8 @@ function persistCurrent(doc, views, { edited }) {
   }).catch((err) => {
     console.error(err);
     toast(`Autosave failed: ${err.message}. Use Save file… to keep a copy.`);
+  }).finally(() => {
+    inFlight--;
   });
   return saving;
 }

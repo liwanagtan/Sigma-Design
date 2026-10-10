@@ -12,7 +12,7 @@ import { startEditing, stopEditing, measureText } from './text.js';
 import {
   setTool, zoomAt, zoomIn, zoomOut, zoomTo100, zoomToFit, zoomToSelection, deleteSelection, duplicateSelection,
   wrapSelection, ungroupSelection, reorder, nudge, selectAll, selectParent, selectChildren, toggleVisible,
-  toggleLocked, scaleKids, sortByZ, flip, addAutoLayout, removeAutoLayout, createComponent, detachSelection, goToMainComponent, resetSelectionOverrides, placeInstance,
+  toggleLocked, scaleKids, sortByZ, flip, addAutoLayout, removeAutoLayout, createComponent, detachSelection, goToMainComponent, resetSelectionOverrides, placeInstance, combineAsVariants,
 } from './commands.js';
 import { copySelection, cutSelection, paste, importImages, pickImages, exportNodes } from './io.js';
 import { isAutoLayout, flowInsertBefore } from './layout.js';
@@ -874,6 +874,7 @@ function onContextMenu(e) {
     { label: 'Group selection', shortcut: '⌘G', action: () => wrapSelection('group') },
     { label: 'Frame selection', shortcut: '⌥⌘G', action: () => wrapSelection('frame') },
     { label: 'Create component', shortcut: '⌥⌘K', action: createComponent },
+    ...(nodes.length && nodes.every((n) => n.type === 'component') ? [{ label: 'Combine as variants', action: combineAsVariants }] : []),
     ...(nodes.some((n) => n.type === 'instance' || isInsideInstance(n)) ? [
       { label: 'Go to main component', action: goToMainComponent },
       { label: 'Reset overrides', action: resetSelectionOverrides },

@@ -104,7 +104,16 @@ function remeasure(n) {
 }
 
 function applyRootProps(target, main, rootOverride) {
-  for (const k of ROOT_PROPS) target[k] = clone(k in rootOverride ? rootOverride[k] : main[k]);
+  for (const k of ROOT_PROPS) {
+    if (k in rootOverride) target[k] = clone(rootOverride[k]);
+    else target[k] = k === 'name' ? displayName(main) : clone(main[k]);
+  }
+}
+
+// Instances of a variant are named after the component set, like Figma.
+export function displayName(main) {
+  const set = getParent(main.id);
+  return set?.type === 'componentSet' ? set.name : main.name;
 }
 
 // Component property definitions for a main component. Variants share the definitions of their set.
@@ -471,4 +480,86 @@ export function setInstanceProp(inst, pid, value) {
   editNode(inst, ['propValues'], () => {
     inst.propValues = { ...(inst.propValues || {}), [pid]: value };
   });
+}
+
+// ---------- variants ----------
+// Variant components live in a component set and are named "Prop=Value, Prop2=Value2".
+export function parseVariantName(name) {
+  const out = {};
+  for (const part of String(name).split(',')) {
+    const i = part.indexOf('=');
+    if (i > 0) out[part.slice(0, i).trim()] = part.slice(i + 1).trim();
+  }
+  return out;
+}
+
+export const formatVariantName = (props) => Object.entries(props).map(([k, v]) => `${k}=${v}`).join(', ');
+
+export const isVariant = (n) => n?.type === 'component' && getParent(n.id)?.type === 'componentSet';
+export const variantsOf = (set) => set.children.filter((c) => c.type === 'component');
+
+// { Prop: [values in order of appearance] } for a component set.
+export function variantDefs(set) {
+  const defs = {};
+  for (const v of variantsOf(set)) {
+    for (const [k, val] of Object.entries(parseVariantName(v.name))) {
+      if (!defs[k]) defs[k] = [];
+      if (!defs[k].includes(val)) defs[k].push(val);
+    }
+  }
+  return defs;
+}
+
+// The variant matching `props` exactly, or else the one matching the most of them.
+export function findVariant(set, props) {
+  let best = null, bestScore = -1;
+  for (const v of variantsOf(set)) {
+    const vp = parseVariantName(v.name);
+    const score = Object.entries(props).filter(([k, val]) => vp[k] === val).length;
+    if (score > bestScore) {
+      best = v;
+      bestScore = score;
+    }
+  }
+  return { variant: best, exact: bestScore === Object.keys(props).length };
+}
+
+// Switch an instance (top-level or nested) to another variant of its set. Overrides carry over by layer name.
+export function switchVariant(inst, prop, value) {
+  const main = mainComponentOf(inst);
+  const set = main && getParent(main.id);
+  if (set?.type !== 'componentSet') return false;
+  const wanted = { ...parseVariantName(main.name), [prop]: value };
+  const { variant, exact } = findVariant(set, wanted);
+  if (variant && variant.id !== inst.componentId) {
+    editNode(inst, ['componentId'], () => void (inst.componentId = variant.id));
+  }
+  return exact;
+}
+
+function renameAll(set, fn) {
+  for (const v of variantsOf(set)) {
+    const props = fn(parseVariantName(v.name));
+    if (props) v.name = formatVariantName(props);
+  }
+}
+
+export function renameVariantProperty(set, from, to) {
+  to = to.trim();
+  if (!to || to === from || to.includes('=') || to.includes(',')) return;
+  renameAll(set, (p) => Object.fromEntries(Object.entries(p).map(([k, v]) => [k === from ? to : k, v])));
+}
+
+export function setVariantValue(variant, prop, value) {
+  value = value.trim();
+  if (!value || value.includes(',') || value.includes('=')) return;
+  variant.name = formatVariantName({ ...parseVariantName(variant.name), [prop]: value });
+}
+
+export function addVariantProperty(set) {
+  const defs = variantDefs(set);
+  let name = 'Property 1';
+  for (let i = 2; defs[name]; i++) name = `Property ${i}`;
+  renameAll(set, (p) => ({ ...p, [name]: 'Default' }));
+  return name;
 }

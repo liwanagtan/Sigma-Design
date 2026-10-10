@@ -1,5 +1,5 @@
 import {
-  state, page, view, getNode, getParent, selectedNodes, localMatrix, worldMatrix, worldCorners, worldBounds, isFrameLike,
+  state, page, view, getNode, getParent, selectedNodes, localMatrix, worldMatrix, worldCorners, worldBounds, isFrameLike, walk,
 } from './store.js';
 import { css, mul, apply, unionBoxes, cornersOf } from './geom.js';
 import { textStyle } from './text.js';
@@ -188,7 +188,7 @@ export function renderOverlay(svg) {
     const tl = toScreen(apply(W, { x: 0, y: 0 }));
     const tr = toScreen(apply(W, { x: n.w, y: 0 }));
     const maxW = Math.max(0, Math.hypot(tr.x - tl.x, tr.y - tl.y));
-    let text = (n.type === 'component' ? '❖ ' : n.type === 'instance' ? '◇ ' : '') + n.name;
+    let text = (n.type === 'component' || n.type === 'componentSet' ? '❖ ' : n.type === 'instance' ? '◇ ' : '') + n.name;
     if (labelWidth(text) > maxW) {
       while (text.length > 1 && labelWidth(text + '…') > maxW) text = text.slice(0, -1);
       text = maxW < 16 ? '' : text + '…';
@@ -197,6 +197,16 @@ export function renderOverlay(svg) {
     const color = isComponentish(n) ? COMPONENT_ACCENT : sel.has(n.id) ? ACCENT : state.hoverId === n.id ? '#333' : '#8C8C8C';
     out += `<text transform="translate(${tl.x},${tl.y}) rotate(${angle})" y="-6" fill="${color}" font-size="11" font-weight="500" font-family="Inter,system-ui,sans-serif">${esc(text)}</text>`;
     frameLabels.push({ id: n.id, x: tl.x, y: tl.y - 18, w: Math.max(labelWidth(text), 8), h: 16, angle });
+  }
+
+  // Component sets get Figma's dashed purple border (canvas chrome only, never exported).
+  const sets = [];
+  walk(page().children, (n) => {
+    if (n.type === 'componentSet' && n.visible) sets.push(n);
+    if (n.type === 'instance') return false;
+  });
+  for (const set of sets) {
+    out += poly(worldCorners(set).map(toScreen), `fill="none" stroke="${COMPONENT_ACCENT}" stroke-width="1" stroke-dasharray="4 3"`);
   }
 
   // Hover outline

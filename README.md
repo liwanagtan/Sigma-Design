@@ -51,6 +51,9 @@ Then open http://localhost:5173.
   - **component properties** are defined on the main component: Boolean (show or hide a layer), Text and Instance swap
   - to link a layer, select it inside the main component and use the Component properties section
   - each instance gets a control per property, plus a Swap picker for the component itself
+  - **variants:** select components and right-click → **Combine as variants** to make a component set
+  - variant names become properties (`Size=Large, State=Hover`); the set's panel renames properties and adds properties or variants
+  - instances of a variant get a dropdown per variant property, and overrides carry over when switching
 - **Resizing:** each layer can be **Fixed**, **Hug** contents (auto-layout frames and text) or **Fill** container (children of auto-layout frames), separately for width and height
 - **Lock aspect ratio:** the link button next to W/H. It applies to typed sizes and to resize handles (hold ⇧ to override).
 - **Layers panel:** tree view, rename (double-click or ⌘R), hide, lock, drag to reorder or nest
