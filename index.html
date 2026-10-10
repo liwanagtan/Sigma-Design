@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sigma</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <aside id="left" class="panel">
+      <div class="file-header">
+        <button id="logo-btn" class="logo-btn" title="Main menu"></button>
+        <input id="file-name" class="file-name" spellcheck="false" aria-label="File name">
+      </div>
+      <section class="pages">
+        <div class="panel-head"><span>Pages</span><button id="add-page" class="icon-btn" title="Add page"></button></div>
+        <div id="pages-list"></div>
+      </section>
+      <section class="layers">
+        <div class="panel-head"><span>Layers</span></div>
+        <div id="layers-list"></div>
+      </section>
+    </aside>
+
+    <main id="canvas">
+      <svg id="scene" xmlns="http://www.w3.org/2000/svg"><g id="world"></g></svg>
+      <svg id="overlay" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div id="toolbar"></div>
+    </main>
+
+    <aside id="right" class="panel">
+      <div class="right-head">
+        <div class="tabs"><span class="tab active">Design</span></div>
+        <button id="zoom-btn" class="zoom-btn" title="Zoom options"></button>
+      </div>
+      <div id="props"></div>
+    </aside>
+  </div>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
