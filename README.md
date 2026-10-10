@@ -41,6 +41,13 @@ Then open http://localhost:5173.
   - ⇧A infers direction, gap and padding from how the layers are already arranged
   - drag children to reorder them (siblings reflow live), or use the arrow keys
   - children can opt out with **Absolute position**
+- **Components and instances:**
+  - ⌥⌘K turns a frame, or any selection, into a component
+  - make instances by duplicating (⌘D), ⌥-dragging or pasting a component, or from the **Assets** tab, where you can click a component or drag it onto the canvas
+  - changes to the main component flow to every instance, live
+  - an instance can override appearance and text, such as fills, strokes, text and visibility; size and position come from the main component
+  - the Instance section in the panel has Go to main component, Reset overrides and Detach (⌥⌘B)
+  - a component can never end up containing an instance of itself
 - **Resizing:** each layer can be **Fixed**, **Hug** contents (auto-layout frames and text) or **Fill** container (children of auto-layout frames), separately for width and height
 - **Lock aspect ratio:** the link button next to W/H. It applies to typed sizes and to resize handles (hold ⇧ to override).
 - **Layers panel:** tree view, rename (double-click or ⌘R), hide, lock, drag to reorder or nest

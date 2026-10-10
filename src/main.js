@@ -11,6 +11,7 @@ import { initTextEditor, positionEditor, measureText, stopEditing } from './text
 import { setViewportElement, zoomToFit } from './commands.js';
 import {
   initPanels, renderLayers, renderProps, renderPages, renderToolbar, renderZoomLabel, renderFileHeader, highlightLayerHover,
+  renderAssets,
 } from './panels.js';
 import {
   initFiles, loadFile, setCurrentFile, closeCurrentFile, discardCurrentFile, saveNow, getCurrentFileId, goHome,
@@ -58,6 +59,7 @@ function frame() {
     renderLayers();
     renderPages();
     renderFileHeader();
+    renderAssets();
   } else if (dirty.hover) {
     highlightLayerHover();
   }

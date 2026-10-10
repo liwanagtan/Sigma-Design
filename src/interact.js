@@ -12,10 +12,11 @@ import { startEditing, stopEditing, measureText } from './text.js';
 import {
   setTool, zoomAt, zoomIn, zoomOut, zoomTo100, zoomToFit, zoomToSelection, deleteSelection, duplicateSelection,
   wrapSelection, ungroupSelection, reorder, nudge, selectAll, selectParent, selectChildren, toggleVisible,
-  toggleLocked, scaleKids, sortByZ, flip, addAutoLayout, removeAutoLayout,
+  toggleLocked, scaleKids, sortByZ, flip, addAutoLayout, removeAutoLayout, createComponent, detachSelection, goToMainComponent, resetSelectionOverrides, placeInstance,
 } from './commands.js';
 import { copySelection, cutSelection, paste, importImages, pickImages, exportNodes } from './io.js';
 import { isAutoLayout, flowInsertBefore } from './layout.js';
+import { isInsideInstance, isTransparentContainer, canPlaceInside, createInstance } from './components.js';
 import { showContextMenu, hideContextMenu } from './menu.js';
 
 let canvasEl;
@@ -49,8 +50,15 @@ export function initInteractions(el) {
   });
   el.addEventListener('drop', (e) => {
     e.preventDefault();
+    const wp = toWorld(screenPt(e));
+    const componentId = e.dataTransfer.getData('application/x-sigma-component');
+    if (componentId) {
+      const main = getNode(componentId);
+      if (main) placeInstance(main, wp, frameAt(wp));
+      return;
+    }
     const files = [...e.dataTransfer.files].filter((f) => f.type.startsWith('image/'));
-    if (files.length) importImages(files, toWorld(screenPt(e)));
+    if (files.length) importImages(files, wp);
   });
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
@@ -172,7 +180,7 @@ const EDGES = [[0, 1, 0, -1], [1, 2, 1, 0], [2, 3, 0, 1], [3, 0, -1, 0]];
 function handleAt(sp) {
   if (state.editingTextId || state.tool !== 'move') return null;
   const g = selectionGeometry();
-  if (!g || selectedNodes().some((n) => n.locked)) return null;
+  if (!g || selectedNodes().some((n) => n.locked || isInsideInstance(n))) return null;
   if (g.kind === 'line') {
     for (let i = 0; i < 2; i++) if (dist(sp, g.ends[i]) <= 7) return { kind: 'line-end', end: i };
     return null;
@@ -278,7 +286,7 @@ function onPointerDown(e) {
     }
     if (!already) {
       // Dragging on the empty background of a top-level frame with content starts a marquee inside it.
-      const isFrameBg = isFrameLike(target) && !getParent(target.id) && target.children.length &&
+      const isFrameBg = isTransparentContainer(target) && !getParent(target.id) && target.children.length &&
         path[path.length - 1] === target;
       if (isFrameBg && !insideSelectionBox(sp)) {
         drag = { type: 'pending-frame', frame: target, start: sp, startWorld: wp, shift: e.shiftKey };
@@ -463,7 +471,7 @@ function updateMarquee(wp) {
   for (const n of candidates) {
     if (!n.visible || n.locked) continue;
     const b = worldBounds(n);
-    if (!drag.context && isFrameLike(n) && n.children.length && !contains(box, b)) {
+    if (!drag.context && isTransparentContainer(n) && n.children.length && !contains(box, b)) {
       for (const c of n.children) if (c.visible && !c.locked && intersects(box, worldBounds(c))) hits.push(c.id);
     } else if (intersects(box, b)) {
       hits.push(n.id);
@@ -478,12 +486,20 @@ function beginMove(wp, sp, e, extra) {
 }
 
 function startMoveDrag() {
-  let nodes = selectedNodes().filter((n) => !n.locked);
+  // Layers inside an instance can't be moved; their position comes from the main component.
+  let nodes = selectedNodes().filter((n) => !n.locked && !isInsideInstance(n));
   if (drag.alt) {
     const clones = [];
     for (const n of sortByZ(nodes)) {
+      const parent = getParent(n.id), at = siblingsOf(n).indexOf(n) + 1;
+      if (n.type === 'component') {
+        // ⌥-dragging a main component drags out an instance of it.
+        const tl = apply(worldMatrix(n), { x: 0, y: 0 });
+        clones.push(createInstance(n, { parent, at, x: tl.x, y: tl.y }));
+        continue;
+      }
       const c = cloneNode(n);
-      insertNode(c, getParent(n.id), siblingsOf(n).indexOf(n) + 1);
+      insertNode(c, parent, at);
       clones.push(c);
     }
     nodes = clones;
@@ -506,8 +522,10 @@ function updateMove(wp, e) {
   const box = { x: b0.x + dx, y: b0.y + dy, w: b0.w, h: b0.h };
   const th = snapThreshold();
   const T = drag.targets;
-  const targetFrame = frameAt(wp, drag.exclude);
-  const intoFlow = isAutoLayout(targetFrame) && drag.items.some(({ n }) => !n.absolute);
+  let targetFrame = frameAt(wp, drag.exclude);
+  // Never move a component inside itself (directly or through instances).
+  const canReparent = drag.items.every(({ n }) => canPlaceInside(n, targetFrame));
+  const intoFlow = canReparent && isAutoLayout(targetFrame) && drag.items.some(({ n }) => !n.absolute);
   if (!(e.metaKey || e.ctrlKey) && !intoFlow) {
     const sx = !e.shiftKey || dx !== 0 ? nearest([box.x, box.x + box.w / 2, box.x + box.w], T.xs, th) : null;
     const sy = !e.shiftKey || dy !== 0 ? nearest([box.y, box.y + box.h / 2, box.y + box.h], T.ys, th) : null;
@@ -527,7 +545,7 @@ function updateMove(wp, e) {
     : null;
   for (const { n, M0 } of drag.items) {
     const p = getParent(n.id);
-    if (p?.type !== 'group') {
+    if (p?.type !== 'group' && canReparent) {
       if (intoFlow && !(n.absolute && p === targetFrame)) {
         if (p !== targetFrame) n.absolute = false;
         detach(n);
@@ -855,6 +873,12 @@ function onContextMenu(e) {
     '-',
     { label: 'Group selection', shortcut: '⌘G', action: () => wrapSelection('group') },
     { label: 'Frame selection', shortcut: '⌥⌘G', action: () => wrapSelection('frame') },
+    { label: 'Create component', shortcut: '⌥⌘K', action: createComponent },
+    ...(nodes.some((n) => n.type === 'instance' || isInsideInstance(n)) ? [
+      { label: 'Go to main component', action: goToMainComponent },
+      { label: 'Reset overrides', action: resetSelectionOverrides },
+      { label: 'Detach instance', shortcut: '⌥⌘B', action: detachSelection },
+    ] : []),
     nodes.length === 1 && isAutoLayout(nodes[0])
       ? { label: 'Remove auto layout', shortcut: '⌥⇧A', action: () => removeAutoLayout() }
       : { label: 'Add auto layout', shortcut: '⇧A', action: addAutoLayout },
@@ -900,6 +924,14 @@ function onKeyDown(e) {
     return;
   }
 
+  if (mod && e.altKey && e.code === 'KeyK') {
+    e.preventDefault();
+    return createComponent();
+  }
+  if (mod && e.altKey && e.code === 'KeyB') {
+    e.preventDefault();
+    return detachSelection();
+  }
   if (mod) {
     switch (true) {
       case k === 'z' && e.shiftKey:

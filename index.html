@@ -17,6 +17,14 @@
         <button id="logo-btn" class="logo-btn" title="Main menu"></button>
         <input id="file-name" class="file-name" spellcheck="false" aria-label="File name">
       </div>
+      <div class="left-tabs">
+        <button class="left-tab active" data-left-tab="layers">Layers</button>
+        <button class="left-tab" data-left-tab="assets">Assets</button>
+      </div>
+      <div id="left-assets" class="left-pane" hidden>
+        <div class="assets-search"><input type="search" id="assets-search" placeholder="Search components" spellcheck="false"></div>
+        <div id="assets-list"></div>
+      </div>
       <section class="pages">
         <div class="panel-head"><span>Pages</span><button id="add-page" class="icon-btn" title="Add page"></button></div>
         <div id="pages-list"></div>

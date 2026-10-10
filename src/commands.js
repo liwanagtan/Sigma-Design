@@ -1,11 +1,23 @@
 import {
   state, page, view, emit, commit, select, selectedNodes, getNode, getParent, siblingsOf, walk,
   createNode, cloneNode, insertNode, detach, removeNodes, reindex, worldMatrix, worldBounds, worldCorners,
-  setWorldMatrix, saveViewsSoon, isFrameLike, editNode,
+  setWorldMatrix, saveViewsSoon, isFrameLike, editNode, pageOf, ancestors, nextName,
 } from './store.js';
 import { mul, inv, apply, translate, aabb, unionBoxes, round, IDENTITY } from './geom.js';
 import { measureText } from './text.js';
 import { isAutoLayout, guessLayout, setSizing } from './layout.js';
+import {
+  isInsideInstance, owningInstance, createInstance, detachInstance, resetOverrides, mainComponentOf, canPlaceInside,
+} from './components.js';
+
+const hint = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
+
+// Structural commands (delete, group, reorder…) can't touch layers inside an instance.
+function structural(nodes, verb) {
+  const ok = nodes.filter((n) => !isInsideInstance(n));
+  if (ok.length < nodes.length) hint(`Layers inside an instance can't be ${verb}. Edit the main component, or detach the instance.`);
+  return ok;
+}
 
 let viewportEl = null;
 export function setViewportElement(el) {
@@ -90,19 +102,27 @@ export function sortByZ(nodes) {
 
 // ---------- editing ----------
 export function deleteSelection() {
-  if (!state.selection.length) return;
-  removeNodes(state.selection);
+  const nodes = structural(selectedNodes(), 'deleted');
+  if (!nodes.length) return;
+  removeNodes(nodes.map((n) => n.id));
   state.selection = [];
   commit();
 }
 
 export function duplicateSelection() {
   const ids = [];
-  for (const n of sortByZ(selectedNodes())) {
-    const c = cloneNode(n);
+  for (const n of sortByZ(structural(selectedNodes(), 'duplicated'))) {
     const parent = getParent(n.id);
+    const at = siblingsOf(n).indexOf(n) + 1;
+    if (n.type === 'component') {
+      // Duplicating a main component creates an instance of it, like Figma.
+      const tl = apply(worldMatrix(n), { x: 0, y: 0 });
+      ids.push(createInstance(n, { parent, at, x: tl.x + (parent ? 0 : n.w + 40), y: tl.y }).id);
+      continue;
+    }
+    const c = cloneNode(n);
     if (!parent && isFrameLike(n)) c.x = n.x + n.w + 40;
-    insertNode(c, parent, siblingsOf(n).indexOf(n) + 1);
+    insertNode(c, parent, at);
     ids.push(c.id);
   }
   if (ids.length) {
@@ -112,7 +132,7 @@ export function duplicateSelection() {
 }
 
 export function wrapSelection(type = 'group', { commitAfter = true } = {}) {
-  const nodes = sortByZ(selectedNodes());
+  const nodes = sortByZ(structural(selectedNodes(), 'grouped'));
   if (!nodes.length) return null;
   const parent = getParent(nodes[0].id);
   const list = parent ? parent.children : page().children;
@@ -178,8 +198,9 @@ function reorderInFlow(nodes, dir) {
 
 export function ungroupSelection() {
   const ids = [];
-  for (const n of selectedNodes()) {
-    if (!n.children) {
+  for (const n of structural(selectedNodes(), 'ungrouped')) {
+    if (!n.children || n.type === 'instance') {
+      if (n.type === 'instance') hint('Use Detach instance (⌥⌘B) to ungroup an instance.');
       ids.push(n.id);
       continue;
     }
@@ -200,7 +221,7 @@ export function ungroupSelection() {
 }
 
 export function reorder(dir) {
-  const nodes = sortByZ(selectedNodes());
+  const nodes = sortByZ(structural(selectedNodes(), 'reordered'));
   if (!nodes.length) return;
   const seq = dir === 'front' || dir === 'backward' ? nodes : [...nodes].reverse();
   const sel = new Set(nodes);
@@ -272,7 +293,7 @@ export function distribute(axis) {
 }
 
 export function nudge(dx, dy) {
-  const nodes = selectedNodes().filter((n) => !n.locked);
+  const nodes = structural(selectedNodes(), 'moved').filter((n) => !n.locked);
   const inFlowNodes = nodes.filter((n) => isAutoLayout(getParent(n.id)) && !n.absolute);
   for (const n of nodes) if (!inFlowNodes.includes(n)) moveWorld(n, dx, dy);
   if (inFlowNodes.length) {
@@ -318,7 +339,7 @@ export function toggleLocked(nodes = selectedNodes()) {
 
 export function flip(axis) {
   // Mirror positions of children/rotation; shapes here are symmetric, so flipping a single shape mirrors its rotation.
-  for (const n of selectedNodes()) {
+  for (const n of structural(selectedNodes(), 'flipped')) {
     n.rotation = -n.rotation;
     if (n.children) {
       for (const c of n.children) {
@@ -402,4 +423,74 @@ export function setProps(props, { live = false, nodes = selectedNodes() } = {}) 
   }
   if (live) emit('doc');
   else commit();
+}
+
+// ---------- components ----------
+// ⌥⌘K: a frame becomes a component; anything else is wrapped in a new component.
+export function createComponent() {
+  const nodes = selectedNodes();
+  if (!nodes.length) return;
+  if (nodes.some(isInsideInstance)) return hint("Can't create a component inside an instance.");
+  if (nodes.some((n) => ancestors(n).some((a) => a.type === 'component'))) {
+    return hint("Components can't be created inside another component.");
+  }
+  let c;
+  if (nodes.length === 1 && nodes[0].type === 'component') return hint('This layer is already a component.');
+  if (nodes.length === 1 && nodes[0].type === 'frame') {
+    c = nodes[0];
+    c.type = 'component';
+  } else {
+    c = wrapSelection('frame', { commitAfter: false });
+    if (!c) return;
+    c.type = 'component';
+    c.name = nextName('component');
+    c.fills = [];
+  }
+  select([c.id]);
+  commit();
+}
+
+// ⌥⌘B: turn selected instances into plain frames.
+export function detachSelection() {
+  const insts = selectedNodes().filter((n) => n.type === 'instance' && !isInsideInstance(n));
+  if (!insts.length) return hint('Select an instance to detach.');
+  for (const inst of insts) detachInstance(inst);
+  select(insts.map((n) => n.id));
+  commit();
+}
+
+// Select a node anywhere in the document (switching page if needed) and zoom to it.
+export function revealNode(node) {
+  const pg = pageOf(node.id);
+  if (pg && pg.id !== state.doc.currentPageId) state.doc.currentPageId = pg.id;
+  state.selection = [node.id];
+  emit('doc');
+  requestAnimationFrame(() => zoomToSelection());
+}
+
+export function goToMainComponent() {
+  const n = selectedNodes()[0];
+  const inst = n?.type === 'instance' && !isInsideInstance(n) ? n : n && owningInstance(n);
+  const main = mainComponentOf(inst);
+  if (!main) return hint(inst ? 'The main component for this instance is missing.' : 'Select an instance first.');
+  revealNode(main);
+}
+
+// Reset overrides on the selected instances (whole instance) or instance layers (just that layer).
+export function resetSelectionOverrides() {
+  for (const n of selectedNodes()) {
+    if (n.type === 'instance' && !isInsideInstance(n)) resetOverrides(n);
+    else if (isInsideInstance(n)) resetOverrides(owningInstance(n), n.pathKey);
+  }
+  commit();
+}
+
+// Place an instance of `main` centered on a world point, inside the frame under that point if allowed.
+export function placeInstance(main, worldPt, parent = null) {
+  const inst = { type: 'instance', componentId: main.id };
+  if (parent && !canPlaceInside(inst, parent)) parent = null; // e.g. would put a component inside itself
+  const n = createInstance(main, { parent, x: Math.round(worldPt.x - main.w / 2), y: Math.round(worldPt.y - main.h / 2) });
+  select([n.id]);
+  commit();
+  return n;
 }

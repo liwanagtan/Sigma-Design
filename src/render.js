@@ -3,8 +3,11 @@ import {
 } from './store.js';
 import { css, mul, apply, unionBoxes, cornersOf } from './geom.js';
 import { textStyle } from './text.js';
+import { isInsideInstance } from './components.js';
 
 export const ACCENT = '#0D99FF';
+export const COMPONENT_ACCENT = '#9747FF';
+const isComponentish = (n) => n && (n.type === 'component' || n.type === 'componentSet' || n.type === 'instance');
 export const GUIDE = '#F24822';
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -185,20 +188,20 @@ export function renderOverlay(svg) {
     const tl = toScreen(apply(W, { x: 0, y: 0 }));
     const tr = toScreen(apply(W, { x: n.w, y: 0 }));
     const maxW = Math.max(0, Math.hypot(tr.x - tl.x, tr.y - tl.y));
-    let text = n.name;
+    let text = (n.type === 'component' ? '❖ ' : n.type === 'instance' ? '◇ ' : '') + n.name;
     if (labelWidth(text) > maxW) {
       while (text.length > 1 && labelWidth(text + '…') > maxW) text = text.slice(0, -1);
       text = maxW < 16 ? '' : text + '…';
     }
     const angle = Math.atan2(tr.y - tl.y, tr.x - tl.x) * 180 / Math.PI;
-    const color = sel.has(n.id) ? ACCENT : state.hoverId === n.id ? '#333' : '#8C8C8C';
+    const color = isComponentish(n) ? COMPONENT_ACCENT : sel.has(n.id) ? ACCENT : state.hoverId === n.id ? '#333' : '#8C8C8C';
     out += `<text transform="translate(${tl.x},${tl.y}) rotate(${angle})" y="-6" fill="${color}" font-size="11" font-weight="500" font-family="Inter,system-ui,sans-serif">${esc(text)}</text>`;
     frameLabels.push({ id: n.id, x: tl.x, y: tl.y - 18, w: Math.max(labelWidth(text), 8), h: 16, angle });
   }
 
   // Hover outline
   const hover = state.hoverId && !sel.has(state.hoverId) ? getNode(state.hoverId) : null;
-  if (hover && !state.marquee) out += outline(hover, 2);
+  if (hover && !state.marquee) out += outline(hover, 2, isComponentish(hover) ? COMPONENT_ACCENT : ACCENT);
   if (state.measureTarget) {
     const t = getNode(state.measureTarget);
     if (t) out += outline(t, 1, GUIDE);
@@ -207,18 +210,22 @@ export function renderOverlay(svg) {
   // Selection
   const g = selectionGeometry();
   if (g && !state.editingTextId) {
-    for (const n of selectedNodes()) if (g.kind === 'multi' || n.children) out += outline(n, 1);
+    const selNodes = selectedNodes();
+    const accent = selNodes.every(isComponentish) ? COMPONENT_ACCENT : ACCENT;
+    // Layers inside an instance can't be moved or resized, so they get no handles.
+    const handles = !selNodes.some(isInsideInstance);
+    for (const n of selNodes) if (g.kind === 'multi' || n.children) out += outline(n, 1, isComponentish(n) ? COMPONENT_ACCENT : ACCENT);
     if (g.kind === 'line') {
-      out += `<line x1="${g.ends[0].x}" y1="${g.ends[0].y}" x2="${g.ends[1].x}" y2="${g.ends[1].y}" stroke="${ACCENT}" stroke-width="1"/>`;
-      for (const p of g.ends) out += handle(p);
+      out += `<line x1="${g.ends[0].x}" y1="${g.ends[0].y}" x2="${g.ends[1].x}" y2="${g.ends[1].y}" stroke="${accent}" stroke-width="1"/>`;
+      if (handles) for (const p of g.ends) out += handle(p, accent);
       const mid = { x: (g.ends[0].x + g.ends[1].x) / 2, y: Math.max(g.ends[0].y, g.ends[1].y) + 8 };
-      out += pill(mid.x, mid.y, fmt(g.node.w), ACCENT);
+      out += pill(mid.x, mid.y, fmt(g.node.w), accent);
     } else {
-      out += poly(g.corners, `fill="none" stroke="${ACCENT}" stroke-width="1"`);
-      for (const p of g.corners) out += handle(p);
+      out += poly(g.corners, `fill="none" stroke="${accent}" stroke-width="1"`);
+      if (handles) for (const p of g.corners) out += handle(p, accent);
       const xs = g.corners.map((p) => p.x), ys = g.corners.map((p) => p.y);
       const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
-      out += pill(cx, Math.max(...ys) + 8, `${fmt(g.w)} × ${fmt(g.h)}`, ACCENT);
+      out += pill(cx, Math.max(...ys) + 8, `${fmt(g.w)} × ${fmt(g.h)}`, accent);
     }
   } else if (g && state.editingTextId) {
     out += poly(g.corners, `fill="none" stroke="${ACCENT}" stroke-width="1"`);
@@ -250,8 +257,8 @@ export function renderOverlay(svg) {
   svg.innerHTML = out;
 }
 
-function handle(p) {
-  return `<rect x="${p.x - 4}" y="${p.y - 4}" width="8" height="8" rx="1.5" fill="#fff" stroke="${ACCENT}" stroke-width="1"/>`;
+function handle(p, color = ACCENT) {
+  return `<rect x="${p.x - 4}" y="${p.y - 4}" width="8" height="8" rx="1.5" fill="#fff" stroke="${color}" stroke-width="1"/>`;
 }
 
 function outline(n, width, color = ACCENT) {

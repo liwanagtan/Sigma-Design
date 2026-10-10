@@ -55,7 +55,8 @@ export function pickFromPath(path, { deep = false } = {}) {
     const i = path.indexOf(p);
     if (i >= 0 && i < path.length - 1) return path[i + 1];
   }
-  if (isFrameLike(path[0]) && path.length > 1) return path[1];
+  // Top-level frames and components are "transparent": a click selects the layer inside. Instances aren't.
+  if (isFrameLike(path[0]) && path[0].type !== 'instance' && path.length > 1) return path[1];
   return path[0];
 }
 
@@ -64,7 +65,8 @@ export function frameAt(pt, exclude = new Set()) {
   const search = (nodes) => {
     for (let i = nodes.length - 1; i >= 0; i--) {
       const n = nodes[i];
-      if (!n.visible || n.locked || exclude.has(n.id) || !n.children) continue;
+      // Nothing can be drawn or dropped into an instance.
+      if (!n.visible || n.locked || exclude.has(n.id) || !n.children || n.type === 'instance') continue;
       const L = localPoint(n, pt);
       const inside = L.x >= 0 && L.y >= 0 && L.x <= n.w && L.y <= n.h;
       if (isFrameLike(n)) {

@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Phases 1–2 done**; next up is Phase 3. Each phase below should fit in one working session. Finish a phase, test it in the browser, commit, then move to the next. Work through the phases in order. **Phase 1 (Files home) is the priority** and doesn't depend on anything else.
+Status: **Phases 1–3 done**; next up is Phase 4. Each phase below should fit in one working session. Finish a phase, test it in the browser, commit, then move to the next. Work through the phases in order. **Phase 1 (Files home) is the priority** and doesn't depend on anything else.
 
 ## Scope
 
@@ -279,7 +279,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 
 - [x] Phase 1: Files home (priority)
 - [x] Phase 2: Foundations
-- [ ] Phase 3: Components and instances
+- [x] Phase 3: Components and instances
 - [ ] Phase 4: Component properties
 - [ ] Phase 5: Variants
 - [ ] Phase 6: Variables (core)

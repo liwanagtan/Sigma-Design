@@ -8,6 +8,7 @@ import { frameAt } from './hit.js';
 import { sortByZ, viewportSize } from './commands.js';
 import { toWorld } from './render.js';
 import { measureText } from './text.js';
+import { createInstance, canPlaceInside } from './components.js';
 
 export function toast(msg) {
   window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
@@ -66,7 +67,16 @@ function pasteSigma(json) {
   else if (data.parentId && getNode(data.parentId) && pageOf(data.parentId) === page()) parent = getNode(data.parentId);
 
   const created = [];
+  if (parent && !data.nodes.every(({ node }) => canPlaceInside(node, parent))) parent = null;
   for (const { node, wm } of data.nodes) {
+    const main = node.type === 'component' ? getNode(node.id) : null;
+    if (main?.type === 'component') {
+      // Pasting a main component in its own file creates an instance of it, like Figma.
+      const inst = createInstance(main, { parent });
+      setWorldMatrix(inst, wm);
+      created.push(inst);
+      continue;
+    }
     const c = cloneNode(node);
     walk([c], migratePaints);
     insertNode(c, parent);

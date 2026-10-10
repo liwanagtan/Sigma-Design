@@ -61,6 +61,9 @@ export function layerIcon(n) {
     case 'line': return i16('<path d="M1.5 10.5l9-9"/>');
     case 'text': return i16('<path d="M2 3V1.5h8V3M6 1.5v9M4.5 10.5h3"/>');
     case 'image': return i16('<rect x="1" y="1.5" width="10" height="9" rx="1"/><path d="M11 8L8 5l-6 5.5"/>');
+    case 'component': return i16('<path d="M6 1.2l1.9 1.9L6 5 4.1 3.1zM6 7l1.9 1.9L6 10.8 4.1 8.9zM3.1 4.1L5 6 3.1 7.9 1.2 6zM8.9 4.1L10.8 6 8.9 7.9 7 6z"/>');
+    case 'instance': return i16('<path d="M6 1.5L10.5 6 6 10.5 1.5 6z"/>');
+    case 'componentSet': return i16('<path d="M6 1.5L10.5 6 6 10.5 1.5 6z" stroke-dasharray="1.6 1.2"/>');
     default: return '';
   }
 }

@@ -169,7 +169,10 @@ export function worldBounds(n) {
 }
 
 // ---------- node factory ----------
-const NAMES = { frame: 'Frame', rect: 'Rectangle', ellipse: 'Ellipse', line: 'Line', text: 'Text', group: 'Group', image: 'Image' };
+const NAMES = {
+  frame: 'Frame', rect: 'Rectangle', ellipse: 'Ellipse', line: 'Line', text: 'Text', group: 'Group', image: 'Image',
+  component: 'Component', componentSet: 'Component set', instance: 'Instance',
+};
 const counters = {};
 
 export function nextName(type) {

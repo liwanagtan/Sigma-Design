@@ -1,20 +1,24 @@
 import {
   state, page, view, emit, commit, select, selectedNodes, getNode, getParent, siblingsOf, ancestors, isAncestor,
-  uid, detach, insertNode, worldMatrix, setWorldMatrix, createNode, undo, redo, makePaint, isFrameLike, editNode,
+  uid, detach, insertNode, worldMatrix, setWorldMatrix, createNode, undo, redo, makePaint, isFrameLike, editNode, worldBounds,
 } from './store.js';
 import { translate } from './geom.js';
 import { icons, layerIcon } from './icons.js';
 import {
   setTool, setProps, align, distribute, zoomIn, zoomOut, zoomTo100, zoomToFit, zoomToSelection, zoomAt,
   viewportSize, sortByZ, toggleVisible, toggleLocked, addAutoLayout, removeAutoLayout,
+  placeInstance, duplicateSelection, detachSelection, goToMainComponent, resetSelectionOverrides,
 } from './commands.js';
 import { isAutoLayout, getSizing } from './layout.js';
+import {
+  isInsideInstance, owningInstance, canPlaceInside, listComponents, instancesOf, mainComponentOf, overrideCount,
+} from './components.js';
 import { exportNodes, saveFile, pickImages } from './io.js';
 import { createFile, openFile, goHome, pickFilesToImport } from './files.js';
 import { sampleDocument } from './sample.js';
 import { showContextMenu } from './menu.js';
 import { stopEditing } from './text.js';
-import { toWorld } from './render.js';
+import { toWorld, nodeWorldSVG } from './render.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -22,7 +26,10 @@ const MIXED = Symbol('mixed');
 
 export const FONTS = ['Inter', 'Roboto', 'Space Grotesk', 'Playfair Display', 'JetBrains Mono', 'Arial', 'Georgia', 'Times New Roman', 'Courier New'];
 const WEIGHTS = [[300, 'Light'], [400, 'Regular'], [500, 'Medium'], [600, 'Semi Bold'], [700, 'Bold'], [800, 'Extra Bold']];
-const TYPE_LABEL = { frame: 'Frame', group: 'Group', rect: 'Rectangle', ellipse: 'Ellipse', line: 'Line', text: 'Text', image: 'Image' };
+const TYPE_LABEL = {
+  frame: 'Frame', group: 'Group', rect: 'Rectangle', ellipse: 'Ellipse', line: 'Line', text: 'Text', image: 'Image',
+  component: 'Component', componentSet: 'Component set', instance: 'Instance',
+};
 const FRAME_PRESETS = [
   ['iPhone 16', 393, 852], ['iPhone 16 Pro Max', 440, 956], ['Android Compact', 412, 917], ['iPad mini', 744, 1133],
   ['Desktop', 1440, 1024], ['MacBook Air', 1280, 832], ['Slide 16:9', 1920, 1080], ['Instagram post', 1080, 1350],
@@ -35,6 +42,7 @@ export function initPanels() {
   initPages();
   initLayers();
   initProps();
+  initAssets();
   initToast();
   window.addEventListener('sigma:rename', (e) => startRename(e.detail));
 }
@@ -114,7 +122,7 @@ function showShortcuts() {
     ['Tools', [['Move', 'V'], ['Hand / pan', 'H or hold Space'], ['Frame', 'F'], ['Rectangle', 'R'], ['Ellipse', 'O'], ['Line', 'L'], ['Text', 'T'], ['Place image', '⇧⌘K']]],
     ['Canvas', [['Zoom in / out', '⌘+ / ⌘−  or ⌘-scroll / pinch'], ['Zoom to 100%', '⇧0'], ['Zoom to fit', '⇧1'], ['Zoom to selection', '⇧2'], ['Pan', 'Scroll / Space-drag']]],
     ['Selection', [['Select all', '⌘A'], ['Deep select', '⌘-click'], ['Select inside', 'Double-click / Enter'], ['Select parent', '⇧Enter'], ['Measure distance', 'Hold ⌥']]],
-    ['Edit', [['Undo / Redo', '⌘Z / ⇧⌘Z'], ['Copy / Paste / Cut', '⌘C / ⌘V / ⌘X'], ['Duplicate', '⌘D or ⌥-drag'], ['Delete', '⌫'], ['Group / Ungroup', '⌘G / ⇧⌘G'], ['Frame selection', '⌥⌘G'], ['Add / remove auto layout', '⇧A / ⌥⇧A'], ['Reorder in auto layout', 'Drag or arrow keys'], ['Nudge', 'Arrows (⇧ = 10px)'], ['Bring forward / Send backward', '⌘] / ⌘['], ['To front / To back', '⌥⌘] / ⌥⌘['], ['Hide / Lock', '⇧⌘H / ⇧⌘L'], ['Rename', '⌘R'], ['Flip', '⇧H / ⇧V']]],
+    ['Edit', [['Undo / Redo', '⌘Z / ⇧⌘Z'], ['Copy / Paste / Cut', '⌘C / ⌘V / ⌘X'], ['Duplicate', '⌘D or ⌥-drag'], ['Delete', '⌫'], ['Group / Ungroup', '⌘G / ⇧⌘G'], ['Frame selection', '⌥⌘G'], ['Add / remove auto layout', '⇧A / ⌥⇧A'], ['Create component', '⌥⌘K'], ['Detach instance', '⌥⌘B'], ['Reorder in auto layout', 'Drag or arrow keys'], ['Nudge', 'Arrows (⇧ = 10px)'], ['Bring forward / Send backward', '⌘] / ⌘['], ['To front / To back', '⌥⌘] / ⌥⌘['], ['Hide / Lock', '⇧⌘H / ⇧⌘L'], ['Rename', '⌘R'], ['Flip', '⇧H / ⇧V']]],
     ['Transform', [['Keep proportions', 'Hold ⇧ while resizing'], ['Resize from center', 'Hold ⌥ while resizing'], ['Snap rotation to 15°', 'Hold ⇧ while rotating'], ['Disable snapping', 'Hold ⌘ while dragging']]],
   ];
   const wrap = document.createElement('div');
@@ -287,9 +295,12 @@ function initLayers() {
     if (!dragIds || !row) return;
     const target = getNode(row.dataset.id);
     if (dragIds.some((id) => id === target.id || isAncestor(getNode(id), target))) return;
+    const pos = dropPos(e, row);
+    const dest = pos === 'inside' ? target : getParent(target.id);
+    if (!dragIds.every((id) => !isInsideInstance(getNode(id)) && canPlaceInside(getNode(id), dest))) return;
     e.preventDefault();
     clearMarks();
-    row.classList.add(`drop-${dropPos(e, row)}`);
+    row.classList.add(`drop-${pos}`);
   });
   list.addEventListener('dragleave', (e) => {
     if (!list.contains(e.relatedTarget)) clearMarks();
@@ -301,10 +312,11 @@ function initLayers() {
     if (!dragIds || !row) return;
     const target = getNode(row.dataset.id);
     const pos = dropPos(e, row);
-    const nodes = sortByZ(dragIds.map(getNode).filter(Boolean)).filter((n) => n !== target && !isAncestor(n, target));
+    const parent = pos === 'inside' ? target : getParent(target.id);
+    const nodes = sortByZ(dragIds.map(getNode).filter(Boolean))
+      .filter((n) => n !== target && !isAncestor(n, target) && !isInsideInstance(n) && canPlaceInside(n, parent));
     dragIds = null;
     if (!nodes.length) return;
-    const parent = pos === 'inside' ? target : getParent(target.id);
     const seq = pos === 'before' ? [...nodes].reverse() : nodes;
     for (const n of seq) {
       const M = worldMatrix(n);
@@ -348,12 +360,14 @@ export function renderLayers(force = false) {
   if (!force && list.querySelector('input')) return;
   const sel = new Set(state.selection);
   const rows = [];
-  const walkRows = (nodes, depth, inSelected) => {
+  const walkRows = (nodes, depth, inSelected, inInstance) => {
     for (let i = nodes.length - 1; i >= 0; i--) {
       const n = nodes[i];
       const kids = n.children?.length;
       const open = kids && !state.collapsed.has(n.id);
       const cls = ['layer-row', n.type];
+      if (inInstance) cls.push('in-instance');
+      if (n.type === 'component' || n.type === 'instance' || n.type === 'componentSet') cls.push('componentish');
       if (sel.has(n.id)) cls.push('selected');
       else if (inSelected) cls.push('in-selected');
       if (!n.visible) cls.push('is-hidden');
@@ -366,7 +380,7 @@ export function renderLayers(force = false) {
         `<span class="row-actions"><button class="icon-btn" data-act="lock" title="Lock">${n.locked ? icons.lock : icons.unlock}</button>` +
         `<button class="icon-btn" data-act="vis" title="Show/hide">${n.visible ? icons.eye : icons.eyeOff}</button></span></div>`,
       );
-      if (open) walkRows(n.children, depth + 1, inSelected || sel.has(n.id));
+      if (open) walkRows(n.children, depth + 1, inSelected || sel.has(n.id), inInstance || n.type === 'instance');
     }
   };
   walkRows(page().children, 0, false);
@@ -533,11 +547,13 @@ function buildProps() {
   const types = new Set(nodes.map((n) => n.type));
   const single = nodes.length === 1 ? nodes[0] : null;
   const has = (pred) => nodes.every(pred);
-  let html = '';
+  // Layers inside an instance take their geometry from the main component.
+  const lockedGeometry = nodes.some(isInsideInstance);
+  let html = componentSection(nodes);
 
   // Alignment
   const alignBtns = [['left', 'alignLeft'], ['hcenter', 'alignHCenter'], ['right', 'alignRight'], ['top', 'alignTop'], ['vcenter', 'alignVCenter'], ['bottom', 'alignBottom']];
-  const canAlign = nodes.length > 1 || (single && getParent(single.id));
+  const canAlign = !lockedGeometry && (nodes.length > 1 || (single && getParent(single.id)));
   html += `<div class="section align-bar">${alignBtns.map(([k, i]) => `<button class="icon-btn" data-align="${k}" ${canAlign ? '' : 'disabled'} title="Align ${k}">${icons[i]}</button>`).join('')}` +
     `<button class="icon-btn" data-distribute="x" ${nodes.length > 2 ? '' : 'disabled'} title="Distribute horizontal spacing">${icons.distH}</button>` +
     `<button class="icon-btn" data-distribute="y" ${nodes.length > 2 ? '' : 'disabled'} title="Distribute vertical spacing">${icons.distV}</button></div>`;
@@ -574,8 +590,8 @@ function buildProps() {
     const abs = common(nodes, (n) => !!n.absolute);
     layout += `<label class="check-row" title="Ignore auto layout and position freely"><input type="checkbox" data-bool="absolute" ${abs === true ? 'checked' : ''}> Absolute position</label>`;
   }
-  html += section(title, layout);
-  html += autoLayoutSection(nodes);
+  html += section(title, lockedGeometry ? `<fieldset class="readonly" disabled title="Comes from the main component">${layout}</fieldset>` : layout);
+  if (!lockedGeometry) html += autoLayoutSection(nodes);
 
   // Layer
   html += section('Layer', `<div class="grid2">${numField('opacity', '', nodes, { icon: '<span class="op-icon"></span>' })}<span></span></div>`);
@@ -627,6 +643,9 @@ function buildProps() {
 }
 
 function autoLayoutSection(nodes) {
+  // Instances get their auto layout from the main component; its values can be overridden, not added or removed.
+  const fromMain = nodes.some((n) => n.type === 'instance');
+  if (fromMain && !nodes.every(isAutoLayout)) return '';
   if (!nodes.every(isAutoLayout)) {
     return section('Auto layout', '', `<button class="icon-btn" data-action="add-al" title="Add auto layout  ⇧A">${icons.plus}</button>`);
   }
@@ -649,7 +668,99 @@ function autoLayoutSection(nodes) {
   const body = `<div class="grid2"><div class="seg">${dir}</div>${numField('gap', '', nodes, { icon: horiz ? icons.gapH : icons.gapV })}</div>` +
     `<div class="al-mid"><div class="al-grid${mode === MIXED ? '' : ` ${mode}`}${spacing === 'auto' ? ' between' : ''}">${cells}</div>` +
     `<div class="al-fields">${numField('padH', '', nodes, { icon: icons.padH })}${numField('padV', '', nodes, { icon: icons.padV })}</div></div>`;
-  return section('Auto layout', body, `<button class="icon-btn" data-action="remove-al" title="Remove auto layout  ⌥⇧A">${icons.minus}</button>`);
+  return section('Auto layout', body, fromMain ? '' : `<button class="icon-btn" data-action="remove-al" title="Remove auto layout  ⌥⇧A">${icons.minus}</button>`);
+}
+
+// ---------- components ----------
+function componentSection(nodes) {
+  const single = nodes.length === 1 ? nodes[0] : null;
+  if (single?.type === 'component') {
+    const count = instancesOf(single.id).length;
+    return section('Main component',
+      `<textarea class="desc" data-desc rows="2" placeholder="Add a description…" spellcheck="false">${esc(single.description || '')}</textarea>` +
+      `<div class="muted">${count} instance${count === 1 ? '' : 's'} in this file</div>`,
+      `<button class="icon-btn" data-action="add-instance" title="Create an instance next to it">${icons.plus}</button>`);
+  }
+  if (single?.type === 'instance' && !isInsideInstance(single)) {
+    const main = mainComponentOf(single);
+    const n = overrideCount(single);
+    const body = (main
+      ? `<button class="link-row" data-action="go-main" title="Go to main component"><span class="licon purple">${layerIcon(main)}</span><span class="link-name">${esc(main.name)}</span><span class="muted">Go to main ›</span></button>`
+      : '<div class="warn">The main component is missing. Detach the instance to keep editing it freely.</div>') +
+      `<div class="btn-row"><button class="btn" data-action="reset-overrides" ${n ? '' : 'disabled'}>Reset ${n ? `${n} ` : ''}override${n === 1 ? '' : 's'}</button>` +
+      '<button class="btn" data-action="detach" title="⌥⌘B">Detach</button></div>';
+    return section('Instance', body);
+  }
+  if (nodes.length && nodes.every(isInsideInstance)) {
+    const owner = owningInstance(nodes[0]);
+    const n = single ? overrideCount(owner, single.pathKey) : 0;
+    return section('Instance layer',
+      `<div class="muted">Part of “${esc(owner.name)}”. Appearance and text can be overridden here; size and position come from the main component.</div>` +
+      (single ? `<button class="btn wide" data-action="reset-overrides" ${n ? '' : 'disabled'}>Reset overrides</button>` : ''));
+  }
+  return '';
+}
+
+// ---------- assets ----------
+let leftTab = 'layers';
+let assetQuery = '';
+
+function initAssets() {
+  document.querySelector('.left-tabs').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-left-tab]');
+    if (!b) return;
+    leftTab = b.dataset.leftTab;
+    for (const t of document.querySelectorAll('[data-left-tab]')) t.classList.toggle('active', t === b);
+    $('#left-assets').hidden = leftTab !== 'assets';
+    document.querySelector('#left .pages').hidden = leftTab !== 'layers';
+    document.querySelector('#left .layers').hidden = leftTab !== 'layers';
+    renderAssets();
+  });
+  $('#assets-search').addEventListener('input', (e) => {
+    assetQuery = e.target.value;
+    renderAssets();
+  });
+  const list = $('#assets-list');
+  list.addEventListener('click', (e) => {
+    const tile = e.target.closest('[data-component]');
+    const main = tile && getNode(tile.dataset.component);
+    if (!main) return;
+    const { width, height } = viewportSize();
+    placeInstance(main, toWorld({ x: width / 2, y: height / 2 }));
+  });
+  list.addEventListener('dragstart', (e) => {
+    const tile = e.target.closest('[data-component]');
+    if (!tile) return;
+    e.dataTransfer.setData('application/x-sigma-component', tile.dataset.component);
+    e.dataTransfer.effectAllowed = 'copy';
+  });
+}
+
+export function renderAssets() {
+  if (leftTab !== 'assets' || !state.doc) return;
+  const q = assetQuery.trim().toLowerCase();
+  const comps = listComponents().filter(({ node }) => !q || node.name.toLowerCase().includes(q));
+  const list = $('#assets-list');
+  if (!comps.length) {
+    list.innerHTML = `<div class="empty-hint">${q ? 'No components match.' : 'No components yet. Select layers and press ⌥⌘K to create one.'}</div>`;
+    return;
+  }
+  const byPage = new Map();
+  for (const c of comps) {
+    if (!byPage.has(c.page)) byPage.set(c.page, []);
+    byPage.get(c.page).push(c.node);
+  }
+  list.innerHTML = [...byPage].map(([pg, nodes]) =>
+    `<div class="assets-group"><div class="assets-group-title">${esc(pg.name)}</div><div class="assets-grid">` +
+    nodes.map((n) => `<div class="asset" draggable="true" data-component="${n.id}" title="${esc(n.name)} — click to insert, or drag onto the canvas">` +
+      `<div class="asset-thumb">${componentThumb(n)}</div><div class="asset-name">${esc(n.name)}</div></div>`).join('') +
+    '</div></div>').join('');
+}
+
+function componentThumb(n) {
+  const b = worldBounds(n);
+  if (!(b.w > 0 && b.h > 0)) return '';
+  return `<svg viewBox="${b.x} ${b.y} ${b.w} ${b.h}" preserveAspectRatio="xMidYMid meet">${nodeWorldSVG(n)}</svg>`;
 }
 
 let exportScale = 2, exportFormat = 'png';
@@ -710,6 +821,10 @@ function initProps() {
     }
     if (t.dataset.paintColor) return updatePaint(t.dataset.paintColor, (p) => void (p.color = t.value.toUpperCase()));
     if (t.dataset.bool) return setProps({ [t.dataset.bool]: t.checked });
+    if (t.hasAttribute('data-desc')) {
+      for (const n of selectedNodes()) editNode(n, ['description'], () => void (n.description = t.value.trim()));
+      return commit();
+    }
     if (t.dataset.sizing) return setProps({ [t.dataset.sizing === 'w' ? 'sizingH' : 'sizingV']: t.value });
     if (t.dataset.select) {
       const v = t.dataset.select === 'fontWeight' ? +t.value : t.value;
@@ -793,6 +908,14 @@ function initProps() {
       return;
     }
     switch (b.dataset.action) {
+      case 'add-instance':
+        return duplicateSelection();
+      case 'go-main':
+        return goToMainComponent();
+      case 'reset-overrides':
+        return resetSelectionOverrides();
+      case 'detach':
+        return detachSelection();
       case 'add-al':
         return addAutoLayout();
       case 'remove-al':
@@ -816,7 +939,7 @@ function initProps() {
   // Scrubbable labels
   panel.addEventListener('pointerdown', (e) => {
     const lbl = e.target.closest('[data-scrub]');
-    if (!lbl) return;
+    if (!lbl || lbl.closest('fieldset[disabled]')) return;
     e.preventDefault();
     const key = lbl.dataset.scrub;
     const f = FIELDS[key];
