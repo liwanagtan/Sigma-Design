@@ -37,13 +37,24 @@ export const icons = {
   fixedSize: s16('<rect x="3" y="3" width="10" height="10" rx="1"/>'),
   rotation: s16('<path d="M3 13V8a5 5 0 0 1 5-5h1"/><path d="M3 13h10"/>'),
   radius: s16('<path d="M3 13V7a4 4 0 0 1 4-4h6"/>'),
+  alVertical: s16('<path d="M8 2.5v11M4.5 10L8 13.5 11.5 10"/>'),
+  alHorizontal: s16('<path d="M2.5 8h11M10 4.5L13.5 8 10 11.5"/>'),
+  gapH: s16('<path d="M3 3v10M13 3v10M7 8h2"/>'),
+  gapV: s16('<path d="M3 3h10M3 13h10M8 7v2"/>'),
+  padH: s16('<rect x="4.5" y="3.5" width="7" height="9" rx="1"/><path d="M2 3v10M14 3v10"/>'),
+  padV: s16('<rect x="3.5" y="4.5" width="9" height="7" rx="1"/><path d="M3 2h10M3 14h10"/>'),
+  link: s16('<path d="M6.5 9.5l3-3"/><path d="M7 4.5l1-1a2.5 2.5 0 0 1 3.5 3.5l-1 1M9 11.5l-1 1A2.5 2.5 0 0 1 4.5 9l1-1"/><path d="M3 3l1.5 1.5M13 13l-1.5-1.5"/>'),
+  linkOn: s16('<path d="M6.5 9.5l3-3"/><path d="M7 4.5l1-1a2.5 2.5 0 0 1 3.5 3.5l-1 1M9 11.5l-1 1A2.5 2.5 0 0 1 4.5 9l1-1"/>'),
   logo: `<svg width="20" height="20" viewBox="0 0 20 20"><rect width="20" height="20" rx="5" fill="#0D99FF"/><path d="M14 5.5H6.5L11 10l-4.5 4.5H14" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
 };
 
 export function layerIcon(n) {
   const i16 = (body) => `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1">${body}</svg>`;
   switch (n.type) {
-    case 'frame': return i16('<path d="M3.5 1v10M8.5 1v10M1 3.5h10M1 8.5h10"/>');
+    case 'frame':
+      if (n.layout?.mode === 'horizontal') return i16('<rect x="1.5" y="2.5" width="3.5" height="7" rx=".5"/><rect x="7" y="2.5" width="3.5" height="7" rx=".5"/>');
+      if (n.layout?.mode === 'vertical') return i16('<rect x="2.5" y="1.5" width="7" height="3.5" rx=".5"/><rect x="2.5" y="7" width="7" height="3.5" rx=".5"/>');
+      return i16('<path d="M3.5 1v10M8.5 1v10M1 3.5h10M1 8.5h10"/>');
     case 'group': return i16('<rect x="1.5" y="1.5" width="9" height="9" rx="1" stroke-dasharray="2 1.5"/>');
     case 'rect': return i16('<rect x="1.5" y="1.5" width="9" height="9" rx="1"/>');
     case 'ellipse': return i16('<circle cx="6" cy="6" r="4.5"/>');

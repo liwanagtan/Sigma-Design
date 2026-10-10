@@ -16,7 +16,19 @@ export const state = {
   spaceDown: false,
   collapsed: new Set(),
   pageViews: {}, // pageId -> {x, y, zoom}
+  layoutSkip: new Set(), // ids auto layout must not reposition (being dragged/drawn)
 };
+
+// Passes that derive geometry from the document (auto layout), run before render and commit.
+const normalizers = [];
+export function addNormalizer(fn) {
+  normalizers.push(fn);
+}
+export function normalizeDocument() {
+  fixGroups();
+  for (const fn of normalizers) fn();
+  fixGroups();
+}
 
 // ---------- ids ----------
 export function uid() {
@@ -150,13 +162,35 @@ export function nextName(type) {
   return `${NAMES[type]} ${++counters[type]}`;
 }
 
+// ---------- paints ----------
+// Layers have lists of fills and strokes, drawn bottom (index 0) to top. Stroke weight and
+// position are shared by all of a layer's strokes, like in Figma.
+export const makePaint = (color, opacity = 1) => ({ color, opacity, visible: true });
+
+// Convert the legacy single fill/stroke properties into paint lists. Safe to call repeatedly.
+export function migratePaints(n) {
+  if (!Array.isArray(n.fills)) n.fills = n.fill ? [makePaint(n.fill, n.fillOpacity ?? 1)] : [];
+  if (!Array.isArray(n.strokes)) n.strokes = n.stroke ? [makePaint(n.stroke, n.strokeOpacity ?? 1)] : [];
+  delete n.fill;
+  delete n.fillOpacity;
+  delete n.stroke;
+  delete n.strokeOpacity;
+  if (n.strokeWidth == null) n.strokeWidth = 1;
+  if (!n.strokeAlign) n.strokeAlign = n.type === 'line' ? 'center' : 'inside';
+}
+
+export function migrateDocument(doc) {
+  for (const pg of doc.pages) walk(pg.children, migratePaints);
+  return doc;
+}
+
 export function createNode(type, props = {}) {
   const base = {
     id: uid(), type, name: props.name || nextName(type),
     x: 0, y: 0, w: 100, h: 100, rotation: 0,
     opacity: 1, visible: true, locked: false,
     fill: '#D9D9D9', fillOpacity: 1,
-    stroke: null, strokeOpacity: 1, strokeWidth: 1,
+    stroke: null, strokeOpacity: 1, strokeWidth: 1, strokeAlign: 'inside',
     radius: 0,
   };
   if (type === 'frame') Object.assign(base, { fill: '#FFFFFF', children: [], clip: true });
@@ -169,7 +203,11 @@ export function createNode(type, props = {}) {
       lineHeight: null, letterSpacing: 0, textAlign: 'left', autoResize: 'width',
     });
   }
-  return Object.assign(base, props, { id: base.id });
+  const n = Object.assign(base, props, { id: base.id });
+  if ('fills' in props) delete n.fill;
+  if ('strokes' in props) delete n.stroke;
+  migratePaints(n);
+  return n;
 }
 
 export function cloneNode(n) {
@@ -274,7 +312,7 @@ let saveTimer = null;
 const snapshot = () => JSON.stringify(state.doc);
 
 export function commit() {
-  fixGroups();
+  normalizeDocument();
   const snap = snapshot();
   if (snap === lastSnapshot) return;
   if (lastSnapshot) past.push({ doc: lastSnapshot, selection: [...state.selection] });
@@ -329,7 +367,7 @@ export function saveViewsSoon() {
 }
 
 export function loadDocument(doc, views = {}) {
-  state.doc = doc;
+  state.doc = migrateDocument(doc);
   state.pageViews = views;
   state.selection = [];
   state.editingTextId = null;

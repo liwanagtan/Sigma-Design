@@ -1,9 +1,9 @@
 import {
   state, page, view, commit, select, selectedNodes, getNode, getParent, pageOf, createNode, cloneNode,
-  insertNode, removeNodes, worldMatrix, worldBounds, setWorldMatrix, loadDocument,
+  insertNode, removeNodes, worldMatrix, worldBounds, setWorldMatrix, loadDocument, walk, migratePaints,
 } from './store.js';
 import { mul, translate, unionBoxes, intersects } from './geom.js';
-import { nodeWorldSVG } from './render.js';
+import { nodeWorldSVG, strokeOverhang } from './render.js';
 import { frameAt } from './hit.js';
 import { sortByZ, viewportSize, zoomToFit } from './commands.js';
 import { toWorld } from './render.js';
@@ -69,6 +69,7 @@ function pasteSigma(json) {
   const created = [];
   for (const { node, wm } of data.nodes) {
     const c = cloneNode(node);
+    walk([c], migratePaints);
     insertNode(c, parent);
     setWorldMatrix(c, wm);
     created.push(c);
@@ -198,7 +199,14 @@ export function download(blob, filename) {
 const safeName = (s) => (s || 'Untitled').replace(/[\\/:*?"<>|]+/g, '-').trim();
 
 export function buildSVG(nodes) {
-  const box = unionBoxes(nodes.map(worldBounds));
+  let box = unionBoxes(nodes.map(worldBounds));
+  // Grow the canvas so center/outside strokes aren't cropped.
+  let pad = 0;
+  walk(nodes, (n) => {
+    pad = Math.max(pad, strokeOverhang(n));
+  });
+  pad = Math.ceil(pad);
+  box = { x: box.x - pad, y: box.y - pad, w: box.w + pad * 2, h: box.h + pad * 2 };
   const body = sortByZ(nodes).map(nodeWorldSVG).join('');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${box.w}" height="${box.h}" viewBox="${box.x} ${box.y} ${box.w} ${box.h}">${body}</svg>`;
   return { svg, box };
@@ -262,5 +270,11 @@ export function openFile() {
 export function newFile() {
   if (!confirm('Start a new file? The current file will be replaced (save it first if you want to keep it).')) return;
   loadDocument(sampleDocument({ blank: true }));
+  requestAnimationFrame(() => zoomToFit());
+}
+
+export function openSample() {
+  if (!confirm('Open the sample file? The current file will be replaced (save it first if you want to keep it).')) return;
+  loadDocument(sampleDocument());
   requestAnimationFrame(() => zoomToFit());
 }

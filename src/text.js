@@ -51,7 +51,8 @@ export function positionEditor() {
   const v = view();
   const M = mul([v.zoom, 0, 0, v.zoom, v.x, v.y], worldMatrix(n));
   editor.style.transform = css(M);
-  editor.setAttribute('style', `${textStyle(n)};color:${n.fill || '#000'};opacity:${n.fillOpacity ?? 1};` +
+  const top = [...(n.fills || [])].reverse().find((p) => p.visible !== false);
+  editor.setAttribute('style', `${textStyle(n)};color:${top?.color || '#000'};opacity:${top ? top.opacity : 1};` +
     `position:absolute;left:0;top:0;transform-origin:0 0;transform:${css(M)};outline:none;caret-color:#0D99FF;` +
     (n.autoResize === 'width' ? 'width:auto;min-width:1px;' : `width:${n.w}px;`) +
     (n.autoResize === 'fixed' ? `height:${n.h}px;` : ''));

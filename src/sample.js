@@ -1,4 +1,7 @@
 import { createNode, uid } from './store.js';
+import { DEFAULT_LAYOUT } from './layout.js';
+
+const autoLayout = (props) => ({ ...DEFAULT_LAYOUT, ...props });
 
 const text = (props) => createNode('text', { autoResize: 'width', ...props, name: props.name || props.text.slice(0, 30) });
 
@@ -15,19 +18,40 @@ export function sampleDocument({ blank = false } = {}) {
     text({ text: 'Sigma', x: 66, y: 21, fontSize: 18, fontWeight: 700, w: 60, h: 22 }),
     text({ text: 'Design on an infinite canvas', x: 64, y: 160, fontSize: 48, fontWeight: 700, letterSpacing: -1, w: 640, h: 58 }),
     text({ text: 'Draw frames, shapes and text. Drag, resize, rotate, and snap\nwith smart guides — all in your browser.', x: 64, y: 236, fontSize: 18, lineHeight: 150, fill: '#555555', w: 520, h: 54 }),
-    createNode('rect', { name: 'Button', x: 64, y: 320, w: 160, h: 48, radius: 8, fill: '#0D99FF' }),
-    text({ text: 'Get started', x: 100, y: 334, fontSize: 16, fontWeight: 600, fill: '#FFFFFF', w: 88, h: 19 }),
+    button(),
     createNode('rect', { name: 'Card', x: 600, y: 300, w: 280, h: 220, radius: 16, fill: '#FFC700', rotation: -6 }),
     createNode('ellipse', { name: 'Blob', x: 720, y: 360, w: 180, h: 180, fill: '#9747FF', fillOpacity: 0.85 }),
   );
-  const mobile = createNode('frame', { name: 'Mobile', x: 1040, y: 0, w: 390, h: 600, fill: '#1E1E1E', radius: 0 });
+  // Vertical auto layout screen: children fill the width, the row splits its width between two tiles.
+  const mobile = createNode('frame', {
+    name: 'Mobile', x: 1040, y: 0, w: 390, h: 600, fill: '#1E1E1E',
+    layout: autoLayout({ mode: 'vertical', gap: 16, pt: 64, pr: 24, pb: 24, pl: 24 }), sizingH: 'fixed', sizingV: 'fixed',
+  });
+  const row = createNode('frame', {
+    name: 'Row', fill: null, w: 342, h: 160,
+    layout: autoLayout({ mode: 'horizontal', gap: 16 }), sizingH: 'fill', sizingV: 'hug',
+  });
+  row.children.push(
+    createNode('rect', { name: 'Tile', w: 163, h: 160, radius: 20, fill: '#F24822', sizingH: 'fill' }),
+    createNode('rect', { name: 'Tile', w: 163, h: 160, radius: 20, fill: '#0D99FF', sizingH: 'fill' }),
+  );
   mobile.children.push(
-    text({ text: 'Hello 👋', x: 24, y: 64, fontSize: 32, fontWeight: 700, fill: '#FFFFFF', w: 140, h: 39 }),
-    createNode('rect', { name: 'Tile', x: 24, y: 136, w: 342, h: 160, radius: 20, fill: '#14AE5C' }),
-    createNode('rect', { name: 'Tile', x: 24, y: 312, w: 163, h: 160, radius: 20, fill: '#F24822' }),
-    createNode('rect', { name: 'Tile', x: 203, y: 312, w: 163, h: 160, radius: 20, fill: '#0D99FF' }),
-    createNode('line', { name: 'Divider', x: 24, y: 504, w: 342, h: 0, stroke: '#444444', strokeWidth: 1 }),
+    text({ text: 'Hello 👋', fontSize: 32, fontWeight: 700, fill: '#FFFFFF' }),
+    createNode('rect', { name: 'Tile', w: 342, h: 160, radius: 20, fill: '#14AE5C', sizingH: 'fill' }),
+    row,
+    createNode('line', { name: 'Divider', w: 342, h: 0, stroke: '#444444', strokeWidth: 1, sizingH: 'fill' }),
   );
   page1.children.push(hero, mobile);
   return doc;
+}
+
+// Hug-contents button: edit the label and the button grows with it.
+function button() {
+  const btn = createNode('frame', {
+    name: 'Button', x: 64, y: 320, w: 160, h: 48, radius: 8, fill: '#0D99FF', clip: false,
+    layout: autoLayout({ mode: 'horizontal', gap: 8, pt: 14, pb: 14, pl: 24, pr: 24, alignP: 'center', alignC: 'center' }),
+    sizingH: 'hug', sizingV: 'hug',
+  });
+  btn.children.push(text({ text: 'Get started', fontSize: 16, fontWeight: 600, fill: '#FFFFFF' }));
+  return btn;
 }

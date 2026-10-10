@@ -1,4 +1,5 @@
-import { state, page, view, subscribe, emit, fixGroups, loadFromStorage, loadDocument, walk } from './store.js';
+import { state, page, view, subscribe, emit, normalizeDocument, addNormalizer, loadFromStorage, loadDocument, walk } from './store.js';
+import { applyLayouts } from './layout.js';
 import { renderScene, applyViewTransform, renderOverlay } from './render.js';
 import { initInteractions, refreshCursor } from './interact.js';
 import { initTextEditor, positionEditor, measureText } from './text.js';
@@ -30,7 +31,7 @@ subscribe((kind) => {
 function frame() {
   scheduled = false;
   if (dirty.scene) {
-    fixGroups();
+    normalizeDocument();
     renderScene(world);
   }
   if (dirty.view || dirty.scene) {
@@ -57,10 +58,12 @@ function frame() {
 
 function remeasureAllText() {
   for (const pg of state.doc.pages) walk(pg.children, (n) => void (n.type === 'text' && measureText(n)));
+  normalizeDocument();
   emit('doc');
 }
 
 // ---------- boot ----------
+addNormalizer(applyLayouts);
 initTextEditor(canvas);
 setViewportElement(canvas);
 initPanels();

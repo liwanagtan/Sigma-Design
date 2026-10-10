@@ -5,6 +5,7 @@ import {
 } from './store.js';
 import { mul, inv, apply, translate, aabb, unionBoxes, round, IDENTITY } from './geom.js';
 import { measureText } from './text.js';
+import { isAutoLayout, guessLayout, setSizing } from './layout.js';
 
 let viewportEl = null;
 export function setViewportElement(el) {
@@ -110,9 +111,9 @@ export function duplicateSelection() {
   }
 }
 
-export function wrapSelection(type = 'group') {
+export function wrapSelection(type = 'group', { commitAfter = true } = {}) {
   const nodes = sortByZ(selectedNodes());
-  if (!nodes.length) return;
+  if (!nodes.length) return null;
   const parent = getParent(nodes[0].id);
   const list = parent ? parent.children : page().children;
   const PW = parent ? worldMatrix(parent) : IDENTITY;
@@ -130,7 +131,49 @@ export function wrapSelection(type = 'group') {
   reindex();
   nodes.forEach((n, i) => setWorldMatrix(n, mats[i]));
   select([g.id]);
+  if (commitAfter) commit();
+  return g;
+}
+
+// ---------- auto layout ----------
+// Shift+A: turn a frame into an auto layout frame, or wrap the selection in a new one.
+export function addAutoLayout() {
+  const nodes = selectedNodes();
+  if (!nodes.length) return;
+  let f;
+  if (nodes.length === 1 && nodes[0].type === 'frame' && !isAutoLayout(nodes[0])) {
+    f = nodes[0];
+  } else {
+    f = wrapSelection('frame', { commitAfter: false });
+    if (!f) return;
+    f.fills = [];
+  }
+  guessLayout(f);
+  select([f.id]);
   commit();
+}
+
+export function removeAutoLayout(nodes = selectedNodes()) {
+  const frames = nodes.filter(isAutoLayout);
+  for (const f of frames) {
+    f.layout = null;
+    if (f.sizingH === 'hug') f.sizingH = 'fixed';
+    if (f.sizingV === 'hug') f.sizingV = 'fixed';
+  }
+  if (frames.length) commit();
+}
+
+// Move auto layout children earlier/later in the flow (arrow keys).
+function reorderInFlow(nodes, dir) {
+  const ordered = dir > 0 ? sortByZ(nodes).reverse() : sortByZ(nodes);
+  for (const n of ordered) {
+    const list = siblingsOf(n);
+    const i = list.indexOf(n);
+    const j = i + dir;
+    if (j < 0 || j >= list.length || nodes.includes(list[j])) continue;
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  reindex();
 }
 
 export function ungroupSelection() {
@@ -230,7 +273,14 @@ export function distribute(axis) {
 
 export function nudge(dx, dy) {
   const nodes = selectedNodes().filter((n) => !n.locked);
-  for (const n of nodes) moveWorld(n, dx, dy);
+  const inFlowNodes = nodes.filter((n) => isAutoLayout(getParent(n.id)) && !n.absolute);
+  for (const n of nodes) if (!inFlowNodes.includes(n)) moveWorld(n, dx, dy);
+  if (inFlowNodes.length) {
+    // In auto layout, arrows along the flow direction reorder instead of moving.
+    const horiz = getParent(inFlowNodes[0].id).layout.mode === 'horizontal';
+    const d = Math.sign(horiz ? dx : dy);
+    if (d) reorderInFlow(inFlowNodes, d);
+  }
   if (nodes.length) commit();
 }
 
@@ -290,6 +340,7 @@ export function scaleKids(kids, kids0, sx, sy) {
     k.w = round(k0.w * sx);
     k.h = round(k0.h * sy);
     if (k.type === 'text') k.autoResize = 'fixed';
+    k.sizingH = k.sizingV = 'fixed';
     if (k.type === 'group') scaleKids(k.children, k0.children, sx, sy);
   });
 }
@@ -298,22 +349,45 @@ export function scaleKids(kids, kids0, sx, sy) {
 export function setProps(props, { live = false, nodes = selectedNodes() } = {}) {
   for (const n of nodes) {
     for (const [k, v] of Object.entries(props)) {
+      if (k.startsWith('layout.')) {
+        if (n.layout) n.layout[k.slice(7)] = v;
+        continue;
+      }
+      if (k === 'sizingH' || k === 'sizingV') {
+        const axis = k === 'sizingH' ? 'w' : 'h';
+        if (v === 'hug' && !(isAutoLayout(n) || n.type === 'text')) continue;
+        if (v === 'fill' && !isAutoLayout(getParent(n.id))) continue;
+        if (axis === 'h' && n.type === 'line') continue;
+        setSizing(n, axis, v);
+        continue;
+      }
       if (k === 'radius' && !['rect', 'frame', 'image'].includes(n.type)) continue;
+      if (k === 'strokeAlign' && n.type === 'line') continue;
       if (k.startsWith('font') || ['lineHeight', 'letterSpacing', 'textAlign', 'autoResize', 'text'].includes(k)) {
         if (n.type !== 'text') continue;
       }
+      if (k === 'autoResize' && v !== 'width' && n.sizingH === 'hug') n.sizingH = 'fixed';
+      if (k === 'absolute' && !isAutoLayout(getParent(n.id))) continue;
       if (k === 'h' && n.type === 'line') continue;
       if (k === 'w' || k === 'h') {
         // Resize about the top-left corner in parent space (keeps x/y stable even if rotated).
         const M = worldMatrix(n);
         const next = Math.max(0.01, v);
+        const other = k === 'w' ? 'h' : 'w';
+        const ratio = n[k] > 0 ? next / n[k] : 1;
+        const lock = n.lockAspect && n.type !== 'line' && n[other] > 0;
         if (n.type === 'group' && n[k] > 0) {
-          const r = next / n[k];
-          scaleKids(n.children, JSON.parse(JSON.stringify(n.children)), k === 'w' ? r : 1, k === 'h' ? r : 1);
+          scaleKids(n.children, JSON.parse(JSON.stringify(n.children)), k === 'w' || lock ? ratio : 1, k === 'h' || lock ? ratio : 1);
         }
         n[k] = next;
+        if (lock) n[other] = Math.max(0.01, round(n[other] * ratio));
         setWorldMatrix(n, M);
-        if (n.type === 'text') n.autoResize = k === 'w' && n.autoResize === 'width' ? 'height' : k === 'h' ? 'fixed' : n.autoResize;
+        if (n.type === 'text') {
+          n.autoResize = lock || k === 'h' ? 'fixed' : n.autoResize === 'width' ? 'height' : n.autoResize;
+        }
+        // Typing a size makes that axis fixed (no longer hug/fill), like Figma.
+        if (k === 'w' || lock) n.sizingH = 'fixed';
+        if (k === 'h' || lock) n.sizingV = 'fixed';
         continue;
       }
       if (k === 'rotation') {

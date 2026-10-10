@@ -1,14 +1,15 @@
 import {
   state, page, view, emit, commit, select, selectedNodes, getNode, getParent, siblingsOf, ancestors, isAncestor,
-  uid, detach, insertNode, worldMatrix, setWorldMatrix, createNode, undo, redo,
+  uid, detach, insertNode, worldMatrix, setWorldMatrix, createNode, undo, redo, makePaint,
 } from './store.js';
 import { translate } from './geom.js';
 import { icons, layerIcon } from './icons.js';
 import {
   setTool, setProps, align, distribute, zoomIn, zoomOut, zoomTo100, zoomToFit, zoomToSelection, zoomAt,
-  viewportSize, sortByZ, toggleVisible, toggleLocked,
+  viewportSize, sortByZ, toggleVisible, toggleLocked, addAutoLayout, removeAutoLayout,
 } from './commands.js';
-import { exportNodes, saveFile, openFile, newFile, pickImages } from './io.js';
+import { isAutoLayout, getSizing } from './layout.js';
+import { exportNodes, saveFile, openFile, newFile, openSample, pickImages } from './io.js';
 import { showContextMenu } from './menu.js';
 import { stopEditing } from './text.js';
 import { toWorld } from './render.js';
@@ -70,6 +71,7 @@ function initFileHeader() {
       { label: 'New file', action: newFile },
       { label: 'Open file…', action: openFile },
       { label: 'Save file…', shortcut: '', action: saveFile },
+      { label: 'Open sample file', action: openSample },
       '-',
       { label: 'Place image…', shortcut: '⇧⌘K', action: () => pickImages() },
       { label: sel.length ? 'Export selection as PNG' : 'Export page as PNG', shortcut: '⇧⌘E', action: () => exportNodes(sel.length ? sel : page().children, { format: 'png', scale: 2 }) },
@@ -105,7 +107,7 @@ function showShortcuts() {
     ['Tools', [['Move', 'V'], ['Hand / pan', 'H or hold Space'], ['Frame', 'F'], ['Rectangle', 'R'], ['Ellipse', 'O'], ['Line', 'L'], ['Text', 'T'], ['Place image', '⇧⌘K']]],
     ['Canvas', [['Zoom in / out', '⌘+ / ⌘−  or ⌘-scroll / pinch'], ['Zoom to 100%', '⇧0'], ['Zoom to fit', '⇧1'], ['Zoom to selection', '⇧2'], ['Pan', 'Scroll / Space-drag']]],
     ['Selection', [['Select all', '⌘A'], ['Deep select', '⌘-click'], ['Select inside', 'Double-click / Enter'], ['Select parent', '⇧Enter'], ['Measure distance', 'Hold ⌥']]],
-    ['Edit', [['Undo / Redo', '⌘Z / ⇧⌘Z'], ['Copy / Paste / Cut', '⌘C / ⌘V / ⌘X'], ['Duplicate', '⌘D or ⌥-drag'], ['Delete', '⌫'], ['Group / Ungroup', '⌘G / ⇧⌘G'], ['Frame selection', '⌥⌘G'], ['Nudge', 'Arrows (⇧ = 10px)'], ['Bring forward / Send backward', '⌘] / ⌘['], ['To front / To back', '⌥⌘] / ⌥⌘['], ['Hide / Lock', '⇧⌘H / ⇧⌘L'], ['Rename', '⌘R'], ['Flip', '⇧H / ⇧V']]],
+    ['Edit', [['Undo / Redo', '⌘Z / ⇧⌘Z'], ['Copy / Paste / Cut', '⌘C / ⌘V / ⌘X'], ['Duplicate', '⌘D or ⌥-drag'], ['Delete', '⌫'], ['Group / Ungroup', '⌘G / ⇧⌘G'], ['Frame selection', '⌥⌘G'], ['Add / remove auto layout', '⇧A / ⌥⇧A'], ['Reorder in auto layout', 'Drag or arrow keys'], ['Nudge', 'Arrows (⇧ = 10px)'], ['Bring forward / Send backward', '⌘] / ⌘['], ['To front / To back', '⌥⌘] / ⌥⌘['], ['Hide / Lock', '⇧⌘H / ⇧⌘L'], ['Rename', '⌘R'], ['Flip', '⇧H / ⇧V']]],
     ['Transform', [['Keep proportions', 'Hold ⇧ while resizing'], ['Resize from center', 'Hold ⌥ while resizing'], ['Snap rotation to 15°', 'Hold ⇧ while rotating'], ['Disable snapping', 'Hold ⌘ while dragging']]],
   ];
   const wrap = document.createElement('div');
@@ -163,8 +165,15 @@ function initPages() {
   });
 }
 
+// Apply a half-edited properties field to the current selection before the selection changes.
+export function commitFocusedField() {
+  const a = document.activeElement;
+  if (a && a !== document.body && $('#props').contains(a)) a.blur();
+}
+
 function switchPage(id) {
   if (state.editingTextId) stopEditing();
+  commitFocusedField();
   state.doc.currentPageId = id;
   state.selection = [];
   state.hoverId = null;
@@ -227,6 +236,7 @@ function initLayers() {
       return emit('selection');
     }
     if (state.editingTextId) stopEditing();
+    commitFocusedField();
     if (e.metaKey || e.ctrlKey) select([n.id], { toggle: true });
     else if (e.shiftKey) select([n.id], { add: true });
     else select([n.id]);
@@ -376,11 +386,25 @@ const FIELDS = {
   x: num('x'), y: num('y'), w: num('w', 0.01), h: num('h', 0.01),
   rotation: { get: (n) => -(n.rotation || 0), set: (v) => ({ rotation: -(((v + 180) % 360 + 360) % 360 - 180) }), suffix: '°' },
   radius: num('radius', 0),
-  opacity: pct('opacity'), fillOpacity: pct('fillOpacity'), strokeOpacity: pct('strokeOpacity'),
+  opacity: pct('opacity'),
   strokeWidth: num('strokeWidth', 0),
   fontSize: num('fontSize', 1),
-  lineHeight: { get: (n) => n.lineHeight ?? 'Auto', set: (v) => ({ lineHeight: v }), suffix: '%', nullable: true },
+  lineHeight: { get: (n) => n.lineHeight ?? 'Auto', set: (v) => ({ lineHeight: v }), suffix: '%', auto: /^\s*(auto)?\s*$/i, autoValue: { lineHeight: null } },
   letterSpacing: num('letterSpacing'),
+  // Auto layout
+  gap: {
+    get: (n) => (n.layout ? (n.layout.spacing === 'auto' ? 'Auto' : n.layout.gap) : 0),
+    set: (v) => ({ 'layout.gap': Math.max(0, v), 'layout.spacing': 'packed' }),
+    auto: /^\s*auto\s*$/i, autoValue: { 'layout.spacing': 'auto' },
+  },
+  padH: {
+    get: (n) => (n.layout ? (n.layout.pl === n.layout.pr ? n.layout.pl : 'Mixed') : 0),
+    set: (v) => ({ 'layout.pl': Math.max(0, v), 'layout.pr': Math.max(0, v) }),
+  },
+  padV: {
+    get: (n) => (n.layout ? (n.layout.pt === n.layout.pb ? n.layout.pt : 'Mixed') : 0),
+    set: (v) => ({ 'layout.pt': Math.max(0, v), 'layout.pb': Math.max(0, v) }),
+  },
 };
 
 function common(nodes, get) {
@@ -421,16 +445,61 @@ function numField(key, label, nodes, { icon } = {}) {
     `<input data-key="${key}" value="${esc(shown)}"${v === MIXED ? ' placeholder="Mixed"' : ''} spellcheck="false"></label>`;
 }
 
-function colorRow(kind, nodes) {
-  const color = common(nodes, (n) => n[kind]);
-  const opKey = kind === 'fill' ? 'fillOpacity' : 'strokeOpacity';
-  const op = common(nodes, FIELDS[opKey].get);
-  const hex = color === MIXED ? '' : (color || '').replace('#', '');
-  return `<div class="color-row">` +
-    `<label class="swatch" style="--c:${color === MIXED ? '#ccc' : color}"><input type="color" data-color="${kind}" value="${color === MIXED ? '#cccccc' : (color || '#000000').toLowerCase()}"></label>` +
-    `<input class="hex" data-hex="${kind}" value="${esc(hex)}"${color === MIXED ? ' placeholder="Mixed"' : ''} spellcheck="false">` +
-    `<input class="op" data-key="${opKey}" value="${op === MIXED ? '' : op}"${op === MIXED ? ' placeholder="Mixed"' : ''}><span class="op-suffix">%</span>` +
-    `<button class="icon-btn" data-action="remove-${kind}" title="Remove">${icons.minus}</button></div>`;
+// ---------- paints (multiple fills / strokes) ----------
+const PAINT_KINDS = { fills: 'fill', strokes: 'stroke' };
+const canHavePaint = (n, kind) => (kind === 'fills' ? !['line', 'group'].includes(n.type) : !['group', 'text'].includes(n.type));
+const defaultPaintColor = (n, kind) =>
+  kind === 'strokes' ? '#000000' : n.type === 'text' ? '#000000' : n.type === 'frame' ? '#FFFFFF' : '#D9D9D9';
+
+function samePaints(nodes, kind) {
+  const first = JSON.stringify(nodes[0]?.[kind] || []);
+  return nodes.every((n) => JSON.stringify(n[kind] || []) === first);
+}
+
+// Rows are listed top paint first, like Figma; ids refer to the underlying (bottom-up) index.
+function paintRows(kind, nodes) {
+  if (!samePaints(nodes, kind)) {
+    return `<div class="mixed-paints">Click + to replace mixed ${PAINT_KINDS[kind]}s</div>`;
+  }
+  const list = nodes[0][kind] || [];
+  return list.map((p, i) => ({ p, i })).reverse().map(({ p, i }) => {
+    const id = `${kind}:${i}`;
+    const hidden = p.visible === false;
+    return `<div class="color-row paint-row${hidden ? ' is-hidden' : ''}">` +
+      `<label class="swatch" style="--c:${p.color}"><input type="color" data-paint-color="${id}" value="${p.color.toLowerCase()}"></label>` +
+      `<input class="hex" data-paint-hex="${id}" value="${esc(p.color.replace('#', ''))}" spellcheck="false">` +
+      `<input class="op" data-paint-op="${id}" value="${Math.round(p.opacity * 100)}"><span class="op-suffix">%</span>` +
+      `<button class="icon-btn" data-paint-act="toggle" data-paint="${id}" title="${hidden ? 'Show' : 'Hide'} ${PAINT_KINDS[kind]}">${hidden ? icons.eyeOff : icons.eye}</button>` +
+      `<button class="icon-btn" data-paint-act="remove" data-paint="${id}" title="Remove ${PAINT_KINDS[kind]}">${icons.minus}</button></div>`;
+  }).join('');
+}
+
+function addPaintButton(kind) {
+  return `<button class="icon-btn" data-action="add-${kind}" title="Add ${PAINT_KINDS[kind]}">${icons.plus}</button>`;
+}
+
+// Apply fn to paint `id` ("fills:2") on every selected node.
+function updatePaint(id, fn, { live = false } = {}) {
+  const [kind, i] = id.split(':');
+  for (const n of selectedNodes()) {
+    const p = n[kind]?.[+i];
+    if (p) fn(p, n[kind], +i);
+  }
+  if (live) emit('doc');
+  else commit();
+}
+
+function addPaint(kind) {
+  const nodes = selectedNodes().filter((n) => canHavePaint(n, kind));
+  if (!nodes.length) return;
+  const replace = !samePaints(nodes, kind);
+  for (const n of nodes) {
+    const list = replace ? [] : (n[kind] || []);
+    // The first paint gets the layer's default color; extra ones start as a translucent black overlay.
+    list.push(list.length ? makePaint('#000000', 0.2) : makePaint(defaultPaintColor(n, kind)));
+    n[kind] = list;
+  }
+  commit();
 }
 
 function section(title, body, action = '') {
@@ -464,15 +533,38 @@ function buildProps() {
 
   // Layout
   const title = types.size === 1 ? TYPE_LABEL[[...types][0]] : 'Mixed';
+  const showH = !(types.has('line') && types.size === 1);
+  const lockAspect = common(nodes, (n) => !!n.lockAspect);
   let layout = `<div class="grid2">${numField('x', 'X', nodes)}${numField('y', 'Y', nodes)}</div>`;
-  layout += `<div class="grid2">${numField('w', 'W', nodes)}${types.has('line') && types.size === 1 ? '' : numField('h', 'H', nodes)}</div>`;
+  layout += `<div class="grid2 wh-row">${numField('w', 'W', nodes)}${showH ? numField('h', 'H', nodes) : '<span></span>'}` +
+    `<button class="icon-btn lock-aspect${lockAspect === true ? ' on' : ''}" data-action="lock-aspect" title="${lockAspect === true ? 'Unlock' : 'Lock'} aspect ratio">${lockAspect === true ? icons.linkOn : icons.link}</button></div>`;
+
+  // Resizing: Fixed / Hug contents / Fill container
+  const canHug = nodes.every((n) => isAutoLayout(n) || n.type === 'text');
+  const canFill = nodes.every((n) => isAutoLayout(getParent(n.id)) && !n.absolute && n.type !== 'group');
+  if (canHug || canFill) {
+    const sizingSelect = (axis) => {
+      const cur = common(nodes, (n) => getSizing(n, axis));
+      return `<select class="select" data-sizing="${axis}" title="${axis === 'w' ? 'Horizontal' : 'Vertical'} resizing">` +
+        (cur === MIXED ? '<option selected disabled>Mixed</option>' : '') +
+        `<option value="fixed" ${cur === 'fixed' ? 'selected' : ''}>Fixed</option>` +
+        (canHug ? `<option value="hug" ${cur === 'hug' ? 'selected' : ''}>Hug</option>` : '') +
+        (canFill ? `<option value="fill" ${cur === 'fill' ? 'selected' : ''}>Fill</option>` : '') + '</select>';
+    };
+    layout += `<div class="grid2">${sizingSelect('w')}${showH ? sizingSelect('h') : '<span></span>'}</div>`;
+  }
   const hasRadius = has((n) => ['rect', 'frame', 'image'].includes(n.type));
   layout += `<div class="grid2">${numField('rotation', '', nodes, { icon: icons.rotation })}${hasRadius ? numField('radius', '', nodes, { icon: icons.radius }) : ''}</div>`;
   if (types.size === 1 && types.has('frame')) {
     const clip = common(nodes, (n) => !!n.clip);
     layout += `<label class="check-row"><input type="checkbox" data-bool="clip" ${clip === true ? 'checked' : ''}> Clip content</label>`;
   }
+  if (nodes.every((n) => isAutoLayout(getParent(n.id)))) {
+    const abs = common(nodes, (n) => !!n.absolute);
+    layout += `<label class="check-row" title="Ignore auto layout and position freely"><input type="checkbox" data-bool="absolute" ${abs === true ? 'checked' : ''}> Absolute position</label>`;
+  }
   html += section(title, layout);
+  html += autoLayoutSection(nodes);
 
   // Layer
   html += section('Layer', `<div class="grid2">${numField('opacity', '', nodes, { icon: '<span class="op-icon"></span>' })}<span></span></div>`);
@@ -492,29 +584,61 @@ function buildProps() {
   }
 
   // Fill
-  if (!(types.size === 1 && (types.has('line') || types.has('group')))) {
-    const fillNodes = nodes.filter((n) => n.type !== 'line' && n.type !== 'group');
-    const hasFill = fillNodes.some((n) => n.fill);
-    html += section(types.has('image') && types.size === 1 ? 'Fill (behind image)' : 'Fill',
-      hasFill ? colorRow('fill', fillNodes.filter((n) => n.fill)) : '',
-      hasFill ? '' : `<button class="icon-btn" data-action="add-fill" title="Add fill">${icons.plus}</button>`);
+  const fillNodes = nodes.filter((n) => canHavePaint(n, 'fills'));
+  if (fillNodes.length) {
+    html += section(types.has('image') && types.size === 1 ? 'Fill (behind image)' : 'Fill', paintRows('fills', fillNodes), addPaintButton('fills'));
   }
 
   // Stroke
-  if (!(types.size === 1 && types.has('group')) && !types.has('text')) {
-    const strokeNodes = nodes.filter((n) => n.stroke);
-    const hasStroke = strokeNodes.length > 0;
-    let body = '';
-    if (hasStroke) {
-      body = colorRow('stroke', strokeNodes) + `<div class="grid2">${numField('strokeWidth', '', strokeNodes, { icon: '<span class="mini">≡</span>' })}` +
-        (types.size === 1 && types.has('line') ? `<select class="select" data-select="cap">${['butt', 'round', 'square'].map((c) => `<option ${common(nodes, (n) => n.cap || 'butt') === c ? 'selected' : ''} value="${c}">${c[0].toUpperCase() + c.slice(1)} cap</option>`).join('')}</select>` : '<span></span>') + '</div>';
+  const paintableStroke = nodes.filter((n) => canHavePaint(n, 'strokes'));
+  if (paintableStroke.length && !types.has('text')) {
+    const strokeNodes = paintableStroke.filter((n) => n.strokes?.length);
+    let body = paintRows('strokes', paintableStroke);
+    if (strokeNodes.length) {
+      const shapeNodes = strokeNodes.filter((n) => n.type !== 'line');
+      const align = common(shapeNodes, (n) => n.strokeAlign || 'inside');
+      const alignSelect = shapeNodes.length
+        ? `<select class="select" data-select="strokeAlign" title="Stroke position">${align === MIXED ? '<option selected disabled>Mixed</option>' : ''}` +
+          ['inside', 'center', 'outside'].map((a) => `<option value="${a}" ${align === a ? 'selected' : ''}>${a[0].toUpperCase() + a.slice(1)}</option>`).join('') + '</select>'
+        : '';
+      const capSelect = types.size === 1 && types.has('line')
+        ? `<select class="select" data-select="cap">${['butt', 'round', 'square'].map((c) => `<option ${common(nodes, (n) => n.cap || 'butt') === c ? 'selected' : ''} value="${c}">${c[0].toUpperCase() + c.slice(1)} cap</option>`).join('')}</select>`
+        : '';
+      body +=
+        `<div class="grid2">${alignSelect || capSelect || '<span></span>'}${numField('strokeWidth', '', strokeNodes, { icon: '<span class="mini">≡</span>' })}</div>`;
     }
-    html += section('Stroke', body, hasStroke ? '' : `<button class="icon-btn" data-action="add-stroke" title="Add stroke">${icons.plus}</button>`);
+    html += section('Stroke', body, addPaintButton('strokes'));
   }
 
   // Export
   html += section('Export', `<div class="export-row">${exportControls()}</div><button class="btn wide" data-action="export">Export ${single ? esc(single.name) : `${nodes.length} layers`}</button>`);
   return html;
+}
+
+function autoLayoutSection(nodes) {
+  if (!nodes.every(isAutoLayout)) {
+    return section('Auto layout', '', `<button class="icon-btn" data-action="add-al" title="Add auto layout  ⇧A">${icons.plus}</button>`);
+  }
+  const mode = common(nodes, (n) => n.layout.mode);
+  const alignP = common(nodes, (n) => n.layout.alignP);
+  const alignC = common(nodes, (n) => n.layout.alignC);
+  const spacing = common(nodes, (n) => n.layout.spacing);
+  const horiz = mode === 'horizontal';
+  const dir = [['vertical', 'alVertical', 'Vertical layout'], ['horizontal', 'alHorizontal', 'Horizontal layout']]
+    .map(([m, i, tip]) => `<button class="icon-btn${mode === m ? ' on' : ''}" data-al-mode="${m}" title="${tip}">${icons[i]}</button>`).join('');
+  const POS = ['start', 'center', 'end'];
+  let cells = '';
+  for (const r of POS) {
+    for (const c of POS) {
+      const p = horiz ? c : r, q = horiz ? r : c; // primary / counter position of this cell
+      const on = mode !== MIXED && alignC === q && (spacing === 'auto' || alignP === p);
+      cells += `<button class="al-cell${on ? ' on' : ''}" data-al-align="${r},${c}" title="Align ${r === 'center' ? 'middle' : r === 'start' ? 'top' : 'bottom'} ${c === 'start' ? 'left' : c === 'end' ? 'right' : 'center'}"><span></span></button>`;
+    }
+  }
+  const body = `<div class="grid2"><div class="seg">${dir}</div>${numField('gap', '', nodes, { icon: horiz ? icons.gapH : icons.gapV })}</div>` +
+    `<div class="al-mid"><div class="al-grid${mode === MIXED ? '' : ` ${mode}`}${spacing === 'auto' ? ' between' : ''}">${cells}</div>` +
+    `<div class="al-fields">${numField('padH', '', nodes, { icon: icons.padH })}${numField('padV', '', nodes, { icon: icons.padV })}</div></div>`;
+  return section('Auto layout', body, `<button class="icon-btn" data-action="remove-al" title="Remove auto layout  ⌥⇧A">${icons.minus}</button>`);
 }
 
 let exportScale = 2, exportFormat = 'png';
@@ -523,16 +647,21 @@ function exportControls() {
     `<select class="select" data-export-format>${['png', 'jpg', 'svg'].map((f) => `<option value="${f}" ${f === exportFormat ? 'selected' : ''}>${f.toUpperCase()}</option>`).join('')}</select>`;
 }
 
+let lastPropsSig = '';
+
 export function renderProps() {
   const panel = $('#props');
   const active = document.activeElement;
-  if (panel.contains(active) && active.tagName !== 'BUTTON') {
+  const sig = `${page().id}|${state.selection.join()}|${state.tool}`;
+  const sameTarget = sig === lastPropsSig;
+  lastPropsSig = sig;
+  if (sameTarget && panel.contains(active) && active.tagName !== 'BUTTON') {
     // Don't clobber the field being edited; refresh the others in place.
     const tmp = document.createElement('div');
     tmp.innerHTML = buildProps();
     for (const el of panel.querySelectorAll('input:not([type=color]):not([type=checkbox])')) {
       if (el === active) continue;
-      const attr = ['data-key', 'data-hex', 'data-page-hex'].find((a) => el.hasAttribute(a));
+      const attr = ['data-key', 'data-paint-hex', 'data-paint-op', 'data-page-hex'].find((a) => el.hasAttribute(a));
       if (!attr) continue;
       const twin = tmp.querySelector(`[${attr}${el.getAttribute(attr) ? `="${el.getAttribute(attr)}"` : ''}]`);
       if (twin) el.value = twin.value;
@@ -550,7 +679,7 @@ function initProps() {
   const applyField = (key, raw) => {
     const f = FIELDS[key];
     if (!f) return;
-    if (f.nullable && /^\s*(auto)?\s*$/i.test(raw)) return setProps({ [key]: null });
+    if (f.auto?.test(raw)) return setProps(f.autoValue);
     const v = evalNum(raw);
     if (v === null) return emit('selection');
     setProps(f.set(v));
@@ -559,12 +688,18 @@ function initProps() {
   panel.addEventListener('change', (e) => {
     const t = e.target;
     if (t.dataset.key) return applyField(t.dataset.key, t.value);
-    if (t.dataset.hex) {
+    if (t.dataset.paintHex) {
       const hex = normHex(t.value);
-      return hex ? setProps({ [t.dataset.hex]: hex }) : emit('selection');
+      return hex ? updatePaint(t.dataset.paintHex, (p) => void (p.color = hex)) : emit('selection');
     }
-    if (t.dataset.color) return setProps({ [t.dataset.color]: t.value.toUpperCase() });
+    if (t.dataset.paintOp) {
+      const v = evalNum(t.value);
+      if (v === null) return emit('selection');
+      return updatePaint(t.dataset.paintOp, (p) => void (p.opacity = Math.min(100, Math.max(0, v)) / 100));
+    }
+    if (t.dataset.paintColor) return updatePaint(t.dataset.paintColor, (p) => void (p.color = t.value.toUpperCase()));
     if (t.dataset.bool) return setProps({ [t.dataset.bool]: t.checked });
+    if (t.dataset.sizing) return setProps({ [t.dataset.sizing === 'w' ? 'sizingH' : 'sizingV']: t.value });
     if (t.dataset.select) {
       const v = t.dataset.select === 'fontWeight' ? +t.value : t.value;
       return setProps({ [t.dataset.select]: v });
@@ -582,8 +717,8 @@ function initProps() {
   });
   panel.addEventListener('input', (e) => {
     const t = e.target;
-    if (t.dataset.color) {
-      setProps({ [t.dataset.color]: t.value.toUpperCase() }, { live: true });
+    if (t.dataset.paintColor) {
+      updatePaint(t.dataset.paintColor, (p) => void (p.color = t.value.toUpperCase()), { live: true });
       t.parentElement.style.setProperty('--c', t.value);
     }
     if (t.hasAttribute('data-page-bg')) {
@@ -618,6 +753,19 @@ function initProps() {
     if (b.dataset.distribute) return distribute(b.dataset.distribute);
     if (b.dataset.textAlign) return setProps({ textAlign: b.dataset.textAlign });
     if (b.dataset.autoResize) return setProps({ autoResize: b.dataset.autoResize });
+    if (b.dataset.paintAct === 'toggle') return updatePaint(b.dataset.paint, (p) => void (p.visible = p.visible === false));
+    if (b.dataset.paintAct === 'remove') return updatePaint(b.dataset.paint, (p, list, i) => void list.splice(i, 1));
+    if (b.dataset.alMode) return setProps({ 'layout.mode': b.dataset.alMode });
+    if (b.dataset.alAlign) {
+      const [r, c] = b.dataset.alAlign.split(',');
+      for (const n of nodes) {
+        if (!n.layout) continue;
+        const horiz = n.layout.mode === 'horizontal';
+        n.layout.alignP = horiz ? c : r;
+        n.layout.alignC = horiz ? r : c;
+      }
+      return commit();
+    }
     if (b.dataset.preset) {
       const [name, w, h] = FRAME_PRESETS[+b.dataset.preset];
       const { width, height } = viewportSize();
@@ -632,21 +780,19 @@ function initProps() {
       return;
     }
     switch (b.dataset.action) {
-      case 'add-fill':
-        for (const n of nodes) if (n.type !== 'line' && n.type !== 'group' && !n.fill) n.fill = n.type === 'text' ? '#000000' : n.type === 'frame' ? '#FFFFFF' : '#D9D9D9';
+      case 'add-al':
+        return addAutoLayout();
+      case 'remove-al':
+        return removeAutoLayout();
+      case 'lock-aspect': {
+        const on = !nodes.every((n) => n.lockAspect);
+        for (const n of nodes) n.lockAspect = on;
         return commit();
-      case 'remove-fill':
-        for (const n of nodes) if (n.type !== 'text') n.fill = null;
-        return commit();
-      case 'add-stroke':
-        for (const n of nodes) if (n.type !== 'group' && n.type !== 'text' && !n.stroke) {
-          n.stroke = '#000000';
-          n.strokeWidth = n.strokeWidth || 1;
-        }
-        return commit();
-      case 'remove-stroke':
-        for (const n of nodes) if (n.type !== 'line') n.stroke = null;
-        return commit();
+      }
+      case 'add-fills':
+        return addPaint('fills');
+      case 'add-strokes':
+        return addPaint('strokes');
       case 'export':
         return exportNodes(nodes, { format: exportFormat, scale: exportScale });
       case 'export-page':

@@ -20,15 +20,41 @@ function paint(color, opacity, attr = 'fill') {
   return `${attr}="${color}"${opacity < 1 ? ` ${attr}-opacity="${opacity}"` : ''}`;
 }
 
-function strokeShape(n, shape) {
-  if (!n.stroke || !(n.strokeWidth > 0)) return '';
-  const sw = n.strokeWidth, h = sw / 2;
-  const attrs = `fill="none" ${paint(n.stroke, n.strokeOpacity, 'stroke')} stroke-width="${sw}"`;
+const visiblePaints = (list) => (list || []).filter((p) => p.visible !== false);
+
+// One element per visible fill, bottom to top. `shape(attrs)` returns the element markup.
+function fillLayers(n, shape) {
+  return visiblePaints(n.fills).map((p) => shape(paint(p.color, p.opacity))).join('');
+}
+
+// How far a stroke's centerline sits inside the shape's edge: inside = +sw/2, center = 0, outside = -sw/2.
+function strokeInset(n) {
+  const align = n.strokeAlign || 'inside';
+  return align === 'center' ? 0 : align === 'outside' ? -n.strokeWidth / 2 : n.strokeWidth / 2;
+}
+
+const hasStroke = (n) => n.strokeWidth > 0 && visiblePaints(n.strokes).length > 0;
+
+// How far a node's stroke extends beyond its bounds (used to pad exports).
+export function strokeOverhang(n) {
+  if (!n.visible || !hasStroke(n)) return 0;
+  if (n.type === 'line') return n.strokeWidth / 2;
+  return Math.max(0, n.strokeWidth / 2 - strokeInset(n));
+}
+
+function strokeLayers(n, shape) {
+  if (!hasStroke(n)) return '';
+  const sw = n.strokeWidth, d = strokeInset(n);
+  let geom;
   if (shape === 'ellipse') {
-    return `<ellipse cx="${n.w / 2}" cy="${n.h / 2}" rx="${Math.max(0, n.w / 2 - h)}" ry="${Math.max(0, n.h / 2 - h)}" ${attrs}/>`;
+    geom = `<ellipse cx="${n.w / 2}" cy="${n.h / 2}" rx="${Math.max(0, n.w / 2 - d)}" ry="${Math.max(0, n.h / 2 - d)}"`;
+  } else {
+    const r0 = Math.min(n.radius || 0, n.w / 2, n.h / 2);
+    const r = r0 > 0 ? Math.max(0, r0 - d) : 0;
+    geom = `<rect x="${d}" y="${d}" width="${Math.max(0, n.w - 2 * d)}" height="${Math.max(0, n.h - 2 * d)}" rx="${r}"`;
   }
-  const r = Math.max(0, Math.min(n.radius || 0, n.w / 2, n.h / 2) - h);
-  return `<rect x="${h}" y="${h}" width="${Math.max(0, n.w - sw)}" height="${Math.max(0, n.h - sw)}" rx="${r}" ${attrs}/>`;
+  return visiblePaints(n.strokes)
+    .map((p) => `${geom} fill="none" ${paint(p.color, p.opacity, 'stroke')} stroke-width="${sw}"/>`).join('');
 }
 
 // Renders a node in its parent's coordinate space.
@@ -40,37 +66,40 @@ export function nodeSVG(n, opts = {}) {
     case 'frame': {
       const cid = `clip-${n.id}`;
       const kids = n.children.map((c) => nodeSVG(c, opts)).join('');
-      inner = `<rect width="${n.w}" height="${n.h}" rx="${r}" ${paint(n.fill, n.fillOpacity)}/>`;
+      inner = fillLayers(n, (a) => `<rect width="${n.w}" height="${n.h}" rx="${r}" ${a}/>`);
       inner += n.clip
         ? `<clipPath id="${cid}"><rect width="${n.w}" height="${n.h}" rx="${r}"/></clipPath><g clip-path="url(#${cid})">${kids}</g>`
         : `<g>${kids}</g>`;
-      inner += strokeShape(n, 'rect');
+      inner += strokeLayers(n, 'rect');
       break;
     }
     case 'group':
       inner = n.children.map((c) => nodeSVG(c, opts)).join('');
       break;
     case 'rect':
-      inner = `<rect width="${n.w}" height="${n.h}" rx="${r}" ${paint(n.fill, n.fillOpacity)}/>` + strokeShape(n, 'rect');
+      inner = fillLayers(n, (a) => `<rect width="${n.w}" height="${n.h}" rx="${r}" ${a}/>`) + strokeLayers(n, 'rect');
       break;
     case 'ellipse':
-      inner = `<ellipse cx="${n.w / 2}" cy="${n.h / 2}" rx="${n.w / 2}" ry="${n.h / 2}" ${paint(n.fill, n.fillOpacity)}/>` + strokeShape(n, 'ellipse');
+      inner = fillLayers(n, (a) => `<ellipse cx="${n.w / 2}" cy="${n.h / 2}" rx="${n.w / 2}" ry="${n.h / 2}" ${a}/>`) + strokeLayers(n, 'ellipse');
       break;
     case 'line':
-      inner = `<line x1="0" y1="0" x2="${n.w}" y2="0" ${paint(n.stroke || '#000', n.strokeOpacity, 'stroke')} stroke-width="${n.strokeWidth}" stroke-linecap="${n.cap || 'butt'}"/>`;
+      inner = visiblePaints(n.strokes).map((p) =>
+        `<line x1="0" y1="0" x2="${n.w}" y2="0" ${paint(p.color, p.opacity, 'stroke')} stroke-width="${n.strokeWidth}" stroke-linecap="${n.cap || 'butt'}"/>`).join('');
       break;
     case 'image': {
       const cid = `clip-${n.id}`;
-      inner = `<clipPath id="${cid}"><rect width="${n.w}" height="${n.h}" rx="${r}"/></clipPath>` +
+      inner = fillLayers(n, (a) => `<rect width="${n.w}" height="${n.h}" rx="${r}" ${a}/>`) +
+        `<clipPath id="${cid}"><rect width="${n.w}" height="${n.h}" rx="${r}"/></clipPath>` +
         `<image href="${esc(n.src)}" width="${n.w}" height="${n.h}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${cid})"/>` +
-        strokeShape(n, 'rect');
+        strokeLayers(n, 'rect');
       break;
     }
     case 'text': {
+      // Text fills stack like shape fills: one text layer per visible fill.
       const hidden = !opts.export && state.editingTextId === n.id;
-      const color = hexToRgba(n.fill || '#000000', n.fillOpacity ?? 1);
-      inner = `<foreignObject width="${Math.max(n.w, 1)}" height="${Math.max(n.h, 1)}" style="overflow:visible"${hidden ? ' visibility="hidden"' : ''}>` +
-        `<div xmlns="http://www.w3.org/1999/xhtml" style="${esc(textStyle(n))};color:${color};width:${n.autoResize === 'width' ? 'max-content' : n.w + 'px'}">${esc(n.text)}</div></foreignObject>`;
+      inner = visiblePaints(n.fills).map((p) =>
+        `<foreignObject width="${Math.max(n.w, 1)}" height="${Math.max(n.h, 1)}" style="overflow:visible"${hidden ? ' visibility="hidden"' : ''}>` +
+        `<div xmlns="http://www.w3.org/1999/xhtml" style="${esc(textStyle(n))};color:${hexToRgba(p.color, p.opacity)};width:${n.autoResize === 'width' ? 'max-content' : n.w + 'px'}">${esc(n.text)}</div></foreignObject>`).join('');
       break;
     }
   }

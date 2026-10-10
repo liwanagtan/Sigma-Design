@@ -12,9 +12,10 @@ import { startEditing, stopEditing, measureText } from './text.js';
 import {
   setTool, zoomAt, zoomIn, zoomOut, zoomTo100, zoomToFit, zoomToSelection, deleteSelection, duplicateSelection,
   wrapSelection, ungroupSelection, reorder, nudge, selectAll, selectParent, selectChildren, toggleVisible,
-  toggleLocked, scaleKids, sortByZ, flip,
+  toggleLocked, scaleKids, sortByZ, flip, addAutoLayout, removeAutoLayout,
 } from './commands.js';
 import { copySelection, cutSelection, paste, importImages, pickImages, exportNodes } from './io.js';
+import { isAutoLayout, flowInsertBefore } from './layout.js';
 import { showContextMenu, hideContextMenu } from './menu.js';
 
 let canvasEl;
@@ -352,6 +353,7 @@ function onPointerUp(e) {
       emit('selection');
       break;
     case 'move':
+      state.layoutSkip.clear();
       if (d.started) commit();
       else if (d.toggleOnClick) select([d.toggleOnClick], { toggle: true });
       else if (d.selectOnClick) select([d.selectOnClick]);
@@ -487,6 +489,7 @@ function startMoveDrag() {
     select(clones.map((c) => c.id));
   }
   drag.started = true;
+  for (const n of nodes) state.layoutSkip.add(n.id);
   drag.items = nodes.map((n) => ({ n, M0: worldMatrix(n) }));
   drag.box0 = unionBoxes(nodes.map(worldBounds));
   drag.exclude = excludeSet(nodes);
@@ -502,7 +505,9 @@ function updateMove(wp, e) {
   const box = { x: b0.x + dx, y: b0.y + dy, w: b0.w, h: b0.h };
   const th = snapThreshold();
   const T = drag.targets;
-  if (!(e.metaKey || e.ctrlKey)) {
+  const targetFrame = frameAt(wp, drag.exclude);
+  const intoFlow = isAutoLayout(targetFrame) && drag.items.some(({ n }) => !n.absolute);
+  if (!(e.metaKey || e.ctrlKey) && !intoFlow) {
     const sx = !e.shiftKey || dx !== 0 ? nearest([box.x, box.x + box.w / 2, box.x + box.w], T.xs, th) : null;
     const sy = !e.shiftKey || dy !== 0 ? nearest([box.y, box.y + box.h / 2, box.y + box.h], T.ys, th) : null;
     dx += sx || 0;
@@ -514,13 +519,23 @@ function updateMove(wp, e) {
     state.guides = [];
   }
 
-  // Live reparenting into the frame under the pointer.
-  const targetFrame = frameAt(wp, drag.exclude);
+  // Live reparenting into the frame under the pointer. Auto layout frames take the
+  // layer into their flow at the pointer position; siblings reflow around it.
+  const before = intoFlow
+    ? flowInsertBefore(targetFrame, apply(inv(worldMatrix(targetFrame)), wp), drag.exclude)
+    : null;
   for (const { n, M0 } of drag.items) {
     const p = getParent(n.id);
-    if (p?.type !== 'group' && p !== targetFrame) {
-      detach(n);
-      insertNode(n, targetFrame);
+    if (p?.type !== 'group') {
+      if (intoFlow && !(n.absolute && p === targetFrame)) {
+        if (p !== targetFrame) n.absolute = false;
+        detach(n);
+        const list = targetFrame.children;
+        insertNode(n, targetFrame, before ? list.indexOf(before) : list.length);
+      } else if (p !== targetFrame) {
+        detach(n);
+        insertNode(n, targetFrame);
+      }
     }
     setWorldMatrix(n, mul(translate(dx, dy), M0));
   }
@@ -578,6 +593,7 @@ function updateDraw(wp, e) {
     const type = tool === 'text' ? 'text' : tool;
     drag.node = createNode(type, type === 'text' ? { autoResize: 'height' } : {});
     insertNode(drag.node, drag.parent);
+    state.layoutSkip.add(drag.node.id);
     state.selection = [drag.node.id];
   }
   const n = drag.node;
@@ -610,7 +626,16 @@ function finishDraw(d, wp, e) {
       setWorldMatrix(n, translate(d.startWorld.x, d.startWorld.y));
     }
   }
-  if (n.type === 'frame' && d.node) {
+  state.layoutSkip.clear();
+  const parent = getParent(n.id);
+  if (d.node && isAutoLayout(parent)) {
+    // Drop the drawn layer into the flow where it was drawn.
+    const W = worldMatrix(n);
+    const c = apply(W, { x: n.w / 2, y: n.h / 2 });
+    const before = flowInsertBefore(parent, apply(inv(worldMatrix(parent)), c), new Set([n.id]));
+    detach(n);
+    insertNode(n, parent, before ? parent.children.indexOf(before) : parent.children.length);
+  } else if (n.type === 'frame' && d.node) {
     // Adopt siblings that are fully inside the new frame.
     const fb = worldBounds(n);
     const list = siblingsOf(n);
@@ -702,9 +727,11 @@ function updateResizeSingle(wp, e) {
     if (!(e.metaKey || e.ctrlKey)) wp = snapPoint(wp, d.T, { x: !!d.hx, y: !!d.hy });
   }
   const p = apply(inv(d.M0), wp);
-  const r = resizeBox(d.hx, d.hy, d.w0, d.h0, p, e.altKey, e.shiftKey);
+  const r = resizeBox(d.hx, d.hy, d.w0, d.h0, p, e.altKey, e.shiftKey !== !!n.lockAspect);
   n.w = r.w;
   n.h = r.h;
+  if (d.hx || n.lockAspect) n.sizingH = 'fixed';
+  if (d.hy || n.lockAspect) n.sizingV = 'fixed';
   if (d.kids0) scaleKids(n.children, d.kids0, r.w / d.w0, r.h / d.h0);
   if (n.type === 'text') {
     n.autoResize = d.hy === 0 ? 'height' : 'fixed';
@@ -720,7 +747,8 @@ function updateResizeMulti(wp, e) {
   const b0 = d.box0;
   wp = pixel(wp);
   if (!(e.metaKey || e.ctrlKey)) wp = snapPoint(wp, d.T, { x: !!d.hx, y: !!d.hy });
-  const r = resizeBox(d.hx, d.hy, b0.w, b0.h, { x: wp.x - b0.x, y: wp.y - b0.y }, e.altKey, e.shiftKey);
+  const locked = d.items.every((it) => it.n.lockAspect);
+  const r = resizeBox(d.hx, d.hy, b0.w, b0.h, { x: wp.x - b0.x, y: wp.y - b0.y }, e.altKey, e.shiftKey !== locked);
   const sx = r.w / b0.w, sy = r.h / b0.h;
   const nx = b0.x + r.x0, ny = b0.y + r.y0;
   for (const it of d.items) {
@@ -730,9 +758,9 @@ function updateResizeMulti(wp, e) {
     n.w = Math.max(1, it.w0 * sx);
     n.h = n.type === 'line' ? 0 : Math.max(1, it.h0 * sy);
     if (it.kids0) scaleKids(n.children, it.kids0, n.w / it.w0, n.h / it.h0);
-    if (n.type === 'text') {
-      n.autoResize = 'fixed';
-    }
+    if (n.type === 'text') n.autoResize = 'fixed';
+    if (d.hx || locked) n.sizingH = 'fixed';
+    if (d.hy || locked) n.sizingV = 'fixed';
     const M = mul(translate(c.x, c.y), mul(rotate(angleOf(M0)), translate(-n.w / 2, -n.h / 2)));
     setWorldMatrix(n, M);
   }
@@ -826,6 +854,9 @@ function onContextMenu(e) {
     '-',
     { label: 'Group selection', shortcut: '⌘G', action: () => wrapSelection('group') },
     { label: 'Frame selection', shortcut: '⌥⌘G', action: () => wrapSelection('frame') },
+    nodes.length === 1 && isAutoLayout(nodes[0])
+      ? { label: 'Remove auto layout', shortcut: '⌥⇧A', action: () => removeAutoLayout() }
+      : { label: 'Add auto layout', shortcut: '⇧A', action: addAutoLayout },
     ...(nodes.some((n) => n.children) ? [{ label: 'Ungroup', shortcut: '⇧⌘G', action: ungroupSelection }] : []),
     '-',
     { label: 'Flip horizontal', shortcut: '⇧H', action: () => flip('x') },
@@ -927,6 +958,10 @@ function onKeyDown(e) {
     return;
   }
 
+  if (e.shiftKey && e.code === 'KeyA') {
+    e.preventDefault();
+    return e.altKey ? removeAutoLayout() : addAutoLayout();
+  }
   if (e.shiftKey && !e.altKey) {
     if (e.code === 'Digit0') return zoomTo100();
     if (e.code === 'Digit1') return zoomToFit();
