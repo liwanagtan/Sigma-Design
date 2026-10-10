@@ -1,8 +1,10 @@
 // The "Local variables" editor: collections on the left, a table of variables × modes on the right.
+// Extended collections show their parent's variables; inherited values are greyed, overrides are highlighted.
 import { state, commit, emit, subscribe } from './store.js';
 import {
   collections, VAR_TYPES, createCollection, deleteCollection, addMode, removeMode, createVariable, deleteVariable,
-  setAlias, findVariable, allVariables, previewValue, isAlias, wouldCycle,
+  setAlias, findVariable, allVariables, previewValue, isAlias, wouldCycle, extendCollection, inheritedVariables,
+  rawValueIn, setOverride, setOverrideAlias, clearOverride, parentOf, isExtension,
 } from './variables.js';
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
@@ -19,6 +21,8 @@ const TYPE_ICON = {
   boolean: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><rect x="1" y="3.5" width="10" height="5" rx="2.5"/><circle cx="8.5" cy="6" r="1.5" fill="currentColor"/></svg>',
 };
 const LINK_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M5 7l2-2M5.5 3.5l.8-.8a2 2 0 0 1 2.8 2.8l-.8.8M6.5 8.5l-.8.8a2 2 0 0 1-2.8-2.8l.8-.8"/></svg>';
+const RESET_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M2.5 6a3.5 3.5 0 1 0 1-2.5M2.5 1.5v2h2"/></svg>';
+const DEFAULTS = { color: '#000000', number: 0, string: '', boolean: true };
 
 export function openVariablesEditor(focusCollectionId) {
   if (!state.doc) return;
@@ -61,66 +65,101 @@ function active() {
   return cols.find((c) => c.id === activeId) || cols[0] || null;
 }
 
-function cell(v, mode) {
-  const raw = v.valuesByMode[mode.id];
+// Collections in tree order: each root followed by its extensions (indented).
+function collectionTree() {
+  const cols = collections();
+  const out = [];
+  const add = (c, depth) => {
+    out.push({ c, depth });
+    for (const ext of cols.filter((x) => x.extends === c.id)) add(ext, depth + 1);
+  };
+  for (const c of cols.filter((x) => !x.extends || !cols.some((p) => p.id === x.extends))) add(c, 0);
+  return out;
+}
+
+function valueEditor(type, raw, data) {
+  if (type === 'color') {
+    return `<label class="swatch" style="--c:${esc(raw)}"><input type="color" ${data} data-cell="color" value="${esc(String(raw).slice(0, 7).toLowerCase())}"></label>` +
+      `<input class="cell-input hex" ${data} data-cell="hex" value="${esc(String(raw).replace('#', ''))}" spellcheck="false">`;
+  }
+  if (type === 'number') return `<input class="cell-input" ${data} data-cell="number" value="${esc(raw)}" spellcheck="false">`;
+  if (type === 'string') return `<input class="cell-input" ${data} data-cell="string" value="${esc(raw)}" spellcheck="false">`;
+  return `<label class="cell-bool"><input type="checkbox" ${data} data-cell="boolean" ${raw ? 'checked' : ''}> ${raw ? 'True' : 'False'}</label>`;
+}
+
+function cell(col, v, mode) {
+  const ext = isExtension(col);
+  const own = ext ? col.overrides?.[v.id]?.[mode.id] : v.valuesByMode[mode.id];
+  const overridden = ext && own !== undefined;
+  const raw = ext ? rawValueIn(col, mode.id, v) : own;
   const data = `data-var="${v.id}" data-mode="${mode.id}"`;
   const aliasBtn = `<button class="icon-btn cell-alias" ${data} data-alias-menu title="Use another variable (alias)">${LINK_ICON}</button>`;
+  const resetBtn = overridden ? `<button class="icon-btn cell-reset" ${data} data-reset-override title="Reset to inherited value">${RESET_ICON}</button>` : '';
+  const cls = `var-cell${ext ? (overridden ? ' overridden' : ' inherited') : ''}`;
   if (isAlias(raw)) {
     const target = findVariable(raw.alias);
-    return `<div class="var-cell"><button class="alias-chip" ${data} data-alias-menu title="Aliased variable">→ ${esc(target ? target.variable.name : 'Missing variable')}</button></div>`;
+    return `<div class="${cls}"><button class="alias-chip" ${data} data-alias-menu title="Aliased variable">→ ${esc(target ? target.variable.name : 'Missing variable')}</button>${resetBtn}</div>`;
   }
-  let editor;
-  if (v.type === 'color') {
-    editor = `<label class="swatch" style="--c:${esc(raw)}"><input type="color" ${data} data-cell="color" value="${esc(String(raw).slice(0, 7).toLowerCase())}"></label>` +
-      `<input class="cell-input hex" ${data} data-cell="hex" value="${esc(String(raw).replace('#', ''))}" spellcheck="false">`;
-  } else if (v.type === 'number') {
-    editor = `<input class="cell-input" ${data} data-cell="number" value="${esc(raw)}" spellcheck="false">`;
-  } else if (v.type === 'string') {
-    editor = `<input class="cell-input" ${data} data-cell="string" value="${esc(raw)}" spellcheck="false">`;
-  } else {
-    editor = `<label class="cell-bool"><input type="checkbox" ${data} data-cell="boolean" ${raw ? 'checked' : ''}> ${raw ? 'True' : 'False'}</label>`;
-  }
-  return `<div class="var-cell">${editor}${aliasBtn}</div>`;
+  return `<div class="${cls}">${valueEditor(v.type, raw, data)}${aliasBtn}${resetBtn}</div>`;
 }
 
 function render() {
   if (!modal) return;
-  const cols = collections();
   const col = active();
-  const sidebar = cols.map((c) => `<button class="vars-col${c === col ? ' active' : ''}" data-col="${c.id}">${esc(c.name)}<span class="muted">${c.variables.length}</span></button>`).join('');
+  const sidebar = collectionTree().map(({ c, depth }) => {
+    const count = isExtension(c) ? Object.keys(c.overrides || {}).length : c.variables.length;
+    return `<button class="vars-col${c === col ? ' active' : ''}" data-col="${c.id}" style="padding-left:${10 + depth * 14}px">` +
+      `<span class="vars-col-label">${depth ? '↳ ' : ''}${esc(c.name)}</span>` +
+      `<span class="muted" title="${isExtension(c) ? 'Overridden variables' : 'Variables'}">${count}</span></button>`;
+  }).join('');
   let main;
   if (!col) {
     main = '<div class="vars-empty"><div class="home-empty-title">No variables yet</div><p>Variables store reusable colors, numbers, text and booleans. Create a collection to start.</p><button class="btn primary" data-act="new-collection">Create collection</button></div>';
   } else {
+    const ext = isExtension(col);
+    const vars = ext ? inheritedVariables(col) : col.variables;
     const gridCols = `minmax(200px, 1.3fr) repeat(${col.modes.length}, minmax(150px, 1fr)) 40px`;
     const head = `<div class="vars-row vars-head" style="grid-template-columns:${gridCols}"><div>Name</div>` +
       col.modes.map((m) => `<div class="mode-head"><input class="mode-name" data-mode-name="${m.id}" value="${esc(m.name)}" spellcheck="false">` +
-        (col.modes.length > 1 ? `<button class="icon-btn" data-remove-mode="${m.id}" title="Delete mode">${icons.close}</button>` : '') + '</div>').join('') +
-      `<div><button class="icon-btn" data-act="add-mode" title="Add mode">${icons.plus}</button></div></div>`;
+        (!ext && col.modes.length > 1 ? `<button class="icon-btn" data-remove-mode="${m.id}" title="Delete mode">${icons.close}</button>` : '') + '</div>').join('') +
+      `<div>${ext ? '' : `<button class="icon-btn" data-act="add-mode" title="Add mode">${icons.plus}</button>`}</div></div>`;
     // Group rows by the part of the name before the last "/".
     const groups = new Map();
-    for (const v of col.variables) {
+    for (const v of vars) {
       const i = v.name.lastIndexOf('/');
       const g = i > 0 ? v.name.slice(0, i) : '';
       if (!groups.has(g)) groups.set(g, []);
       groups.get(g).push(v);
     }
-    const body = [...groups].map(([g, vars]) =>
+    const body = [...groups].map(([g, list]) =>
       (g ? `<div class="vars-group">${esc(g)}</div>` : '') +
-      vars.map((v) => `<div class="vars-row" style="grid-template-columns:${gridCols}">` +
+      list.map((v) => `<div class="vars-row" style="grid-template-columns:${gridCols}">` +
         `<div class="var-name"><span class="var-type" title="${VAR_TYPES[v.type]}">${TYPE_ICON[v.type]}</span>` +
-        `<input data-var-name="${v.id}" value="${esc(v.name)}" spellcheck="false"></div>` +
-        col.modes.map((m) => cell(v, m)).join('') +
-        `<div><button class="icon-btn" data-delete-var="${v.id}" title="Delete variable">${icons.close}</button></div></div>`).join('')).join('');
-    main = `<div class="vars-toolbar"><input class="vars-col-name" data-col-name="${col.id}" value="${esc(col.name)}" spellcheck="false">` +
-      `<button class="btn" data-act="delete-collection">Delete collection</button></div>` +
+        (ext ? `<span class="var-name-text">${esc(v.name)}</span>` : `<input data-var-name="${v.id}" value="${esc(v.name)}" spellcheck="false">`) + '</div>' +
+        col.modes.map((m) => cell(col, v, m)).join('') +
+        `<div>${ext ? '' : `<button class="icon-btn" data-delete-var="${v.id}" title="Delete variable">${icons.close}</button>`}</div></div>`).join('')).join('');
+    const parent = parentOf(col);
+    main = `<div class="vars-toolbar"><div class="vars-title"><input class="vars-col-name" data-col-name="${col.id}" value="${esc(col.name)}" spellcheck="false">` +
+      (ext ? `<span class="ext-badge" title="Inherits variables and modes from ${esc(parent?.name || 'a missing collection')}">Extends ${esc(parent?.name || '?')}</span>` : '') + '</div>' +
+      `<div class="vars-actions"><button class="btn" data-act="extend" title="Create a collection that inherits this one and overrides only some values">Extend</button>` +
+      `<button class="btn" data-act="delete-collection">Delete</button></div></div>` +
+      (ext ? '<div class="vars-hint">Greyed values are inherited. Edit a value to override it for this collection; ↺ resets it. Add variables and modes in the root collection.</div>' : '') +
       `<div class="vars-table">${head}${body || '<div class="muted vars-none">No variables in this collection yet.</div>'}</div>` +
-      '<div class="vars-footer"><button class="btn" data-act="new-variable">+ Create variable</button></div>';
+      (ext ? '' : '<div class="vars-footer"><button class="btn" data-act="new-variable">+ Create variable</button></div>');
   }
   modal.querySelector('.modal').innerHTML =
     `<div class="modal-head">Local variables<button class="icon-btn" data-close>${icons.close}</button></div>` +
     `<div class="vars-body"><aside class="vars-side">${sidebar}<button class="vars-add" data-act="new-collection">+ New collection</button></aside>` +
     `<section class="vars-main">${main}</section></div>`;
+}
+
+// Write a cell: a root collection's own value, or an extension's override.
+function writeCell(col, varId, modeId, value) {
+  if (isExtension(col)) setOverride(col, varId, modeId, value);
+  else {
+    const v = findVariable(varId)?.variable;
+    if (v) v.valuesByMode[modeId] = value;
+  }
 }
 
 function bind() {
@@ -135,15 +174,19 @@ function bind() {
     }
     if (t.dataset.removeMode) return change(() => removeMode(col, t.dataset.removeMode));
     if (t.dataset.deleteVar) return change(() => deleteVariable(t.dataset.deleteVar));
-    if (t.hasAttribute('data-alias-menu')) return aliasMenu(t);
+    if (t.hasAttribute('data-reset-override')) return change(() => clearOverride(col, t.dataset.var, t.dataset.mode));
+    if (t.hasAttribute('data-alias-menu')) return aliasMenu(t, col);
     switch (t.dataset.act) {
       case 'new-collection':
         return change(() => void (activeId = createCollection().id));
-      case 'delete-collection':
-        if (col && confirm(`Delete the collection “${col.name}” and its ${col.variables.length} variables? Bound layers keep their current values.`)) {
-          change(() => deleteCollection(col));
-        }
+      case 'extend':
+        return change(() => void (activeId = extendCollection(col).id));
+      case 'delete-collection': {
+        const exts = collections().filter((c) => c.extends === col.id).length;
+        const what = isExtension(col) ? 'its overrides' : `its ${col.variables.length} variables${exts ? ` and ${exts} extended collection${exts === 1 ? '' : 's'}` : ''}`;
+        if (col && confirm(`Delete “${col.name}” and ${what}? Bound layers keep their current values.`)) change(() => deleteCollection(col));
         return;
+      }
       case 'add-mode':
         return change(() => addMode(col));
       case 'new-variable': {
@@ -167,9 +210,6 @@ function bind() {
       if (v && t.value.trim()) v.name = t.value.trim().replace(/\s*\/\s*/g, '/');
     });
     if (t.dataset.cell) {
-      const v = findVariable(t.dataset.var)?.variable;
-      if (!v) return;
-      const mode = t.dataset.mode;
       let value;
       if (t.dataset.cell === 'color') value = t.value.toUpperCase();
       else if (t.dataset.cell === 'hex') {
@@ -182,18 +222,16 @@ function bind() {
         if (!Number.isFinite(value)) return render();
       } else if (t.dataset.cell === 'boolean') value = t.checked;
       else value = t.value;
-      change(() => void (v.valuesByMode[mode] = value));
+      change(() => writeCell(col, t.dataset.var, t.dataset.mode, value));
     }
   });
   modal.addEventListener('input', (e) => {
-    // Live color preview while the picker is open.
+    // Live color preview while the picker is open; the change event commits one undo step.
     const t = e.target;
     if (t.dataset.cell !== 'color') return;
-    const v = findVariable(t.dataset.var)?.variable;
-    if (!v) return;
-    v.valuesByMode[t.dataset.mode] = t.value.toUpperCase();
+    writeCell(active(), t.dataset.var, t.dataset.mode, t.value.toUpperCase());
     t.parentElement.style.setProperty('--c', t.value);
-    emit('doc'); // committed (one undo step) by the change event when the picker closes
+    emit('doc');
   });
   modal.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.target.tagName === 'INPUT') e.target.blur();
@@ -207,23 +245,22 @@ function change(fn) {
   render();
 }
 
-function aliasMenu(btn) {
+function aliasMenu(btn, col) {
   const hit = findVariable(btn.dataset.var);
   if (!hit) return;
   const { variable } = hit;
   const mode = btn.dataset.mode;
-  const current = variable.valuesByMode[mode];
+  const ext = isExtension(col);
+  const current = ext ? col.overrides?.[variable.id]?.[mode] : variable.valuesByMode[mode];
   const options = allVariables(variable.type).filter(({ variable: o }) => o.id !== variable.id && !wouldCycle(variable.id, o.id));
   const r = btn.getBoundingClientRect();
   const items = options.map(({ variable: o, collection }) => ({
     label: `${collection.name} / ${o.name}`,
     checked: isAlias(current) && current.alias === o.id,
-    action: () => change(() => setAlias(variable, mode, o.id)),
+    action: () => change(() => (ext ? setOverrideAlias(col, variable.id, mode, o.id) : setAlias(variable, mode, o.id))),
   }));
   if (isAlias(current)) {
-    items.push('-', { label: 'Detach alias', action: () => change(() => {
-      variable.valuesByMode[mode] = previewValue(current.alias) ?? (variable.type === 'color' ? '#000000' : variable.type === 'number' ? 0 : variable.type === 'boolean' ? true : '');
-    }) });
+    items.push('-', { label: 'Detach alias', action: () => change(() => writeCell(col, variable.id, mode, previewValue(current.alias) ?? DEFAULTS[variable.type])) });
   }
   if (!items.length) items.push({ label: `No other ${VAR_TYPES[variable.type].toLowerCase()} variables`, disabled: true });
   showContextMenu(r.left, r.bottom + 4, items);

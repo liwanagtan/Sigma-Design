@@ -63,6 +63,9 @@ Then open http://localhost:5173.
   - **modes:** for any collection with several modes, the Layer section (or the Page section, with nothing selected) has a mode picker
   - "Auto" inherits the mode from the parent; children follow unless they pin their own mode
   - instances inherit a mode pinned on their main component and can pin a different one
+  - **extended collections:** **Extend** in the variables editor creates a collection that inherits all variables and modes and stores only the values you override
+  - in an extension, inherited values are greyed and ↺ resets an override
+  - apply an extension with the mode picker on a frame, page or instance to re-skin it (for example, a second brand); extensions can be extended again
 - **Resizing:** each layer can be **Fixed**, **Hug** contents (auto-layout frames and text) or **Fill** container (children of auto-layout frames), separately for width and height
 - **Lock aspect ratio:** the link button next to W/H. It applies to typed sizes and to resize handles (hold ⇧ to override).
 - **Layers panel:** tree view, rename (double-click or ⌘R), hide, lock, drag to reorder or nest

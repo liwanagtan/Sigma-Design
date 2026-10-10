@@ -35,11 +35,56 @@ function variablesRoot() {
 }
 
 // ---------- lookup ----------
-let index = new Map(); // varId -> { variable, collection }
+// Extended collections ({ extends: parentId, modes: [{ id, name, parentModeId }], overrides: { varId: { modeId: value } } })
+// inherit their parent's variables and modes and store only the values they change.
+let index = new Map(); // varId -> { variable, collection } (the collection that defines it)
+let colIndex = new Map(); // collectionId -> collection
 
 function reindexVariables() {
   index = new Map();
-  for (const c of collections()) for (const v of c.variables) index.set(v.id, { variable: v, collection: c });
+  colIndex = new Map();
+  for (const c of collections()) {
+    colIndex.set(c.id, c);
+    for (const v of c.variables || []) index.set(v.id, { variable: v, collection: c });
+  }
+  for (const c of collections()) if (c.extends) syncExtensionModes(c);
+}
+
+export const isExtension = (c) => !!c?.extends;
+export const parentOf = (c) => (c?.extends ? colIndex.get(c.extends) || null : null);
+
+// Is `c` the collection `root`, or an extension of it (at any depth)?
+export function inFamily(c, root) {
+  for (let cur = c, guard = 0; cur && guard < 32; cur = parentOf(cur), guard++) if (cur === root) return true;
+  return false;
+}
+
+// Keep an extension's modes matching its parent's: add modes the parent gained, drop ones it lost.
+function syncExtensionModes(ext) {
+  const parent = parentOf(ext);
+  if (!parent) return;
+  ext.modes = ext.modes.filter((m) => parent.modes.some((pm) => pm.id === m.parentModeId));
+  for (const pm of parent.modes) {
+    if (!ext.modes.some((m) => m.parentModeId === pm.id)) ext.modes.push({ id: uid(), name: pm.name, parentModeId: pm.id });
+  }
+  if (!ext.modes.some((m) => m.id === ext.defaultModeId)) ext.defaultModeId = ext.modes[0]?.id;
+}
+
+// The raw value (a value or an alias) of `variable` in collection `c` (its own or an extension), mode `modeId`.
+export function rawValueIn(c, modeId, variable, depth = 0) {
+  if (!c.extends || depth > 32) {
+    const v = variable.valuesByMode[modeId];
+    return v === undefined ? variable.valuesByMode[c.defaultModeId] : v;
+  }
+  const own = c.overrides?.[variable.id]?.[modeId];
+  if (own !== undefined) return own;
+  const parent = parentOf(c);
+  if (!parent) {
+    const owner = index.get(variable.id)?.collection; // orphaned extension: use the defining collection
+    return owner ? variable.valuesByMode[owner.defaultModeId] : undefined;
+  }
+  const mode = c.modes.find((m) => m.id === modeId);
+  return rawValueIn(parent, mode?.parentModeId || parent.defaultModeId, variable, depth + 1);
 }
 
 export function findVariable(id) {
@@ -55,16 +100,28 @@ export function allVariables(type = null) {
 
 const isAlias = (v) => !!v && typeof v === 'object' && typeof v.alias === 'string';
 
-// Resolve a variable for a mode context. `modeOf(collection)` returns the active mode id.
-export function resolveValue(varId, modeOf, depth = 0) {
+// Resolve a variable. `pick(rootCollection)` returns the active { collection, modeId } for that variable's
+// family: the root itself or one of its extensions.
+export function resolveValue(varId, pick, depth = 0) {
   if (depth > MAX_ALIAS_DEPTH) return undefined;
   const hit = index.get(varId);
   if (!hit) return undefined;
-  const { variable, collection } = hit;
-  const modeId = modeOf(collection);
-  let v = variable.valuesByMode[modeId];
-  if (v === undefined) v = variable.valuesByMode[collection.defaultModeId];
-  return isAlias(v) ? resolveValue(v.alias, modeOf, depth + 1) : v;
+  const { collection, modeId } = pick(hit.collection);
+  const v = rawValueIn(collection, modeId, hit.variable);
+  return isAlias(v) ? resolveValue(v.alias, pick, depth + 1) : v;
+}
+
+// A picker for a mode context { collectionId: modeId } whose keys are ordered farthest → nearest.
+// The nearest entry for any collection in the variable's family wins.
+function contextPicker(ctx) {
+  const keys = Object.keys(ctx);
+  return (root) => {
+    for (let i = keys.length - 1; i >= 0; i--) {
+      const c = colIndex.get(keys[i]);
+      if (c && inFamily(c, root) && c.modes.some((m) => m.id === ctx[keys[i]])) return { collection: c, modeId: ctx[keys[i]] };
+    }
+    return { collection: root, modeId: root.defaultModeId };
+  };
 }
 
 // ---------- applying values ----------
@@ -114,10 +171,13 @@ export function resolveVariables() {
   for (const pg of doc.pages) {
     const visit = (nodes, ctx) => {
       for (const n of nodes) {
-        const here = n.modes ? { ...ctx, ...n.modes } : ctx;
+        // Re-insert this layer's modes so they come last (nearest) in key order.
+        const here = n.modes
+          ? Object.assign(Object.fromEntries(Object.entries(ctx).filter(([k]) => !(k in n.modes))), n.modes)
+          : ctx;
         if (n.bindings) {
-          const modeOf = (c) => (here[c.id] && c.modes.some((m) => m.id === here[c.id]) ? here[c.id] : c.defaultModeId);
-          for (const [path, varId] of Object.entries(n.bindings)) applyBinding(n, path, resolveValue(varId, modeOf));
+          const pick = contextPicker(here);
+          for (const [path, varId] of Object.entries(n.bindings)) applyBinding(n, path, resolveValue(varId, pick));
         }
         if (n.children) visit(n.children, here);
       }
@@ -126,18 +186,19 @@ export function resolveVariables() {
   }
 }
 
-// The mode a layer would use for `col` if it didn't set one itself (from ancestors, the page, or the default).
+// The mode a layer inherits for `col` from its ancestors or page, or null if none pins one.
 export function inheritedMode(node, col, ancestorsOf, pageOfNode) {
   for (const a of ancestorsOf(node)) if (a.modes?.[col.id]) return a.modes[col.id];
-  return pageOfNode(node)?.modes?.[col.id] || col.defaultModeId;
+  return pageOfNode(node)?.modes?.[col.id] || null;
 }
 
-export const multiModeCollections = () => collections().filter((c) => c.modes.length > 1);
+// Collections worth a mode picker: roots with several modes, and every extension (picking one applies it).
+export const multiModeCollections = () => collections().filter((c) => c.modes.length > 1 || c.extends);
 
 // Resolved value of a variable in each collection's default mode (for previews in menus and the editor).
 export function previewValue(varId) {
   reindexVariables();
-  return resolveValue(varId, (c) => c.defaultModeId);
+  return resolveValue(varId, (root) => ({ collection: root, modeId: root.defaultModeId }));
 }
 
 // ---------- binding ----------
@@ -200,9 +261,48 @@ export function createCollection(name = 'Collection') {
 }
 
 export function deleteCollection(col) {
-  for (const v of [...col.variables]) deleteVariable(v.id);
+  reindexVariables();
+  for (const ext of collections().filter((c) => c !== col && inFamily(c, col))) deleteCollection(ext);
+  for (const v of [...(col.variables || [])]) deleteVariable(v.id);
   const root = variablesRoot();
   root.collections = root.collections.filter((c) => c !== col);
+}
+
+// Create an extension of `parent`: same variables and modes, no values of its own yet.
+export function extendCollection(parent) {
+  const root = variablesRoot();
+  let name = `${parent.name} (extended)`;
+  for (let i = 2; root.collections.some((c) => c.name === name); i++) name = `${parent.name} (extended ${i})`;
+  const modes = parent.modes.map((m) => ({ id: uid(), name: m.name, parentModeId: m.id }));
+  const ext = { id: uid(), name, extends: parent.id, modes, defaultModeId: modes[0].id, variables: [], overrides: {} };
+  root.collections.push(ext);
+  return ext;
+}
+
+// Variables an extension shows: everything defined up its chain.
+export function inheritedVariables(ext) {
+  reindexVariables();
+  let root = ext;
+  for (let guard = 0; root?.extends && guard < 32; guard++) root = parentOf(root);
+  return root?.variables || [];
+}
+
+export function setOverride(ext, varId, modeId, value) {
+  ((ext.overrides ||= {})[varId] ||= {})[modeId] = value;
+}
+
+export function setOverrideAlias(ext, varId, modeId, targetId) {
+  const v = findVariable(varId)?.variable;
+  const target = findVariable(targetId)?.variable;
+  if (!v || !target || v.type !== target.type || varId === targetId || wouldCycle(varId, targetId)) return false;
+  setOverride(ext, varId, modeId, { alias: targetId });
+  return true;
+}
+
+export function clearOverride(ext, varId, modeId) {
+  if (!ext.overrides?.[varId]) return;
+  delete ext.overrides[varId][modeId];
+  if (!Object.keys(ext.overrides[varId]).length) delete ext.overrides[varId];
 }
 
 export function addMode(col, name) {
@@ -237,10 +337,17 @@ export function deleteVariable(varId) {
   reindexVariables();
   const hit = index.get(varId);
   if (!hit) return;
+  const literal = previewValue(varId) ?? DEFAULTS[hit.variable.type];
   for (const c of collections()) {
-    for (const v of c.variables) {
+    for (const v of c.variables || []) {
       for (const [m, val] of Object.entries(v.valuesByMode)) {
-        if (isAlias(val) && val.alias === varId) v.valuesByMode[m] = previewValue(varId) ?? DEFAULTS[v.type];
+        if (isAlias(val) && val.alias === varId) v.valuesByMode[m] = literal;
+      }
+    }
+    if (c.overrides) {
+      delete c.overrides[varId];
+      for (const byMode of Object.values(c.overrides)) {
+        for (const [m, val] of Object.entries(byMode)) if (isAlias(val) && val.alias === varId) byMode[m] = literal;
       }
     }
   }

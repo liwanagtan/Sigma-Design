@@ -497,16 +497,18 @@ function modeRows(nodes) {
     let current, inherited;
     if (nodes) {
       current = common(nodes, (n) => n.modes?.[col.id] || '');
-      inherited = inheritedMode(nodes[0], col, ancestors, (n) => state.doc.pages.find((p) => p.id === state.doc.currentPageId));
+      inherited = inheritedMode(nodes[0], col, ancestors, () => page());
     } else {
       current = page().modes?.[col.id] || '';
-      inherited = col.defaultModeId;
+      inherited = null;
     }
-    const inheritedName = col.modes.find((m) => m.id === inherited)?.name || '';
+    // "Auto" inherits; for an extended collection that nothing applies, it means "not applied".
+    const inheritedName = col.modes.find((m) => m.id === (inherited || col.defaultModeId))?.name || '';
+    const autoLabel = col.extends && !inherited ? 'Not applied' : `Auto (${inheritedName})`;
     return `<label class="bind-row mode-row" title="Variable mode for ${esc(col.name)}"><span>${esc(col.name)}</span>` +
       `<select class="select" data-mode-col="${col.id}" data-mode-target="${nodes ? 'layers' : 'page'}">` +
       (current === MIXED ? '<option selected disabled>Mixed</option>' : '') +
-      `<option value="" ${current === '' ? 'selected' : ''}>Auto (${esc(inheritedName)})</option>` +
+      `<option value="" ${current === '' ? 'selected' : ''}>${esc(autoLabel)}</option>` +
       col.modes.map((m) => `<option value="${m.id}" ${current === m.id ? 'selected' : ''}>${esc(m.name)}</option>`).join('') +
       '</select></label>';
   }).join('');

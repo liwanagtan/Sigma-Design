@@ -370,3 +370,12 @@ fieldset.readonly .field-label { cursor: default; }
 .vars-empty { margin: auto; text-align: center; color: var(--muted); max-width: 360px; }
 .vars-empty .btn { height: 32px; padding: 0 14px; margin-top: 8px; }
 .vars-none { padding: 16px 8px; }
+.vars-col-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vars-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.vars-actions { display: flex; gap: 8px; }
+.ext-badge { padding: 2px 8px; border-radius: 10px; background: #f0e6ff; color: #5b21b6; font-size: 11px; white-space: nowrap; }
+.vars-hint { padding: 8px 16px; color: var(--muted); border-bottom: 1px solid var(--border); background: #fafafa; }
+.var-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 6px; }
+.var-cell.inherited .cell-input, .var-cell.inherited .cell-bool, .var-cell.inherited .alias-chip { opacity: 0.5; }
+.var-cell.overridden { background: #f5efff; border-radius: 6px; padding: 2px 4px; margin: -2px -4px; }
+.cell-reset { width: 22px; height: 22px; color: #6d28d9; }
