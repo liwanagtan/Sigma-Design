@@ -1,7 +1,7 @@
 // The files home: lists every Sigma file stored in this browser.
 import {
   listFiles, createFile, renameFile, duplicateFile, deleteFile, downloadFile, importFiles, pickFilesToImport,
-  storageSummary, openFile, fileHref, fileKind, newTokenDocument,
+  storageSummary, openFile, fileHref, fileKind, newTokenDocument, createSampleFiles,
 } from './files.js';
 import { sampleDocument } from './sample.js';
 import { showContextMenu } from './menu.js';
@@ -178,8 +178,9 @@ async function newBlankFile() {
   openFile(await createFile(sampleDocument({ blank: true })));
 }
 
+// The sample comes as a token file plus a design file that links it.
 async function newSampleFile() {
-  openFile(await createFile(sampleDocument()));
+  openFile(await createSampleFiles(sampleDocument()));
 }
 
 function afterImport(ids) {

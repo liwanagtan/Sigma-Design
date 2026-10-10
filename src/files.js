@@ -5,6 +5,7 @@ import {
   state, uid, setPersistence, flushSave, hasUnsavedChanges, LEGACY_STORAGE_KEY, migrateDocument,
 } from './store.js';
 import { buildSVG, download, toast } from './io.js';
+import { snapshotForLibrary } from './variables.js';
 
 const TAB_ID = uid();
 const channel = 'BroadcastChannel' in window ? new BroadcastChannel('sigma-files') : null;
@@ -127,6 +128,7 @@ export function newTokenDocument(name = 'Untitled tokens') {
 const metaFor = (id, doc, extra = {}) => ({
   id,
   kind: fileKind(doc),
+  tokenVersion: doc.published?.version || 0,
   name: doc.name || 'Untitled',
   background: doc.pages?.[0]?.background || '#F5F5F5',
   createdAt: Date.now(),
@@ -204,6 +206,59 @@ export function pickFilesToImport() {
   });
 }
 
+// ---------- token files as libraries ----------
+export async function listTokenFiles() {
+  return (await listFiles()).filter((f) => fileKind(f) === 'tokens');
+}
+
+// The latest published version of a token file: { meta, published } or null.
+export async function loadPublished(id) {
+  const file = await loadFile(id);
+  if (!file || fileKind(file.meta) !== 'tokens') return null;
+  return { meta: file.meta, published: file.doc.published || null };
+}
+
+const publishedFrom = (collections, prev, notes) => ({
+  version: (prev?.version || 0) + 1, publishedAt: Date.now(), notes: notes || '', collections: structuredClone(collections),
+});
+
+// Create a token file holding `collections`, already published as v1.
+export async function createTokenFileWith(name, collections, notes = 'Initial version') {
+  const doc = newTokenDocument(name);
+  doc.variables.collections = structuredClone(collections);
+  doc.published = publishedFrom(collections, null, notes);
+  const id = await createFile(doc);
+  return { id, name, published: doc.published };
+}
+
+// Add collections to an existing (closed) token file and publish a new version.
+export async function appendToTokenFile(id, collections, notes) {
+  const file = await loadFile(id);
+  if (!file) throw new Error('That token file no longer exists.');
+  const doc = file.doc;
+  doc.variables ||= { collections: [] };
+  doc.variables.collections.push(...structuredClone(collections));
+  doc.published = publishedFrom(doc.variables.collections, doc.published, notes);
+  const meta = { ...file.meta, updatedAt: Date.now(), tokenVersion: doc.published.version };
+  await db.putFile(meta, { id, doc, views: file.views });
+  broadcast('saved', id);
+  broadcast('published', id);
+  return { id, name: meta.name, published: doc.published };
+}
+
+// The sample: a token file with the design-system tokens, and a design file that links it.
+export async function createSampleFiles(doc) {
+  const cols = doc.variables?.collections || [];
+  if (!cols.length) return createFile(doc);
+  doc.variables.collections = [];
+  const lib = await createTokenFileWith(`${doc.name} tokens`, cols);
+  doc.libraries = [{
+    fileId: lib.id, name: lib.name, version: lib.published.version,
+    collections: snapshotForLibrary(cols, lib.id),
+  }];
+  return createFile(doc);
+}
+
 // ---------- the open file ----------
 export function setCurrentFile(id) {
   currentFileId = id;
@@ -229,12 +284,15 @@ function persistCurrent(doc, views, { edited }) {
     }
     meta.name = doc.name || 'Untitled';
     meta.background = doc.pages?.[0]?.background || meta.background;
+    const publishedBefore = meta.tokenVersion || 0;
+    meta.tokenVersion = doc.published?.version || 0;
     if (edited) meta.updatedAt = Date.now();
     await db.putFile(meta, { id, doc, views });
     if (edited) {
       broadcast('saved', id);
       scheduleThumbnail();
     }
+    if (meta.tokenVersion !== publishedBefore) broadcast('published', id);
   }).catch((err) => {
     console.error(err);
     toast(`Autosave failed: ${err.message}. Use Save file… to keep a copy.`);

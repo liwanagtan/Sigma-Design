@@ -66,6 +66,12 @@ Then open http://localhost:5173.
   - **typography tokens** bundle font family, weight, size, line height and letter spacing, and each part can alias a number or text token
   - a typography token is edited in the inspector, with a live sample
   - in design files, the Text section's **Text style** links a typography token to a text layer; changing any font property by hand detaches it
+- **Token libraries:**
+  - **Publish…** in a token file creates a numbered version, with optional notes and a summary of what changed
+  - in a design file, **Token libraries…** (Σ menu, or the panel with nothing selected) links published token files; the file keeps a copy of the version it accepted
+  - when a newer version is published, the design file shows "Token updates available"; **Review** lists added, changed and removed tokens, and you accept when ready
+  - **Move to token file…** in the local tokens window sends a file's local tokens to a new or existing token file and links it
+  - files from before token libraries move their variables into a linked token file the first time they're opened
   - organise color, number, string and boolean variables into collections; use `/` in names to group them
   - each collection has modes (columns), and a cell can alias another variable
   - the ◈ button on a fill, stroke, number field, visibility or text content binds a variable; a bound field shows a purple chip

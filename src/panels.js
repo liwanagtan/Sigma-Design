@@ -17,11 +17,12 @@ import {
   addVariantProperty, displayName,
 } from './components.js';
 import { exportNodes, saveFile, pickImages } from './io.js';
-import { createFile, openFile, goHome, pickFilesToImport } from './files.js';
+import { createFile, openFile, goHome, pickFilesToImport, createSampleFiles } from './files.js';
+import { libraries, openLibrariesDialog } from './libraries.js';
 import { sampleDocument } from './sample.js';
 import {
   collections, findVariable, typeForPath, previewValue, bindVariable, unbindVariable, shiftPaintBindings, createCollection,
-  createVariable, VAR_TYPES, multiModeCollections, inheritedMode, splitColor,
+  createVariable, VAR_TYPES, multiModeCollections, inheritedMode, splitColor, localCollections, libraryOf,
 } from './variables.js';
 import { openVariablesEditor } from './variables-ui.js';
 import { showContextMenu } from './menu.js';
@@ -92,7 +93,7 @@ function initFileHeader() {
         const [id] = await pickFilesToImport();
         if (id) openFile(id);
       } },
-      { label: 'Open sample file', action: async () => openFile(await createFile(sampleDocument())) },
+      { label: 'Open sample file', action: async () => openFile(await createSampleFiles(sampleDocument())) },
       { label: 'Download a copy (.sigma.json)', action: saveFile },
       '-',
       { label: 'Place image…', shortcut: '⇧⌘K', action: () => pickImages() },
@@ -102,6 +103,7 @@ function initFileHeader() {
       { label: 'Undo', shortcut: '⌘Z', action: undo },
       { label: 'Redo', shortcut: '⇧⌘Z', action: redo },
       '-',
+      { label: 'Token libraries…', action: () => openLibrariesDialog() },
       { label: 'Local design tokens…', action: () => openVariablesEditor() },
       { label: 'Keyboard shortcuts', shortcut: '?', action: showShortcuts },
     ]);
@@ -527,6 +529,7 @@ function setMode(target, colId, modeId) {
 }
 
 // ---------- variable bindings ----------
+const TOKEN_ICON = '<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 1.2l5 2.9v5.8L7 12.8 2 9.9V4.1z"/><circle cx="7" cy="7" r="1.6"/></svg>';
 const VAR_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M6 1l4.3 2.5v5L6 11 1.7 8.5v-5z"/><circle cx="6" cy="6" r="1.4"/></svg>';
 
 // The variable all `nodes` bind at `path`: a variable, MIXED, or null when unbound.
@@ -568,10 +571,11 @@ function variableMenu(btn, path) {
   const current = boundVar(nodes, path);
   const items = [];
   for (const col of collections()) {
-    const vars = col.variables.filter((v) => v.type === type);
+    const vars = (col.variables || []).filter((v) => v.type === type);
     if (!vars.length) continue;
     if (items.length) items.push('-');
-    items.push({ label: col.name, disabled: true });
+    // Group by where the tokens come from: a linked token file, or this file's local tokens.
+    items.push({ label: `${libraryOf(col)?.name || 'Local'} / ${col.name}`, disabled: true });
     for (const v of vars) {
       items.push({
         label: v.name, shortcut: previewText(v), checked: current && current !== MIXED && current.id === v.id,
@@ -595,7 +599,7 @@ function applyVariable(nodes, path, varId) {
 }
 
 function variableFromValue(nodes, path, type) {
-  const col = collections()[0] || createCollection('Tokens');
+  const col = localCollections()[0] || createCollection('Tokens');
   let value = readPath(nodes[0], path);
   if (type === 'typography') {
     const n = nodes[0];
@@ -704,8 +708,15 @@ function buildProps() {
       html += section('Frame', `<div class="presets">${FRAME_PRESETS.map(([name, w, h], i) =>
         `<button class="preset" data-preset="${i}"><span>${name}</span><span class="muted">${w}×${h}</span></button>`).join('')}</div>`);
     }
-    const vcount = collections().reduce((n, c) => n + c.variables.length, 0);
-    html += section('Local design tokens', `<div class="muted">${vcount ? `${vcount} token${vcount === 1 ? '' : 's'} in ${collections().length} collection${collections().length === 1 ? '' : 's'}` : 'Reusable colors, numbers, text and booleans, kept in this file.'}</div>` +
+    const locals = localCollections();
+    const vcount = locals.reduce((n, c) => n + c.variables.length, 0);
+    const libs = libraries();
+    html += section('Design tokens',
+      (libs.length
+        ? libs.map((l) => `<div class="lib-line"><span class="licon purple">${TOKEN_ICON}</span><span class="link-name">${esc(l.name)}</span><span class="muted">v${l.version}</span></div>`).join('')
+        : '<div class="muted">Link token files to use their design tokens here.</div>') +
+      '<button class="btn wide" data-action="open-libraries">Manage libraries…</button>' +
+      `<div class="muted">${vcount ? `${vcount} local token${vcount === 1 ? '' : 's'} in this file` : 'No local tokens in this file.'}</div>` +
       '<button class="btn wide" data-action="open-variables">Open local tokens</button>');
     html += section('Page', modeRows(null) + `<div class="color-row"><label class="swatch" style="--c:${page().background}"><input type="color" data-page-bg value="${page().background.toLowerCase()}"></label>` +
       `<input class="hex" data-page-hex value="${page().background.replace('#', '')}" spellcheck="false"></div>`);
@@ -1260,6 +1271,8 @@ function initProps() {
       }
       case 'open-variables':
         return openVariablesEditor();
+      case 'open-libraries':
+        return openLibrariesDialog();
       case 'add-instance':
         return duplicateSelection();
       case 'add-variant':

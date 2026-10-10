@@ -441,3 +441,34 @@ fieldset.readonly .field-label { cursor: default; }
 .typo-field .select { width: 100%; }
 .cell-input.boxed { border-color: var(--border); }
 .cell-alias.always { visibility: visible; }
+
+/* ---------- token libraries ---------- */
+.lib-modal { width: min(560px, calc(100vw - 32px)); }
+.lib-body { padding: 12px 16px 16px; overflow: auto; display: flex; flex-direction: column; gap: 8px; }
+.lib-intro { margin: 0 0 4px; line-height: 1.5; }
+.lib-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); }
+.lib-footer .btn, .lib-row .btn { height: 30px; padding: 0 12px; }
+.lib-row { display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; }
+.lib-icon { color: #9747ff; display: grid; place-items: center; }
+.lib-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.lib-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lib-empty { padding: 16px 0; }
+.update-dot { color: #9747ff; }
+.update-card { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.update-card .btn { align-self: flex-start; height: 28px; padding: 0 12px; }
+.update-head { display: flex; justify-content: space-between; gap: 8px; }
+.update-notes { font-style: italic; color: var(--muted); }
+.diff-group { display: flex; flex-direction: column; gap: 1px; }
+.diff-label { font-weight: 600; margin-top: 4px; }
+.diff-group.added .diff-label { color: #14ae5c; }
+.diff-group.changed .diff-label { color: #b54708; }
+.diff-group.removed .diff-label { color: #c4320a; }
+.lib-line { display: flex; align-items: center; gap: 6px; margin-right: 24px; min-height: 22px; }
+.head-actions { display: flex; align-items: center; gap: 8px; }
+.head-actions .btn { height: 28px; padding: 0 10px; font-weight: 500; font-size: 11px; }
+.publish-status { margin-right: 4px; }
+.status-chip { padding: 3px 8px; border-radius: 10px; background: var(--hover); color: var(--muted); font-size: 11px; }
+.status-chip.ok { background: #e7f7ee; color: #0f7a40; }
+.status-chip.warn { background: #fff4e5; color: #b54708; }
+.tokens-header-actions .btn { height: 30px; padding: 0 12px; margin-right: 8px; }
+.tokens-header-actions .btn:disabled { opacity: 0.45; }

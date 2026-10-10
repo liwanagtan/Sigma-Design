@@ -207,7 +207,9 @@ export function migratePaints(n) {
 }
 
 // Bump DOC_VERSION and add a step below whenever the saved format changes.
-export const DOC_VERSION = 2;
+// v3: design tokens can come from linked token files (doc.libraries). Files older than v3 have their
+// variables moved into a token file the first time they're opened (see libraries.migrateLegacyTokens).
+export const DOC_VERSION = 3;
 
 export function migrateDocument(doc) {
   // v1 → v2: single fill/stroke → paint lists, and a variables container.

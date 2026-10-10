@@ -18,6 +18,7 @@ import {
 } from './files.js';
 import { initHome, renderHome, setHomeNotice } from './home.js';
 import { initTokensScreen, showTokensScreen, hideTokensScreen } from './tokens-screen.js';
+import { checkLibraryUpdates, migrateLegacyTokens, libraries } from './libraries.js';
 import { hideContextMenu } from './menu.js';
 
 const appEl = document.getElementById('app');
@@ -87,6 +88,8 @@ function showBanner(text, actionLabel, action) {
   banner.hidden = false;
 }
 const hideBanner = () => void (banner.hidden = true);
+// Other modules raise or clear the banner with a 'sigma:banner' event ({ text, label, action } or null).
+window.addEventListener('sigma:banner', (e) => (e.detail ? showBanner(e.detail.text, e.detail.label, e.detail.action) : hideBanner()));
 
 // ---------- screens ----------
 // `discard`: drop unsaved local changes instead of writing them (reloading another tab's version).
@@ -137,11 +140,14 @@ async function showFile(id, { force = false, discard = false } = {}) {
   state.screen = 'editor';
   tokensEl.hidden = true;
   appEl.hidden = false;
+  const wasVersion = file.doc.version || 1;
   loadDocument(file.doc, file.views);
   remeasureAllText();
   if (!state.pageViews[page().id]) requestAnimationFrame(() => zoomToFit());
   emit('view');
   emit('tool');
+  await migrateLegacyTokens(wasVersion);
+  checkLibraryUpdates();
 }
 
 let routing = Promise.resolve();
@@ -159,6 +165,10 @@ function route() {
 function onRemoteChange(msg) {
   const current = getCurrentFileId();
   if (state.screen === 'home') return void renderHome();
+  // A linked token file published a new version.
+  if (msg.type === 'published' && state.screen === 'editor' && libraries().some((l) => l.fileId === msg.id)) {
+    return void checkLibraryUpdates();
+  }
   if (msg.id !== current) return;
   if (msg.type === 'saved') {
     showBanner('This file was changed in another tab.', 'Reload', () => {

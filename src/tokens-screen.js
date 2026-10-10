@@ -1,5 +1,6 @@
 // The screen for token files: no canvas, just the design token editor full-screen.
 import { state, commit, subscribe, undo, redo } from './store.js';
+import { diffCollections } from './variables.js';
 import { mountTokenEditor, unmountTokenEditor } from './variables-ui.js';
 import { goHome } from './files.js';
 import { saveFile } from './io.js';
@@ -16,6 +17,8 @@ export function initTokensScreen(el) {
       <input class="file-name tokens-file-name" spellcheck="false" aria-label="Token file name">
       <span class="kind-badge tokens-kind">Token file</span>
       <div class="tokens-header-actions">
+        <span class="publish-status" data-publish-status></span>
+        <button class="btn primary" data-publish>Publish…</button>
         <button class="icon-btn" data-undo title="Undo  ⌘Z"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><path d="M5 3L2 6l3 3"/><path d="M2 6h7.5a4 4 0 0 1 0 8H7"/></svg></button>
         <button class="icon-btn" data-redo title="Redo  ⇧⌘Z"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><path d="M11 3l3 3-3 3"/><path d="M14 6H6.5a4 4 0 0 0 0 8H9"/></svg></button>
       </div>
@@ -41,6 +44,7 @@ export function initTokensScreen(el) {
   name.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === 'Escape') name.blur();
   });
+  el.querySelector('[data-publish]').addEventListener('click', openPublishDialog);
   el.querySelector('[data-undo]').addEventListener('click', undo);
   el.querySelector('[data-redo]').addEventListener('click', redo);
 
@@ -68,6 +72,51 @@ function renderHeader() {
   const name = root.querySelector('.tokens-file-name');
   if (document.activeElement !== name) name.value = state.doc.name || 'Untitled tokens';
   document.title = `${state.doc.name || 'Untitled tokens'} – Sigma`;
+  const pub = state.doc.published;
+  const dirty = hasUnpublishedChanges();
+  root.querySelector('[data-publish-status]').innerHTML = !pub
+    ? '<span class="status-chip">Not published</span>'
+    : dirty ? `<span class="status-chip warn">Unpublished changes · v${pub.version} live</span>`
+      : `<span class="status-chip ok">v${pub.version} published</span>`;
+  root.querySelector('[data-publish]').disabled = !!pub && !dirty;
+}
+
+const current = () => state.doc?.variables?.collections || [];
+const hasUnpublishedChanges = () => JSON.stringify(current()) !== JSON.stringify(state.doc?.published?.collections || []);
+
+// ---------- publishing ----------
+// Publishing makes the current tokens a new numbered version. Design files that link this token file
+// see "Token updates available" and choose when to accept it.
+function openPublishDialog() {
+  const pub = state.doc.published;
+  const d = diffCollections(pub?.collections || [], current());
+  const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const list = (label, items) => (items.length ? `<div class="diff-group"><div class="diff-label">${label} (${items.length})</div>${items.slice(0, 10).map((n) => `<div>${esc(n)}</div>`).join('')}${items.length > 10 ? `<div class="muted">and ${items.length - 10} more</div>` : ''}</div>` : '');
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-backdrop';
+  wrap.innerHTML = `<div class="modal lib-modal"><div class="modal-head">Publish ${esc(state.doc.name)}<button class="icon-btn" data-close>${icons.close}</button></div>
+    <div class="lib-body">
+      <p class="muted">This becomes version ${(pub?.version || 0) + 1}. Design files that use this token file will be offered the update.</p>
+      ${list('Added', d.added) + list('Changed', d.changed) + list('Removed', d.removed) || '<div class="muted">No changes since the last version.</div>'}
+      <label class="inspector-label">Notes (optional)</label>
+      <textarea class="desc publish-notes" rows="3" placeholder="What changed and why?"></textarea>
+    </div>
+    <div class="lib-footer"><button class="btn" data-close>Cancel</button><button class="btn primary" data-confirm>Publish v${(pub?.version || 0) + 1}</button></div></div>`;
+  const close = () => wrap.remove();
+  wrap.addEventListener('click', (e) => {
+    if (e.target === wrap || e.target.closest('[data-close]')) return close();
+    if (!e.target.closest('[data-confirm]')) return;
+    state.doc.published = {
+      version: (pub?.version || 0) + 1, publishedAt: Date.now(),
+      notes: wrap.querySelector('.publish-notes').value.trim(), collections: structuredClone(current()),
+    };
+    commit();
+    close();
+    window.dispatchEvent(new CustomEvent('sigma:toast', { detail: `Published v${state.doc.published.version}` }));
+  });
+  wrap.addEventListener('keydown', (e) => e.key === 'Escape' && close());
+  document.body.appendChild(wrap);
+  wrap.querySelector('.publish-notes').focus();
 }
 
 subscribe((kind) => {

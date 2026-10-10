@@ -51,12 +51,46 @@ const DEFAULTS = {
 export const defaultValue = (type) => structuredClone(DEFAULTS[type]);
 const MAX_ALIAS_DEPTH = 16;
 
-export const collections = () => state.doc?.variables?.collections || [];
+// A design file's tokens come from its own (local) collections and from snapshots of linked token files
+// (doc.libraries[].collections, each marked fromLibrary: fileId). Everything resolves together, but only
+// local collections are edited here.
+export const localCollections = () => state.doc?.variables?.collections || [];
+export const libraryCollections = () => (state.doc?.libraries || []).flatMap((l) => l.collections || []);
+export const collections = () => [...localCollections(), ...libraryCollections()];
+export const isLibraryCollection = (c) => !!c?.fromLibrary;
+export const libraryOf = (c) => (c?.fromLibrary ? (state.doc?.libraries || []).find((l) => l.fileId === c.fromLibrary) || null : null);
+
+// Copy published collections for a design file, marked with the token file they came from.
+export function snapshotForLibrary(cols, fileId) {
+  return structuredClone(cols || []).map((c) => ({ ...c, fromLibrary: fileId }));
+}
+
+// What changed between two published versions: token and collection names added, changed or removed.
+export function diffCollections(before, after) {
+  const index = (cols) => {
+    const m = new Map();
+    for (const c of cols || []) {
+      m.set(`col:${c.id}`, { name: `Collection “${c.name}”`, sig: JSON.stringify([c.name, c.modes?.map((x) => x.name), c.extends || null]) });
+      for (const v of c.variables || []) m.set(v.id, { name: v.name, sig: JSON.stringify([v.name, v.type, v.valuesByMode, v.description || '']) });
+      for (const [vid, ov] of Object.entries(c.overrides || {})) m.set(`${c.id}:${vid}`, { name: `${c.name}: override`, sig: JSON.stringify(ov) });
+    }
+    return m;
+  };
+  const a = index(before), b = index(after);
+  const added = [], changed = [], removed = [];
+  for (const [k, v] of b) {
+    if (!a.has(k)) added.push(v.name);
+    else if (a.get(k).sig !== v.sig) changed.push(v.name);
+  }
+  for (const [k, v] of a) if (!b.has(k)) removed.push(v.name);
+  return { added, changed, removed };
+}
 
 function variablesRoot() {
   if (!state.doc.variables) state.doc.variables = { collections: [] };
   return state.doc.variables;
 }
+
 
 // ---------- lookup ----------
 // Extended collections ({ extends: parentId, modes: [{ id, name, parentModeId }], overrides: { varId: { modeId: value } } })
@@ -214,7 +248,7 @@ function applyBinding(node, path, value) {
 // Normalize step: write every bound variable's value into its layer property.
 export function resolveVariables() {
   const doc = state.doc;
-  if (!doc?.variables?.collections?.length) return;
+  if (!doc || !collections().length) return; // local tokens or linked token files
   reindexVariables();
   for (const pg of doc.pages) {
     const visit = (nodes, ctx) => {

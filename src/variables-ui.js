@@ -6,8 +6,9 @@ import {
   collections, VAR_TYPES, createCollection, deleteCollection, addMode, removeMode, createVariable, deleteVariable,
   setAlias, findVariable, allVariables, previewValue, isAlias, wouldCycle, extendCollection, inheritedVariables,
   rawValueIn, setOverride, setOverrideAlias, clearOverride, parentOf, isExtension, TYPO_FIELDS, splitColor, joinColor,
-  defaultValue,
+  defaultValue, localCollections,
 } from './variables.js';
+import { moveLocalTokensMenu } from './libraries.js';
 import { FONTS, WEIGHTS } from './fonts.js';
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
@@ -91,14 +92,15 @@ subscribe((kind) => {
   render();
 });
 
+// Only this file's own collections are edited here; linked token files are edited in their own file.
 function active() {
-  const cols = collections();
+  const cols = localCollections();
   return cols.find((c) => c.id === activeId) || cols[0] || null;
 }
 
 // Collections in tree order: each root followed by its extensions (indented).
 function collectionTree() {
-  const cols = collections();
+  const cols = localCollections();
   const out = [];
   const add = (c, depth) => {
     out.push({ c, depth });
@@ -309,7 +311,9 @@ function render() {
       (ext ? '' : '<div class="vars-footer"><button class="btn" data-act="new-variable">+ Create token</button></div>');
   }
   modal.querySelector('.vars-modal').innerHTML =
-    (inline ? '' : `<div class="modal-head">Local design tokens<button class="icon-btn" data-close>${icons.close}</button></div>`) +
+    (inline ? '' : `<div class="modal-head">Local design tokens<span class="head-actions">` +
+      (localCollections().length ? '<button class="btn" data-act="move-to-file" title="Move these tokens into a token file and link it">Move to token file…</button>' : '') +
+      `<button class="icon-btn" data-close>${icons.close}</button></span></div>`) +
     `<div class="vars-body"><aside class="vars-side">${sidebar}<button class="vars-add" data-act="new-collection">+ New collection</button></aside>` +
     `<section class="vars-main">${main}</section></div>`;
   if (searching) {
@@ -395,6 +399,11 @@ function bind() {
     if (t.hasAttribute('data-reset-override')) return change(() => clearOverride(col, t.dataset.var, t.dataset.mode));
     if (t.hasAttribute('data-alias-menu')) return aliasMenu(t, col);
     switch (t.dataset.act) {
+      case 'move-to-file': {
+        const r = t.getBoundingClientRect(); // read before the modal (and the button) goes away
+        close();
+        return moveLocalTokensMenu({ getBoundingClientRect: () => r });
+      }
       case 'new-collection':
         return change(() => void (activeId = createCollection().id));
       case 'extend':
