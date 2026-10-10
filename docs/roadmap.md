@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **All phases (1–9) done.** See "Follow-ups" at the end for what's left. Each phase below should fit in one working session. Finish a phase, test it in the browser, commit, then move to the next. Work through the phases in order. **Phase 1 (Files home) is the priority** and doesn't depend on anything else.
+Status: **Phases 1–9 done.** Next up is **Part C: Design tokens** (Phases 10–14). See "Follow-ups" for smaller open items. Each phase below should fit in one working session. Finish a phase, test it in the browser, commit, then move to the next. Work through the phases in order. **Phase 1 (Files home) is the priority** and doesn't depend on anything else.
 
 ## Scope
 
@@ -271,6 +271,95 @@ doc.variables = {
 - **Snapshot undo size.** Every commit snapshots the whole document, and materialized instances make it bigger. Phase 1 moves storage to IndexedDB, which removes the storage limit. The in-memory undo stack can still grow, so cap it by total size, not just by count. Fallback: store instances without children and rebuild them on load, since they're derivable.
 - **Cycles.** These can come from nested instances or variable aliases. Both need hard guards in the pipeline, not just in the UI.
 
+# Part C: Design tokens
+
+This is where Sigma deliberately differs from Figma. Figma treats variables as a feature inside a design file. In Sigma, **design tokens** are their own product: a token file is a source of truth that a designer, team or org owns, and design files consume it.
+
+## Decisions
+
+1. **Name.** "Variables" is renamed **Design tokens** everywhere in the UI. Internal code names (`variables.js`, `doc.variables`) stay, to avoid churn.
+2. **File kinds.** Every file is a **Design file** or a **Token file**. The home page has a separate **Design tokens** group and a **New token file** button. Token files don't have a canvas. They open a full-screen token editor.
+3. **Publish and accept updates** (like a Figma library). Editing a token file changes nothing for consumers until you **Publish**, which creates a numbered version. A design file stores a snapshot of the version it accepted. When a newer version exists, it shows "Token updates available", and you review and accept. Bad edits can't instantly change everyone's work, and design files keep working when the token file isn't available.
+4. **Several token files per design file.** For example, a design file can use "Core" and "Brand B" together.
+5. **Local tokens stay possible** in design files, as a scratchpad. A **Move to token file…** action promotes them, and bindings keep working because token ids don't change.
+6. **Existing variables convert automatically.** A design file's variables become a token file named "<file> tokens", published as v1 and linked to the design file it came from.
+7. **Colors carry opacity.** Every color token has an explicit opacity, shown on a checkerboard swatch. A layer using the token gets its paint opacity from it.
+8. **Typography tokens.** A single token bundles font family, weight, size, line height and letter spacing. Each part can be a value or an alias to another token, such as size → `font/size/lg`. A text layer links one typography token instead of five fields. Figma keeps text styles in a separate system; Sigma doesn't.
+9. **Code-friendly.** Token files export to the W3C Design Tokens format (DTCG `tokens.json`) and to CSS custom properties, and can import DTCG JSON. That makes the token file the source of truth for developers as well as designers.
+10. **Sharing with a team.** For now, token files are shared by exporting and importing files. Syncing between people needs a backend, which is listed as a later step.
+
+## Data model
+
+```js
+// Files: meta.kind tells the home page and the router what a file is.
+files: { id, name, kind: 'design' | 'tokens', updatedAt, thumbnail, tokenVersion? }
+
+// A token file's document
+{ kind: 'tokens', name, version, collections: [/* same shape as doc.variables.collections */],
+  published: { version: 3, publishedAt, notes, collections: [/* snapshot */] } }
+
+// A design file links token files and keeps the accepted snapshot of each
+doc.libraries = [{ fileId, name, version: 3, collections: [/* snapshot of that published version */] }]
+doc.variables.collections  // local (scratchpad) tokens, as today
+
+// Token ids are globally unique, so bindings keep pointing at a token id. The resolver indexes local
+// collections plus every linked library snapshot.
+
+// Color token: '#RRGGBB' or '#RRGGBBAA'. The editor shows hex + opacity %.
+// Typography token value: each field is a value or { alias: tokenId } of the matching primitive type
+{ fontFamily: 'Inter', fontWeight: 600, fontSize: { alias: 'size-lg' }, lineHeight: 140, letterSpacing: 0 }
+// A text layer binds it with bindings.typography = tokenId (sets all five properties)
+```
+
+## Phases
+
+### Phase 10: Rename and file kinds
+
+- **Rename** "Variables" to "Design tokens" in every label, menu, panel and the README.
+- **File kinds:** add `kind` to file metadata. Existing files are `design`.
+- **Home page:** sidebar groups **Design files** and **Design tokens**. Recents shows both, with a kind badge. Add a **New token file** button. Token-file thumbnails are swatch palettes generated from their color tokens.
+- **Routing:** `#/file/<id>` opens the canvas editor for design files and the token editor for token files. A token file gets an empty token editor for now; Phase 11 fills it in.
+- **Done when:** you can create, rename, duplicate and delete a token file from the home page, and it opens without a canvas.
+
+### Phase 11: Token file editor
+
+- **Full-screen layout**, built from today's variables editor:
+  - left: collections, with extensions nested
+  - center: the token table, one column per mode
+  - right: an inspector for the selected token (description, aliases, which tokens alias it)
+  - top: file name, search and a type filter
+- **Previews:** color swatches on a checkerboard, and so on per type.
+- **Descriptions:** tokens get a `description` for documentation.
+- **Done when:** a token file can be built from scratch with collections, modes, extensions, aliases and descriptions, with undo, without opening a canvas.
+
+### Phase 12: Color opacity and typography tokens
+
+- **Color opacity:** an opacity % field in the editor and in the design file's token picker. Swatches show transparency.
+- **Typography type:** a composite token. The editor shows a live sample ("The quick brown fox"), and each part can alias a token. `fontWeight` becomes a bindable number.
+- **Text section in design files:** a **Text style** picker lists typography tokens with an "Aa" preview. Linking one sets all five properties. Changing any of them by hand detaches the typography token.
+- **Done when:** a heading style token drives several text layers, and changing its size token (via an alias) updates them all.
+
+### Phase 13: Linking design files to token files
+
+- **Linking:** a **Libraries** dialog in design files lets you add or remove token files. Linking takes the latest published snapshot.
+- **Publish:** the token editor has **Publish** (with optional notes). It increments the version, stores the snapshot, and notifies open tabs.
+- **Accepting updates:** when a newer version exists, design files show "Token updates available". You review what changed (added, changed and removed tokens) and accept or skip. Tokens removed in a new version keep their last value, and their layers are flagged.
+- **Local tokens:** they're shown in the picker under "Local". **Move to token file…** moves local collections into a new or existing token file, publishes it, and links it.
+- **Migration:** design files with variables get a linked token file (v1) on first open after the update.
+- **Done when:** editing a color in a token file and publishing shows an update banner in an open design file, and accepting it recolors the bound layers.
+
+### Phase 14: Export and import
+
+- **Export DTCG `tokens.json`:** groups come from `/` in names, modes become separate sets, extensions become separate sets, aliases are written as `{group.token}`, and color uses the DTCG color format (including alpha).
+- **Export CSS:** custom properties, with `:root` for the default mode and a `[data-theme="dark"]` block per other mode.
+- **Import:** DTCG JSON creates a new token file, or merges into an open one.
+- **Done when:** exporting and re-importing a token file round-trips without loss, and the CSS works in a plain web page.
+
+### Later (needs a backend)
+
+- **Real sharing:** token files shared across people and devices, with roles (who can publish).
+- **History:** published version history with diffs and rollback.
+
 ## How to resume in a new session
 
 > "Read `docs/roadmap.md` and implement Phase N. Follow the ground rules, test in the browser pane, then commit."
@@ -286,6 +375,11 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 7: Modes
 - [x] Phase 8: Extended collections
 - [x] Phase 9: Integration and polish
+- [ ] Phase 10: Rename and file kinds
+- [ ] Phase 11: Token file editor
+- [ ] Phase 12: Color opacity and typography tokens
+- [ ] Phase 13: Linking design files to token files
+- [ ] Phase 14: Export and import
 
 ## Follow-ups
 
