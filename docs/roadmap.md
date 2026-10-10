@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Phases 1–11 done.** Next up is Phase 12 (color opacity and typography tokens). See "Follow-ups" for smaller open items. Each phase below should fit in one working session. Finish a phase, test it in the browser, commit, then move to the next. Work through the phases in order. **Phase 1 (Files home) is the priority** and doesn't depend on anything else.
+Status: **Phases 1–12 done.** Next up is Phase 13 (linking design files to token files). See "Follow-ups" for smaller open items. Each phase below should fit in one working session. Finish a phase, test it in the browser, commit, then move to the next. Work through the phases in order. **Phase 1 (Files home) is the priority** and doesn't depend on anything else.
 
 ## Scope
 
@@ -377,7 +377,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 9: Integration and polish
 - [x] Phase 10: Rename and file kinds
 - [x] Phase 11: Token file editor
-- [ ] Phase 12: Color opacity and typography tokens
+- [x] Phase 12: Color opacity and typography tokens
 - [ ] Phase 13: Linking design files to token files
 - [ ] Phase 14: Export and import
 

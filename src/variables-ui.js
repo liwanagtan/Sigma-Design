@@ -5,8 +5,10 @@ import { state, commit, emit, subscribe, walk } from './store.js';
 import {
   collections, VAR_TYPES, createCollection, deleteCollection, addMode, removeMode, createVariable, deleteVariable,
   setAlias, findVariable, allVariables, previewValue, isAlias, wouldCycle, extendCollection, inheritedVariables,
-  rawValueIn, setOverride, setOverrideAlias, clearOverride, parentOf, isExtension,
+  rawValueIn, setOverride, setOverrideAlias, clearOverride, parentOf, isExtension, TYPO_FIELDS, splitColor, joinColor,
+  defaultValue,
 } from './variables.js';
+import { FONTS, WEIGHTS } from './fonts.js';
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
 
@@ -25,7 +27,9 @@ const TYPE_ICON = {
   number: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M4.5 1.5l-1 9M8.5 1.5l-1 9M2 4.5h8.5M1.5 7.5H10"/></svg>',
   string: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M2 3V2h8v1M6 2v8M4.5 10h3"/></svg>',
   boolean: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><rect x="1" y="3.5" width="10" height="5" rx="2.5"/><circle cx="8.5" cy="6" r="1.5" fill="currentColor"/></svg>',
+  typography: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M1.5 10L4.5 2l3 8M2.6 7.2h3.8M8.5 6.5h2.5M9.75 6.5V10"/></svg>',
 };
+const FIELD_LABELS = { fontFamily: 'Family', fontWeight: 'Weight', fontSize: 'Size', lineHeight: 'Line height', letterSpacing: 'Letter spacing' };
 const LINK_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M5 7l2-2M5.5 3.5l.8-.8a2 2 0 0 1 2.8 2.8l-.8.8M6.5 8.5l-.8.8a2 2 0 0 1-2.8-2.8l.8-.8"/></svg>';
 const RESET_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M2.5 6a3.5 3.5 0 1 0 1-2.5M2.5 1.5v2h2"/></svg>';
 const DEFAULTS = { color: '#000000', number: 0, string: '', boolean: true };
@@ -104,10 +108,29 @@ function collectionTree() {
   return out;
 }
 
-function valueEditor(type, raw, data) {
+// A typography value with alias fields resolved (default modes), for previews.
+function typoPreview(raw) {
+  const base = isAlias(raw) ? previewValue(raw.alias) : raw;
+  const out = { ...defaultValue('typography'), ...(base || {}) };
+  for (const f of Object.keys(TYPO_FIELDS)) if (isAlias(out[f])) out[f] = previewValue(out[f].alias);
+  return out;
+}
+
+const typoStyle = (t) => `font-family:'${esc(t.fontFamily)}',system-ui;font-weight:${Number(t.fontWeight) || 400};` +
+  `letter-spacing:${Number(t.letterSpacing) || 0}px`;
+const typoSummary = (t) => `${t.fontFamily} · ${t.fontWeight} · ${t.fontSize}${t.lineHeight ? `/${t.lineHeight}%` : ''}`;
+
+function valueEditor(type, raw, data, v) {
   if (type === 'color') {
-    return `<label class="swatch" style="--c:${esc(raw)}"><input type="color" ${data} data-cell="color" value="${esc(String(raw).slice(0, 7).toLowerCase())}"></label>` +
-      `<input class="cell-input hex" ${data} data-cell="hex" value="${esc(String(raw).replace('#', ''))}" spellcheck="false">`;
+    const { hex, alpha } = splitColor(raw);
+    return `<label class="swatch" style="--c:${esc(raw)}"><input type="color" ${data} data-cell="color" value="${hex.toLowerCase()}"></label>` +
+      `<input class="cell-input hex" ${data} data-cell="hex" value="${hex.slice(1)}" spellcheck="false">` +
+      `<span class="alpha-wrap" title="Opacity"><input class="cell-input alpha" ${data} data-cell="alpha" value="${Math.round(alpha * 100)}" spellcheck="false">%</span>`;
+  }
+  if (type === 'typography') {
+    const t = typoPreview(raw);
+    return `<button class="typo-cell" data-row-select="${v.id}" title="Edit in the inspector">` +
+      `<span class="typo-sample" style="${typoStyle(t)}">Ag</span><span class="typo-meta">${esc(typoSummary(t))}</span></button>`;
   }
   if (type === 'number') return `<input class="cell-input" ${data} data-cell="number" value="${esc(raw)}" spellcheck="false">`;
   if (type === 'string') return `<input class="cell-input" ${data} data-cell="string" value="${esc(raw)}" spellcheck="false">`;
@@ -127,18 +150,20 @@ function cell(col, v, mode) {
     const target = findVariable(raw.alias);
     return `<div class="${cls}"><button class="alias-chip" ${data} data-alias-menu title="Aliased token">→ ${esc(target ? target.variable.name : 'Missing token')}</button>${resetBtn}</div>`;
   }
-  return `<div class="${cls}">${valueEditor(v.type, raw, data)}${aliasBtn}${resetBtn}</div>`;
+  return `<div class="${cls}">${valueEditor(v.type, raw, data, v)}${aliasBtn}${resetBtn}</div>`;
 }
 
 // Tokens (in any collection) whose values alias `id`, with the collection they're in.
 function aliasedBy(id) {
   const out = [];
   for (const c of collections()) {
+    const refers = (x) => (isAlias(x) && x.alias === id) ||
+      (x && typeof x === 'object' && Object.keys(TYPO_FIELDS).some((f) => isAlias(x[f]) && x[f].alias === id));
     for (const v of c.variables || []) {
-      if (Object.values(v.valuesByMode).some((x) => isAlias(x) && x.alias === id)) out.push({ variable: v, collection: c });
+      if (Object.values(v.valuesByMode).some(refers)) out.push({ variable: v, collection: c });
     }
     for (const [vid, byMode] of Object.entries(c.overrides || {})) {
-      if (Object.values(byMode).some((x) => isAlias(x) && x.alias === id)) {
+      if (Object.values(byMode).some(refers)) {
         const hit = findVariable(vid);
         if (hit) out.push({ variable: hit.variable, collection: c });
       }
@@ -162,6 +187,38 @@ function matches(v) {
   return !q || v.name.toLowerCase().includes(q) || (v.description || '').toLowerCase().includes(q);
 }
 
+// The typography editor for one mode: each field is a value or an alias to a number/string token.
+function typographyEditor(col, v, mode) {
+  const raw = isExtension(col) ? rawValueIn(col, mode.id, v) : v.valuesByMode[mode.id];
+  if (isAlias(raw)) {
+    return `<div class="typo-mode"><div class="typo-mode-name">${esc(mode.name)}</div>` +
+      `<button class="link-chip" data-select-token="${raw.alias}">→ ${esc(findVariable(raw.alias)?.variable.name || 'Missing token')}</button></div>`;
+  }
+  const value = { ...defaultValue('typography'), ...(raw || {}) };
+  const data = (f) => `data-var="${v.id}" data-mode="${mode.id}" data-typo-field="${f}"`;
+  const field = (f) => {
+    const x = value[f];
+    const alias = `<button class="icon-btn cell-alias always" ${data(f)} data-typo-alias title="Use a ${TYPO_FIELDS[f]} token">${LINK_ICON}</button>`;
+    let control;
+    if (isAlias(x)) {
+      control = `<button class="alias-chip" ${data(f)} data-typo-alias>→ ${esc(findVariable(x.alias)?.variable.name || 'Missing token')}</button>`;
+    } else if (f === 'fontFamily') {
+      const fonts = FONTS.includes(x) ? FONTS : [x, ...FONTS];
+      control = `<select class="select" ${data(f)}>${fonts.map((n) => `<option ${n === x ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`;
+    } else if (f === 'fontWeight') {
+      control = `<select class="select" ${data(f)}>${WEIGHTS.map(([w, l]) => `<option value="${w}" ${w === Number(x) ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+    } else {
+      const shown = f === 'lineHeight' && (x === null || x === undefined) ? 'Auto' : x;
+      control = `<input class="cell-input boxed" ${data(f)} value="${esc(shown)}" spellcheck="false">`;
+    }
+    return `<label class="typo-field"><span class="muted">${FIELD_LABELS[f]}</span>${control}${isAlias(x) ? '' : alias}</label>`;
+  };
+  const t = typoPreview(raw);
+  return `<div class="typo-mode">${col.modes.length > 1 ? `<div class="typo-mode-name">${esc(mode.name)}</div>` : ''}` +
+    `<div class="typo-sample-line" style="${typoStyle(t)};font-size:${Math.min(Number(t.fontSize) || 16, 40)}px;line-height:${t.lineHeight ? t.lineHeight + '%' : 'normal'}">The quick brown fox</div>` +
+    Object.keys(TYPO_FIELDS).map(field).join('') + '</div>';
+}
+
 function inspector(col) {
   const hit = selectedId ? findVariable(selectedId) : null;
   if (!hit) {
@@ -169,11 +226,16 @@ function inspector(col) {
   }
   const { variable: v, collection: home } = hit;
   const ext = isExtension(col);
-  const modeRows = col.modes.map((m) => {
+  const modeRows = v.type === 'typography' ? col.modes.map((m) => typographyEditor(col, v, m)).join('') : col.modes.map((m) => {
     const raw = ext ? rawValueIn(col, m.id, v) : v.valuesByMode[m.id];
+    let shown = String(raw);
+    if (v.type === 'color') {
+      const { hex, alpha } = splitColor(raw);
+      shown = alpha < 1 ? `${hex} · ${Math.round(alpha * 100)}%` : hex;
+    }
     const value = isAlias(raw)
       ? `<button class="link-chip" data-select-token="${raw.alias}">→ ${esc(findVariable(raw.alias)?.variable.name || 'Missing token')}</button>`
-      : `<span class="inspector-value">${v.type === 'color' ? `<span class="mini-swatch" style="--c:${esc(raw)}"></span>` : ''}${esc(String(raw))}</span>`;
+      : `<span class="inspector-value">${v.type === 'color' ? `<span class="mini-swatch" style="--c:${esc(raw)}"></span>` : ''}${esc(shown)}</span>`;
     return `<div class="inspector-row"><span class="muted">${esc(m.name)}</span>${value}</div>`;
   }).join('');
   const users = aliasedBy(v.id);
@@ -257,6 +319,39 @@ function render() {
   }
 }
 
+// The raw value shown in a cell (an extension shows its override or the inherited value).
+function cellRaw(col, varId, modeId) {
+  const v = findVariable(varId)?.variable;
+  if (!v) return undefined;
+  return isExtension(col) ? rawValueIn(col, modeId, v) : v.valuesByMode[modeId];
+}
+
+// Change one field of a typography token for a mode (writing an override in an extension).
+function writeTypoField(col, varId, modeId, field, value) {
+  let base = cellRaw(col, varId, modeId);
+  base = isAlias(base) ? { ...defaultValue('typography'), ...(previewValue(base.alias) || {}) } : { ...defaultValue('typography'), ...(base || {}) };
+  base[field] = value;
+  writeCell(col, varId, modeId, base);
+}
+
+function typoAliasMenu(btn, col) {
+  const { var: varId, mode, typoField: field } = btn.dataset;
+  const current = cellRaw(col, varId, mode)?.[field];
+  const type = TYPO_FIELDS[field];
+  const items = allVariables(type).map(({ variable: o, collection }) => ({
+    label: `${collection.name} / ${o.name}`,
+    shortcut: String(previewValue(o.id) ?? ''),
+    checked: isAlias(current) && current.alias === o.id,
+    action: () => change(() => writeTypoField(col, varId, mode, field, { alias: o.id })),
+  }));
+  if (isAlias(current)) {
+    items.push('-', { label: 'Detach alias', action: () => change(() => writeTypoField(col, varId, mode, field, previewValue(current.alias) ?? null)) });
+  }
+  if (!items.length) items.push({ label: `No ${VAR_TYPES[type].toLowerCase()} tokens yet`, disabled: true });
+  const r = btn.getBoundingClientRect();
+  showContextMenu(Math.max(8, r.right - 240), r.bottom + 4, items);
+}
+
 // Write a cell: a root collection's own value, or an extension's override.
 function writeCell(col, varId, modeId, value) {
   if (isExtension(col)) setOverride(col, varId, modeId, value);
@@ -277,6 +372,11 @@ function bind() {
     const t = e.target.closest('button');
     if (!t) return;
     const col = active();
+    if (t.dataset.rowSelect) {
+      selectedId = t.dataset.rowSelect;
+      return render();
+    }
+    if (t.hasAttribute('data-typo-alias')) return typoAliasMenu(t, col);
     if (t.dataset.selectToken) {
       // Jump to a token, switching to its collection if it lives elsewhere.
       const hit = findVariable(t.dataset.selectToken);
@@ -346,14 +446,30 @@ function bind() {
       const v = findVariable(t.dataset.varName)?.variable;
       if (v && t.value.trim()) v.name = t.value.trim().replace(/\s*\/\s*/g, '/');
     });
+    if (t.dataset.typoField) {
+      const f = t.dataset.typoField;
+      let value = t.value.trim();
+      if (f === 'lineHeight' && /^(auto)?$/i.test(value)) value = null;
+      else if (f !== 'fontFamily') {
+        value = Number(value);
+        if (!Number.isFinite(value)) return render();
+      }
+      return change(() => writeTypoField(col, t.dataset.var, t.dataset.mode, f, value));
+    }
     if (t.dataset.cell) {
       let value;
-      if (t.dataset.cell === 'color') value = t.value.toUpperCase();
-      else if (t.dataset.cell === 'hex') {
+      // Colors keep their opacity when the hex or picker changes, and vice versa.
+      const current = splitColor(cellRaw(col, t.dataset.var, t.dataset.mode));
+      if (t.dataset.cell === 'color') value = joinColor(t.value, current.alpha);
+      else if (t.dataset.cell === 'alpha') {
+        const pct = Number(t.value.replace('%', ''));
+        if (!Number.isFinite(pct)) return render();
+        value = joinColor(current.hex, pct / 100);
+      } else if (t.dataset.cell === 'hex') {
         const h = t.value.trim().replace(/^#/, '');
         const full = /^[0-9a-f]{3}$/i.test(h) ? h.split('').map((c) => c + c).join('') : h;
         if (!/^([0-9a-f]{6}|[0-9a-f]{8})$/i.test(full)) return render();
-        value = `#${full.toUpperCase()}`;
+        value = full.length === 8 ? `#${full.toUpperCase()}` : joinColor(`#${full}`, current.alpha);
       } else if (t.dataset.cell === 'number') {
         value = Number(t.value);
         if (!Number.isFinite(value)) return render();
@@ -370,7 +486,9 @@ function bind() {
     }
     // Live color preview while the picker is open; the change event commits one undo step.
     if (t.dataset.cell !== 'color') return;
-    writeCell(active(), t.dataset.var, t.dataset.mode, t.value.toUpperCase());
+    const col = active();
+    const { alpha } = splitColor(cellRaw(col, t.dataset.var, t.dataset.mode));
+    writeCell(col, t.dataset.var, t.dataset.mode, joinColor(t.value, alpha));
     t.parentElement.style.setProperty('--c', t.value);
     emit('doc');
   });

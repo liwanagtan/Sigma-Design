@@ -9,11 +9,30 @@ import { state, walk, addEditHook, uid } from './store.js';
 import { measureText } from './text.js';
 import { owningInstance } from './components.js';
 
-export const VAR_TYPES = { color: 'Color', number: 'Number', string: 'String', boolean: 'Boolean' };
+export const VAR_TYPES = { color: 'Color', number: 'Number', string: 'String', boolean: 'Boolean', typography: 'Typography' };
+
+// A typography token bundles five text properties. Each field is a value or { alias: tokenId } of the
+// field's primitive type. lineHeight is a percentage, or null for "auto".
+export const TYPO_FIELDS = {
+  fontFamily: 'string', fontWeight: 'number', fontSize: 'number', lineHeight: 'number', letterSpacing: 'number',
+};
+
+// Color tokens are '#RRGGBB' or '#RRGGBBAA'; the editor shows hex and opacity separately.
+export function splitColor(value) {
+  const m = /^#?([0-9a-f]{6})([0-9a-f]{2})?$/i.exec(String(value || ''));
+  if (!m) return { hex: '#000000', alpha: 1 };
+  return { hex: `#${m[1].toUpperCase()}`, alpha: m[2] ? Math.round((parseInt(m[2], 16) / 255) * 100) / 100 : 1 };
+}
+
+export function joinColor(hex, alpha = 1) {
+  const a = Math.max(0, Math.min(1, alpha));
+  const h = splitColor(hex).hex;
+  return a >= 1 ? h : h + Math.round(a * 255).toString(16).padStart(2, '0').toUpperCase();
+}
 
 // Which property paths each variable type can bind to.
 const NUMBER_PATHS = new Set([
-  'w', 'h', 'radius', 'opacity', 'strokeWidth', 'fontSize', 'lineHeight', 'letterSpacing',
+  'w', 'h', 'radius', 'opacity', 'strokeWidth', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing',
   'layout.gap', 'layout.pt', 'layout.pr', 'layout.pb', 'layout.pl',
 ]);
 export function typeForPath(path) {
@@ -21,10 +40,15 @@ export function typeForPath(path) {
   if (NUMBER_PATHS.has(path)) return 'number';
   if (path === 'text' || path === 'fontFamily') return 'string';
   if (path === 'visible') return 'boolean';
+  if (path === 'typography') return 'typography';
   return null;
 }
 
-const DEFAULTS = { color: '#000000', number: 0, string: '', boolean: true };
+const DEFAULTS = {
+  color: '#000000', number: 0, string: '', boolean: true,
+  typography: { fontFamily: 'Inter', fontWeight: 400, fontSize: 16, lineHeight: null, letterSpacing: 0 },
+};
+export const defaultValue = (type) => structuredClone(DEFAULTS[type]);
 const MAX_ALIAS_DEPTH = 16;
 
 export const collections = () => state.doc?.variables?.collections || [];
@@ -108,7 +132,14 @@ export function resolveValue(varId, pick, depth = 0) {
   if (!hit) return undefined;
   const { collection, modeId } = pick(hit.collection);
   const v = rawValueIn(collection, modeId, hit.variable);
-  return isAlias(v) ? resolveValue(v.alias, pick, depth + 1) : v;
+  if (isAlias(v)) return resolveValue(v.alias, pick, depth + 1);
+  if (hit.variable.type === 'typography' && v && typeof v === 'object') {
+    // Resolve each field; a field may alias a number or string token.
+    const out = {};
+    for (const f of Object.keys(TYPO_FIELDS)) out[f] = isAlias(v[f]) ? resolveValue(v[f].alias, pick, depth + 1) : v[f];
+    return out;
+  }
+  return v;
 }
 
 // A picker for a mode context { collectionId: modeId } whose keys are ordered farthest → nearest.
@@ -142,13 +173,30 @@ function applyBinding(node, path, value) {
   const type = typeForPath(path);
   if (value === undefined || value === null || !type) return;
   if (type === 'color') {
-    const m = /^#([0-9a-f]{6})([0-9a-f]{2})?$/i.exec(String(value));
-    if (!m) return;
+    if (!/^#([0-9a-f]{6})([0-9a-f]{2})?$/i.test(String(value))) return;
     const [kind, i] = path.split('.');
     const paint = node[kind]?.[+i];
     if (!paint) return;
-    paint.color = `#${m[1].toUpperCase()}`;
-    if (m[2]) paint.opacity = Math.round((parseInt(m[2], 16) / 255) * 100) / 100;
+    // The token's opacity is the paint's opacity (100% when the token has none).
+    const { hex, alpha } = splitColor(value);
+    paint.color = hex;
+    paint.opacity = alpha;
+    return;
+  }
+  if (type === 'typography') {
+    if (node.type !== 'text' || !value || typeof value !== 'object') return;
+    let changed = false;
+    for (const f of Object.keys(TYPO_FIELDS)) {
+      let x = value[f];
+      if (x === undefined) continue;
+      if (f !== 'fontFamily' && f !== 'lineHeight') x = Number(x);
+      if (f === 'lineHeight' && x !== null) x = Number(x);
+      if (node[f] !== x) {
+        node[f] = x;
+        changed = true;
+      }
+    }
+    if (changed) measureText(node);
     return;
   }
   if (type === 'number') {
@@ -232,6 +280,10 @@ addEditHook({
   after(node, keys) {
     if (!node.bindings) return;
     let changed = false;
+    if (node.bindings.typography && keys.some((k) => k in TYPO_FIELDS)) {
+      delete node.bindings.typography; // changing one font property by hand detaches the text style
+      changed = true;
+    }
     for (const k of keys) {
       if (k === 'bindings') continue;
       for (const path of Object.keys(node.bindings)) {
@@ -327,7 +379,7 @@ export function createVariable(col, type, name) {
   let label = base;
   for (let i = 2; col.variables.some((v) => v.name === label); i++) label = `${base} ${i}`;
   const v = { id: uid(), name: label, type, valuesByMode: {} };
-  for (const m of col.modes) v.valuesByMode[m.id] = DEFAULTS[type];
+  for (const m of col.modes) v.valuesByMode[m.id] = defaultValue(type);
   col.variables.push(v);
   return v;
 }
@@ -337,13 +389,20 @@ export function deleteVariable(varId) {
   reindexVariables();
   const hit = index.get(varId);
   if (!hit) return;
-  const literal = previewValue(varId) ?? DEFAULTS[hit.variable.type];
+  const literal = previewValue(varId) ?? defaultValue(hit.variable.type);
+  // Typography fields that alias the deleted token become plain values too.
+  const fixFields = (val) => {
+    if (!val || typeof val !== 'object' || isAlias(val)) return;
+    for (const f of Object.keys(TYPO_FIELDS)) if (isAlias(val[f]) && val[f].alias === varId) val[f] = literal;
+  };
   for (const c of collections()) {
     for (const v of c.variables || []) {
       for (const [m, val] of Object.entries(v.valuesByMode)) {
         if (isAlias(val) && val.alias === varId) v.valuesByMode[m] = literal;
+        else fixFields(val);
       }
     }
+    for (const byMode of Object.values(c.overrides || {})) for (const val of Object.values(byMode)) fixFields(val);
     if (c.overrides) {
       delete c.overrides[varId];
       for (const byMode of Object.values(c.overrides)) {

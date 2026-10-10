@@ -21,7 +21,7 @@ import { createFile, openFile, goHome, pickFilesToImport } from './files.js';
 import { sampleDocument } from './sample.js';
 import {
   collections, findVariable, typeForPath, previewValue, bindVariable, unbindVariable, shiftPaintBindings, createCollection,
-  createVariable, VAR_TYPES, multiModeCollections, inheritedMode,
+  createVariable, VAR_TYPES, multiModeCollections, inheritedMode, splitColor,
 } from './variables.js';
 import { openVariablesEditor } from './variables-ui.js';
 import { showContextMenu } from './menu.js';
@@ -32,8 +32,7 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const MIXED = Symbol('mixed');
 
-export const FONTS = ['Inter', 'Roboto', 'Space Grotesk', 'Playfair Display', 'JetBrains Mono', 'Arial', 'Georgia', 'Times New Roman', 'Courier New'];
-const WEIGHTS = [[300, 'Light'], [400, 'Regular'], [500, 'Medium'], [600, 'Semi Bold'], [700, 'Bold'], [800, 'Extra Bold']];
+import { FONTS, WEIGHTS } from './fonts.js';
 const TYPE_LABEL = {
   frame: 'Frame', group: 'Group', rect: 'Rectangle', ellipse: 'Ellipse', line: 'Line', text: 'Text', image: 'Image',
   component: 'Component', componentSet: 'Component set', instance: 'Instance',
@@ -553,6 +552,11 @@ function readPath(node, path) {
 function previewText(v) {
   const val = previewValue(v.id);
   if (v.type === 'boolean') return val ? 'True' : 'False';
+  if (v.type === 'typography') return val ? `${val.fontFamily} ${val.fontSize}` : '';
+  if (v.type === 'color') {
+    const { hex, alpha } = splitColor(val);
+    return alpha < 1 ? `${hex} ${Math.round(alpha * 100)}%` : hex;
+  }
   if (v.type === 'string') return String(val ?? '').slice(0, 14);
   return String(val ?? '');
 }
@@ -593,11 +597,21 @@ function applyVariable(nodes, path, varId) {
 function variableFromValue(nodes, path, type) {
   const col = collections()[0] || createCollection('Tokens');
   let value = readPath(nodes[0], path);
+  if (type === 'typography') {
+    const n = nodes[0];
+    value = { fontFamily: n.fontFamily, fontWeight: n.fontWeight, fontSize: n.fontSize, lineHeight: n.lineHeight ?? null, letterSpacing: n.letterSpacing || 0 };
+  }
+  if (type === 'color') {
+    // Keep the paint's opacity in the new token.
+    const [kind, i] = path.split('.');
+    const p = nodes[0][kind]?.[+i];
+    if (p && p.opacity < 1) value = p.color + Math.round(p.opacity * 255).toString(16).padStart(2, '0').toUpperCase();
+  }
   if (path === 'opacity') value = Math.round((value ?? 1) * 100);
   if (type === 'number') value = Number(value) || 0;
   if (type === 'boolean') value = value !== false;
   if (type === 'string') value = String(value ?? '');
-  const name = type === 'color' ? 'color' : path.split('.').pop();
+  const name = type === 'color' ? 'color' : type === 'typography' ? 'text/style' : path.split('.').pop();
   const v = createVariable(col, type, name);
   for (const m of col.modes) v.valuesByMode[m.id] = value;
   applyVariable(nodes, path, v.id);
@@ -762,6 +776,7 @@ function buildProps() {
     t += `<div class="grid2">${numField('lineHeight', '', nodes, { icon: '<span class="mini">LH</span>' })}${numField('letterSpacing', '', nodes, { icon: '<span class="mini">|A|</span>' })}</div>`;
     t += `<div class="grid2"><div class="seg">${[['left', 'textLeft'], ['center', 'textCenter'], ['right', 'textRight']].map(([k, i]) => `<button class="icon-btn${ta === k ? ' on' : ''}" data-text-align="${k}" title="Align ${k}">${icons[i]}</button>`).join('')}</div>` +
       `<div class="seg">${[['width', 'autoWidth', 'Auto width'], ['height', 'autoHeight', 'Auto height'], ['fixed', 'fixedSize', 'Fixed size']].map(([k, i, tip]) => `<button class="icon-btn${ar === k ? ' on' : ''}" data-auto-resize="${k}" title="${tip}">${icons[i]}</button>`).join('')}</div></div>`;
+    t += `<div class="bind-inline wide"><span class="muted">Text style</span>${varControl(nodes, 'typography')}</div>`;
     t += `<div class="bind-inline wide"><span class="muted">Text content</span>${varControl(nodes, 'text')}</div>`;
     html += section('Text', t);
   }

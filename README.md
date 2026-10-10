@@ -62,6 +62,10 @@ Then open http://localhost:5173.
   - the token editor has search and a type filter
   - click a token to open the inspector: its description, its values per mode, which tokens alias it (click to jump), and how many layers use it
   - color swatches sit on a checkerboard so transparency shows
+  - **color tokens carry opacity** (a hex value plus an opacity %); a fill or stroke using the token gets its opacity from it
+  - **typography tokens** bundle font family, weight, size, line height and letter spacing, and each part can alias a number or text token
+  - a typography token is edited in the inspector, with a live sample
+  - in design files, the Text section's **Text style** links a typography token to a text layer; changing any font property by hand detaches it
   - organise color, number, string and boolean variables into collections; use `/` in names to group them
   - each collection has modes (columns), and a cell can alias another variable
   - the ◈ button on a fill, stroke, number field, visibility or text content binds a variable; a bound field shows a purple chip
