@@ -397,3 +397,32 @@ fieldset.readonly .field-label { cursor: default; }
 .tokens-header-actions { margin-left: auto; display: flex; gap: 2px; }
 .tokens-editor { flex: 1; min-height: 0; display: flex; }
 .vars-modal.inline { flex: 1; display: flex; flex-direction: column; width: auto; height: auto; max-height: none; border-radius: 0; box-shadow: none; }
+
+/* ---------- token editor workspace ---------- */
+.vars-work { flex: 1; min-height: 0; display: flex; }
+.vars-work .vars-table { flex: 1; min-width: 0; }
+.vars-search { height: 28px; width: 180px; border: 1px solid transparent; background: var(--input); border-radius: 5px; padding: 0 8px; outline: none; }
+.vars-search:focus { border-color: var(--accent); background: #fff; }
+.vars-actions .select { height: 28px; }
+.vars-row[data-row] { cursor: default; }
+.vars-row[data-row]:hover { background: #fafafa; }
+.vars-row.selected { background: var(--accent-softer); box-shadow: inset 2px 0 0 var(--accent); }
+.desc-dot { width: 6px; height: 6px; border-radius: 3px; background: #b9a3e8; flex: none; }
+.vars-inspector { width: 280px; flex: none; border-left: 1px solid var(--border); padding: 14px 16px; overflow: auto; display: flex; flex-direction: column; gap: 6px; }
+.inspector-empty { margin-top: 24px; line-height: 1.5; }
+.inspector-head { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; }
+.inspector-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inspector-label { margin-top: 10px; font-weight: 600; color: var(--muted); font-size: 11px; }
+.inspector-desc { width: 100%; }
+.inspector-row { display: grid; grid-template-columns: 80px 1fr; gap: 8px; align-items: center; min-height: 24px; }
+.inspector-row > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inspector-value { display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.link-chip { align-self: flex-start; max-width: 100%; padding: 2px 8px; border-radius: 4px; background: #f0e6ff; color: #5b21b6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.link-chip:hover { background: #e4d4ff; }
+.btn.danger { color: #c4320a; margin-top: 16px; }
+.btn.danger:hover { background: #fff1ee; }
+/* Checkerboard behind color swatches so transparency shows. */
+.swatch, .mini-swatch {
+  background: linear-gradient(var(--c), var(--c)), repeating-conic-gradient(#d9d9d9 0% 25%, #ffffff 0% 50%) 0 0 / 8px 8px;
+}
+.mini-swatch { width: 14px; height: 14px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1); flex: none; }

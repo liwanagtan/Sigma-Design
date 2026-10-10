@@ -59,6 +59,9 @@ Then open http://localhost:5173.
 - **Design tokens** (Sigma's name for Figma's variables):
   - **New token file** creates a token file, which opens straight into a full-screen token editor
   - a design file can also keep **local design tokens**; open them from the Σ menu or the panel (with nothing selected)
+  - the token editor has search and a type filter
+  - click a token to open the inspector: its description, its values per mode, which tokens alias it (click to jump), and how many layers use it
+  - color swatches sit on a checkerboard so transparency shows
   - organise color, number, string and boolean variables into collections; use `/` in names to group them
   - each collection has modes (columns), and a cell can alias another variable
   - the ◈ button on a fill, stroke, number field, visibility or text content binds a variable; a bound field shows a purple chip

@@ -1,7 +1,7 @@
 // The design token editor: collections on the left, a table of tokens × modes on the right.
 // Extended collections show their parent's tokens; inherited values are greyed, overrides are highlighted.
 // It opens as a modal for a design file's local tokens, or fills the screen for a token file.
-import { state, commit, emit, subscribe } from './store.js';
+import { state, commit, emit, subscribe, walk } from './store.js';
 import {
   collections, VAR_TYPES, createCollection, deleteCollection, addMode, removeMode, createVariable, deleteVariable,
   setAlias, findVariable, allVariables, previewValue, isAlias, wouldCycle, extendCollection, inheritedVariables,
@@ -16,6 +16,9 @@ let modal = null; // the element the editor renders into (modal backdrop, or the
 let inline = false;
 const bound = new WeakSet();
 let activeId = null;
+let selectedId = null; // token shown in the inspector
+let query = '';
+let typeFilter = '';
 
 const TYPE_ICON = {
   color: '<svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor"/><path d="M6 1.5a4.5 4.5 0 0 1 0 9z" fill="currentColor"/></svg>',
@@ -80,7 +83,7 @@ subscribe((kind) => {
   if (!modal || kind !== 'doc') return;
   if (!state.doc) return inline ? undefined : close();
   const a = document.activeElement;
-  if (modal.contains(a) && a.tagName === 'INPUT' && a.type !== 'checkbox') return;
+  if (modal.contains(a) && ((a.tagName === 'INPUT' && a.type !== 'checkbox') || a.tagName === 'TEXTAREA')) return;
   render();
 });
 
@@ -127,8 +130,73 @@ function cell(col, v, mode) {
   return `<div class="${cls}">${valueEditor(v.type, raw, data)}${aliasBtn}${resetBtn}</div>`;
 }
 
+// Tokens (in any collection) whose values alias `id`, with the collection they're in.
+function aliasedBy(id) {
+  const out = [];
+  for (const c of collections()) {
+    for (const v of c.variables || []) {
+      if (Object.values(v.valuesByMode).some((x) => isAlias(x) && x.alias === id)) out.push({ variable: v, collection: c });
+    }
+    for (const [vid, byMode] of Object.entries(c.overrides || {})) {
+      if (Object.values(byMode).some((x) => isAlias(x) && x.alias === id)) {
+        const hit = findVariable(vid);
+        if (hit) out.push({ variable: hit.variable, collection: c });
+      }
+    }
+  }
+  return out;
+}
+
+// Layers in this design file bound to `id` (token files have no layers).
+function layerUses(id) {
+  let n = 0;
+  for (const pg of state.doc?.pages || []) walk(pg.children, (x) => {
+    if (x.bindings && Object.values(x.bindings).includes(id)) n++;
+  });
+  return n;
+}
+
+function matches(v) {
+  if (typeFilter && v.type !== typeFilter) return false;
+  const q = query.trim().toLowerCase();
+  return !q || v.name.toLowerCase().includes(q) || (v.description || '').toLowerCase().includes(q);
+}
+
+function inspector(col) {
+  const hit = selectedId ? findVariable(selectedId) : null;
+  if (!hit) {
+    return '<aside class="vars-inspector"><div class="muted inspector-empty">Select a token to see its description, aliases and where it\'s used.</div></aside>';
+  }
+  const { variable: v, collection: home } = hit;
+  const ext = isExtension(col);
+  const modeRows = col.modes.map((m) => {
+    const raw = ext ? rawValueIn(col, m.id, v) : v.valuesByMode[m.id];
+    const value = isAlias(raw)
+      ? `<button class="link-chip" data-select-token="${raw.alias}">→ ${esc(findVariable(raw.alias)?.variable.name || 'Missing token')}</button>`
+      : `<span class="inspector-value">${v.type === 'color' ? `<span class="mini-swatch" style="--c:${esc(raw)}"></span>` : ''}${esc(String(raw))}</span>`;
+    return `<div class="inspector-row"><span class="muted">${esc(m.name)}</span>${value}</div>`;
+  }).join('');
+  const users = aliasedBy(v.id);
+  const uses = state.doc?.pages?.length ? layerUses(v.id) : null;
+  return `<aside class="vars-inspector">
+    <div class="inspector-head"><span class="var-type">${TYPE_ICON[v.type]}</span><span class="inspector-name">${esc(v.name)}</span></div>
+    <div class="muted">${VAR_TYPES[v.type]} · ${esc(home.name)}</div>
+    <label class="inspector-label">Description</label>
+    <textarea class="desc inspector-desc" data-token-desc="${v.id}" rows="3" placeholder="What is this token for?" spellcheck="false" ${ext ? 'disabled title="Edit descriptions in the root collection"' : ''}>${esc(v.description || '')}</textarea>
+    <label class="inspector-label">Values in ${esc(col.name)}</label>
+    ${modeRows}
+    <label class="inspector-label">Referenced by</label>
+    ${users.length ? users.map(({ variable: u, collection: c }) => `<button class="link-chip" data-select-token="${u.id}" title="${esc(c.name)}">${esc(u.name)}</button>`).join('') : '<div class="muted">No other tokens alias this one.</div>'}
+    ${uses === null ? '' : `<label class="inspector-label">Used in this file</label><div class="muted">${uses ? `${uses} layer${uses === 1 ? '' : 's'}` : 'Not used by any layer yet.'}</div>`}
+    ${ext ? '' : `<button class="btn wide danger" data-delete-var="${v.id}">Delete token</button>`}
+  </aside>`;
+}
+
 function render() {
   if (!modal) return;
+  // Keep the search box focused (with its caret) across re-renders.
+  const searching = document.activeElement?.hasAttribute?.('data-search');
+  const caret = searching ? document.activeElement.selectionStart : 0;
   const col = active();
   const sidebar = collectionTree().map(({ c, depth }) => {
     const count = isExtension(c) ? Object.keys(c.overrides || {}).length : c.variables.length;
@@ -141,7 +209,8 @@ function render() {
     main = '<div class="vars-empty"><div class="home-empty-title">No design tokens yet</div><p>Design tokens store reusable colors, numbers, text and booleans. Create a collection to start.</p><button class="btn primary" data-act="new-collection">Create collection</button></div>';
   } else {
     const ext = isExtension(col);
-    const vars = ext ? inheritedVariables(col) : col.variables;
+    const all = ext ? inheritedVariables(col) : col.variables;
+    const vars = all.filter(matches);
     const gridCols = `minmax(200px, 1.3fr) repeat(${col.modes.length}, minmax(150px, 1fr)) 40px`;
     const head = `<div class="vars-row vars-head" style="grid-template-columns:${gridCols}"><div>Name</div>` +
       col.modes.map((m) => `<div class="mode-head"><input class="mode-name" data-mode-name="${m.id}" value="${esc(m.name)}" spellcheck="false">` +
@@ -157,24 +226,35 @@ function render() {
     }
     const body = [...groups].map(([g, list]) =>
       (g ? `<div class="vars-group">${esc(g)}</div>` : '') +
-      list.map((v) => `<div class="vars-row" style="grid-template-columns:${gridCols}">` +
+      list.map((v) => `<div class="vars-row${v.id === selectedId ? ' selected' : ''}" data-row="${v.id}" style="grid-template-columns:${gridCols}">` +
         `<div class="var-name"><span class="var-type" title="${VAR_TYPES[v.type]}">${TYPE_ICON[v.type]}</span>` +
-        (ext ? `<span class="var-name-text">${esc(v.name)}</span>` : `<input data-var-name="${v.id}" value="${esc(v.name)}" spellcheck="false">`) + '</div>' +
+        (ext ? `<span class="var-name-text">${esc(v.name)}</span>` : `<input data-var-name="${v.id}" value="${esc(v.name)}" spellcheck="false">`) +
+        (v.description ? `<span class="desc-dot" title="${esc(v.description)}"></span>` : '') + '</div>' +
         col.modes.map((m) => cell(col, v, m)).join('') +
         `<div>${ext ? '' : `<button class="icon-btn" data-delete-var="${v.id}" title="Delete token">${icons.close}</button>`}</div></div>`).join('')).join('');
     const parent = parentOf(col);
+    const empty = all.length
+      ? '<div class="muted vars-none">No tokens match the search or filter.</div>'
+      : '<div class="muted vars-none">No tokens in this collection yet.</div>';
     main = `<div class="vars-toolbar"><div class="vars-title"><input class="vars-col-name" data-col-name="${col.id}" value="${esc(col.name)}" spellcheck="false">` +
       (ext ? `<span class="ext-badge" title="Inherits tokens and modes from ${esc(parent?.name || 'a missing collection')}">Extends ${esc(parent?.name || '?')}</span>` : '') + '</div>' +
-      `<div class="vars-actions"><button class="btn" data-act="extend" title="Create a collection that inherits this one and overrides only some values">Extend</button>` +
+      `<div class="vars-actions"><input type="search" class="vars-search" data-search placeholder="Search tokens" value="${esc(query)}" spellcheck="false">` +
+      `<select class="select" data-type-filter title="Filter by type"><option value="">All types</option>${Object.entries(VAR_TYPES).map(([t, l]) => `<option value="${t}" ${t === typeFilter ? 'selected' : ''}>${l}</option>`).join('')}</select>` +
+      `<button class="btn" data-act="extend" title="Create a collection that inherits this one and overrides only some values">Extend</button>` +
       `<button class="btn" data-act="delete-collection">Delete</button></div></div>` +
       (ext ? '<div class="vars-hint">Greyed values are inherited. Edit a value to override it for this collection; ↺ resets it. Add tokens and modes in the root collection.</div>' : '') +
-      `<div class="vars-table">${head}${body || '<div class="muted vars-none">No tokens in this collection yet.</div>'}</div>` +
+      `<div class="vars-work"><div class="vars-table">${head}${body || empty}</div>${inspector(col)}</div>` +
       (ext ? '' : '<div class="vars-footer"><button class="btn" data-act="new-variable">+ Create token</button></div>');
   }
   modal.querySelector('.vars-modal').innerHTML =
     (inline ? '' : `<div class="modal-head">Local design tokens<button class="icon-btn" data-close>${icons.close}</button></div>`) +
     `<div class="vars-body"><aside class="vars-side">${sidebar}<button class="vars-add" data-act="new-collection">+ New collection</button></aside>` +
     `<section class="vars-main">${main}</section></div>`;
+  if (searching) {
+    const box = modal.querySelector('[data-search]');
+    box?.focus();
+    box?.setSelectionRange(caret, caret);
+  }
 }
 
 // Write a cell: a root collection's own value, or an extension's override.
@@ -189,9 +269,23 @@ function writeCell(col, varId, modeId, value) {
 function bind() {
   modal.addEventListener('click', (e) => {
     if (!inline && (e.target === modal || e.target.closest('[data-close]'))) return close();
+    const row = e.target.closest('[data-row]');
+    if (row && !e.target.closest('button, input, label')) {
+      selectedId = row.dataset.row;
+      return render();
+    }
     const t = e.target.closest('button');
     if (!t) return;
     const col = active();
+    if (t.dataset.selectToken) {
+      // Jump to a token, switching to its collection if it lives elsewhere.
+      const hit = findVariable(t.dataset.selectToken);
+      if (hit && !isExtension(col)) activeId = hit.collection.id;
+      selectedId = t.dataset.selectToken;
+      query = '';
+      typeFilter = '';
+      return render();
+    }
     if (t.dataset.col) {
       activeId = t.dataset.col;
       return render();
@@ -221,9 +315,28 @@ function bind() {
       }
     }
   });
+  modal.addEventListener('focusin', (e) => {
+    // Focusing a token's name selects it.
+    const id = e.target.dataset?.varName;
+    if (id && id !== selectedId) {
+      selectedId = id;
+      modal.querySelectorAll('.vars-row.selected').forEach((r) => r.classList.remove('selected'));
+      e.target.closest('.vars-row')?.classList.add('selected');
+      const insp = modal.querySelector('.vars-inspector');
+      if (insp) insp.outerHTML = inspector(active());
+    }
+  });
   modal.addEventListener('change', (e) => {
     const t = e.target;
     const col = active();
+    if (t.hasAttribute('data-type-filter')) {
+      typeFilter = t.value;
+      return render();
+    }
+    if (t.dataset.tokenDesc) return change(() => {
+      const v = findVariable(t.dataset.tokenDesc)?.variable;
+      if (v) v.description = t.value.trim() || undefined;
+    });
     if (t.dataset.colName) return change(() => void (col.name = t.value.trim() || col.name));
     if (t.dataset.modeName) return change(() => {
       const m = col.modes.find((x) => x.id === t.dataset.modeName);
@@ -250,8 +363,12 @@ function bind() {
     }
   });
   modal.addEventListener('input', (e) => {
-    // Live color preview while the picker is open; the change event commits one undo step.
     const t = e.target;
+    if (t.hasAttribute('data-search')) {
+      query = t.value;
+      return render();
+    }
+    // Live color preview while the picker is open; the change event commits one undo step.
     if (t.dataset.cell !== 'color') return;
     writeCell(active(), t.dataset.var, t.dataset.mode, t.value.toUpperCase());
     t.parentElement.style.setProperty('--c', t.value);
