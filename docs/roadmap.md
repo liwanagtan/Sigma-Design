@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **All phases (1–14) done.** What's left is listed under "Later (needs a backend)" in Part C and under "Follow-ups" at the end.
+Status: **All phases (1–14) done.** What's left is listed under "Later (needs a backend)" in Part C, under "Follow-ups", and in **Part D: Design and development**, which starts once Sigma's design and tokens are final.
 
 ## Scope
 
@@ -401,3 +401,44 @@ Things noticed while building, not yet done:
   - **Motion tokens:** Duration and Easing types, in DTCG and CSS. Nothing on the canvas uses them yet (no prototyping).
   - **Text case:** as typed, upper, lower and title case on text layers.
 - **Drawing icons (later).** A pen tool, vector editing and boolean shapes (union, subtract, intersect, exclude), so icons can be drawn in Sigma. Not needed yet: icons come from free icon libraries for now. Pick this up once the rest of Sigma is set up.
+
+# Part D: Design and development (later)
+
+From Figma's "Design & Development" guides on designsystems.com. These are big pieces of work, so they start **after Sigma's design and tokens are final**. Phase 15 comes first: it's the main reason Sigma exists.
+
+Everything here works locally in the browser unless it says it needs a backend.
+
+## Phase 15: Code handoff (priority)
+
+Close the gap between design and code: a developer selects a layer and gets code that uses the design system's names.
+
+- **Inspect panel:** a third tab next to Design. For the selected layer it shows:
+  - its CSS (size, layout, padding, gap, radius, fills, strokes, effects, typography), with each token-bound value written as the token's CSS variable, such as `var(--surface-default)`, matching **Export CSS variables**
+  - which tokens it uses, with their values in the current mode
+  - for an instance: the component, its variant and its property values, written as code props (`<Button style="primary" label="Get started" />`)
+  - copy buttons for each block
+- **Code names per platform:** each token can have its own name for Web, iOS and Android (like Figma's variable code syntax), used in the Inspect panel and in exports. If none is set, the name comes from the token's path.
+- **Component code names:** a component and its properties can carry the name they have in code, so the design mirrors the code library ("stack mirroring").
+- Questions to settle first: which code targets beyond CSS (React props, SwiftUI, Compose), and whether code names live in token files only or in design files too.
+
+## Phase 16: Accessibility checks and annotations
+
+- **Annotations** on layers: alt text for images, accessible labels for icon-only buttons, heading levels, and focus order. They show in the Inspect panel.
+- **Check accessibility** for a frame, like eBay's Include plugin: a list of issues with the reason for each, such as text contrast below AA (using `contrast.js`), tap targets under 44×44 or 48×48, very small text, or images with no alt text.
+- Component-level guidance (keyboard behavior, roles) in the component's description or a new field.
+
+## Phase 17: Design system use report
+
+Like Pinterest's FigStats, measured across every design file in this browser:
+
+- the share of layers that come from library components
+- the share of colors, type and spacing that use tokens rather than one-off values
+- the most-used components and tokens, and those nobody uses
+- per file and overall, with a way to limit it to recently edited files or pages marked as handoff
+
+## Later
+
+- **Branching and review:** propose a change to a library on a branch, review it, then merge and publish (*Future is complicated*, ChimeKit). Local branches can work in the browser; reviews between people need a backend.
+- **Plugins and automation:** a way to script repetitive work and extend Sigma (*Future is automated*). Large; needs an API design first.
+- **Right-to-left layout:** auto layout that can flip for right-to-left languages. Language modes on text tokens already cover the strings.
+
