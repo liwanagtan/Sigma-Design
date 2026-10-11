@@ -404,7 +404,7 @@ Things noticed while building, not yet done:
 
 # Part D: Design and development (later)
 
-From Figma's "Design & Development" and "Operations" guides on designsystems.com. These are big pieces of work, so they start **after Sigma's design and tokens are final**. Phase 15 comes first: it's the main reason Sigma exists.
+From Figma's "Design & Development", "Operations" and "Schema" guides on designsystems.com. These are big pieces of work, so they start **after Sigma's design and tokens are final**. Phase 15 comes first: it's the main reason Sigma exists.
 
 Everything here works locally in the browser unless it says it needs a backend.
 
@@ -446,6 +446,15 @@ From Figma's "Operations" guides on designsystems.com. These matter once other d
 - **Component docs:** beyond one description: the purpose first (what it's for and what it isn't), usage guidance, do and don't examples (linked frames), and a link to the component's code (with Phase 15's code names). Shown in Assets, the playground and the Inspect panel.
 - **Changelog:** one "What's new" history per library, from publish notes and the automatic list of changes, exportable as Markdown to start a newsletter or release notes.
 - **Documentation site:** generate a page from a library's tokens and components to share. Sharing it beyond this browser needs the backend from "Real sharing".
+
+## Phase 19: Visual change review
+
+From Figma's Schema talks ("Taking cues from code": test-driven design and visual regression tests; Zalando on large system updates). Like Phase 18, it matters once library updates reach files you aren't watching.
+
+- **Before and after:** when publishing a library, accepting an update, or comparing with a version in version history, show each affected component (and, in a design file, the frames that use it) rendered before and after, side by side.
+- **Highlight differences:** an overlay that marks what changed, like a blend-mode diff of the two renders, so small shifts in spacing, color or size stand out.
+- **What it touched:** the number of instances and files affected, linked to them, next to the existing text summary ("changed: button/primary/background").
+- Built on what's there: renders come from `buildSVG`, versions from the version history, and library updates already know which components and tokens changed.
 
 ## Later
 
