@@ -1,9 +1,10 @@
 // The files home: lists every Sigma file stored in this browser.
 import {
   listFiles, createFile, renameFile, duplicateFile, deleteFile, downloadFile, importFiles, pickFilesToImport,
-  storageSummary, openFile, fileHref, fileKind, newTokenDocument, createSampleFiles,
+  storageSummary, openFile, fileHref, fileKind, newTokenDocument, createSampleFiles, createTokenFileWith,
 } from './files.js';
 import { sampleDocument } from './sample.js';
+import { sampleTokenDocument } from './sample-tokens.js';
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
 import { toast } from './io.js';
@@ -71,7 +72,7 @@ export function initHome(el) {
             <button class="icon-btn" data-layout="list" title="List view">${LIST_ICON}</button>
           </div>
           <button class="btn" id="home-import">Import</button>
-          <button class="btn" id="home-new-tokens">${icons.plus} New token file</button>
+          <span class="split-btn"><button class="btn" id="home-new-tokens">${icons.plus} New token file</button><button class="btn split-more" id="home-new-tokens-more" title="More token files">${icons.chevronDown}</button></span>
           <button class="btn primary" id="home-new">${icons.plus} New design file</button>
         </div>
       </header>
@@ -105,6 +106,13 @@ export function initHome(el) {
   });
   root.querySelector('#home-new').addEventListener('click', () => newBlankFile());
   root.querySelector('#home-new-tokens').addEventListener('click', () => newTokenFile());
+  root.querySelector('#home-new-tokens-more').addEventListener('click', (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    showContextMenu(r.right - 220, r.bottom + 4, [
+      { label: 'Blank token file', action: newTokenFile },
+      { label: 'Sample token file', action: newSampleTokenFile },
+    ]);
+  });
   root.querySelector('#home-import').addEventListener('click', async () => {
     const ids = await pickFilesToImport();
     afterImport(ids);
@@ -117,6 +125,7 @@ export function initHome(el) {
     if (action) {
       e.preventDefault();
       const act = action.dataset.emptyAction;
+      if (act === 'sample-tokens') return newSampleTokenFile();
       return act === 'sample' ? newSampleFile() : act === 'tokens' ? newTokenFile() : newBlankFile();
     }
     if (more) {
@@ -181,6 +190,14 @@ async function newBlankFile() {
 // The sample comes as a token file plus a design file that links it.
 async function newSampleFile() {
   openFile(await createSampleFiles(sampleDocument()));
+}
+
+// A complete sample design system: primitives, semantic Light/Dark colors, a brand, text styles and
+// component tokens, published so design files can link it right away.
+async function newSampleTokenFile() {
+  const { name, collections } = sampleTokenDocument();
+  const lib = await createTokenFileWith(name, collections, 'Sample tokens');
+  openFile(lib.id);
 }
 
 function afterImport(ids) {
@@ -252,6 +269,7 @@ export async function renderHome() {
   // The primary "New" button matches the section you're in.
   root.querySelector('#home-new').classList.toggle('primary', section !== 'tokens');
   root.querySelector('#home-new-tokens').classList.toggle('primary', section === 'tokens');
+  root.querySelector('#home-new-tokens-more').classList.toggle('primary', section === 'tokens');
   const sortSel = root.querySelector('#home-sort');
   sortSel.hidden = recents;
   sortSel.value = prefs.sort;
@@ -285,7 +303,8 @@ export async function renderHome() {
   } else if (!inSection && section === 'tokens') {
     list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No token files yet</div>
       <p>A token file holds your design tokens — colors, spacing, type — for design files to use. It has no canvas.</p>
-      <div class="home-empty-actions"><button class="btn primary" data-empty-action="tokens">${icons.plus} New token file</button></div></div>`;
+      <div class="home-empty-actions"><button class="btn primary" data-empty-action="tokens">${icons.plus} New token file</button>
+      <button class="btn" data-empty-action="sample-tokens">Open the sample token file</button></div></div>`;
   } else if (!inSection) {
     list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No design files yet</div>
       <div class="home-empty-actions"><button class="btn primary" data-empty-action="blank">${icons.plus} New design file</button>

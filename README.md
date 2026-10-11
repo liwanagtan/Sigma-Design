@@ -60,6 +60,7 @@ Then open http://localhost:5173.
   - instances of a variant get a dropdown per variant property, and overrides carry over when switching
 - **Design tokens** (Sigma's name for Figma's variables):
   - **New token file** creates a token file, which opens straight into a full-screen token editor
+  - **New token file ▾ → Sample token file** (or **Open the sample token file** under Design tokens) creates a complete example: Primitives (a palette with transparent colors, spacing, radii, type scales, text and a boolean), Semantic colors in Light and Dark, Brand B (an extension that only changes the accent), Typography styles built from the type primitives, and Components tokens that point at semantic tokens (button → accent → blue). It's published, so design files can link it right away
   - a design file can also keep **local design tokens**; open them from the Σ menu or the panel (with nothing selected)
   - the token editor has search and a type filter
   - **structure:** a collection holds tokens and groups, and groups hold tokens and other groups (Collection → Group → Tokens). The sidebar shows the whole tree: every collection with its groups, nested and collapsible, with token counts
@@ -149,6 +150,7 @@ Press `?` in the app to see every keyboard shortcut.
 | `src/variables-ui.js` | The design token editor (a modal in design files, full-screen in token files) |
 | `src/tokens-screen.js` | The token file screen |
 | `src/libraries.js` | Token and component libraries: publishing, linking, updates, migration |
+| `src/sample-tokens.js` | The sample token file (a complete small design system) |
 | `src/history.js` | Version history panel: viewing a version read-only, restore, duplicate, named versions |
 | `src/tokens-io.js` | Token export (DTCG `tokens.json`, CSS) and import |
 | `tests/` | In-browser test runner (`tests/index.html`) and tests |

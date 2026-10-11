@@ -585,3 +585,7 @@ button.group-caret.open { transform: rotate(90deg); }
 .group-desc { width: 100%; resize: vertical; min-height: 28px; }
 .group-desc-inline { margin-left: 8px; font-weight: 400; color: var(--muted); }
 .group-caret { display: inline-flex; align-items: center; justify-content: center; height: 16px; font-size: 0; }
+
+.split-btn { display: inline-flex; }
+.split-btn > .btn:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.split-btn > .split-more { border-top-left-radius: 0; border-bottom-left-radius: 0; margin-left: 1px; padding: 0 8px; }
