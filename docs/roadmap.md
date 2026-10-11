@@ -385,7 +385,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 
 Things noticed while building, not yet done:
 
-- **Rendering performance.** With 200 card instances (about 400 text layers), a frame takes about 17 ms: normalize about 2 ms (instances whose main and settings haven't changed are skipped), scene about 5 ms (only changed top-level layers are re-rendered), and the rest is the browser's layout of HTML text. The next step would be drawing text as SVG `<text>` instead of `foreignObject`.
+- ~~**Rendering performance.**~~ Done: text that doesn't wrap is drawn as SVG `<text>`. With 200 card instances (about 400 text layers), a frame went from about 17 ms to about 8 ms. Wrapping text still uses HTML (`foreignObject`), because SVG text can't wrap.
 - ~~**Orphaned overrides.**~~ Done: instances show "N overrides no longer apply" with a Clear button.
 - ~~**Constraints.**~~ Done: Left / Right / Left & right / Center / Scale (and vertical), applied to frames and resized instances.
 - ~~**Exposed nested properties.**~~ Done: a nested instance can expose its properties; outer instances show its controls.

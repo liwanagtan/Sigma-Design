@@ -103,6 +103,11 @@ export function nodeSVG(n, opts = {}) {
     case 'text': {
       // Text fills stack like shape fills: one text layer per visible fill.
       const hidden = !opts.export && state.editingTextId === n.id;
+      if (n.autoResize === 'width') {
+        // Text that never wraps is drawn as native SVG text: much cheaper for the browser than HTML.
+        inner = svgText(n, visiblePaints(n.fills), hidden);
+        break;
+      }
       inner = visiblePaints(n.fills).map((p) =>
         `<foreignObject width="${Math.max(n.w, 1)}" height="${Math.max(n.h, 1)}" style="overflow:visible"${hidden ? ' visibility="hidden"' : ''}>` +
         `<div xmlns="http://www.w3.org/1999/xhtml" style="${esc(textStyle(n))};color:${hexToRgba(p.color, p.opacity)};width:${n.autoResize === 'width' ? 'max-content' : n.w + 'px'}">${esc(n.text)}</div></foreignObject>`).join('');
@@ -111,6 +116,42 @@ export function nodeSVG(n, opts = {}) {
   }
   const op = n.opacity < 1 ? ` opacity="${n.opacity}"` : '';
   return `<g transform="${css(localMatrix(n))}"${op}>${inner}</g>`;
+}
+
+// ---------- native SVG text (for text that doesn't wrap) ----------
+let metricsCtx = null;
+const metricsCache = new Map();
+
+// Ascent and descent of a font, as the browser lays out an HTML line box with it.
+function fontMetrics(n) {
+  const font = `${n.fontWeight} ${n.fontSize}px '${n.fontFamily}', system-ui, sans-serif`;
+  let m = metricsCache.get(font);
+  if (!m) {
+    metricsCtx ||= document.createElement('canvas').getContext('2d');
+    metricsCtx.font = font;
+    const t = metricsCtx.measureText('Hg');
+    m = {
+      asc: t.fontBoundingBoxAscent ?? t.actualBoundingBoxAscent ?? n.fontSize * 0.8,
+      desc: t.fontBoundingBoxDescent ?? t.actualBoundingBoxDescent ?? n.fontSize * 0.2,
+    };
+    // Fonts still loading report fallback metrics; don't keep those.
+    if (!document.fonts || document.fonts.check(font)) metricsCache.set(font, m);
+  }
+  return m;
+}
+
+function svgText(n, paints, hidden) {
+  const lines = String(n.text ?? '').split('\n');
+  const lineH = n.lineHeight ? (n.lineHeight / 100) * n.fontSize : (n.h || n.fontSize * 1.2) / lines.length;
+  const { asc, desc } = fontMetrics(n);
+  const baseline = (lineH - (asc + desc)) / 2 + asc; // where an HTML line box puts the baseline
+  const anchor = n.textAlign === 'center' ? 'middle' : n.textAlign === 'right' ? 'end' : 'start';
+  const x = anchor === 'middle' ? n.w / 2 : anchor === 'end' ? n.w : 0;
+  const spans = lines.map((line, i) => `<tspan x="${x}" y="${(baseline + i * lineH).toFixed(2)}">${esc(line)}</tspan>`).join('');
+  const attrs = `font-family="${esc(`'${n.fontFamily}', system-ui, sans-serif`)}" font-size="${n.fontSize}" font-weight="${n.fontWeight}"` +
+    (n.letterSpacing ? ` letter-spacing="${n.letterSpacing}"` : '') + ` text-anchor="${anchor}" style="white-space:pre"` +
+    (hidden ? ' visibility="hidden"' : '');
+  return paints.map((p) => `<text ${attrs} ${paint(p.color, p.opacity)}>${spans}</text>`).join('');
 }
 
 // ---------- scene ----------
