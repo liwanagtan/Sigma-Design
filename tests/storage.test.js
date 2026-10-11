@@ -64,15 +64,11 @@ test('storage: an autosave that races with a delete never brings the file back',
 
 test('storage: Welcome to Sigma is reused, and links the sample tokens, skipping a copy that lost tokens it uses', async () => {
   const before = new Set((await listFiles()).map((f) => f.id));
-  const setAside = [];
+  const archivedBefore = new Set((await listArchivedFiles()).map((f) => f.id));
   const linked = async (id) => (await loadFile(id)).doc.libraries.map((l) => l.fileId);
   try {
     // Start from no current Welcome file, so this test sees one being made.
-    for (const f of await listFiles()) {
-      if (!f.welcome) continue;
-      await archiveFile(f.id);
-      setAside.push(f.id);
-    }
+    for (const f of await listFiles()) if (f.welcome) await archiveFile(f.id);
     const a = await welcomeFile();
     const b = await welcomeFile();
     eq(b, a); // the same Welcome file is reopened
@@ -86,11 +82,14 @@ test('storage: Welcome to Sigma is reused, and links the sample tokens, skipping
     await archiveFile(a); // the next one is new, and must skip the broken tokens
     const c = await welcomeFile();
     ok(c !== a, 'an archived Welcome file isn’t reopened');
+    ok(!(await listFiles()).some((f) => f.id === broken.id), 'a new guide moves the other sample files to the Archive');
+    ok((await listArchivedFiles()).some((f) => f.id === broken.id), '…where they stay, not deleted');
     eq(await linked(c), await linked(a));
     ok(!(await linked(c)).includes(broken.id), 'the broken file is not linked');
   } finally {
-    for (const f of [...await listFiles(), ...await listArchivedFiles()]) if (!before.has(f.id)) await deleteFile(f.id);
-    for (const id of setAside) await restoreFile(id);
+    for (const f of [...await listFiles(), ...await listArchivedFiles()]) if (!before.has(f.id) && !archivedBefore.has(f.id)) await deleteFile(f.id);
+    // Put back whatever this test (or the automatic archiving of older samples) moved to the Archive.
+    for (const f of await listArchivedFiles()) if (before.has(f.id) && !archivedBefore.has(f.id)) await restoreFile(f.id);
   }
 });
 

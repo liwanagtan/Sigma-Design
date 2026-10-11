@@ -2,7 +2,7 @@
 import {
   listFiles, createFile, renameFile, duplicateFile, deleteFile, downloadFile, importFiles, pickFilesToImport,
   listArchivedFiles, archiveFile, restoreFile, emptyArchive,
-  storageSummary, openFile, fileHref, fileKind, newTokenDocument, welcomeFile, sampleTokenFile, isSampleFile, isOlderSample,
+  storageSummary, openFile, fileHref, fileKind, newTokenDocument, welcomeFile, sampleTokenFile, isSampleFile,
 } from './files.js';
 import { blankDocument } from './sample.js';
 import { showContextMenu } from './menu.js';
@@ -356,7 +356,7 @@ export async function renderHome() {
 
   if (welcome) {
     list.innerHTML = '<div class="archive-intro"><p class="muted">Start with <b>Sigma Design</b>: a guide to everything in Sigma, with examples to try. <b>Sigma Tokens</b> holds the sample design tokens it uses.</p></div>' +
-      (files.length ? files.sort((a, b) => isOlderSample(a) - isOlderSample(b) || fileKind(a).localeCompare(fileKind(b))).map(card).join('')
+      (files.length ? files.sort((a, b) => fileKind(a).localeCompare(fileKind(b))).map(card).join('')
         : `<div class="home-empty"><div class="home-empty-title">Welcome to Sigma</div><p>The guide isn’t here (it may be in the Archive).</p>
           <div class="home-empty-actions"><button class="btn primary" data-empty-action="welcome">Open Welcome to Sigma</button></div></div>`);
   } else if (archive) {
@@ -416,7 +416,7 @@ function card(f) {
     : `<div class="card-name" title="${esc(f.name)}">${esc(f.name)}</div>`;
   return `<a class="file-card${tokens ? ' tokens' : ''}" href="${fileHref(f.id)}" data-id="${f.id}" draggable="false">
     <div class="file-thumb" style="background:${tokens ? '#FFFFFF' : esc(f.background || '#F5F5F5')}">${thumb}</div>
-    <div class="file-info">${name}<div class="file-time">${tokens ? '<span class="kind-badge">Tokens</span>' : ''}${isOlderSample(f) ? '<span class="kind-badge old" title="An earlier sample copy. Sigma Design and Sigma Tokens are the current ones; archive this when you’re done with it.">Older copy</span>' : ''}Edited ${ago(f.updatedAt)}</div></div>
+    <div class="file-info">${name}<div class="file-time">${tokens ? '<span class="kind-badge">Tokens</span>' : ''}Edited ${ago(f.updatedAt)}</div></div>
     <div class="file-created">${new Date(f.createdAt).toLocaleDateString()}</div>
     <button class="icon-btn file-more" data-more title="More actions">${MORE_ICON}</button>
   </a>`;

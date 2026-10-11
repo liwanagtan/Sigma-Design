@@ -11,10 +11,6 @@ import { welcomeDocument, WELCOME_VERSION } from './welcome.js';
 // The sample files (the Welcome to Sigma guide and its Sigma Tokens) live in the files home's Welcome to
 // Sigma folder rather than with your own files.
 export const isSampleFile = (meta) => !!(meta?.welcome || meta?.sample || meta?.sampleLegacy);
-// An earlier copy: a guide from before the current WELCOME_VERSION, an older sample token file, or a sample
-// from before samples were marked.
-export const isOlderSample = (meta) => !!meta && (!!meta.sampleLegacy ||
-  (!!meta.welcome && meta.welcome < WELCOME_VERSION) || (!!meta.sample && meta.name !== sampleTokenDocument().name));
 const LEGACY_SAMPLE_TOKENS_NAME = 'Sample design tokens';
 // Names earlier versions gave their sample files, before they were marked as samples.
 const LEGACY_SAMPLE_NAMES = { design: ['Welcome to Sigma', 'Sample design file'], tokens: ['Welcome to Sigma tokens', LEGACY_SAMPLE_TOKENS_NAME] };
@@ -32,6 +28,45 @@ async function migrateLegacySamples() {
     if (isSampleFile(f) || !LEGACY_SAMPLE_NAMES[fileKind(f)]?.includes(f.name)) continue;
     await db.updateFile(f.id, (meta) => ({ meta: { ...meta, sampleLegacy: true } }));
   }
+  try {
+    localStorage.setItem(KEY, '1');
+  } catch {}
+}
+
+// Only the current sample files stay in the folder. Older ones (earlier guides, replaced sample tokens,
+// samples from older versions of Sigma) go to the Archive, never deleted: they may hold your edits, and
+// files that used old sample tokens keep working. `keep`: ids of the current guide and its tokens.
+async function archiveSamples(keep) {
+  let n = 0;
+  for (const m of await listFiles()) {
+    if (isSampleFile(m) && !keep.has(m.id) && (await archiveFile(m.id))) n++;
+  }
+  return n;
+}
+
+const currentGuide = async () => (await listFiles())
+  .filter((m) => m.welcome === WELCOME_VERSION && fileKind(m) === 'design')
+  .sort((a, b) => b.updatedAt - a.updatedAt)[0] || null;
+
+// Once, for sample files made before older ones were archived automatically: keep the current guide and the
+// Sigma Tokens file it uses (or, with no current guide, the latest Sigma Tokens), archive the rest.
+async function archiveOlderSamplesOnce() {
+  const KEY = 'sigma.olderSamplesArchived';
+  try {
+    if (localStorage.getItem(KEY)) return;
+  } catch {
+    return;
+  }
+  const keep = new Set();
+  const guide = await currentGuide();
+  if (guide) {
+    keep.add(guide.id);
+    for (const l of (await loadFile(guide.id))?.doc.libraries || []) keep.add(l.fileId);
+  } else {
+    const tokens = (await listFiles()).filter((m) => m.sample && m.name === sampleTokenDocument().name).sort((a, b) => b.updatedAt - a.updatedAt)[0];
+    if (tokens) keep.add(tokens.id);
+  }
+  await archiveSamples(keep);
   try {
     localStorage.setItem(KEY, '1');
   } catch {}
@@ -96,6 +131,7 @@ export async function initFiles(handlers = {}) {
   document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && stashPending());
   await migrateLegacyDocument();
   await migrateLegacySamples();
+  await archiveOlderSamplesOnce();
 }
 
 function broadcast(type, id) {
@@ -368,12 +404,10 @@ export async function sampleTokenFile() {
 }
 
 // "Welcome to Sigma": the guide file a new user starts with, linking the sample tokens. Reopens the most
-// recently edited copy of the current version (WELCOME_VERSION), and makes a new one when there's none:
-// an older copy, archived or not, stays as it is.
+// recently edited copy of the current version (WELCOME_VERSION); otherwise makes a new one and moves the
+// older sample files to the Archive.
 export async function welcomeFile() {
-  const current = (await listFiles())
-    .filter((m) => m.welcome === WELCOME_VERSION && fileKind(m) === 'design')
-    .sort((a, b) => b.updatedAt - a.updatedAt)[0];
+  const current = await currentGuide();
   if (current) return current.id;
   const lib = await sampleTokenFile();
   // An older sample token file gets its current name and joins the Welcome to Sigma folder.
@@ -386,7 +420,11 @@ export async function welcomeFile() {
   }
   const doc = welcomeDocument(lib.published.collections);
   doc.libraries = [libraryEntry(lib.id, lib.name, lib.published)];
-  return createFile(doc, {}, { welcome: WELCOME_VERSION });
+  const id = await createFile(doc, {}, { welcome: WELCOME_VERSION });
+  // The new guide replaces the old one: older sample files go to the Archive.
+  const moved = await archiveSamples(new Set([id, lib.id]));
+  if (moved) toast(`Moved ${moved === 1 ? 'the previous sample file' : `${moved} older sample files`} to the Archive`);
+  return id;
 }
 
 // The first visit to Sigma in this browser (no files at all) starts with "Welcome to Sigma". Returns its
