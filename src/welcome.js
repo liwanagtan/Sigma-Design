@@ -7,7 +7,7 @@
 import { createNode, uid, makePaint } from './store.js';
 import { DEFAULT_LAYOUT } from './layout.js';
 
-export const WELCOME_VERSION = 3;
+export const WELCOME_VERSION = 4;
 // The files home keeps the guide and its tokens in a "Welcome to Sigma" folder, as "Sigma Design" and
 // "Sigma Tokens".
 export const WELCOME_FOLDER = 'Welcome to Sigma';
@@ -186,7 +186,7 @@ export function welcomeDocument(collections) {
       '9 Sigma Tokens: how token files work',
     ] },
   ]);
-  start.parts.push(tryIt('Pick a page in the Pages list on the left. Each one has a guide like this and examples to try on the right.'));
+  start.parts.push(tryIt('Pick a page in the Pages list on the left. Each one has a guide like this and examples to try on the right. This file is a playground: change anything, nothing is saved, and it’s back to the original the next time you open it. Duplicate to keep changes (in the banner) makes it your own.'));
   const tokensBox = stack('Sigma Tokens', 'vertical', { gap: P('space/2'), padding: P('space/6'), fill: S('surface/default'), radius: P('radius/lg'), stroke: S('border/strong'), width: 300 }, [
     text('Kind', 'Sigma Tokens file', S('text/link'), T('label/default'), { textCase: 'upper' }),
     text('Name', 'Sigma Tokens', S('text/primary'), T('heading/h3')),
@@ -432,7 +432,7 @@ export function welcomeDocument(collections) {
       'Move to Archive (on the files home) is a soft delete; restore from the Archive.',
     ] },
   ]);
-  libGuide.parts.push(tryIt('Open the Σ menu → Show version history to see this file’s versions. Nothing you do here can’t be undone or restored.'));
+  libGuide.parts.push(tryIt('Every file of your own gets a version history (Σ menu → Show version history). This sample has none, because it’s never saved: duplicate it to try version history on your copy.'));
   const step = (n, title, body) => stack(title, 'vertical', { gap: P('space/1'), padding: P('space/4'), fill: S('surface/default'), radius: P('radius/md'), stroke: S('border/default'), width: 180 }, [
     text('Step', `Step ${n}`, S('text/link'), T('label/small'), { textCase: 'upper' }),
     text('Title', title, S('text/primary'), T('body/strong')),

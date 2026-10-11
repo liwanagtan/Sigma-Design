@@ -4,7 +4,7 @@ import { openHistory, openSaveVersionDialog } from './history.js';
 import { openLibrariesDialog, publishDependencies } from './libraries.js';
 import { diffCollections, libraryCollections, dependencyChanges } from './variables.js';
 import { mountTokenEditor, unmountTokenEditor } from './variables-ui.js';
-import { goHome } from './files.js';
+import { goHome, isCurrentSample } from './files.js';
 import { saveFile, download } from './io.js';
 import { exportDTCG, exportCSS, importTokens, mergeCollections } from './tokens-io.js';
 import { showContextMenu } from './menu.js';
@@ -138,6 +138,9 @@ const hasUnpublishedChanges = () => JSON.stringify(current()) !== JSON.stringify
 // Publishing makes the current tokens a new numbered version. Design files that link this token file
 // see "Token updates available" and choose when to accept it.
 function openPublishDialog() {
+  if (isCurrentSample()) {
+    return window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'The sample Sigma Tokens can’t be published: it isn’t saved. Duplicate it (banner above) to publish your own.' }));
+  }
   const pub = state.doc.published;
   const d = diffCollections(pub?.collections || [], current());
   const deps = publishDependencies();

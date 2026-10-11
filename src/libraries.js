@@ -13,6 +13,7 @@ import { isAutoLayout } from './layout.js';
 import {
   listTokenFiles, loadPublished, createTokenFileWith, appendToTokenFile, getCurrentFileId, listComponentLibraries,
   loadPublishedComponents,
+  isSampleFile,
 } from './files.js';
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
@@ -515,7 +516,7 @@ async function moveLocal(target) {
 }
 
 export async function moveLocalTokensMenu(anchor) {
-  const files = await listTokenFiles();
+  const files = (await listTokenFiles()).filter((f) => !isSampleFile(f)); // the sample tokens never change
   const r = anchor.getBoundingClientRect();
   showContextMenu(r.left, r.bottom + 4, [
     { label: 'New Sigma Tokens file', action: () => moveLocal(null) },

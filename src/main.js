@@ -15,7 +15,7 @@ import {
 } from './panels.js';
 import {
   initFiles, loadFile, setCurrentFile, closeCurrentFile, discardCurrentFile, saveNow, getCurrentFileId, goHome, fileKind, isArchived,
-  welcomeOnFirstVisit, openFile,
+  welcomeOnFirstVisit, openFile, isSampleFile, duplicateCurrent, updateThumbnail,
 } from './files.js';
 import { initHome, renderHome, setHomeNotice, showHomeSection } from './home.js';
 import { initTokensScreen, showTokensScreen, hideTokensScreen } from './tokens-screen.js';
@@ -82,6 +82,16 @@ function remeasureAllText() {
   for (const pg of state.doc.pages) walk(pg.children, (n) => void (n.type === 'text' && measureText(n)));
   normalizeDocument();
   emit('doc');
+}
+
+// A sample file (Welcome to Sigma) is a playground: edits work but are never saved.
+function sampleBanner() {
+  showBanner('Sample file: try anything. Nothing is saved; it resets when you reopen it.', 'Duplicate to keep changes', async () => {
+    const copy = await duplicateCurrent();
+    if (!copy) return;
+    window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'Made a copy of your changes in Sigma Design' }));
+    openFile(copy);
+  }, [{ label: 'Dismiss', action: () => hideBanner() }]);
 }
 
 // ---------- banner (changes from other tabs) ----------
@@ -151,7 +161,8 @@ async function showFile(id, { force = false, discard = false } = {}) {
   }
   if (id !== getCurrentFileId()) resetHistory();
   await leaveEditor({ discard });
-  setCurrentFile(id);
+  const sample = isSampleFile(file.meta);
+  setCurrentFile(id, { sample });
   homeEl.hidden = true;
   if (fileKind(file.meta) === 'tokens') {
     // Token files have no canvas: the design token editor fills the screen.
@@ -160,6 +171,7 @@ async function showFile(id, { force = false, discard = false } = {}) {
     tokensEl.hidden = false;
     loadDocument(file.doc, file.views);
     showTokensScreen();
+    if (sample) sampleBanner();
     checkLibraryUpdates(); // token files it points at may have published new versions
     return;
   }
@@ -169,10 +181,15 @@ async function showFile(id, { force = false, discard = false } = {}) {
   const wasVersion = file.doc.version || 1;
   loadDocument(file.doc, file.views);
   remeasureAllText();
-  // A new "Welcome to Sigma": place its examples by their real sizes, once.
+  // "Welcome to Sigma": place its examples by their real sizes (each time it opens, since a sample is
+  // never saved).
   if (arrangeWelcome(state.doc)) {
     commit();
     forgetUndo();
+  }
+  if (sample) {
+    sampleBanner();
+    setTimeout(() => getCurrentFileId() === id && updateThumbnail(), 1500); // of the original, once
   }
   if (!state.pageViews[page().id]) requestAnimationFrame(() => zoomToFit());
   emit('view');

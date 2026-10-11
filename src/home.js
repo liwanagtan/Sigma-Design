@@ -229,12 +229,13 @@ function afterImport(ids) {
   renderHome();
 }
 
-function fileMenu(id, x, y) {
+async function fileMenu(id, x, y) {
+  const sample = isSampleFile((await listFiles()).find((f) => f.id === id));
   showContextMenu(x, y, [
     { label: 'Open', action: () => openFile(id) },
     { label: 'Open in new tab', action: () => window.open(fileHref(id), '_blank') },
     '-',
-    { label: 'Rename', action: () => startRename(id) },
+    ...(sample ? [] : [{ label: 'Rename', action: () => startRename(id) }]), // samples keep their names
     { label: 'Duplicate', action: async () => {
       await duplicateFile(id);
       renderHome();

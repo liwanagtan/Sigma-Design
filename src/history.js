@@ -5,6 +5,7 @@ import { state, loadDocument, emit } from './store.js';
 import {
   getCurrentFileId, listVersions, loadVersionDoc, saveNamedVersion, restoreVersion, duplicateVersion, updateVersion,
   deleteVersion, openFile, saveNow,
+  isCurrentSample,
 } from './files.js';
 import { modal } from './libraries.js';
 import { showContextMenu } from './menu.js';
@@ -188,6 +189,7 @@ async function remove(v) {
 // Save the current state as a named version, or (with `v`) rename an existing one.
 export function openSaveVersionDialog(v = null) {
   if (!getCurrentFileId()) return;
+  if (isCurrentSample()) return toast('Sample files aren’t saved, so they have no version history. Duplicate it to keep your changes.');
   if (!v && viewing) return toast('Go back to the current version to save it.');
   const body = '<label class="inspector-label">Title</label><input class="prop-input version-title" spellcheck="false" placeholder="e.g. Before the redesign">' +
     '<label class="inspector-label">Description (optional)</label><textarea class="desc version-desc" rows="3" placeholder="What does this version contain?"></textarea>';

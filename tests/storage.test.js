@@ -2,7 +2,7 @@ import { test, eq, ok } from './harness.js';
 import { state, createNode, commit, loadDocument, flushSave, setPersistence, editNode } from '../src/store.js';
 import {
   initFiles, createFile, deleteFile, loadFile, listFiles, renameFile, setCurrentFile, saveNamedVersion, listVersions, updateThumbnail,
-  welcomeFile, createTokenFileWith, sampleTokenFile, archiveFile, restoreFile, listArchivedFiles, listTokenFiles,
+  welcomeFile, createTokenFileWith, sampleTokenFile, appendToTokenFile, archiveFile, restoreFile, listArchivedFiles, listTokenFiles,
 } from '../src/files.js';
 import { sampleTokenDocument } from '../src/sample-tokens.js';
 import { WELCOME_VERSION } from '../src/welcome.js';
@@ -110,6 +110,40 @@ test('storage: deleting moves a file to the Archive; it can be restored, and onl
     await deleteFile(id);
     ok(!(await loadFile(id)), 'Delete forever erases it');
   } finally {
+    await deleteFile(id);
+    await deleteFile(tokens.id);
+  }
+});
+
+test('storage: a sample file (Welcome to Sigma) can be edited while open but is never saved', async () => {
+  await initFiles();
+  const id = await createFile(sampleDoc(), {}, { welcome: 1 });
+  const tokens = await createTokenFileWith('Sample tokens test (temporary)', sampleTokenDocument().collections, 'x', { meta: { sample: true } });
+  try {
+    const file = await loadFile(id);
+    setCurrentFile(id, { sample: true });
+    state.screen = 'editor';
+    loadDocument(file.doc, file.views);
+    const box = state.doc.pages[0].children[0];
+    editNode(box, ['x'], (n) => void (n.x = 500));
+    commit();
+    await flushSave();
+    eq(state.doc.pages[0].children[0].x, 500); // the edit works while it's open
+    eq((await loadFile(id)).doc.pages[0].children[0].x, 0); // …but the file is unchanged
+    eq(await saveNamedVersion(id, 'Mine'), null);
+    eq((await listVersions(id)).length, 0);
+    await renameFile(id, 'Renamed');
+    eq((await loadFile(id)).meta.name, 'Storage test (temporary)');
+    let refused = false;
+    try {
+      await appendToTokenFile(tokens.id, [], 'x');
+    } catch {
+      refused = true;
+    }
+    ok(refused, 'tokens can’t be moved into the sample Sigma Tokens');
+  } finally {
+    setCurrentFile(null);
+    state.screen = 'home';
     await deleteFile(id);
     await deleteFile(tokens.id);
   }

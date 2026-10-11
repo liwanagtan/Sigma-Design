@@ -96,6 +96,11 @@ const channel = 'BroadcastChannel' in window ? new BroadcastChannel('sigma-files
 
 let currentFileId = null;
 let currentDeleted = false; // the open file was deleted or archived in another tab: stop writing it
+// The open file is a sample (Welcome to Sigma): a playground. Anything can be changed while it's open, but
+// nothing is saved, so it's back to how it was whenever it's opened again.
+let currentSample = false;
+export const isCurrentSample = () => currentSample;
+const SAMPLE_READONLY = 'Sample files keep their original content. Duplicate it to make your own copy.';
 let saving = Promise.resolve();
 let inFlight = 0; // autosaves started but not yet written
 
@@ -104,7 +109,7 @@ let inFlight = 0; // autosaves started but not yet written
 const PENDING_KEY = 'sigma.pending';
 
 function stashPending() {
-  if (!currentFileId || currentDeleted || !state.doc || state.readOnly) return;
+  if (!currentFileId || currentDeleted || currentSample || !state.doc || state.readOnly) return;
   if (!hasUnsavedChanges() && !inFlight) return;
   try {
     localStorage.setItem(PENDING_KEY, JSON.stringify({ id: currentFileId, doc: state.doc, views: state.pageViews, t: Date.now() }));
@@ -121,6 +126,7 @@ function readPending() {
   }
 }
 let thumbTimer = null;
+let sampleThumbDone = false;
 
 export const getCurrentFileId = () => currentFileId;
 
@@ -217,7 +223,7 @@ export async function loadFile(id) {
   if (!meta || !rec?.doc) return null;
   const pending = readPending();
   if (pending?.id === id) {
-    if (pending.t > meta.updatedAt) {
+    if (pending.t > meta.updatedAt && !isSampleFile(meta)) { // a sample is never saved, not even this way
       // Changes from the last session that didn't reach IndexedDB before the page closed.
       meta.updatedAt = pending.t;
       localStorage.removeItem(PENDING_KEY);
@@ -268,6 +274,7 @@ export async function createFile(doc, views = {}, extra = {}) {
 
 export async function renameFile(id, name) {
   name = name.trim() || 'Untitled';
+  if (isSampleFile(await db.get('files', id))) return toast(SAMPLE_READONLY);
   if (id === currentFileId && state.doc) {
     state.doc.name = name; // the open editor saves it (and the meta) on its next autosave
   }
@@ -379,6 +386,7 @@ export async function createTokenFileWith(name, collections, notes = 'Initial ve
 export async function appendToTokenFile(id, collections, notes, { libraries = [], dependencies = [] } = {}) {
   const file = await loadFile(id);
   if (!file) throw new Error('That Sigma Tokens file no longer exists.');
+  if (isSampleFile(file.meta)) throw new Error('The sample Sigma Tokens keep their original content. Pick another file.');
   const doc = file.doc;
   doc.variables ||= { collections: [] };
   doc.variables.collections.push(...structuredClone(collections));
@@ -452,15 +460,28 @@ export async function welcomeOnFirstVisit() {
 }
 
 // ---------- the open file ----------
-export function setCurrentFile(id) {
+export function setCurrentFile(id, { sample = false } = {}) {
   currentFileId = id;
   currentDeleted = false;
+  currentSample = sample;
+  sampleThumbDone = false;
+}
+
+// A sample's edits as a file of your own (what "Duplicate to keep changes" makes).
+export async function duplicateCurrent() {
+  if (!state.doc) return null;
+  const doc = structuredClone(state.doc);
+  delete doc.published;
+  delete doc.publishedComponents;
+  doc.name = `${doc.name || 'Untitled'} (copy)`;
+  return createFile(doc, structuredClone(state.pageViews || {}));
 }
 
 // Called (debounced) by the store whenever the open document changes.
 function persistCurrent(doc, views, { edited }) {
   const id = currentFileId;
   if (!id || currentDeleted || state.readOnly) return saving; // read-only: viewing an older version
+  if (currentSample) return saving; // a sample is never saved: it's the same every time it opens
   inFlight++;
   saving = saving.then(async () => {
     // Every write below checks, in the same transaction, that the file still exists: a file deleted
@@ -581,7 +602,7 @@ async function afterSave(fn) {
 export async function saveNamedVersion(fileId, title, description = '') {
   const write = async () => {
     const [meta, rec] = await Promise.all([db.get('files', fileId), db.get('docs', fileId)]);
-    if (!meta || !rec?.doc) return null;
+    if (!meta || !rec?.doc || isSampleFile(meta)) return null; // samples have no history to add to
     const version = await addVersion(fileId, rec.doc, { kind: 'named', title: title.trim() || 'Untitled version', description: description.trim() });
     await db.updateFile(fileId, (m) => ({ meta: { ...m, lastVersionAt: Date.now() } }));
     return version;
@@ -612,6 +633,7 @@ export async function restoreVersion(fileId, version) {
   const write = async () => {
     const [meta, rec, old] = await Promise.all([db.get('files', fileId), db.get('docs', fileId), loadVersionDoc(version.id)]);
     if (!meta || !rec?.doc || !old) throw new Error('That version could not be found.');
+    if (isSampleFile(meta)) throw new Error(SAMPLE_READONLY);
     await addVersion(fileId, rec.doc, { kind: 'auto', title: `Before restoring ${versionLabel(version)}` });
     const doc = migrateDocument(structuredClone(old));
     doc.name = rec.doc.name;
@@ -704,6 +726,9 @@ async function renderThumbnail() {
 export async function updateThumbnail() {
   const id = currentFileId;
   if (!id || !state.doc) return;
+  // A sample's thumbnail is made once, of its original content (see main.js), never of your edits.
+  if (currentSample && (sampleThumbDone || (await db.get('files', id))?.thumbnail)) return;
+  if (currentSample) sampleThumbDone = true;
   let thumbnail = null;
   try {
     thumbnail = await renderThumbnail();

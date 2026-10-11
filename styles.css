@@ -312,6 +312,8 @@ kbd { font-family: inherit; color: var(--muted); }
 /* ---------- editor banner (changes from another tab) ---------- */
 .file-banner { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 4; display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 14px; background: #1e1e1e; color: #fff; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); white-space: nowrap; }
 .file-banner .btn { height: 26px; background: #fff; color: #1e1e1e; border: 0; }
+/* The token screen's header spans the width: the banner sits at the bottom there. */
+#tokens:not([hidden]) ~ .file-banner { top: auto; bottom: 16px; }
 
 @media (max-width: 760px) {
   .home { grid-template-columns: 1fr; }
