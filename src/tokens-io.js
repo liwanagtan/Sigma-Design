@@ -137,7 +137,7 @@ export function exportDTCG(cols, { external = [] } = {}) {
       collections: cols.map((c) => ({
         id: c.id, name: c.name, extends: c.extends || null, defaultModeId: c.defaultModeId,
         modes: c.modes.map((m) => ({ id: m.id, name: m.name, parentModeId: m.parentModeId || null })),
-        variables: (c.variables || []).map((v) => ({ id: v.id, name: v.name, type: v.type })),
+        variables: (c.variables || []).map((v) => ({ id: v.id, name: v.name, type: v.type, ...(v.contrastWith?.length ? { contrastWith: v.contrastWith } : {}) })),
         groups: (c.groups || []).filter((g) => g && typeof g === 'object')
           .map((g) => ({ id: g.id, name: g.name, parentId: g.parentId || null, ...(g.description ? { description: g.description } : {}) })),
       })),
@@ -450,6 +450,11 @@ export function importTokens(json, { external = [] } = {}) {
   for (const c of cols) {
     // JSON groups regroup tokens; a Sigma export restores the original order.
     if (c._declared) {
+      // Contrast pairs between imported tokens.
+      for (const v of c.variables) {
+        const pairs = (c._declared.get(v.name)?.contrastWith || []).map((old) => idMap.get(old)).filter(Boolean);
+        if (pairs.length) v.contrastWith = pairs;
+      }
       const order = [...c._declared.keys()];
       const rank = (v) => (order.includes(v.name) ? order.indexOf(v.name) : order.length);
       c.variables.sort((a, b) => rank(a) - rank(b));
@@ -509,6 +514,7 @@ export function mergeCollections(target, incoming) {
       idMap.set(v.id, ev.id);
       for (const [mid, value] of Object.entries(v.valuesByMode)) if (modeMap.has(mid)) ev.valuesByMode[modeMap.get(mid)] = value;
       if (v.description) ev.description = v.description;
+      if (v.contrastWith && ev !== v) ev.contrastWith = [...new Set([...(ev.contrastWith || []), ...v.contrastWith])];
       touched++;
     }
   }
@@ -522,6 +528,7 @@ export function mergeCollections(target, incoming) {
   };
   for (const c of target) {
     for (const v of c.variables || []) for (const m of Object.keys(v.valuesByMode)) v.valuesByMode[m] = remap(v.valuesByMode[m]);
+    for (const v of c.variables || []) if (v.contrastWith) v.contrastWith = [...new Set(v.contrastWith.map((id) => idMap.get(id) || id))];
     if (c.extends && idMap.has(c.extends)) c.extends = idMap.get(c.extends);
   }
   return touched;

@@ -150,6 +150,12 @@ export function sampleTokenDocument() {
     modes({ color: ref(palette.alpha['black-10']), x: 0, y: 12, blur: 32, spread: -4 }, { color: ref(palette.alpha['black-40']), x: 0, y: 12, blur: 32, spread: -4 }),
     'Menus, popovers and dialogs.');
 
+  // Colors meant to be used together, checked for contrast in every mode (see the token inspector).
+  const pair = (fg, ...bgs) => (s.variables.find((v) => v.id === fg).contrastWith = bgs);
+  pair(tPrimary, surfaceDefault, raised);
+  pair(tSecondary, surfaceDefault, raised);
+  pair(onAccent, aDefault, aHover);
+
   // ---------- Brand B: Semantic with a violet accent ----------
   const brand = {
     id: uid(), name: 'Brand B', extends: s.id, variables: [], overrides: {},

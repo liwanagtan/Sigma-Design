@@ -538,6 +538,7 @@ export function deleteVariable(varId) {
       }
     }
   }
+  for (const c of collections()) for (const v of c.variables || []) if (v.contrastWith?.includes(varId)) removeContrastPair(v, varId);
   for (const pg of state.doc.pages) {
     walk(pg.children, (n) => {
       if (!n.bindings) return;
@@ -566,6 +567,27 @@ export function wouldCycle(varId, targetId) {
     frontier = next;
   }
   return false;
+}
+
+// The value `varId` resolves to when collection `col` (or one of its family) is in mode `modeId`; tokens in
+// other collections use their default modes.
+export function resolveIn(col, modeId, varId) {
+  reindexVariables();
+  return resolveValue(varId, (root) => (inFamily(col, root) ? { collection: col, modeId } : { collection: root, modeId: root.defaultModeId }));
+}
+
+// ---------- contrast pairs ----------
+// A color token can list the tokens it's meant to be used with (text on a surface): variable.contrastWith =
+// [tokenId]. The token editor shows each pair's contrast in every mode.
+export function addContrastPair(v, otherId) {
+  if (!otherId || otherId === v.id || (v.contrastWith || []).includes(otherId)) return false;
+  (v.contrastWith ||= []).push(otherId);
+  return true;
+}
+
+export function removeContrastPair(v, otherId) {
+  v.contrastWith = (v.contrastWith || []).filter((id) => id !== otherId);
+  if (!v.contrastWith.length) delete v.contrastWith;
 }
 
 // ---------- references ----------

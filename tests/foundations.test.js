@@ -6,7 +6,9 @@ import { gridBands, gridLines, gridSnapTargets, newGrid, retypeGrid } from '../s
 import { caseText, measureText } from '../src/text.js';
 import { syncInstances, createInstance } from '../src/components.js';
 import { buildSVG } from '../src/io.js';
-import { parseEasing, resolveVariables, shiftPaintBindings } from '../src/variables.js';
+import { parseEasing, resolveVariables, shiftPaintBindings, resolveIn, addContrastPair, deleteVariable } from '../src/variables.js';
+import { contrastRatio, contrastLevel, formatRatio, isLargeText, backgroundBehind, textContrast } from '../src/contrast.js';
+import { sampleTokenDocument } from '../src/sample-tokens.js';
 import { nodeSVG, effectOverhang } from '../src/render.js';
 import { exportDTCG, exportCSS, importTokens } from '../src/tokens-io.js';
 
@@ -168,4 +170,64 @@ test('layout grids: layers snap to column edges while grids show; gutters bind t
   useDoc([main]);
   const inst = createInstance(main, { x: 500 });
   eq(inst.layoutGrids, main.layoutGrids);
+});
+
+test('contrast: WCAG ratios and levels, including translucent colors and large text', () => {
+  eq(Math.round(contrastRatio('#000000', '#FFFFFF') * 100) / 100, 21);
+  eq(formatRatio(contrastRatio('#767676', '#FFFFFF')), '4.54:1'); // the lightest gray that passes AA on white
+  eq(contrastLevel(4.54), 'AA');
+  eq(contrastLevel(4.4), 'Fail');
+  eq(contrastLevel(4.4, true), 'AA'); // large text needs 3:1
+  eq(contrastLevel(7.1), 'AAA');
+  ok(isLargeText(24, 400) && isLargeText(19, 700) && !isLargeText(19, 400), 'large text sizes');
+  eq(formatRatio(contrastRatio('#00000000', '#FFFFFF')), '1:1'); // fully transparent text has no contrast
+  ok(contrastRatio('#00000080', '#FFFFFF') < contrastRatio('#000000', '#FFFFFF'), 'translucent text is blended first');
+});
+
+test('contrast: a text layer is measured against the layers painted behind it', () => {
+  const label = createNode('text', { text: 'Hi', fills: [makePaint('#FFFFFF')], fontSize: 14, x: 10, y: 10 });
+  const card = createNode('frame', { name: 'Card', x: 0, y: 0, w: 200, h: 100, fills: [makePaint('#0D99FF')], children: [label] });
+  const outside = createNode('text', { text: 'Far', fills: [makePaint('#FFFFFF')], x: 500, y: 500 });
+  useDoc([card, outside]);
+  measureText(label);
+  measureText(outside);
+  eq(backgroundBehind(label), '#0D99FF');
+  eq(backgroundBehind(outside), '#F5F5F5'); // only the page behind it
+  const c = textContrast(label);
+  eq(c.bg, '#0D99FF');
+  eq(contrastLevel(c.ratio, c.large), 'Fail'); // white on that blue is under 3:1
+  // A translucent overlay in between is blended in.
+  card.children.unshift(createNode('rect', { w: 200, h: 100, fills: [makePaint('#000000', 0.5)] }));
+  useDoc([card, outside]);
+  ok(textContrast(label).ratio > c.ratio, 'darker behind, more contrast');
+  // Over an image it can't be measured.
+  card.children.unshift(createNode('image', { w: 200, h: 100, src: 'data:image/png;base64,AA' }));
+  card.children.splice(1, 1);
+  useDoc([card, outside]);
+  eq(textContrast(label), null);
+});
+
+test('contrast pairs: tokens list the colors they’re used with; pairs survive tokens.json and token deletion cleans them up', () => {
+  const m = 'm';
+  const text = { id: 'a', name: 'text/primary', type: 'color', valuesByMode: { [m]: '#1A1D22' } };
+  const surface = { id: 'b', name: 'surface/default', type: 'color', valuesByMode: { [m]: '#FFFFFF' } };
+  const col = { id: 'c', name: 'Semantic', modes: [{ id: m, name: 'Light' }], defaultModeId: m, variables: [text, surface] };
+  const doc = useDoc([]);
+  doc.variables = { collections: [col] };
+  ok(addContrastPair(text, 'b'), 'added');
+  ok(!addContrastPair(text, 'b') && !addContrastPair(text, 'a'), 'no duplicates or self-pairs');
+  eq(formatRatio(contrastRatio(resolveIn(col, m, 'a'), resolveIn(col, m, 'b'))), '16.89:1');
+  const back = importTokens(JSON.parse(JSON.stringify(exportDTCG([col])))).collections[0];
+  const t2 = back.variables.find((v) => v.name === 'text/primary');
+  eq(t2.contrastWith, [back.variables.find((v) => v.name === 'surface/default').id]);
+  deleteVariable('b');
+  eq(text.contrastWith, undefined);
+});
+
+test('sample tokens: contrast pairs are defined for text on surfaces and on the accent', () => {
+  const cols = sampleTokenDocument().collections;
+  const semantic = cols.find((c) => c.name === 'Semantic');
+  const named = (n) => semantic.variables.find((v) => v.name === n);
+  eq(named('text/primary').contrastWith, [named('surface/default').id, named('surface/raised').id]);
+  ok(named('text/on-accent').contrastWith.includes(named('accent/default').id), 'on-accent on the accent');
 });

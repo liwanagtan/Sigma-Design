@@ -8,8 +8,10 @@ import {
   rawValueIn, setOverride, setOverrideAlias, clearOverride, parentOf, isExtension, COMPOSITE_FIELDS, ALL_FIELDS, splitColor, joinColor,
   defaultValue, localCollections, libraryCollections, inFamily, isLibraryCollection, libraryOf, aliasChain, findByReference,
   groupTree, groupOf, leafOf, createGroup, renameGroup, moveGroup, ungroup, deleteGroup, moveTokensToGroup, findGroup,
-  groupIdOf, groupPathOf, tokenInGroup, tokensInOrder, setTokenName, setGroupDescription, parseEasing,
+  groupIdOf, groupPathOf, tokenInGroup, tokensInOrder, setTokenName, setGroupDescription, parseEasing, resolveIn,
+  addContrastPair, removeContrastPair,
 } from './variables.js';
+import { contrastRatio, contrastBadge } from './contrast.js';
 import { openTokenPicker, closeTokenPicker, valuePreview, collectionLabel, easingCurve } from './token-picker.js';
 import { moveLocalTokensMenu } from './libraries.js';
 import { FONTS, WEIGHTS } from './fonts.js';
@@ -310,6 +312,7 @@ function inspector(col) {
   const modeRows = COMPOSITE_FIELDS[v.type] && !ro ? col.modes.map((m) => compositeEditor(col, v, m)).join('') : col.modes.map(chainRow).join('');
   const users = aliasedBy(v.id);
   const uses = state.doc?.pages?.length ? layerUses(v.id) : null;
+  const contrast = v.type === 'color' ? contrastSection(col, v, ext || ro) : '';
   return `<aside class="vars-inspector">
     <div class="inspector-head"><span class="var-type">${TYPE_ICON[v.type]}</span><span class="inspector-name">${esc(v.name)}</span></div>
     <div class="muted">${VAR_TYPES[v.type]} · ${esc(collectionLabel(home))}</div>
@@ -317,11 +320,39 @@ function inspector(col) {
     <textarea class="desc inspector-desc" data-token-desc="${v.id}" rows="3" placeholder="${ro ? 'No description' : 'What is this token for?'}" spellcheck="false" ${ext || ro ? `disabled title="${ro ? 'Edit it in its token file' : 'Edit descriptions in the root collection'}"` : ''}>${esc(v.description || '')}</textarea>
     <label class="inspector-label">Values in ${esc(col.name)}</label>
     ${modeRows}
+    ${contrast}
     <label class="inspector-label">Referenced by</label>
     ${users.length ? users.map(({ variable: u, collection: c }) => `<button class="link-chip" data-select-token="${u.id}" title="${esc(c.name)}">${esc(u.name)}</button>`).join('') : '<div class="muted">No other tokens alias this one.</div>'}
     ${uses === null ? '' : `<label class="inspector-label">Used in this file</label><div class="muted">${uses ? `${uses} layer${uses === 1 ? '' : 's'}` : 'Not used by any layer yet.'}</div>`}
     ${ext || ro ? '' : `<button class="btn wide danger" data-delete-var="${v.id}">Delete token</button>`}
   </aside>`;
+}
+
+// Contrast pairs: this color with the colors it's used with, in every mode of the collection shown. A pair
+// is stored on the foreground token ("text/primary" lists "surface/default"); the background token shows
+// it too. Ratios are for normal text: AA needs 4.5:1, AAA 7:1.
+function contrastSection(col, v, readOnlyPairs) {
+  const rows = [];
+  const add = (fg, bg, ownerId, otherId) => {
+    const other = findVariable(otherId);
+    if (!other) return;
+    const badges = col.modes.map((m) => {
+      const a = resolveIn(col, m.id, fg), b = resolveIn(col, m.id, bg);
+      if (!a || !b) return '';
+      return `<span class="contrast-mode">${col.modes.length > 1 ? `<span class="muted">${esc(m.name)}</span>` : ''}${contrastBadge(contrastRatio(a, b), false, { title: `${esc(findVariable(fg)?.variable.name)} on ${esc(findVariable(bg)?.variable.name)} in ${esc(m.name)}: normal text needs 4.5:1 for AA and 7:1 for AAA (large text 3:1 and 4.5:1)` })}</span>`;
+    }).join('');
+    const owner = findVariable(ownerId);
+    const canRemove = !readOnlyPairs && owner && !readOnly(owner.collection);
+    rows.push(`<div class="contrast-pair-row"><div class="contrast-pair-head"><span class="muted">${fg === v.id ? 'on' : 'under'}</span>` +
+      `<button class="link-chip" data-select-token="${otherId}">${esc(other.variable.name)}</button>` +
+      (canRemove ? `<button class="icon-btn" data-remove-pair="${ownerId}:${ownerId === v.id ? otherId : v.id}" title="Stop checking this pair">${icons.close}</button>` : '') +
+      `</div><div class="contrast-modes">${badges}</div></div>`);
+  };
+  for (const id of v.contrastWith || []) add(v.id, id, v.id, id);
+  for (const { variable: u } of allVariables('color')) if (u.contrastWith?.includes(v.id)) add(u.id, v.id, u.id, u.id);
+  return `<label class="inspector-label">Contrast</label>` +
+    (rows.join('') || '<div class="muted">Check this color against the colors it’s used with, in every mode.</div>') +
+    (readOnlyPairs ? '' : `<button class="btn wide" data-add-pair="${v.id}">+ Check contrast with…</button>`);
 }
 
 // The sidebar is one tree: collections, and inside each its groups (nested).
@@ -597,6 +628,20 @@ function bind() {
       return render();
     }
     if (t.hasAttribute('data-typo-alias')) return typoAliasPicker(t, col);
+    if (t.dataset.addPair) {
+      const v = findVariable(t.dataset.addPair)?.variable;
+      if (!v) return;
+      const taken = new Set([v.id, ...(v.contrastWith || [])]);
+      return openTokenPicker({
+        anchor: t.getBoundingClientRect(), type: 'color', exclude: (id) => taken.has(id),
+        onPick: (id) => change(() => addContrastPair(v, id)),
+      });
+    }
+    if (t.dataset.removePair) {
+      const [ownerId, otherId] = t.dataset.removePair.split(':');
+      const owner = findVariable(ownerId)?.variable;
+      return owner && change(() => removeContrastPair(owner, otherId));
+    }
     if (t.hasAttribute('data-pick-token')) return tokenPicker(t.closest('.var-cell') || t, col, t.dataset.var, t.dataset.mode);
     if (t.dataset.toggleGroup) {
       const id = t.dataset.toggleGroup;

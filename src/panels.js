@@ -33,6 +33,7 @@ import { showContextMenu } from './menu.js';
 import { stopEditing, TEXT_CASES } from './text.js';
 import { toWorld, nodeWorldSVG } from './render.js';
 import { GRID_TYPES, newGrid, retypeGrid } from './grids.js';
+import { textContrast, contrastBadge } from './contrast.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -722,6 +723,19 @@ function addPaint(kind) {
   commit();
 }
 
+// ---------- contrast ----------
+// For one text layer: its contrast with what's behind it, and the WCAG level.
+function contrastRow(nodes) {
+  if (nodes.length !== 1 || nodes[0].type !== 'text') return '';
+  const c = textContrast(nodes[0]);
+  if (!c) {
+    return (nodes[0].fills || []).some((p) => p.visible !== false)
+      ? '<div class="contrast-row"><span class="muted">Contrast</span><span class="muted">Can’t measure over an image</span></div>' : '';
+  }
+  return `<div class="contrast-row" title="Text color ${c.fg} on ${c.bg}, measured behind the middle of the text"><span class="muted">Contrast</span>` +
+    `<span class="contrast-pair"><span class="mini-swatch" style="--c:${c.bg}"><span style="color:${c.fg}">A</span></span>${contrastBadge(c.ratio, c.large)}</span></div>`;
+}
+
 // ---------- layout grids ----------
 const sameGrids = (nodes) => nodes.every((n) => JSON.stringify(n.layoutGrids || []) === JSON.stringify(nodes[0].layoutGrids || []));
 
@@ -1001,7 +1015,7 @@ function buildProps() {
   // Fill
   const fillNodes = nodes.filter((n) => canHavePaint(n, 'fills'));
   if (fillNodes.length) {
-    html += section(types.has('image') && types.size === 1 ? 'Fill (behind image)' : 'Fill', paintRows('fills', fillNodes), addPaintButton('fills'));
+    html += section(types.has('image') && types.size === 1 ? 'Fill (behind image)' : 'Fill', paintRows('fills', fillNodes) + contrastRow(nodes), addPaintButton('fills'));
   }
 
   // Stroke
