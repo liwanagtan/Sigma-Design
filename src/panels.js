@@ -11,12 +11,12 @@ import {
 } from './commands.js';
 import { isAutoLayout, getSizing } from './layout.js';
 import {
-  isInsideInstance, owningInstance, canPlaceInside, listComponents, overrideCount, defaultVariant,
+  isInsideInstance, owningInstance, canPlaceInside, listComponents, overrideCount, defaultVariant, setInstanceProp,
 } from './components.js';
 import { exportNodes, saveFile, pickImages } from './io.js';
 import { createFile, openFile, goHome, pickFilesToImport, createSampleFiles } from './files.js';
 import {
-  componentPanel, onComponentClick, onComponentChange, bindPropertyDrag, propBinding, propMenuItems,
+  componentPanel, onComponentClick, onComponentChange, bindPropertyDrag, propBinding, propMenuItems, openPlayground,
 } from './component-ui.js';
 import {
   libraries, componentLibraries, openLibrariesDialog, openPublishComponentsDialog, componentPublishStatus, openDesignTokensDialog,
@@ -927,11 +927,32 @@ function initAssets() {
   });
   const list = $('#assets-list');
   list.addEventListener('click', (e) => {
+    const info = e.target.closest('[data-asset-info]');
+    if (info) return openPlayground(info.dataset.assetInfo);
     const tile = e.target.closest('[data-component]');
     const main = tile && getNode(tile.dataset.component);
     if (!main) return;
     const { width, height } = viewportSize();
     placeInstance(main, toWorld({ x: width / 2, y: height / 2 }));
+  });
+  list.addEventListener('contextmenu', (e) => {
+    const tile = e.target.closest('[data-component]');
+    if (!tile) return;
+    e.preventDefault();
+    const { width, height } = viewportSize();
+    showContextMenu(e.clientX, e.clientY, [
+      { label: 'Insert instance', action: () => placeInstance(getNode(tile.dataset.component), toWorld({ x: width / 2, y: height / 2 })) },
+      { label: 'Open in playground…', action: () => openPlayground(tile.dataset.component) },
+    ]);
+  });
+  // "Insert instance" from the playground: with the variant and property values chosen there.
+  window.addEventListener('sigma:insert-instance', (e) => {
+    const { main, values } = e.detail;
+    if (!main) return;
+    const { width, height } = viewportSize();
+    const inst = placeInstance(main, toWorld({ x: width / 2, y: height / 2 }));
+    for (const [pid, v] of Object.entries(values || {})) setInstanceProp(inst, pid, v);
+    commit();
   });
   list.addEventListener('dragstart', (e) => {
     const tile = e.target.closest('[data-component]');
@@ -941,6 +962,7 @@ function initAssets() {
   });
 }
 
+const ASSET_INFO_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><circle cx="6" cy="6" r="4.8"/><path d="M6 5.4v3M6 3.6v.1"/></svg>';
 const COMPONENT_LIB_ICON = '<svg class="lib-glyph" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M6 1.2l1.9 1.9L6 5 4.1 3.1zM6 7l1.9 1.9L6 10.8 4.1 8.9zM3.1 4.1L5 6 3.1 7.9 1.2 6zM8.9 4.1L10.8 6 8.9 7.9 7 6z"/></svg> ';
 
 export function renderAssets() {
@@ -972,7 +994,8 @@ export function renderAssets() {
     const leaf = node.name.slice(node.name.lastIndexOf('/') + 1);
     const desc = node.description || insert.description;
     return `<div class="asset" draggable="true" data-component="${insert.id}" title="${esc(node.name)}${desc ? `\n${esc(desc)}` : ''}\nClick to insert, or drag onto the canvas">` +
-      `<div class="asset-thumb">${componentThumb(insert)}</div><div class="asset-name">${esc(leaf)}${node.type === 'componentSet' ? ` <span class="muted">· ${node.children.length}</span>` : ''}</div></div>`;
+      `<div class="asset-thumb">${componentThumb(insert)}<button class="asset-info" data-asset-info="${insert.id}" title="Component details: try its properties, then insert">${ASSET_INFO_ICON}</button></div>` +
+      `<div class="asset-name">${esc(leaf)}${node.type === 'componentSet' ? ` <span class="muted">· ${node.children.length}</span>` : ''}</div></div>`;
   };
   list.innerHTML = [...byPage].map(([pg, items]) => {
     const groups = new Map();

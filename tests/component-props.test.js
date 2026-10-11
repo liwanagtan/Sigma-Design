@@ -171,3 +171,19 @@ test("component props: Push changes to main component moves an instance's change
   eq([main.children[0].fills[0].color, propsOf(main)[text].default, main.children[1].text], ['#FF0000', 'Save', 'Save']);
   eq([overrideCount(inst), inst.children[0].fills[0].color, inst.children[1].text], [0, '#FF0000', 'Save']);
 });
+
+test('component props: the playground previews without changing the document', async () => {
+  const { openPlayground, closePlayground } = await import('../src/component-ui.js');
+  const main = button();
+  const doc = useDoc([main]);
+  const pid = addComponentProp(main, 'boolean', { name: 'Show icon', value: true });
+  bindLayerProp(main.children[0], 'visible', pid);
+  const before = JSON.stringify(doc);
+  openPlayground(main.id);
+  const toggle = document.querySelector('[data-pg-prop]');
+  ok(document.querySelector('.pg-preview svg'), 'a preview is drawn');
+  toggle.checked = false;
+  toggle.dispatchEvent(new Event('change', { bubbles: true }));
+  eq(JSON.stringify(doc), before); // nothing in the document changed
+  closePlayground();
+});

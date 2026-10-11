@@ -9,7 +9,9 @@
 //   Layers inside a main component get properties from the "Apply variable/property" button on
 //     Visibility and Text content, and nested instances from "Apply instance swap property"; a bound
 //     layer shows a purple pill (see propBinding / propMenuItems, used by panels.js).
-import { state, getNode, getParent, commit, select, editNode, emit, walk, worldBounds, subscribe } from './store.js';
+import {
+  state, getNode, getParent, commit, select, editNode, emit, walk, worldBounds, subscribe, createNode, insertNode, detach, reindex,
+} from './store.js';
 import { findVariable, previewValue } from './variables.js';
 import { openTokenPicker } from './token-picker.js';
 import { nodeWorldSVG } from './render.js';
@@ -19,7 +21,7 @@ import {
   setVariantValue, toggleValues, defaultVariant, variantConflicts, renameVariantValue, reorderVariantValues,
   reorderVariantProperty, removeVariantProperty, addVariantProperty, containingComponent, mainComponentOf, displayName,
   instancesOf, overrideCount, orphanedOverrides, clearOrphanedOverrides, isInsideInstance, owningInstance, listComponents,
-  canPlaceInside, nestedInstances, layersUsingProp, libraryOfComponent, setPropDefaultVar, pushOverridesToMain,
+  canPlaceInside, nestedInstances, layersUsingProp, libraryOfComponent, setPropDefaultVar, pushOverridesToMain, syncInstances,
 } from './components.js';
 import {
   addVariant, goToMainComponent, resetSelectionOverrides, detachSelection, duplicateSelection, makeComponentSet,
@@ -1028,4 +1030,115 @@ function exposeMenu(btn, comp) {
       },
     })),
   ]);
+}
+
+// ---------- component playground ----------
+// Figma's component details: preview a component, try its properties (variants, toggles, text, swaps)
+// and insert an instance with those choices. The preview instance only ever exists for a moment while
+// its picture is drawn; nothing is saved until "Insert instance".
+let play = null;
+
+function previewSVG(mainId, propValues) {
+  const main = getNode(mainId);
+  if (!main) return '';
+  const inst = createNode('instance', { name: main.name, componentId: main.id, w: main.w, h: main.h, overrides: {}, children: [], propValues: structuredClone(propValues) });
+  insertNode(inst, null);
+  syncInstances();
+  const b = worldBounds(inst);
+  const svg = `<svg viewBox="${b.x - 8} ${b.y - 8} ${b.w + 16} ${b.h + 16}" preserveAspectRatio="xMidYMid meet">${nodeWorldSVG(inst)}</svg>`;
+  detach(inst);
+  reindex();
+  return svg;
+}
+
+export function openPlayground(componentId) {
+  const start = getNode(componentId);
+  if (!start) return;
+  closePlayground();
+  const set = isVariant(start) ? getParent(start.id) : null;
+  play = { mainId: start.id, values: {} };
+  const el = document.createElement('div');
+  el.className = 'modal-backdrop';
+  el.innerHTML = '<div class="modal playground"></div>';
+  document.body.appendChild(el);
+  play.el = el;
+  const render = () => {
+    const main = getNode(play.mainId);
+    const defs = propsOf(main);
+    const rows = [];
+    if (set) {
+      const current = parseVariantName(main.name);
+      for (const [prop, values] of Object.entries(variantDefs(set))) {
+        const t = toggleValues(values);
+        rows.push(`<div class="inst-row"><span class="inst-label">${PROP_ICONS.variant}${esc(prop)}</span>` + (t
+          ? toggle(`data-pg-toggle="${esc(prop)}" data-on="${esc(t.on)}" data-off="${esc(t.off)}"`, current[prop] === t.on)
+          : `<select class="select" data-pg-variant="${esc(prop)}">${values.map((v) => `<option ${v === current[prop] ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select>`) + '</div>');
+      }
+    }
+    for (const [pid, def] of Object.entries(defs)) {
+      const v = play.values[pid] ?? effectiveDefault(def);
+      let control;
+      if (def.type === 'boolean') control = toggle(`data-pg-prop="${pid}"`, !!v);
+      else if (def.type === 'text') control = `<input class="prop-input" data-pg-prop="${pid}" value="${esc(v ?? '')}" spellcheck="false">`;
+      else {
+        const options = listComponents().filter(({ node }) => canPlaceInside({ type: 'instance', componentId: node.id }, main));
+        const pref = def.preferred || [];
+        const ordered = [...options.filter(({ node }) => pref.includes(node.id)), ...options.filter(({ node }) => !pref.includes(node.id))];
+        control = `<select class="select" data-pg-prop="${pid}">${ordered.map(({ node }) => `<option value="${node.id}" ${node.id === v ? 'selected' : ''}>${esc(isVariant(node) ? `${getParent(node.id).name} · ${node.name}` : node.name)}</option>`).join('')}</select>`;
+      }
+      rows.push(`<div class="inst-row"><span class="inst-label">${PROP_ICONS[def.type]}${esc(def.name)}</span>${control}</div>`);
+    }
+    const host = set || main;
+    el.querySelector('.playground').innerHTML =
+      `<div class="modal-head"><span class="comp-icon">${set ? SET_ICON : COMPONENT_ICON}</span> ${esc(host.name)}<button class="icon-btn" data-pg-close>${icons.close}</button></div>` +
+      `<div class="pg-body"><div class="pg-preview">${previewSVG(play.mainId, play.values)}</div>` +
+      `<div class="pg-side">${host.description ? `<div class="comp-desc">${esc(host.description)}</div>` : ''}` +
+      `<div class="prop-sub">Properties</div>${rows.join('') || '<div class="muted">This component has no properties.</div>'}</div></div>` +
+      '<div class="lib-footer"><button class="btn" data-pg-reset>Reset</button><span class="spacer"></span><button class="btn primary" data-pg-insert>Insert instance</button></div>';
+  };
+  play.render = render;
+  render();
+  el.addEventListener('click', (e) => {
+    if (e.target === el || e.target.closest('[data-pg-close]')) return closePlayground();
+    if (e.target.closest('[data-pg-reset]')) {
+      play.mainId = set ? defaultVariant(set).id : start.id;
+      play.values = {};
+      return render();
+    }
+    if (e.target.closest('[data-pg-insert]')) return insertFromPlayground();
+  });
+  el.addEventListener('change', (e) => {
+    const t = e.target;
+    if (t.dataset.pgVariant !== undefined || t.dataset.pgToggle !== undefined) {
+      const prop = t.dataset.pgVariant ?? t.dataset.pgToggle;
+      const value = t.dataset.pgVariant !== undefined ? t.value : t.checked ? t.dataset.on : t.dataset.off;
+      const wanted = { ...parseVariantName(getNode(play.mainId).name), [prop]: value };
+      let best = null, score = -1;
+      for (const v of variantsOf(set)) {
+        const p = parseVariantName(v.name);
+        const sc = Object.entries(wanted).filter(([k, x]) => p[k] === x).length;
+        if (sc > score) [best, score] = [v, sc];
+      }
+      if (best) play.mainId = best.id;
+    } else if (t.dataset.pgProp) {
+      play.values[t.dataset.pgProp] = t.type === 'checkbox' ? t.checked : t.value;
+    } else return;
+    render();
+  });
+  el.addEventListener('keydown', (e) => {
+    e.stopPropagation();
+    if (e.key === 'Escape') closePlayground();
+  });
+}
+
+export function closePlayground() {
+  play?.el.remove();
+  play = null;
+}
+
+function insertFromPlayground() {
+  const main = getNode(play.mainId);
+  const values = play.values;
+  closePlayground();
+  window.dispatchEvent(new CustomEvent('sigma:insert-instance', { detail: { main, values } }));
 }
