@@ -385,6 +385,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 
 Things noticed while building, not yet done:
 
+- ~~**Groups as objects.**~~ Done: `collection.groups = [{ id, name, parentId, description }]` (array order is display order) and `variable.groupId`; token names are derived full paths (`token-groups.js`). The sidebar is one Collection → Group tree. Older files convert on load, with ids derived from collection + path so published and linked copies convert identically.
 - ~~**Token groups and references.**~~ Done: a group tree per collection (create, rename, nest, ungroup, delete, drag tokens in), and references to other tokens with a `{` picker, value previews and the full chain in the inspector. References can point into linked token files; publishing carries those files along (`published.dependencies`) so design files resolve them.
 
 - ~~**Rendering performance.**~~ Done: text that doesn't wrap is drawn as SVG `<text>`. With 200 card instances (about 400 text layers), a frame went from about 17 ms to about 8 ms. Wrapping text still uses HTML (`foreignObject`), because SVG text can't wrap.

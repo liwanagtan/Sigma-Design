@@ -7,7 +7,8 @@ import {
   setAlias, findVariable, allVariables, previewValue, isAlias, wouldCycle, extendCollection, inheritedVariables,
   rawValueIn, setOverride, setOverrideAlias, clearOverride, parentOf, isExtension, TYPO_FIELDS, splitColor, joinColor,
   defaultValue, localCollections, libraryCollections, inFamily, isLibraryCollection, libraryOf, aliasChain, findByReference,
-  groupTree, groupOf, leafOf, inGroup, createGroup, renameGroup, moveGroup, ungroup, deleteGroup, moveTokensToGroup,
+  groupTree, groupOf, leafOf, createGroup, renameGroup, moveGroup, ungroup, deleteGroup, moveTokensToGroup, findGroup,
+  groupIdOf, groupPathOf, tokenInGroup, tokensInOrder, setTokenName, setGroupDescription,
 } from './variables.js';
 import { openTokenPicker, closeTokenPicker, valuePreview, collectionLabel } from './token-picker.js';
 import { moveLocalTokensMenu } from './libraries.js';
@@ -24,9 +25,10 @@ let activeId = null;
 let selectedId = null; // token shown in the inspector
 let query = '';
 let typeFilter = '';
-let activeGroup = ''; // group shown in the table ('' = all tokens)
-let renamingGroup = null; // group path being renamed in the sidebar
-const collapsedGroups = new Set(); // `${collectionId}:${path}`
+let activeGroup = null; // id of the group shown in the table (null: the whole collection)
+let renamingGroup = null; // id of the group being renamed in the sidebar
+const collapsedGroups = new Set(); // group ids
+const openCollections = new Map(); // collection id → expanded in the sidebar (default: own collections open)
 let rendering = false;
 
 const TYPE_ICON = {
@@ -39,6 +41,8 @@ const TYPE_ICON = {
 const FIELD_LABELS = { fontFamily: 'Family', fontWeight: 'Weight', fontSize: 'Size', lineHeight: 'Line height', letterSpacing: 'Letter spacing' };
 const LINK_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M5 7l2-2M5.5 3.5l.8-.8a2 2 0 0 1 2.8 2.8l-.8.8M6.5 8.5l-.8.8a2 2 0 0 1-2.8-2.8l.8-.8"/></svg>';
 const LIB_ICON = '<svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 1.2l5 2.9v5.8L7 12.8 2 9.9V4.1z"/></svg>';
+const CHEVRON = '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2.5 1.5L5.5 4l-3 2.5"/></svg>';
+const GROUP_ICON = '<svg class="group-icon" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M1.5 3.5h3l1 1h5v5h-9z"/></svg>';
 const RESET_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M2.5 6a3.5 3.5 0 1 0 1-2.5M2.5 1.5v2h2"/></svg>';
 
 // Fill `host` with the editor (token files). Stays until unmountTokenEditor().
@@ -284,36 +288,42 @@ function inspector(col) {
   </aside>`;
 }
 
-// The group tree under the active collection in the sidebar.
-function groupRows(col) {
-  const editable = editableGroups(col);
+// The sidebar is one tree: collections, and inside each its groups (nested).
+function groupRows(c, col) {
+  const editable = editableGroups(c);
   const rows = [];
   const visit = (nodes, depth) => {
     for (const g of nodes) {
-      const open = !collapsedGroups.has(`${col.id}:${g.path}`);
+      const open = !collapsedGroups.has(g.id);
       const caret = g.children.length
-        ? `<button class="group-caret${open ? ' open' : ''}" data-toggle-group="${esc(g.path)}" title="${open ? 'Collapse' : 'Expand'}">▸</button>`
+        ? `<button class="group-caret${open ? ' open' : ''}" data-toggle-group="${esc(g.id)}" title="${open ? 'Collapse' : 'Expand'}">${CHEVRON}</button>`
         : '<span class="group-caret"></span>';
-      const label = renamingGroup === g.path
-        ? `<input class="group-rename" data-rename-group="${esc(g.path)}" value="${esc(g.name)}" spellcheck="false">`
+      const label = renamingGroup === g.id
+        ? `<input class="group-rename" data-rename-group="${esc(g.id)}" value="${esc(g.name)}" spellcheck="false">`
         : `<span class="group-name">${esc(g.name)}</span>`;
-      rows.push(`<div class="vars-group-item${g.path === activeGroup ? ' active' : ''}" data-group="${esc(g.path)}" style="padding-left:${16 + depth * 12}px"${editable ? ' draggable="true"' : ''}>` +
-        `${caret}${label}<span class="muted group-count">${g.count}</span>` +
-        (editable ? `<button class="icon-btn group-more" data-group-menu="${esc(g.path)}" title="Group options">⋯</button>` : '') + '</div>');
+      rows.push(`<div class="vars-group-item${c === col && g.id === activeGroup ? ' active' : ''}" data-col-id="${c.id}" data-group="${esc(g.id)}" ` +
+        `style="padding-left:${26 + depth * 12}px"${editable ? ' draggable="true"' : ''} title="${esc(g.description || g.path)}">` +
+        `${caret}${GROUP_ICON}${label}<span class="muted group-count">${g.count}</span>` +
+        (editable ? `<button class="icon-btn group-more" data-group-menu="${esc(g.id)}" title="Group options">⋯</button>` : '') + '</div>');
       if (open) visit(g.children, depth + 1);
     }
   };
-  visit(groupTree(col), 0);
-  return `<div class="vars-groups"><div class="vars-group-item${activeGroup === '' ? ' active' : ''}" data-group="" style="padding-left:16px">` +
-    '<span class="group-caret"></span><span class="group-name">All tokens</span></div>' + rows.join('') +
-    (editable ? `<button class="vars-add sub" data-act="new-group">+ New group${activeGroup ? ` in ${esc(leafOf(activeGroup))}` : ''}</button>` : '') + '</div>';
+  visit(groupTree(c), 0);
+  return rows.join('') + (editable && c === col ? `<button class="vars-add sub" data-act="new-group">+ New group${activeGroup ? ` in ${esc(findGroup(c, activeGroup)?.name || '')}` : ''}</button>` : '');
 }
 
-function colButton(c, col, depth, label = c.name) {
+const collectionOpen = (c, col) => (openCollections.has(c.id) ? openCollections.get(c.id) : !readOnly(c) || c === col);
+
+function colRow(c, col, depth, label = c.name) {
   const count = isExtension(c) ? Object.keys(c.overrides || {}).length : (c.variables || []).length;
-  return `<button class="vars-col${c === col ? ' active' : ''}" data-col="${c.id}" style="padding-left:${10 + depth * 14}px">` +
+  const hasGroups = groupTree(c).length > 0 || (editableGroups(c) && c === col);
+  const open = collectionOpen(c, col);
+  return `<div class="vars-col-row" style="padding-left:${depth * 14}px">` +
+    (hasGroups ? `<button class="group-caret${open ? ' open' : ''}" data-toggle-col="${c.id}" title="${open ? 'Collapse' : 'Expand'}">${CHEVRON}</button>` : '<span class="group-caret"></span>') +
+    `<button class="vars-col${c === col && !activeGroup ? ' active' : c === col ? ' current' : ''}" data-col="${c.id}">` +
     `<span class="vars-col-label">${depth ? '↳ ' : ''}${esc(label)}</span>` +
-    `<span class="muted" title="${isExtension(c) ? 'Overridden tokens' : 'Tokens'}">${count}</span></button>` + (c === col ? groupRows(c) : '');
+    `<span class="muted" title="${isExtension(c) ? 'Overridden tokens' : 'Tokens'}">${count}</span></button></div>` +
+    (open && hasGroups ? groupRows(c, col) : '');
 }
 
 function render() {
@@ -323,12 +333,12 @@ function render() {
   const searching = document.activeElement?.hasAttribute?.('data-search');
   const caret = searching ? document.activeElement.selectionStart : 0;
   const col = active();
-  if (col && activeGroup && !inGroupTree(col, activeGroup)) activeGroup = '';
+  if (col && activeGroup && !findGroup(col, activeGroup)) activeGroup = null;
   const libCols = libraryCollections();
-  const sidebar = collectionTree().map(({ c, depth }) => colButton(c, col, depth)).join('') +
+  const sidebar = collectionTree().map(({ c, depth }) => colRow(c, col, depth)).join('') +
     '<button class="vars-add" data-act="new-collection">+ New collection</button>' +
     (libCols.length ? '<div class="vars-side-head" title="Tokens from linked token files. Edit them in their own file.">Linked libraries</div>' +
-      libCols.map((c) => colButton(c, col, 0, collectionLabel(c))).join('') : '');
+      libCols.map((c) => colRow(c, col, 0, collectionLabel(c))).join('') : '');
   let main;
   if (!col) {
     main = '<div class="vars-empty"><div class="home-empty-title">No design tokens yet</div><p>Design tokens store reusable colors, numbers, text and booleans. Create a collection to start.</p><button class="btn primary" data-act="new-collection">Create collection</button></div>';
@@ -337,28 +347,32 @@ function render() {
     const ro = readOnly(col);
     const all = ext ? inheritedVariables(col) : col.variables;
     // Search looks through every group; otherwise the table shows the selected group.
-    const scope = query.trim() ? '' : activeGroup;
-    const vars = all.filter(matches).filter((v) => inGroup(v.name, scope));
+    const scope = query.trim() ? null : activeGroup;
+    const scopePath = groupPathOf(col, scope);
+    const vars = tokensInOrder(col, all.filter(matches).filter((v) => tokenInGroup(col, v, scope)));
     const gridCols = `minmax(200px, 1.3fr) repeat(${col.modes.length}, minmax(170px, 1fr)) 40px`;
     const head = `<div class="vars-row vars-head" style="grid-template-columns:${gridCols}"><div>Name</div>` +
       col.modes.map((m) => `<div class="mode-head">${ro ? `<span>${esc(m.name)}</span>` : `<input class="mode-name" data-mode-name="${m.id}" value="${esc(m.name)}" spellcheck="false">`}` +
         (!ext && !ro && col.modes.length > 1 ? `<button class="icon-btn" data-remove-mode="${m.id}" title="Delete mode">${icons.close}</button>` : '') + '</div>').join('') +
       `<div>${ext || ro ? '' : `<button class="icon-btn" data-act="add-mode" title="Add mode">${icons.plus}</button>`}</div></div>`;
-    // Rows under a header for each group (relative to the selected group).
+    // Rows under a header for each group (its path relative to the selected group).
     const groups = new Map();
     for (const v of vars) {
-      const g = groupOf(v.name);
+      const g = groupIdOf(col, v) || '';
       if (!groups.has(g)) groups.set(g, []);
       groups.get(g).push(v);
     }
     const editable = editableGroups(col);
     const body = [...groups].map(([g, list]) => {
-      const rel = scope && g.startsWith(`${scope}/`) ? g.slice(scope.length + 1) : g === scope ? '' : g;
-      return (rel ? `<div class="vars-group" data-group-head="${esc(g)}" title="Show only this group">${esc(rel).replace(/\//g, ' <span class="muted">/</span> ')}</div>` : '') +
-      list.map((v) => `<div class="vars-row${v.id === selectedId ? ' selected' : ''}" data-row="${v.id}" style="grid-template-columns:${gridCols}">` +
+      const path = groupPathOf(col, g);
+      const rel = scopePath && path.startsWith(`${scopePath}/`) ? path.slice(scopePath.length + 1) : g === scope ? '' : path;
+      const desc = g && g !== scope ? findGroup(col, g)?.description : '';
+      return (rel ? `<div class="vars-group" data-group-head="${esc(g)}" title="Show only this group">${esc(rel).replace(/\//g, ' <span class="muted">/</span> ')}` +
+        `${desc ? `<span class="group-desc-inline">${esc(desc)}</span>` : ''}</div>` : '') +
+      list.map((v) => `<div class="vars-row${v.id === selectedId ? ' selected' : ''}" data-row="${v.id}" style="grid-template-columns:${gridCols}"${editable ? ' data-drop-row' : ''}>` +
         `<div class="var-name"><span class="var-type${editable ? ' drag-handle' : ''}" title="${VAR_TYPES[v.type]}${editable ? ' · drag to a group' : ''}"${editable ? ` draggable="true" data-drag-token="${v.id}"` : ''}>${TYPE_ICON[v.type]}</span>` +
         (ext || ro ? `<span class="var-name-text" title="${esc(v.name)}">${esc(leafOf(v.name))}</span>`
-          : `<input data-var-name="${v.id}" value="${esc(leafOf(v.name))}" spellcheck="false" title="${esc(v.name)} · a / makes a subgroup, a leading / a path from the top">`) +
+          : `<input data-var-name="${v.id}" value="${esc(leafOf(v.name))}" spellcheck="false" title="${esc(v.name)} · type a/b to put it in a group a, /b for the top of the collection">`) +
         (v.description ? `<span class="desc-dot" title="${esc(v.description)}"></span>` : '') + '</div>' +
         col.modes.map((m) => cell(col, v, m)).join('') +
         `<div>${ext || ro ? '' : `<button class="icon-btn" data-delete-var="${v.id}" title="Delete token">${icons.close}</button>`}</div></div>`).join('');
@@ -366,7 +380,7 @@ function render() {
     const parent = parentOf(col);
     const lib = ro ? libraryOf(col) : null;
     const empty = all.length
-      ? `<div class="muted vars-none">${scope && !query.trim() ? 'No tokens in this group yet.' : 'No tokens match the search or filter.'}</div>`
+      ? `<div class="muted vars-none">${scope ? 'No tokens in this group yet. Drag tokens here or create one.' : 'No tokens match the search or filter.'}</div>`
       : '<div class="muted vars-none">No tokens in this collection yet.</div>';
     main = `<div class="vars-toolbar"><div class="vars-title">` +
       (ro ? `<span class="vars-col-name static">${esc(col.name)}</span><span class="ext-badge lib" title="Edit these tokens in their token file">${esc(lib?.name || 'Library')}${lib?.via ? ` · via ${esc(lib.via)}` : ''} · v${lib?.version ?? '?'} · read-only</span>`
@@ -377,8 +391,8 @@ function render() {
       `<button class="btn" data-act="extend" title="Create a collection that inherits this one and overrides only some values">Extend</button>` +
       (ro ? (lib ? `<button class="btn" data-act="open-library" data-file="${lib.fileId}">Open token file</button>` : '') : '<button class="btn" data-act="delete-collection">Delete</button>') + '</div></div>' +
       (ext ? '<div class="vars-hint">Greyed values are inherited. Edit a value to override it for this collection; ↺ resets it. Add tokens and modes in the root collection.</div>' : '') +
-      `<div class="vars-work"><div class="vars-table">${head}${body || empty}</div>${inspector(col)}</div>` +
-      (ext || ro ? '' : `<div class="vars-footer"><button class="btn" data-act="new-variable">+ Create token${scope ? ` in ${esc(leafOf(scope))}` : ''}</button></div>`);
+      `<div class="vars-work"><div class="vars-table">${groupHeading(col, scope)}${head}${body || empty}</div>${inspector(col)}</div>` +
+      (ext || ro ? '' : `<div class="vars-footer"><button class="btn" data-act="new-variable">+ Create token${scope ? ` in ${esc(findGroup(col, scope)?.name || '')}` : ''}</button></div>`);
   }
   rendering = true; // replacing the HTML blurs a focused field; that's not the user finishing an edit
   modal.querySelector('.vars-modal').innerHTML =
@@ -400,10 +414,17 @@ function render() {
   }
 }
 
-const inGroupTree = (col, path) => {
-  const find = (nodes) => nodes.some((g) => g.path === path || find(g.children));
-  return find(groupTree(col));
-};
+// The selected group's path and description, above its tokens.
+function groupHeading(col, id) {
+  const g = id ? findGroup(col, id) : null;
+  if (!g) return '';
+  const path = groupPathOf(col, id);
+  const crumbs = path.split('/').map((p) => esc(p)).join(' <span class="muted">/</span> ');
+  const desc = editableGroups(col)
+    ? `<textarea class="desc group-desc" data-group-desc="${esc(id)}" rows="1" placeholder="Describe this group (optional)" spellcheck="false">${esc(g.description || '')}</textarea>`
+    : (g.description ? `<div class="muted">${esc(g.description)}</div>` : '');
+  return `<div class="group-heading"><div class="group-crumbs">${GROUP_ICON}${crumbs}</div>${desc}</div>`;
+}
 
 // The raw value shown in a cell (an extension shows its override or the inherited value).
 function cellRaw(col, varId, modeId) {
@@ -455,18 +476,21 @@ function tokenPicker(cellEl, col, varId, modeId, query = '') {
 
 const toast = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
 
-// Group options (⋯ in the sidebar).
-function groupMenu(btn, col, path) {
+// Group options (⋯ or right-click in the sidebar).
+function groupMenu(btn, col, id) {
+  const g = findGroup(col, id);
+  if (!g) return;
   const r = btn.getBoundingClientRect();
-  const count = col.variables.filter((v) => inGroup(v.name, path)).length;
+  const count = col.variables.filter((v) => tokenInGroup(col, v, id)).length;
   showContextMenu(r.left, r.bottom + 4, [
-    { label: 'New group inside', action: () => change(() => { renamingGroup = createGroup(col, path); activeGroup = renamingGroup; collapsedGroups.delete(`${col.id}:${path}`); }) },
-    { label: 'Rename', action: () => { renamingGroup = path; render(); } },
-    { label: 'Ungroup', action: () => change(() => { ungroup(col, path); activeGroup = groupOf(path); }) },
+    { label: 'New group inside', action: () => change(() => { collapsedGroups.delete(id); activeGroup = renamingGroup = createGroup(col, id); }) },
+    { label: 'Rename', action: () => { renamingGroup = id; render(); } },
+    { label: 'Edit description', action: () => { activeGroup = id; render(); modal.querySelector('[data-group-desc]')?.focus(); } },
+    { label: 'Ungroup', action: () => change(() => { ungroup(col, id); activeGroup = g.parentId || null; }) },
     '-',
     { label: count ? `Delete group and ${count} token${count === 1 ? '' : 's'}` : 'Delete group', action: () => {
-      if (count && !confirm(`Delete “${path}” and its ${count} token${count === 1 ? '' : 's'}? Layers and tokens that use them keep their current values.`)) return;
-      change(() => { deleteGroup(col, path); activeGroup = groupOf(path); });
+      if (count && !confirm(`Delete “${groupPathOf(col, id)}” and its ${count} token${count === 1 ? '' : 's'}? Layers and tokens that use them keep their current values.`)) return;
+      change(() => { activeGroup = g.parentId || null; deleteGroup(col, id); });
     } },
   ]);
 }
@@ -474,15 +498,16 @@ function groupMenu(btn, col, path) {
 // Move a token to a group (right-click a row).
 function moveToGroupMenu(x, y, col, varId) {
   const v = findVariable(varId)?.variable;
-  const paths = [];
-  const walkTree = (nodes, depth) => nodes.forEach((g) => { paths.push([g.path, depth]); walkTree(g.children, depth + 1); });
+  const current = v ? groupIdOf(col, v) : null;
+  const items = [];
+  const walkTree = (nodes, depth) => nodes.forEach((g) => {
+    items.push({ label: `${'   '.repeat(depth)}${g.name}`, checked: current === g.id, action: () => change(() => moveTokensToGroup(col, [varId], g.id)) });
+    walkTree(g.children, depth + 1);
+  });
   walkTree(groupTree(col), 0);
   showContextMenu(x, y, [
-    { label: 'Top level', checked: v && !groupOf(v.name), action: () => change(() => moveTokensToGroup(col, [varId], '')) },
-    ...paths.map(([path, depth]) => ({
-      label: `${'   '.repeat(depth)}${leafOf(path)}`, checked: v && groupOf(v.name) === path,
-      action: () => change(() => moveTokensToGroup(col, [varId], path)),
-    })),
+    { label: `Top of “${col.name}”`, checked: !current, action: () => change(() => moveTokensToGroup(col, [varId], null)) },
+    ...(items.length ? ['-', ...items] : []),
   ]);
 }
 
@@ -499,9 +524,10 @@ function bind() {
   modal.addEventListener('click', (e) => {
     if (!inline && (e.target === modal || e.target.closest('[data-close]'))) return close();
     // Groups: select one in the sidebar or by its header in the table.
-    const groupEl = !e.target.closest('button, input') && e.target.closest('[data-group], [data-group-head]');
+    const groupEl = !e.target.closest('button, input, textarea') && e.target.closest('[data-group], [data-group-head]');
     if (groupEl) {
-      activeGroup = groupEl.dataset.group ?? groupEl.dataset.groupHead;
+      if (groupEl.dataset.colId) activeId = groupEl.dataset.colId;
+      activeGroup = (groupEl.dataset.group ?? groupEl.dataset.groupHead) || null;
       query = '';
       return render();
     }
@@ -519,17 +545,26 @@ function bind() {
     }
     if (t.hasAttribute('data-typo-alias')) return typoAliasPicker(t, col);
     if (t.hasAttribute('data-pick-token')) return tokenPicker(t.closest('.var-cell') || t, col, t.dataset.var, t.dataset.mode);
-    if (t.dataset.toggleGroup !== undefined) {
-      const key = `${col.id}:${t.dataset.toggleGroup}`;
-      collapsedGroups.has(key) ? collapsedGroups.delete(key) : collapsedGroups.add(key);
+    if (t.dataset.toggleGroup) {
+      const id = t.dataset.toggleGroup;
+      collapsedGroups.has(id) ? collapsedGroups.delete(id) : collapsedGroups.add(id);
       return render();
     }
-    if (t.dataset.groupMenu !== undefined) return groupMenu(t, col, t.dataset.groupMenu);
+    if (t.dataset.toggleCol) {
+      const c = collections().find((x) => x.id === t.dataset.toggleCol);
+      if (c) openCollections.set(c.id, !collectionOpen(c, col));
+      return render();
+    }
+    if (t.dataset.groupMenu) {
+      const owner = t.closest('[data-col-id]')?.dataset.colId;
+      if (owner && owner !== col?.id) activeId = owner;
+      return groupMenu(t, active(), t.dataset.groupMenu);
+    }
     if (t.dataset.selectToken) {
       // Jump to a token, switching to its collection (maybe a linked library's) if it lives elsewhere.
       const hit = findVariable(t.dataset.selectToken);
       if (hit && !inFamily(col, hit.collection)) activeId = hit.collection.id;
-      activeGroup = '';
+      activeGroup = null;
       selectedId = t.dataset.selectToken;
       query = '';
       typeFilter = '';
@@ -537,6 +572,7 @@ function bind() {
     }
     if (t.dataset.col) {
       activeId = t.dataset.col;
+      activeGroup = null;
       return render();
     }
     if (t.dataset.removeMode) return change(() => removeMode(col, t.dataset.removeMode));
@@ -545,8 +581,9 @@ function bind() {
     switch (t.dataset.act) {
       case 'new-group':
         return change(() => {
+          if (activeGroup) collapsedGroups.delete(activeGroup);
+          openCollections.set(col.id, true);
           renamingGroup = createGroup(col, activeGroup);
-          collapsedGroups.delete(`${col.id}:${activeGroup}`);
         });
       case 'open-library':
         return window.open(`#/file/${t.dataset.file}`, '_blank');
@@ -570,9 +607,9 @@ function bind() {
         return change(() => addMode(col));
       case 'new-variable': {
         const r = t.getBoundingClientRect();
-        const scope = query.trim() ? '' : activeGroup;
+        const scope = query.trim() ? null : activeGroup;
         return showContextMenu(r.left, r.top - 120, Object.entries(VAR_TYPES).map(([type, label]) => ({
-          label, action: () => change(() => void (selectedId = createVariable(col, type, scope ? `${scope}/${type}` : undefined).id)),
+          label, action: () => change(() => void (selectedId = createVariable(col, type, undefined, scope).id)),
         })));
       }
     }
@@ -584,9 +621,12 @@ function bind() {
     const col = active();
     const row = e.target.closest('[data-row]');
     const group = e.target.closest('[data-group]');
-    if (group?.dataset.group && editableGroups(col)) {
+    if (group?.dataset.group) {
+      const owner = collections().find((c) => c.id === group.dataset.colId) || col;
+      if (!editableGroups(owner)) return;
       e.preventDefault();
-      return groupMenu({ getBoundingClientRect: () => ({ left: e.clientX, bottom: e.clientY }) }, col, group.dataset.group);
+      activeId = owner.id;
+      return groupMenu({ getBoundingClientRect: () => ({ left: e.clientX, bottom: e.clientY }) }, owner, group.dataset.group);
     }
     if (!row || e.target.closest('input')) return;
     e.preventDefault();
@@ -601,39 +641,84 @@ function bind() {
       ] : []),
     ]);
   });
-  // Drag tokens (by their type icon) and groups onto groups in the sidebar or table.
+  // Drag and drop, within the collection being edited:
+  //   a token (by its type icon) onto a group, a group heading or the collection (top level) moves it
+  //   there; onto another token, it goes before or after that token (and into its group);
+  //   a group onto a group goes inside it (middle), or before / after it (top / bottom edge).
   let dragging = null;
   modal.addEventListener('dragstart', (e) => {
+    const col = active();
     const token = e.target.closest?.('[data-drag-token]');
     const group = e.target.closest?.('[data-group][draggable]');
-    if (token) dragging = { token: token.dataset.dragToken };
-    else if (group) dragging = { group: group.dataset.group };
+    if (token) dragging = { col, token: token.dataset.dragToken };
+    else if (group) dragging = { col, group: group.dataset.group };
     else return;
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', dragging.token ? `{${findVariable(dragging.token)?.variable.name}}` : dragging.group);
+    e.dataTransfer.setData('text/plain', dragging.token ? `{${findVariable(dragging.token)?.variable.name}}` : groupPathOf(col, dragging.group));
   });
-  const dropTarget = (e) => (dragging ? e.target.closest?.('[data-group], [data-group-head]') : null);
+  const clearMarks = () => modal.querySelectorAll('.drop-into, .drop-before, .drop-after').forEach((x) => x.classList.remove('drop-into', 'drop-before', 'drop-after'));
+  // Where a drop would land: { el, kind: 'into' | 'before' | 'after', ... }.
+  const dropAt = (e) => {
+    if (!dragging) return null;
+    const col = dragging.col;
+    const el = e.target.closest?.('[data-group], [data-group-head], [data-drop-row], [data-col]');
+    if (!el) return null;
+    if (el.dataset.colId && el.dataset.colId !== col.id) return null; // other collections
+    if (el.dataset.col !== undefined && el.dataset.col !== col.id) return null;
+    const r = el.getBoundingClientRect();
+    const y = (e.clientY - r.top) / r.height;
+    if (el.dataset.dropRow !== undefined) {
+      if (!dragging.token || el.dataset.row === dragging.token) return null;
+      return { el, kind: y < 0.5 ? 'before' : 'after', token: el.dataset.row };
+    }
+    if (el.dataset.col !== undefined) return { el, kind: 'into', group: null };
+    const id = el.dataset.group ?? el.dataset.groupHead;
+    if (dragging.group && el.dataset.group !== undefined) {
+      if (id === dragging.group) return null;
+      return { el, kind: y < 0.28 ? 'before' : y > 0.72 ? 'after' : 'into', group: id };
+    }
+    return { el, kind: 'into', group: id || null };
+  };
   modal.addEventListener('dragover', (e) => {
-    const target = dropTarget(e);
-    modal.querySelectorAll('.drop-into').forEach((x) => x !== target && x.classList.remove('drop-into'));
-    if (!target) return;
+    const at = dropAt(e);
+    clearMarks();
+    if (!at) return;
     e.preventDefault();
-    target.classList.add('drop-into');
+    at.el.classList.add(`drop-${at.kind}`);
   });
   modal.addEventListener('dragend', () => {
     dragging = null;
-    modal.querySelectorAll('.drop-into').forEach((x) => x.classList.remove('drop-into'));
+    clearMarks();
   });
   modal.addEventListener('drop', (e) => {
-    const target = dropTarget(e);
-    if (!target) return;
+    const at = dropAt(e);
+    clearMarks();
+    if (!at) return;
     e.preventDefault();
-    const into = target.dataset.group ?? target.dataset.groupHead;
-    const col = active();
+    const { col } = dragging;
     const what = dragging;
     dragging = null;
-    if (what.token) change(() => moveTokensToGroup(col, [what.token], into));
-    else if (what.group !== into) change(() => { activeGroup = moveGroup(col, what.group, into); });
+    if (what.token) {
+      if (at.token) {
+        // Before or after another token, in its group.
+        const target = findVariable(at.token)?.variable;
+        const order = tokensInOrder(col, col.variables);
+        const next = at.kind === 'before' ? at.token : order[order.findIndex((v) => v.id === at.token) + 1]?.id || null;
+        return change(() => moveTokensToGroup(col, [what.token], groupIdOf(col, target), next));
+      }
+      return change(() => moveTokensToGroup(col, [what.token], at.group));
+    }
+    if (at.kind === 'into') {
+      if (!moveGroup(col, what.group, at.group)) return toast('A group can’t go inside itself.');
+      if (at.group) collapsedGroups.delete(at.group);
+      return change(() => {});
+    }
+    // Before or after a sibling group.
+    const target = findGroup(col, at.group);
+    const siblings = (col.groups || []).filter((g) => (g.parentId || null) === (target.parentId || null) && g.id !== what.group);
+    const before = at.kind === 'before' ? target.id : siblings[siblings.findIndex((g) => g.id === target.id) + 1]?.id || null;
+    if (!moveGroup(col, what.group, target.parentId || null, before)) return toast('A group can’t go inside itself.');
+    change(() => {});
   });
   modal.addEventListener('focusin', (e) => {
     // Focusing a token's name selects it.
@@ -664,13 +749,10 @@ function bind() {
     });
     if (t.dataset.renameGroup !== undefined) return finishGroupRename(t);
     if (t.dataset.varName) return change(() => {
-      // The name is relative to the token's group: "a/b" makes a subgroup; a leading "/" starts from the top.
       const v = findVariable(t.dataset.varName)?.variable;
-      const typed = t.value.trim().replace(/\s*\/\s*/g, '/');
-      if (!v || !typed.replace(/\//g, '')) return;
-      const group = groupOf(v.name);
-      v.name = (typed.startsWith('/') || !group ? typed : `${group}/${typed}`).replace(/^\/+|\/+$/g, '');
+      if (v) setTokenName(col, v, t.value);
     });
+    if (t.dataset.groupDesc) return change(() => setGroupDescription(col, t.dataset.groupDesc, t.value));
     if (t.dataset.typoField) {
       const f = t.dataset.typoField;
       let value = t.value.trim();
@@ -759,14 +841,11 @@ function change(fn) {
 }
 
 function finishGroupRename(input) {
-  const path = input.dataset.renameGroup;
-  if (renamingGroup !== path) return;
+  const id = input.dataset.renameGroup;
+  if (renamingGroup !== id) return;
   renamingGroup = null;
-  const name = input.value.trim().replace(/\//g, '-');
   const col = active();
-  if (!name || name === leafOf(path) || !col) return render();
-  change(() => {
-    const next = renameGroup(col, path, groupOf(path) ? `${groupOf(path)}/${name}` : name);
-    if (activeGroup === path || inGroup(activeGroup, path)) activeGroup = next + activeGroup.slice(path.length);
-  });
+  const name = input.value.trim();
+  if (!name || !col || name === findGroup(col, id)?.name) return render();
+  change(() => renameGroup(col, id, name));
 }

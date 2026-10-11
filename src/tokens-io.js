@@ -7,6 +7,7 @@
 // extended collections, so re-importing an export rebuilds them exactly.
 import { uid } from './store.js';
 import { TYPO_FIELDS, splitColor, joinColor, defaultValue } from './variables.js';
+import { normalizeGroups, groupPaths } from './token-groups.js';
 
 const SIGMA = 'app.sigma';
 const isAlias = (v) => !!v && typeof v === 'object' && typeof v.alias === 'string';
@@ -93,9 +94,18 @@ export function exportDTCG(cols, { external = [] } = {}) {
 
   for (const c of cols) {
     const vars = rootOf(c).variables || [];
+    // Group descriptions become "$description" on the group.
+    const groups = (rootOf(c).groups || []).filter((g) => g && typeof g === 'object');
+    const groupPathById = groupPaths(groups);
     for (const m of c.modes) {
       const set = `${c.name}/${m.name}`;
       const tree = {};
+      for (const g of groups) {
+        if (!g.description) continue;
+        let node = tree;
+        for (const p of segs(groupPathById.get(g.id))) node = node[p] ||= {};
+        node.$description = g.description;
+      }
       for (const v of vars) {
         const path = segs(v.name);
         if (!path.length) continue;
@@ -118,6 +128,8 @@ export function exportDTCG(cols, { external = [] } = {}) {
         id: c.id, name: c.name, extends: c.extends || null, defaultModeId: c.defaultModeId,
         modes: c.modes.map((m) => ({ id: m.id, name: m.name, parentModeId: m.parentModeId || null })),
         variables: (c.variables || []).map((v) => ({ id: v.id, name: v.name, type: v.type })),
+        groups: (c.groups || []).filter((g) => g && typeof g === 'object')
+          .map((g) => ({ id: g.id, name: g.name, parentId: g.parentId || null, ...(g.description ? { description: g.description } : {}) })),
       })),
     },
   };
@@ -248,6 +260,9 @@ export function importTokens(json, { external = [] } = {}) {
         id: fresh(mc.id), name: mc.name, modes: mc.modes.map((m) => ({ id: fresh(m.id), name: m.name, ...(m.parentModeId ? { parentModeId: fresh(m.parentModeId) } : {}) })),
         defaultModeId: fresh(mc.defaultModeId), variables: [], ...(mc.extends ? { extends: fresh(mc.extends), overrides: {} } : {}),
         _declared: new Map((mc.variables || []).map((v) => [v.name, v])),
+        ...(mc.groups?.length ? {
+          groups: mc.groups.map((g) => ({ id: fresh(g.id), name: g.name, parentId: g.parentId ? fresh(g.parentId) : null, ...(g.description ? { description: g.description } : {}) })),
+        } : {}),
       };
       cols.push(c);
       colByName.set(c.name, c);
@@ -279,6 +294,7 @@ export function importTokens(json, { external = [] } = {}) {
     const walkTree = (node, path, inherited) => {
       if (!node || typeof node !== 'object') return;
       const groupType = node.$type || inherited;
+      if (!('$value' in node) && path.length && typeof node.$description === 'string') ((c._groupDescs ||= new Map())).set(path.join('/'), node.$description);
       if ('$value' in node) {
         const type = TYPE_IN[node.$type || inherited];
         if (!type) return void skipped++;
@@ -385,6 +401,14 @@ export function importTokens(json, { external = [] } = {}) {
       c.variables.sort((a, b) => rank(a) - rank(b));
     }
     delete c._declared;
+    // Groups: Sigma's own (from its metadata) keep their order and descriptions; the rest come from paths.
+    normalizeGroups(c);
+    const descs = c._groupDescs;
+    delete c._groupDescs;
+    if (descs && !c.extends) {
+      const paths = groupPaths(c.groups);
+      for (const g of c.groups) if (!g.description && descs.has(paths.get(g.id))) g.description = descs.get(paths.get(g.id));
+    }
     for (const v of c.variables) {
       const fallback = v.valuesByMode[c.defaultModeId] ?? defaultValue(v.type);
       for (const m of c.modes) if (v.valuesByMode[m.id] === undefined) v.valuesByMode[m.id] = structuredClone(fallback);

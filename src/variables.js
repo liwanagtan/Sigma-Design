@@ -8,6 +8,9 @@
 import { state, walk, addEditHook, uid } from './store.js';
 import { measureText } from './text.js';
 import { owningInstance } from './components.js';
+import {
+  groupOf, leafOf, cleanSegment, cleanPath, normalizeGroups, groupPaths, structureOf,
+} from './token-groups.js';
 
 export const VAR_TYPES = { color: 'Color', number: 'Number', string: 'String', boolean: 'Boolean', typography: 'Typography' };
 
@@ -99,6 +102,10 @@ export function diffCollections(before, after) {
     for (const c of cols || []) {
       m.set(`col:${c.id}`, { name: `Collection “${c.name}”`, sig: JSON.stringify([c.name, c.modes?.map((x) => x.name), c.extends || null]) });
       for (const v of c.variables || []) m.set(v.id, { name: v.name, sig: JSON.stringify([v.name, v.type, v.valuesByMode, v.description || '']) });
+      const paths = groupPaths((c.groups || []).filter((g) => g && typeof g === 'object'));
+      for (const g of (c.groups || []).filter((x) => x && typeof x === 'object')) {
+        m.set(`grp:${g.id}`, { name: `Group “${paths.get(g.id)}”`, sig: JSON.stringify([paths.get(g.id), g.description || '']) });
+      }
       for (const [vid, ov] of Object.entries(c.overrides || {})) m.set(`${c.id}:${vid}`, { name: `${c.name}: override`, sig: JSON.stringify(ov) });
     }
     return m;
@@ -442,13 +449,17 @@ export function removeMode(col, modeId) {
   for (const v of col.variables) delete v.valuesByMode[modeId];
 }
 
-export function createVariable(col, type, name) {
-  const base = name || `${VAR_TYPES[type].toLowerCase()}`;
+// A new token, at the top level or in group `groupId`, with a name no other token there has.
+export function createVariable(col, type, name, groupId = null) {
+  const base = cleanSegment(name) || `${VAR_TYPES[type].toLowerCase()}`;
+  const taken = (label) => col.variables.some((v) => (v.groupId || null) === (groupId || null) && leafOf(v.name) === label);
   let label = base;
-  for (let i = 2; col.variables.some((v) => v.name === label); i++) label = `${base} ${i}`;
+  for (let i = 2; taken(label); i++) label = `${base} ${i}`;
   const v = { id: uid(), name: label, type, valuesByMode: {} };
+  if (groupId) v.groupId = groupId;
   for (const m of col.modes) v.valuesByMode[m.id] = defaultValue(type);
   col.variables.push(v);
+  normalizeGroups(col); // its name becomes its full path
   return v;
 }
 
@@ -581,89 +592,180 @@ export function findByReference(text, type = null) {
 }
 
 // ---------- groups ----------
-// Groups are the "/" paths in token names: "color/brand/primary" sits in group "color/brand", inside
-// "color". A collection also remembers groups made before they hold any token (collection.groups).
-export const groupOf = (name) => {
-  const i = name.lastIndexOf('/');
-  return i > 0 ? name.slice(0, i) : '';
-};
-export const leafOf = (name) => name.slice(name.lastIndexOf('/') + 1);
-export const inGroup = (name, path) => !path || name.startsWith(`${path}/`);
-const cleanPath = (p) => String(p || '').split('/').map((s) => s.trim()).filter(Boolean).join('/');
+// A collection holds tokens and groups; groups hold tokens and groups (see token-groups.js). Tokens and
+// groups are edited in root collections; extensions show their root's groups.
+export { groupOf, leafOf };
 
-// The collection that owns the group list (an extension shows its root's groups).
 function groupOwner(col) {
   let root = col;
   for (let guard = 0; root?.extends && guard < 32; guard++) root = parentOf(root);
   return root || col;
 }
 
-// Every group path in a collection, parents before children.
-export function groupPaths(col) {
+const structure = (col) => structureOf(groupOwner(col));
+
+// Nested groups in order: [{ id, name, path, description, count, children }]; count includes subgroups.
+export function groupTree(col) {
   reindexVariables();
   const owner = groupOwner(col);
-  const paths = new Set();
-  const addAll = (p) => {
-    const parts = cleanPath(p).split('/').filter(Boolean);
-    for (let i = 1; i <= parts.length; i++) paths.add(parts.slice(0, i).join('/'));
-  };
-  for (const v of owner.variables || []) addAll(groupOf(v.name));
-  for (const g of owner.groups || []) addAll(g);
-  return [...paths].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-}
-
-// Nested groups: [{ path, name, count, children }]; count includes subgroups.
-export function groupTree(col) {
-  const owner = groupOwner(col);
-  const nodes = new Map();
+  const { groups, groupIdOf } = structureOf(owner);
+  const paths = groupPaths(groups);
+  const nodes = new Map(groups.map((g) => [g.id, { id: g.id, name: g.name, path: paths.get(g.id), description: g.description || '', count: 0, children: [] }]));
   const roots = [];
-  for (const path of groupPaths(col)) {
-    const node = { path, name: leafOf(path), count: 0, children: [] };
-    nodes.set(path, node);
-    const parent = groupOf(path);
-    (parent ? nodes.get(parent).children : roots).push(node);
-  }
-  for (const v of owner.variables || []) {
-    for (let g = groupOf(v.name); g; g = groupOf(g)) if (nodes.has(g)) nodes.get(g).count++;
-  }
+  for (const g of groups) (g.parentId && nodes.has(g.parentId) ? nodes.get(g.parentId).children : roots).push(nodes.get(g.id));
+  const parentOfGroup = new Map(groups.map((g) => [g.id, g.parentId || null]));
+  for (const v of owner.variables || []) for (let id = groupIdOf(v); id && nodes.has(id); id = parentOfGroup.get(id)) nodes.get(id).count++;
   return roots;
 }
 
-// Rename (or move) a group: every token and subgroup in it follows. Returns the new path.
-export function renameGroup(col, path, newPath) {
-  newPath = cleanPath(newPath);
-  if (!path || newPath === path || (newPath && `${newPath}/`.startsWith(`${path}/`))) return path; // not into itself
-  const move = (name) => (newPath ? newPath + name.slice(path.length) : name.slice(path.length + 1));
-  for (const v of col.variables) if (inGroup(v.name, path)) v.name = move(v.name);
-  const groups = (col.groups || []).map((g) => (g === path || inGroup(g, path) ? move(g) : g)).filter(Boolean);
-  col.groups = [...new Set(groups)];
-  return newPath;
+export const findGroup = (col, id) => structure(col).groups.find((g) => g.id === id) || null;
+export const groupIdOf = (col, v) => structure(col).groupIdOf(v);
+export const groupPathOf = (col, id) => (id ? groupPaths(structure(col).groups).get(id) || '' : '');
+
+// Group `id` and every group inside it.
+export function groupAndDescendants(col, id) {
+  const { groups } = structure(col);
+  const out = new Set([id]);
+  for (let grew = true; grew;) {
+    grew = false;
+    for (const g of groups) if (g.parentId && out.has(g.parentId) && !out.has(g.id)) out.add(g.id), (grew = true);
+  }
+  return out;
 }
 
-export const moveGroup = (col, path, intoPath) => renameGroup(col, path, intoPath ? `${intoPath}/${leafOf(path)}` : leafOf(path));
-
-// A new, empty group inside `parent`, with a name no sibling uses. Returns its path.
-export function createGroup(col, parent = '', name = 'New group') {
-  const taken = new Set(groupPaths(col));
-  let path = cleanPath(parent ? `${parent}/${name}` : name);
-  for (let i = 2; taken.has(path); i++) path = cleanPath(parent ? `${parent}/${name} ${i}` : `${name} ${i}`);
-  (col.groups ||= []).push(path);
-  return path;
+// Is token `v` in group `id` (directly or in a group inside it)? A null id is the whole collection.
+export function tokenInGroup(col, v, id) {
+  if (!id) return true;
+  const { groups, groupIdOf: gid } = structure(col);
+  const parent = new Map(groups.map((g) => [g.id, g.parentId || null]));
+  for (let g = gid(v), guard = 0; g && guard < 64; g = parent.get(g), guard++) if (g === id) return true;
+  return false;
 }
 
-export function moveTokensToGroup(col, ids, groupPath) {
-  groupPath = cleanPath(groupPath);
-  for (const v of col.variables) if (ids.includes(v.id)) v.name = groupPath ? `${groupPath}/${leafOf(v.name)}` : leafOf(v.name);
-  if (groupPath && !groupPaths(col).includes(groupPath)) (col.groups ||= []).push(groupPath);
+// Tokens of `col` in display order: the top level first, then each group's tokens, depth first.
+export function tokensInOrder(col, vars) {
+  const { groups, groupIdOf: gid } = structure(col);
+  const rank = new Map();
+  let i = 0;
+  const visit = (parentId) => {
+    rank.set(parentId, i++);
+    for (const g of groups) if ((g.parentId || null) === parentId) visit(g.id);
+  };
+  visit(null);
+  const pos = new Map(vars.map((v, k) => [v.id, k]));
+  return [...vars].sort((a, b) => (rank.get(gid(a) || null) ?? 0) - (rank.get(gid(b) || null) ?? 0) || pos.get(a.id) - pos.get(b.id));
 }
 
-// Remove a group but keep what's in it, one level up.
-export const ungroup = (col, path) => renameGroup(col, path, groupOf(path));
+const siblingNameTaken = (col, parentId, name, exceptId) =>
+  (col.groups || []).some((g) => (g.parentId || null) === (parentId || null) && g.name === name && g.id !== exceptId);
+function uniqueGroupName(col, parentId, base, exceptId = null) {
+  let name = base;
+  for (let i = 2; siblingNameTaken(col, parentId, name, exceptId); i++) name = `${base} ${i}`;
+  return name;
+}
 
-// Delete a group with all its tokens (layers and aliases keep their current values).
-export function deleteGroup(col, path) {
-  for (const v of col.variables.filter((x) => inGroup(x.name, path))) deleteVariable(v.id);
-  col.groups = (col.groups || []).filter((g) => g !== path && !inGroup(g, path));
+// A new, empty group inside `parentId` (or at the top level). Returns its id.
+export function createGroup(col, parentId = null, name = 'New group') {
+  normalizeGroups(col);
+  const g = { id: uid(), name: uniqueGroupName(col, parentId, cleanSegment(name) || 'Group'), parentId: parentId || null };
+  col.groups.push(g);
+  return g.id;
+}
+
+export function renameGroup(col, id, name) {
+  const g = (col.groups || []).find((x) => x.id === id);
+  name = cleanSegment(name);
+  if (!g || !name) return;
+  g.name = uniqueGroupName(col, g.parentId, name, id);
+  normalizeGroups(col); // token paths follow
+}
+
+export function setGroupDescription(col, id, text) {
+  const g = (col.groups || []).find((x) => x.id === id);
+  if (!g) return;
+  if (text?.trim()) g.description = text.trim();
+  else delete g.description;
+}
+
+// Move a group into `parentId` (null: top level), before sibling `beforeId` or after the others.
+// A group can't move into itself or a group inside it. Returns false if refused.
+export function moveGroup(col, id, parentId = null, beforeId = null) {
+  const g = (col.groups || []).find((x) => x.id === id);
+  if (!g || (parentId && groupAndDescendants(col, id).has(parentId)) || beforeId === id) return false;
+  g.parentId = parentId || null;
+  g.name = uniqueGroupName(col, g.parentId, g.name, id);
+  col.groups = col.groups.filter((x) => x !== g);
+  const at = beforeId ? col.groups.findIndex((x) => x.id === beforeId) : -1;
+  if (at >= 0) col.groups.splice(at, 0, g);
+  else col.groups.push(g);
+  normalizeGroups(col);
+  return true;
+}
+
+// Move tokens into group `groupId` (null: top level), before token `beforeId` or after the others.
+export function moveTokensToGroup(col, ids, groupId = null, beforeId = null) {
+  const moving = col.variables.filter((v) => ids.includes(v.id));
+  for (const v of moving) {
+    if (groupId) v.groupId = groupId;
+    else delete v.groupId;
+  }
+  if (beforeId && !ids.includes(beforeId)) {
+    const rest = col.variables.filter((v) => !ids.includes(v.id));
+    const at = rest.findIndex((v) => v.id === beforeId);
+    rest.splice(at >= 0 ? at : rest.length, 0, ...moving);
+    col.variables = rest;
+  }
+  normalizeGroups(col);
+}
+
+// Remove a group but keep what's in it, one level up (in its place).
+export function ungroup(col, id) {
+  const g = (col.groups || []).find((x) => x.id === id);
+  if (!g) return;
+  for (const child of col.groups) {
+    if (child.parentId === id) {
+      child.parentId = g.parentId || null;
+      child.name = uniqueGroupName(col, child.parentId, child.name, child.id);
+    }
+  }
+  for (const v of col.variables) {
+    if (v.groupId !== id) continue;
+    if (g.parentId) v.groupId = g.parentId;
+    else delete v.groupId;
+  }
+  col.groups = col.groups.filter((x) => x !== g);
+  normalizeGroups(col);
+}
+
+// Delete a group, the groups in it and their tokens (layers and aliases keep their current values).
+export function deleteGroup(col, id) {
+  const ids = groupAndDescendants(col, id);
+  for (const v of col.variables.filter((x) => ids.has(x.groupId))) deleteVariable(v.id);
+  col.groups = (col.groups || []).filter((g) => !ids.has(g.id));
+  normalizeGroups(col);
+}
+
+// Rename a token. `typed` is relative to its group: "a/b" puts it in a (new or existing) group "a"
+// inside its group; a leading "/" starts from the top of the collection.
+export function setTokenName(col, v, typed) {
+  typed = String(typed || '').trim().replace(/\s*\/\s*/g, '/');
+  const leaf = cleanSegment(leafOf(typed));
+  if (!leaf) return;
+  let parent = typed.startsWith('/') ? null : v.groupId || null;
+  for (const seg of cleanPath(groupOf(typed.replace(/^\/+/, ''))).split('/').filter(Boolean)) {
+    const name = cleanSegment(seg);
+    parent = (col.groups || []).find((g) => (g.parentId || null) === parent && g.name === name)?.id || createGroup(col, parent, name);
+  }
+  if (parent) v.groupId = parent;
+  else delete v.groupId;
+  v.name = leaf;
+  normalizeGroups(col);
+}
+
+// Normalize step: keep every local collection's groups and token paths consistent (imports and merges
+// add tokens by path; older files have paths only).
+export function normalizeTokenGroups() {
+  for (const c of localCollections()) normalizeGroups(c);
 }
 
 export function setAlias(variable, modeId, targetId) {

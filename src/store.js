@@ -1,3 +1,4 @@
+import { normalizeGroups } from './token-groups.js';
 import { mul, inv, translate, rotate, angleOf, normAngle, cornersOf, aabb, round } from './geom.js';
 
 // Where documents lived before the files home (Phase 1); read once for migration.
@@ -221,12 +222,17 @@ export function migratePaints(n) {
 // Bump DOC_VERSION and add a step below whenever the saved format changes.
 // v3: design tokens can come from linked token files (doc.libraries). Files older than v3 have their
 // variables moved into a token file the first time they're opened (see libraries.migrateLegacyTokens).
-export const DOC_VERSION = 3;
+export const DOC_VERSION = 4;
 
 export function migrateDocument(doc) {
   // v1 → v2: single fill/stroke → paint lists, and a variables container.
   for (const pg of doc.pages) walk(pg.children, migratePaints); // idempotent; also fixes pasted legacy nodes
   if (!doc.variables) doc.variables = { collections: [] };
+  // v3 → v4: token groups become objects (from the "/" paths in token names); idempotent. Published and
+  // linked copies convert too (to the same group ids), so nothing looks changed.
+  const copies = [doc.published, ...(doc.libraries || []), ...(doc.libraries || []).flatMap((l) => l.dependencies || [])];
+  for (const c of [...(doc.variables.collections || []), ...copies.flatMap((x) => x?.collections || [])]) normalizeGroups(c);
+  for (const d of doc.published?.dependencies || []) for (const c of d.collections || []) normalizeGroups(c);
   doc.version = DOC_VERSION;
   return doc;
 }

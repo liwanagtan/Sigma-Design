@@ -567,3 +567,21 @@ button.group-caret.open { transform: rotate(90deg); }
 .alias-chip .ref-lib { flex: none; display: inline-flex; color: #0b6bcb; }
 .alias-chip .ref-value { margin-left: auto; padding-left: 2px; }
 .alias-chip { flex: 1 1 auto; min-width: 0; }
+
+/* Collection → group tree */
+.vars-col-row { display: flex; align-items: center; }
+.vars-col-row .vars-col { flex: 1; min-width: 0; padding-left: 4px; }
+.vars-col.current { font-weight: 600; }
+.vars-col.drop-into { box-shadow: inset 0 0 0 2px var(--accent); background: var(--accent-softer); }
+.group-icon { flex: none; color: var(--muted); margin-right: 2px; }
+.vars-group-item.active .group-icon { color: var(--accent); }
+.vars-group-item.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+.vars-group-item.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
+.vars-row.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+.vars-row.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
+.vars-add.sub { padding-left: 44px; }
+.group-heading { padding: 10px 8px 6px; display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid var(--border); }
+.group-crumbs { display: flex; align-items: center; gap: 4px; font-weight: 600; font-size: 12px; }
+.group-desc { width: 100%; resize: vertical; min-height: 28px; }
+.group-desc-inline { margin-left: 8px; font-weight: 400; color: var(--muted); }
+.group-caret { display: inline-flex; align-items: center; justify-content: center; height: 16px; font-size: 0; }

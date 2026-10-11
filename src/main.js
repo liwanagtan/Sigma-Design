@@ -4,7 +4,7 @@ import {
 } from './store.js';
 import { applyLayouts } from './layout.js';
 import { syncInstances } from './components.js';
-import { resolveVariables } from './variables.js';
+import { resolveVariables, normalizeTokenGroups } from './variables.js';
 import { renderScene, applyViewTransform, renderOverlay } from './render.js';
 import { initInteractions, refreshCursor } from './interact.js';
 import { initTextEditor, positionEditor, measureText, stopEditing } from './text.js';
@@ -209,6 +209,7 @@ function onRemoteChange(msg) {
 
 // ---------- boot ----------
 // The normalize pipeline, in order (see store.normalizeDocument).
+addNormalizer(normalizeTokenGroups);
 addNormalizer(syncInstances);
 addNormalizer(resolveVariables);
 addNormalizer(fixGroups);
