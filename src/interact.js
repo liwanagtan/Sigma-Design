@@ -15,7 +15,7 @@ import {
   toggleLocked, scaleKids, sortByZ, flip, addAutoLayout, removeAutoLayout, createComponent, detachSelection, goToMainComponent, resetSelectionOverrides, placeInstance, combineAsVariants,
   addVariant, makeComponentSet, createMultipleComponents, convertToSlot, wrapInSlot,
 } from './commands.js';
-import { copySelection, cutSelection, paste, importImages, pickImages, exportNodes } from './io.js';
+import { copySelection, cutSelection, paste, pasteHere, importImages, pickImages, exportNodes } from './io.js';
 import { isAutoLayout, flowInsertBefore } from './layout.js';
 import { isInsideInstance, isTransparentContainer, canPlaceInside, createInstance, containingComponent } from './components.js';
 import { slotMenu } from './component-ui.js';
@@ -874,7 +874,7 @@ function onContextMenu(e) {
   const nodes = selectedNodes();
   const items = has ? [
     { label: 'Copy', shortcut: '⌘C', action: () => copySelection() },
-    { label: 'Paste here', shortcut: '⌘V', action: () => paste() },
+    { label: 'Paste here', shortcut: '⌘V', action: () => pasteHere(wp) },
     { label: 'Duplicate', shortcut: '⌘D', action: duplicateSelection },
     { label: 'Delete', shortcut: '⌫', action: deleteSelection },
     '-',
@@ -923,7 +923,7 @@ function onContextMenu(e) {
     { label: 'Export as PNG', action: () => exportNodes(selectedNodes(), { format: 'png', scale: 2 }) },
     { label: 'Export as SVG', action: () => exportNodes(selectedNodes(), { format: 'svg' }) },
   ] : [
-    { label: 'Paste here', shortcut: '⌘V', action: () => paste() },
+    { label: 'Paste here', shortcut: '⌘V', action: () => pasteHere(wp) },
     { label: 'Place image…', shortcut: '⇧⌘K', action: () => pickImages(wp) },
     '-',
     { label: 'Select all', shortcut: '⌘A', action: selectAll },

@@ -63,7 +63,8 @@ function visibleWorldBox() {
   return { x: a.x, y: a.y, w: b.x - a.x, h: b.y - a.y };
 }
 
-function pasteSigma(json) {
+// `at`: a world point for "Paste here": the pasted layers' top-left goes there, inside the frame there.
+function pasteSigma(json, { at = null } = {}) {
   let data;
   try {
     data = JSON.parse(json);
@@ -73,7 +74,8 @@ function pasteSigma(json) {
   if (!data?.sigma || !Array.isArray(data.nodes)) return false;
   const sel = selectedNodes();
   let parent = null;
-  if (sel.length === 1 && ['frame', 'component'].includes(sel[0].type)) parent = sel[0];
+  if (at) parent = frameAt(at);
+  else if (sel.length === 1 && ['frame', 'component'].includes(sel[0].type)) parent = sel[0];
   else if (data.parentId && getNode(data.parentId) && pageOf(data.parentId) === page()) parent = getNode(data.parentId);
 
   const created = [];
@@ -94,10 +96,14 @@ function pasteSigma(json) {
     setWorldMatrix(c, wm);
     created.push(c);
   }
-  // Keep pasted content visible: center it in the target frame or the viewport if it would land off-screen.
   const box = unionBoxes(created.map(worldBounds));
   const target = parent ? worldBounds(parent) : visibleWorldBox();
-  if (!intersects(box, target)) {
+  if (at) {
+    // Paste here: the pasted layers' top-left corner lands on the clicked point.
+    const dx = at.x - box.x, dy = at.y - box.y;
+    for (const c of created) setWorldMatrix(c, mul(translate(dx, dy), worldMatrix(c)));
+  } else if (!intersects(box, target)) {
+    // Keep pasted content visible: center it in the target frame or the viewport if it would land off-screen.
     const dx = target.x + target.w / 2 - (box.x + box.w / 2);
     const dy = target.y + target.h / 2 - (box.y + box.h / 2);
     for (const c of created) setWorldMatrix(c, mul(translate(dx, dy), worldMatrix(c)));
@@ -122,14 +128,17 @@ function remapBindings(n, known) {
   if (!Object.keys(n.bindings).length) delete n.bindings;
 }
 
-function pasteText(text) {
+function pasteText(text, { at = null } = {}) {
   const vb = visibleWorldBox();
   const n = createNode('text', { text, name: text.slice(0, 40) });
   measureText(n);
-  const parent = selectedNodes().length === 1 && ['frame', 'component'].includes(selectedNodes()[0].type) ? selectedNodes()[0] : null;
+  let parent = selectedNodes().length === 1 && ['frame', 'component'].includes(selectedNodes()[0].type) ? selectedNodes()[0] : null;
+  if (at) parent = frameAt(at);
+  if (parent && !canPlaceInside(n, parent)) parent = null;
   insertNode(n, parent);
   const target = parent ? worldBounds(parent) : vb;
-  setWorldMatrix(n, translate(target.x + target.w / 2 - n.w / 2, target.y + target.h / 2 - n.h / 2));
+  if (at) setWorldMatrix(n, translate(at.x, at.y));
+  else setWorldMatrix(n, translate(target.x + target.w / 2 - n.w / 2, target.y + target.h / 2 - n.h / 2));
   select([n.id]);
   commit();
 }
@@ -152,6 +161,20 @@ export function paste(e) {
     }
   }
   if (internalClip) pasteSigma(internalClip);
+}
+
+// The context menu's "Paste here": paste what was copied at a point on the canvas (world coordinates).
+// Uses what this tab copied, or else the system clipboard (copied in another tab, or text).
+export async function pasteHere(at) {
+  if (internalClip && pasteSigma(internalClip, { at })) return;
+  let text = '';
+  try {
+    text = await navigator.clipboard.readText();
+  } catch {
+    // Reading the clipboard can be refused; there's nothing else to paste then.
+  }
+  if (!text) return window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'Nothing to paste. Copy something first.' }));
+  if (!pasteSigma(text, { at })) pasteText(text, { at });
 }
 
 // ---------- images ----------
