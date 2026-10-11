@@ -594,6 +594,12 @@ button.group-caret.open { transform: rotate(90deg); }
 .vars-group-item:hover .group-more { visibility: visible; }
 .group-rename { flex: 1; min-width: 0; height: 22px; border: 1px solid var(--accent); border-radius: 4px; padding: 0 4px; outline: none; }
 .vars-add.sub { height: 26px; padding-left: 34px; font-size: 11px; }
+.vars-tabs { display: flex; gap: 12px; margin: 0 10px 10px; border-bottom: 1px solid var(--border); }
+.vars-tab { min-width: 0; height: 30px; padding: 0; margin-bottom: -1px; border-bottom: 2px solid transparent; color: var(--muted); font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vars-tab:hover { color: var(--text); }
+.vars-tab.active { color: var(--text); font-weight: 600; border-bottom-color: var(--text); }
+.lib-file-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 10px 6px; font-size: 11px; color: var(--muted); }
+.lib-file-bar b { color: var(--text); font-weight: 600; }
 .vars-side-head { margin: 12px 10px 4px; font-weight: 600; color: var(--muted); text-transform: uppercase; font-size: 10px; letter-spacing: 0.04em; }
 .vars-side-head.first { margin-top: 4px; }
 .vars-side-head.lib-file { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--border); text-transform: none; letter-spacing: 0; font-size: 11px; }

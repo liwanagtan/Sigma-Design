@@ -58,6 +58,7 @@ export function mountTokenEditor(host) {
   close();
   modal = host;
   inline = true;
+  sideTab = null;
   host.innerHTML = '<div class="vars-modal inline"></div>';
   if (!bound.has(host)) {
     bind();
@@ -76,6 +77,7 @@ export function unmountTokenEditor() {
 
 export function openVariablesEditor(focusCollectionId) {
   if (!state.doc || inline) return;
+  if (!modal) sideTab = null; // opening: show the tab of the selected collection
   if (focusCollectionId) activeId = focusCollectionId;
   if (!modal) {
     modal = document.createElement('div');
@@ -114,10 +116,15 @@ subscribe((kind) => {
 
 // This file's own collections are edited here. Collections of linked token files can be browsed (read-only);
 // they're edited in their own file.
-// With no local collections, the Sigma Tokens file's first collection is shown.
+// The sidebar has two tabs when the file links Sigma Tokens files: 'linked' (their collections, read-only)
+// and 'local' (this file's own). null follows the selected collection; with no local collections, the
+// linked file's first collection is shown.
+let sideTab = null;
 function active() {
-  const cols = localCollections();
-  return cols.find((c) => c.id === activeId) || libraryCollections().find((c) => c.id === activeId) || cols[0] || libraryCollections()[0] || null;
+  const locals = localCollections(), libs = libraryCollections();
+  const pool = sideTab === 'local' ? locals : sideTab === 'linked' ? libs : [...locals, ...libs];
+  const first = sideTab === 'local' ? locals[0] : sideTab === 'linked' ? libs[0] : locals[0] || libs[0];
+  return pool.find((c) => c.id === activeId) || first || null;
 }
 const readOnly = (c) => isLibraryCollection(c);
 const editableGroups = (c) => !!c && !readOnly(c) && !isExtension(c);
@@ -404,7 +411,7 @@ function render() {
   const caret = searching ? document.activeElement.selectionStart : 0;
   const col = active();
   if (col && activeGroup && !findGroup(col, activeGroup)) activeGroup = null;
-  // The sidebar: this file's own collections, then each Sigma Tokens file it uses (read-only), by file.
+  // The sidebar: tabs for the linked Sigma Tokens file(s) and this file's own (local) collections.
   const design = state.doc?.kind !== 'tokens';
   const locals = collectionTree();
   const libFiles = new Map();
@@ -414,18 +421,26 @@ function render() {
     if (!libFiles.has(key)) libFiles.set(key, { lib, cols: [] });
     libFiles.get(key).cols.push(c);
   }
-  const sidebar = (design ? '<div class="vars-side-head first">In this file</div>' : '') +
-    locals.map(({ c, depth }) => colRow(c, col, depth)).join('') +
-    (design && !locals.length ? '<div class="muted vars-side-note">No local tokens. Tokens usually live in the Sigma Tokens file; a collection here is just for this file.</div>' : '') +
-    '<button class="vars-add" data-act="new-collection">+ New collection</button>' +
-    [...libFiles.values()].map(({ lib, cols }) =>
-      `<div class="vars-side-head lib-file" title="Edit these tokens in their own Sigma Tokens file">` +
-      `<span class="lib-file-name">${LIB_ICON} ${esc(lib?.name || 'Sigma Tokens')}</span>` +
-      `<span class="lib-file-meta">v${lib?.version ?? '?'}${lib?.via ? ` · via ${esc(lib.via)}` : ''} · read-only</span>` +
-      (lib?.fileId ? `<button class="link-btn" data-act="open-library" data-file="${lib.fileId}" title="Open it to edit these tokens">Open</button>` : '') + '</div>' +
-      cols.map((c) => colRow(c, col, 0)).join('')).join('');
+  const tab = libFiles.size ? (sideTab || (col && readOnly(col) ? 'linked' : 'local')) : 'local';
+  const linkedCount = [...libFiles.values()].reduce((n, f) => n + f.cols.length, 0);
+  const single = libFiles.size === 1 ? [...libFiles.values()][0].lib : null;
+  const tabButton = (key, label, count, title) => `<button class="vars-tab${tab === key ? ' active' : ''}" data-side-tab="${key}" title="${esc(`${title} · ${count} collection${count === 1 ? '' : 's'}`)}">${label}</button>`;
+  const linkedTab = tabButton('linked', esc(single?.name || 'Linked'), linkedCount, design ? 'The Sigma Tokens file this file uses (read-only)' : 'Sigma Tokens files this file links (read-only)');
+  const localTab = tabButton('local', design ? 'Local' : 'This file', locals.length, design ? 'Tokens kept only in this file' : 'This file’s collections');
+  const tabs = libFiles.size ? `<div class="vars-tabs" role="tablist">${design ? linkedTab + localTab : localTab + linkedTab}</div>` : '';
+  const linkedPanel = () => [...libFiles.values()].map(({ lib, cols }) =>
+    `<div class="lib-file-bar" title="Edit these tokens in their own Sigma Tokens file">` +
+    `<span class="lib-file-meta">${libFiles.size > 1 ? `<b>${esc(lib?.name || 'Sigma Tokens')}</b> · ` : ''}v${lib?.version ?? '?'}${lib?.via ? ` · via ${esc(lib.via)}` : ''} · read-only</span>` +
+    (lib?.fileId ? `<button class="link-btn" data-act="open-library" data-file="${lib.fileId}" title="Open it to edit these tokens">Open</button>` : '') + '</div>' +
+    cols.map((c) => colRow(c, col, 0)).join('')).join('');
+  const localPanel = () => locals.map(({ c, depth }) => colRow(c, col, depth)).join('') +
+    (design && !locals.length && libFiles.size ? '<div class="muted vars-side-note">No local tokens. Tokens usually live in the Sigma Tokens file; a local collection is just for this file.</div>' : '') +
+    '<button class="vars-add" data-act="new-collection">+ New collection</button>';
+  const sidebar = tabs + (tab === 'linked' ? linkedPanel() : localPanel());
   let main;
-  if (!col) {
+  if (!col && libFiles.size && design) {
+    main = '<div class="vars-empty"><div class="home-empty-title">No local tokens</div><p>Most files don’t need any: their tokens come from the Sigma Tokens file. Create a collection here for tokens only this file uses; you can move them to a Sigma Tokens file later.</p><button class="btn primary" data-act="new-collection">Create collection</button></div>';
+  } else if (!col) {
     main = '<div class="vars-empty"><div class="home-empty-title">No design tokens yet</div><p>Design tokens store reusable colors, numbers, text and booleans. Create a collection to start.</p><button class="btn primary" data-act="new-collection">Create collection</button></div>';
   } else {
     const ext = isExtension(col);
@@ -662,6 +677,13 @@ function bind() {
       return owner && change(() => removeContrastPair(owner, otherId));
     }
     if (t.hasAttribute('data-pick-token')) return tokenPicker(t.closest('.var-cell') || t, col, t.dataset.var, t.dataset.mode);
+    if (t.dataset.sideTab) {
+      sideTab = t.dataset.sideTab;
+      activeId = null;
+      activeGroup = null;
+      query = '';
+      return render();
+    }
     if (t.dataset.toggleGroup) {
       const id = t.dataset.toggleGroup;
       collapsedGroups.has(id) ? collapsedGroups.delete(id) : collapsedGroups.add(id);
@@ -680,7 +702,10 @@ function bind() {
     if (t.dataset.selectToken) {
       // Jump to a token, switching to its collection (maybe a linked library's) if it lives elsewhere.
       const hit = findVariable(t.dataset.selectToken);
-      if (hit && !inFamily(col, hit.collection)) activeId = hit.collection.id;
+      if (hit && !inFamily(col, hit.collection)) {
+        activeId = hit.collection.id;
+        sideTab = null; // follow it to its tab
+      }
       activeGroup = null;
       selectedId = t.dataset.selectToken;
       query = '';
@@ -710,8 +735,10 @@ function bind() {
         return moveLocalTokensMenu({ getBoundingClientRect: () => r });
       }
       case 'new-collection':
+        sideTab = 'local';
         return change(() => void (activeId = createCollection().id));
       case 'extend':
+        sideTab = 'local'; // the extension is this file's own
         return change(() => void (activeId = extendCollection(col).id));
       case 'delete-collection': {
         if (readOnly(col)) return;
