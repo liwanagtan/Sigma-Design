@@ -1,6 +1,6 @@
 import {
   state, page, view, subscribe, emit, normalizeDocument, addNormalizer, loadDocument, unloadDocument, walk, cancelPendingSave,
-  fixGroups,
+  fixGroups, commit, forgetUndo,
 } from './store.js';
 import { applyLayouts } from './layout.js';
 import { syncInstances } from './components.js';
@@ -15,11 +15,13 @@ import {
 } from './panels.js';
 import {
   initFiles, loadFile, setCurrentFile, closeCurrentFile, discardCurrentFile, saveNow, getCurrentFileId, goHome, fileKind, isArchived,
+  welcomeOnFirstVisit, openFile,
 } from './files.js';
 import { initHome, renderHome, setHomeNotice, showHomeSection } from './home.js';
 import { initTokensScreen, showTokensScreen, hideTokensScreen } from './tokens-screen.js';
 import { checkLibraryUpdates, migrateLegacyTokens, usesLibrary } from './libraries.js';
 import { hideContextMenu } from './menu.js';
+import { arrangeWelcome } from './welcome.js';
 import { clearViewing, resetHistory } from './history.js';
 
 const appEl = document.getElementById('app');
@@ -167,6 +169,11 @@ async function showFile(id, { force = false, discard = false } = {}) {
   const wasVersion = file.doc.version || 1;
   loadDocument(file.doc, file.views);
   remeasureAllText();
+  // A new "Welcome to Sigma": place its examples by their real sizes, once.
+  if (arrangeWelcome(state.doc)) {
+    commit();
+    forgetUndo();
+  }
   if (!state.pageViews[page().id]) requestAnimationFrame(() => zoomToFit());
   emit('view');
   emit('tool');
@@ -239,7 +246,12 @@ document.addEventListener('visibilitychange', () => {
 });
 
 initFiles({ onRemoteChange })
-  .then(route)
+  .then(async () => {
+    // A first visit opens "Welcome to Sigma".
+    const welcome = await welcomeOnFirstVisit().catch((err) => console.error('Could not create Welcome to Sigma', err));
+    if (welcome && !/^#\/file\//.test(location.hash)) return openFile(welcome);
+    return route();
+  })
   .catch((err) => {
     console.error(err);
     homeEl.hidden = false;

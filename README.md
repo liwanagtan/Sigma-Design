@@ -142,7 +142,7 @@ Then open http://localhost:5173.
   - apply an extension with the mode picker on a frame, page or instance to re-skin it (for example, a second brand); extensions can be extended again
   - copied layers remember their variables' names, so pasting into another file reconnects them to same-named variables there
   - a binding to a variable the other file doesn't have is dropped, and the layer keeps its value
-- **Sample file:** **Open sample file** (Σ menu, or **Open the sample file** on an empty files page) creates a **Sample design file** that links the **Sample design tokens** Sigma Tokens file. It reuses the most recently edited sample token file, and creates one only if there is none (or the existing ones no longer have the tokens the sample uses). **Open sample token file** opens that same file. Its **Design system** page has a Button component set with a Label property and a Card that uses it, built entirely from the sample tokens (component tokens for color, radius, padding and the card's shadow; text styles), with the Card shown in Light, Dark and Brand B, and a frame on the 12-column layout grid whose gutter and margin are layout tokens
+- **Welcome to Sigma:** the guide file. The first visit to Sigma in a browser (no files yet) creates it and opens it; after that, **Welcome to Sigma** in the files home sidebar, **Open Welcome to Sigma** in the Σ menu, or the button on an empty files page opens it. Its nine pages (Start here, Canvas basics, Layout, Components, Tokens in designs, Style, Quality checks, Libraries and versions, Sigma Tokens) each pair a short guide with live examples to try, all built from the sample tokens, which it links. It reopens your copy, and makes a fresh one when its content is newer than yours (`WELCOME_VERSION` in `src/welcome.js`; bump it whenever the guide changes, and add new features to it)
 - **Constraints:** layers placed freely in a frame have horizontal (Left, Right, Left & right, Center, Scale) and vertical (Top, Bottom, Top & bottom, Center, Scale) rules
   - the rules apply when the frame is resized by its handles or its W/H fields; hold ⌘ while dragging to ignore them
   - they also apply when an instance is sized differently from its main component
@@ -183,7 +183,8 @@ Press `?` in the app to see every keyboard shortcut.
 | `src/tokens-screen.js` | The Sigma Tokens file screen |
 | `src/libraries.js` | Token and component libraries: publishing, linking, updates, migration |
 | `src/sample-tokens.js` | The sample token file (a complete small design system) |
-| `src/sample.js` | The blank Sigma Design file, and the sample Sigma Design file built on the sample tokens |
+| `src/sample.js` | The blank Sigma Design file |
+| `src/welcome.js` | Welcome to Sigma: the guide file a new user starts with, built on the sample tokens |
 | `src/component-ui.js` | Figma-style component, component set, variant and instance panels; the property window; the component picker |
 | `src/history.js` | Version history panel: viewing a version read-only, restore, duplicate, named versions |
 | `src/tokens-io.js` | Token export (DTCG `tokens.json`, CSS) and import |

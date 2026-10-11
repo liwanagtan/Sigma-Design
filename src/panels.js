@@ -15,7 +15,7 @@ import {
   isDeprecated,
 } from './components.js';
 import { exportNodes, saveFile, pickImages } from './io.js';
-import { createFile, openFile, goHome, pickFilesToImport, createSampleFiles } from './files.js';
+import { createFile, openFile, goHome, pickFilesToImport, welcomeFile } from './files.js';
 import {
   componentPanel, onComponentClick, onComponentChange, bindPropertyDrag, propBinding, propMenuItems, openPlayground,
 } from './component-ui.js';
@@ -101,7 +101,7 @@ function initFileHeader() {
         const [id] = await pickFilesToImport();
         if (id) openFile(id);
       } },
-      { label: 'Open sample file', action: async () => openFile(await createSampleFiles()) },
+      { label: 'Open Welcome to Sigma', action: async () => openFile(await welcomeFile()) },
       { label: 'Download a copy (.sigma.json)', action: saveFile },
       '-',
       { label: 'Place image…', shortcut: '⇧⌘K', action: () => pickImages() },

@@ -2,7 +2,7 @@
 import {
   listFiles, createFile, renameFile, duplicateFile, deleteFile, downloadFile, importFiles, pickFilesToImport,
   listArchivedFiles, archiveFile, restoreFile, emptyArchive,
-  storageSummary, openFile, fileHref, fileKind, newTokenDocument, createSampleFiles, sampleTokenFile,
+  storageSummary, openFile, fileHref, fileKind, newTokenDocument, welcomeFile, sampleTokenFile,
 } from './files.js';
 import { blankDocument } from './sample.js';
 import { showContextMenu } from './menu.js';
@@ -66,6 +66,7 @@ export function initHome(el) {
         <button class="nav-item" data-section="design">${NAV_DESIGN} Sigma Design</button>
         <button class="nav-item" data-section="tokens">${NAV_TOKENS} Sigma Tokens</button>
         <div class="nav-spacer"></div>
+        <button class="nav-item nav-welcome" data-welcome title="The guide to Sigma: features, how to use them, and examples">${NAV_WELCOME} Welcome to Sigma</button>
         <button class="nav-item" data-section="archive" title="Deleted files, until you delete them forever">${NAV_ARCHIVE} Archive</button>
       </nav>
       <div class="home-storage" id="home-storage"></div>
@@ -91,6 +92,7 @@ export function initHome(el) {
     <div class="home-drop" id="home-drop" hidden><div>Drop <b>.sigma.json</b> or <b>tokens.json</b> files to import them</div></div>`;
 
   root.querySelector('.home-nav').addEventListener('click', (e) => {
+    if (e.target.closest('[data-welcome]')) return openWelcome();
     const b = e.target.closest('[data-section]');
     if (!b) return;
     prefs.section = b.dataset.section;
@@ -144,7 +146,7 @@ export function initHome(el) {
       e.preventDefault();
       const act = action.dataset.emptyAction;
       if (act === 'sample-tokens') return openSampleTokenFile();
-      return act === 'sample' ? newSampleFile() : act === 'tokens' ? newTokenFile() : newBlankFile();
+      return act === 'welcome' ? openWelcome() : act === 'tokens' ? newTokenFile() : newBlankFile();
     }
     if (more) {
       e.preventDefault();
@@ -210,9 +212,9 @@ async function newBlankFile() {
   openFile(await createFile(blankDocument()));
 }
 
-// The sample comes as the sample token file plus a design file that links it.
-async function newSampleFile() {
-  openFile(await createSampleFiles());
+// "Welcome to Sigma", the guide file (made the first time, and again when its content is newer).
+async function openWelcome() {
+  openFile(await welcomeFile());
 }
 
 // A complete sample design system: primitives, semantic Light/Dark colors, a brand, text styles and
@@ -358,8 +360,8 @@ export async function renderHome() {
   } else if (!total) {
     list.innerHTML = `<div class="home-empty"><div class="home-empty-title">Create your first file</div>
       <p>Files are saved in this browser. You can also drag <b>.sigma.json</b> files here to import them.</p>
-      <div class="home-empty-actions"><button class="btn primary" data-empty-action="blank">${icons.plus} New design file</button>
-      <button class="btn" data-empty-action="sample">Open the sample file</button></div></div>`;
+      <div class="home-empty-actions"><button class="btn primary" data-empty-action="blank">${icons.plus} New Sigma Design file</button>
+      <button class="btn" data-empty-action="welcome">Open Welcome to Sigma</button></div></div>`;
   } else if (!inSection && section === 'tokens') {
     list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No Sigma Tokens files yet</div>
       <p>A Sigma Tokens file holds your design tokens (colors, spacing, type, shadows, motion) for Sigma Design files to use. It has no canvas.</p>
@@ -367,8 +369,8 @@ export async function renderHome() {
       <button class="btn" data-empty-action="sample-tokens">Open the sample tokens</button></div></div>`;
   } else if (!inSection) {
     list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No Sigma Design files yet</div>
-      <div class="home-empty-actions"><button class="btn primary" data-empty-action="blank">${icons.plus} New design file</button>
-      <button class="btn" data-empty-action="sample">Open the sample file</button></div></div>`;
+      <div class="home-empty-actions"><button class="btn primary" data-empty-action="blank">${icons.plus} New Sigma Design file</button>
+      <button class="btn" data-empty-action="welcome">Open Welcome to Sigma</button></div></div>`;
   } else if (!files.length) {
     list.innerHTML = `<div class="home-empty"><p>No files match “${esc(query)}”.</p></div>`;
   } else {
@@ -415,6 +417,7 @@ function card(f) {
 }
 
 const NAV_DESIGN = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4.5 1.5v11M9.5 1.5v11M1.5 4.5h11M1.5 9.5h11"/></svg>';
+const NAV_WELCOME = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><circle cx="7" cy="7" r="5.5"/><path d="M5.6 5.4a1.5 1.5 0 1 1 2 1.4c-.4.2-.6.5-.6.9v.4M7 10v.1"/></svg>';
 const NAV_ARCHIVE = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><rect x="1.5" y="2" width="11" height="3" rx=".5"/><path d="M2.5 5v6.5h9V5M5.5 7.5h3"/></svg>';
 const NAV_TOKENS = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 1.2l5 2.9v5.8L7 12.8 2 9.9V4.1z"/><circle cx="7" cy="7" r="1.6"/></svg>';
 

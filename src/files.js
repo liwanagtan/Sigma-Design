@@ -6,7 +6,7 @@ import {
 } from './store.js';
 import { buildSVG, download, toast } from './io.js';
 import { libraryEntry } from './variables.js';
-import { sampleDocument } from './sample.js';
+import { welcomeDocument, WELCOME_VERSION } from './welcome.js';
 import { sampleTokenDocument } from './sample-tokens.js';
 import { importTokens } from './tokens-io.js';
 
@@ -316,7 +316,7 @@ export async function appendToTokenFile(id, collections, notes, { libraries = []
 }
 
 // The sample token file: the most recently edited one (marked as the sample when created, or an earlier
-// one with the sample's name) whose published tokens still have everything the sample design file uses.
+// one with the sample's name) whose published tokens still have everything "Welcome to Sigma" uses.
 // Only when there is none is a new one created, marked as the sample. Returns { id, name, published }.
 export async function sampleTokenFile() {
   const sampleName = sampleTokenDocument().name;
@@ -327,7 +327,7 @@ export async function sampleTokenFile() {
     const published = (await loadPublished(meta.id))?.published;
     if (!published) continue;
     try {
-      sampleDocument(published.collections);
+      welcomeDocument(published.collections);
     } catch {
       continue; // tokens the sample uses were renamed or deleted
     }
@@ -337,12 +337,32 @@ export async function sampleTokenFile() {
   return createTokenFileWith(name, collections, 'Sample tokens', { meta: { sample: true } });
 }
 
-// The sample: a design file that links the sample token file.
-export async function createSampleFiles() {
+// "Welcome to Sigma": the guide file a new user starts with, linking the sample tokens. Reopens the most
+// recently edited copy of the current version (WELCOME_VERSION), and makes a new one when there's none:
+// an older copy, archived or not, stays as it is.
+export async function welcomeFile() {
+  const current = (await listFiles())
+    .filter((m) => m.welcome === WELCOME_VERSION && fileKind(m) === 'design')
+    .sort((a, b) => b.updatedAt - a.updatedAt)[0];
+  if (current) return current.id;
   const lib = await sampleTokenFile();
-  const doc = sampleDocument(lib.published.collections);
+  const doc = welcomeDocument(lib.published.collections);
   doc.libraries = [libraryEntry(lib.id, lib.name, lib.published)];
-  return createFile(doc);
+  return createFile(doc, {}, { welcome: WELCOME_VERSION });
+}
+
+// The first visit to Sigma in this browser (no files at all) starts with "Welcome to Sigma". Returns its
+// id, or null when this isn't a first visit. Remembered, so it never happens again.
+const WELCOMED_KEY = 'sigma.welcomed';
+export async function welcomeOnFirstVisit() {
+  try {
+    if (localStorage.getItem(WELCOMED_KEY)) return null;
+    localStorage.setItem(WELCOMED_KEY, '1');
+  } catch {
+    return null; // no storage to remember it in: don't create a file on every visit
+  }
+  if ((await db.getAll('files')).length) return null; // files already here (archived ones too)
+  return welcomeFile();
 }
 
 // ---------- the open file ----------

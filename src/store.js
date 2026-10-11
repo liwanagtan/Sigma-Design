@@ -396,6 +396,12 @@ const snapshot = () => JSON.stringify(state.doc);
 
 let readOnlyHintAt = 0;
 
+// Forget undo history (after a change that shouldn't be undone, like arranging a new file once).
+export function forgetUndo() {
+  past = [];
+  future = [];
+}
+
 export function commit() {
   normalizeDocument();
   const snap = snapshot();

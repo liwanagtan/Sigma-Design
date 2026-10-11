@@ -4,7 +4,7 @@ import { state, loadDocument, walk } from '../src/store.js';
 import { sampleTokenDocument } from '../src/sample-tokens.js';
 import { collections, findByReference, aliasChain, previewValue, groupTree, findVariable, snapshotForLibrary, resolveVariables } from '../src/variables.js';
 import { syncInstances } from '../src/components.js';
-import { sampleDocument } from '../src/sample.js';
+import { welcomeDocument } from '../src/welcome.js';
 import { exportDTCG, importTokens } from '../src/tokens-io.js';
 
 function loadSample() {
@@ -48,23 +48,31 @@ test('sample tokens: round-trips through tokens.json', () => {
   eq(back.map((c) => [c.name, c.variables.length]), cols.map((c) => [c.name, c.variables.length]));
 });
 
-test('sample design file: every binding points at a linked sample token, and the showcases resolve per mode', () => {
+test('Welcome to Sigma: nine pages, every binding points at a linked sample token, and the examples resolve per mode', () => {
   const tokens = sampleTokenDocument();
-  const doc = sampleDocument(tokens.collections);
+  const doc = welcomeDocument(tokens.collections);
   doc.libraries = [{ fileId: 'lib', name: tokens.name, version: 1, collections: snapshotForLibrary(tokens.collections, 'lib') }];
   loadDocument(doc);
   syncInstances();
   resolveVariables();
-  eq(state.doc.variables?.collections?.length || 0, 0); // no local tokens: all of them come from the token file
-  let bound = 0;
-  walk(state.doc.pages[0].children, (n) => {
-    for (const [path, id] of Object.entries(n.bindings || {})) {
-      bound++;
-      ok(findVariable(id), `${n.name} ${path} is bound to a missing token`);
-    }
-  });
-  ok(bound > 20, 'the components use tokens');
-  const showcase = (name) => state.doc.pages[0].children.find((n) => n.name === name);
+  eq(state.doc.pages.length, 9);
+  eq(state.doc.pages[0].name, '1 Start here');
+  eq(state.doc.variables?.collections?.length || 0, 0); // no local tokens: all of them come from the Sigma Tokens file
+  let bound = 0, oneOff = 0;
+  for (const pg of state.doc.pages) {
+    ok(pg.children.some((n) => n.name === 'Guide'), `${pg.name} has a guide`);
+    walk(pg.children, (n) => {
+      for (const [path, id] of Object.entries(n.bindings || {})) {
+        bound++;
+        ok(findVariable(id), `${pg.name} › ${n.name} ${path} is bound to a missing token`);
+      }
+      if (n.name.startsWith('One-off')) oneOff++;
+    });
+  }
+  ok(bound > 300, 'everything uses tokens');
+  eq(oneOff, 2); // the two raw values the audit example finds, on purpose
+  const tokensPage = state.doc.pages.find((p) => p.name === '5 Tokens in designs');
+  const showcase = (name) => tokensPage.children.find((n) => n.name === name);
   const card = (name) => showcase(name).children[0];
   const button = (name) => card(name).children.find((n) => n.name === 'Button');
   eq(card('Light').fills[0].color, '#FFFFFF'); // card/background → surface/raised → gray/0
