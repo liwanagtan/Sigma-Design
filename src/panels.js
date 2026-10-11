@@ -891,7 +891,8 @@ function componentSection(nodes) {
       `<div class="btn-row"><button class="btn" data-action="reset-overrides" ${n ? '' : 'disabled'}>Reset ${n ? `${n} ` : ''}override${n === 1 ? '' : 's'}</button>` +
       '<button class="btn" data-action="detach" title="⌥⌘B">Detach</button></div>' +
       orphanNote(single);
-    return section('Instance', body);
+    const comp = containingComponent(single);
+    return section('Instance', body + exposedControls(single)) + (comp ? bindingSection(single, comp) : '');
   }
   if (nodes.length && nodes.every(isInsideInstance)) {
     const owner = owningInstance(nodes[0]);
@@ -950,8 +951,36 @@ function bindingSection(layer, comp) {
   };
   let body = row('visible', 'boolean', 'Show layer');
   if (layer.type === 'text') body += row('text', 'text', 'Text');
-  if (layer.type === 'instance') body += row('componentId', 'instance', 'Instance');
+  if (layer.type === 'instance') {
+    body += row('componentId', 'instance', 'Instance');
+    body += `<label class="check-row" title="Instances of ${esc(displayName(comp))} show this instance's properties in their own panel">` +
+      `<input type="checkbox" data-expose ${layer.exposed ? 'checked' : ''}> Show its properties on ${esc(displayName(comp))} instances</label>`;
+  }
   return section('Component properties', body);
+}
+
+// Nested instances whose properties the main component exposes (and, through them, deeper exposed ones).
+function exposedInstances(root) {
+  const out = [];
+  const visit = (nodes) => {
+    for (const n of nodes) {
+      if (n.type === 'instance') {
+        if (n.exposed) {
+          out.push(n);
+          visit(n.children || []);
+        }
+        continue;
+      }
+      if (n.children) visit(n.children);
+    }
+  };
+  visit(root.children || []);
+  return out;
+}
+
+function exposedControls(inst) {
+  return exposedInstances(inst).map((n) =>
+    `<div class="exposed-head"><span class="licon purple">${layerIcon(n)}</span>${esc(n.name)}</div>` + instanceControls(n, mainComponentOf(n))).join('');
 }
 
 // Variant property definitions of a component set: rename properties, add properties and variants.
@@ -973,30 +1002,32 @@ function variantValuesSection(variant) {
 }
 
 // Property values and component swap for an instance.
+// Controls carry data-target so they also work for nested instances shown in an outer instance's panel.
 function instanceControls(inst, main) {
   if (!main) return '';
+  const tgt = `data-target="${inst.id}"`;
   let variantRows = '';
   if (isVariant(main)) {
     const current = parseVariantName(main.name);
     variantRows = Object.entries(variantDefs(getParent(main.id))).map(([prop, values]) =>
-      `<label class="bind-row"><span>${esc(prop)}</span><select class="select" data-variant-prop="${esc(prop)}">` +
+      `<label class="bind-row"><span>${esc(prop)}</span><select class="select" ${tgt} data-variant-prop="${esc(prop)}">` +
       values.map((v) => `<option ${v === current[prop] ? 'selected' : ''}>${esc(v)}</option>`).join('') + '</select></label>').join('');
   }
   const values = inst.propValues || {};
   const rows = Object.entries(propsOf(main)).map(([pid, def]) => {
     const v = values[pid] ?? def.default;
     let control;
-    if (def.type === 'boolean') control = `<input type="checkbox" data-instance-prop="${pid}" ${v ? 'checked' : ''}>`;
-    else if (def.type === 'text') control = `<input class="prop-input" data-instance-prop="${pid}" value="${esc(v ?? '')}" spellcheck="false">`;
-    else control = `<select class="select" data-instance-prop="${pid}">${componentOptions(v, { exclude: (c) => !canPlaceInside({ type: 'instance', componentId: c.id }, getParent(inst.id)) })}</select>`;
+    if (def.type === 'boolean') control = `<input type="checkbox" ${tgt} data-instance-prop="${pid}" ${v ? 'checked' : ''}>`;
+    else if (def.type === 'text') control = `<input class="prop-input" ${tgt} data-instance-prop="${pid}" value="${esc(v ?? '')}" spellcheck="false">`;
+    else control = `<select class="select" ${tgt} data-instance-prop="${pid}">${componentOptions(v, { exclude: (c) => !canPlaceInside({ type: 'instance', componentId: c.id }, getParent(inst.id)) })}</select>`;
     return `<label class="bind-row"><span>${esc(def.name)}</span>${control}</label>`;
   }).join('');
-  const swap = `<label class="bind-row"><span>Swap</span><select class="select" data-swap>${componentOptions(inst.componentId)}</select></label>`;
+  const swap = `<label class="bind-row"><span>Swap</span><select class="select" ${tgt} data-swap>${componentOptions(inst.componentId)}</select></label>`;
   return variantRows + rows + swap;
 }
 
 function onComponentPropChange(t) {
-  const node = selectedNodes()[0];
+  const node = (t.dataset.target && getNode(t.dataset.target)) || selectedNodes()[0];
   if (!node) return;
   if (t.dataset.propName) {
     const def = propsOf(node)[t.dataset.propName];
@@ -1185,9 +1216,16 @@ function initProps() {
       return commit();
     }
     if (t.dataset.variantProp !== undefined) {
-      if (!switchVariant(selectedNodes()[0], t.dataset.variantProp, t.value)) {
+      const target = (t.dataset.target && getNode(t.dataset.target)) || selectedNodes()[0];
+      if (!switchVariant(target, t.dataset.variantProp, t.value)) {
         window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'No variant matches exactly, so the closest one was used.' }));
       }
+      return commit();
+    }
+    if (t.hasAttribute('data-expose')) {
+      const n = selectedNodes()[0];
+      if (t.checked) n.exposed = true;
+      else delete n.exposed;
       return commit();
     }
     if (t.dataset.propName || t.dataset.propDefault || t.dataset.bind || t.dataset.instanceProp || t.hasAttribute('data-swap')) {

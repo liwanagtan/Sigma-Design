@@ -388,5 +388,5 @@ Things noticed while building, not yet done:
 - **Rendering performance.** With 200 card instances (about 400 text layers), a frame takes about 17 ms: normalize about 2 ms (instances whose main and settings haven't changed are skipped), scene about 5 ms (only changed top-level layers are re-rendered), and the rest is the browser's layout of HTML text. The next step would be drawing text as SVG `<text>` instead of `foreignObject`.
 - ~~**Orphaned overrides.**~~ Done: instances show "N overrides no longer apply" with a Clear button.
 - ~~**Constraints.**~~ Done: Left / Right / Left & right / Center / Scale (and vertical), applied to frames and resized instances.
-- **Exposed nested properties.** An outer instance can't show its nested instances' properties in its own panel; you select the nested instance instead.
+- ~~**Exposed nested properties.**~~ Done: a nested instance can expose its properties; outer instances show its controls.
 - **Libraries.** Components and variables are local to a file. Pasting an instance into a file without its main keeps the look but marks it "main component missing".

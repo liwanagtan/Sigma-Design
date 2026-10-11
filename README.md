@@ -51,6 +51,7 @@ Then open http://localhost:5173.
   - the Instance section in the panel has Go to main component, Reset overrides and Detach (⌥⌘B)
   - a component can never end up containing an instance of itself
   - if a layer in the main component is renamed or removed, its instances show "N overrides no longer apply", with a Clear button
+  - **exposed nested properties:** select a nested instance inside a main component and tick "Show its properties on … instances"; instances of the outer component then show that nested instance's controls in their own panel
   - **component properties** are defined on the main component: Boolean (show or hide a layer), Text and Instance swap
   - to link a layer, select it inside the main component and use the Component properties section
   - each instance gets a control per property, plus a Swap picker for the component itself
