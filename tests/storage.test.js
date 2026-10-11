@@ -2,7 +2,9 @@ import { test, eq, ok } from './harness.js';
 import { state, createNode, commit, loadDocument, flushSave, setPersistence, editNode } from '../src/store.js';
 import {
   initFiles, createFile, deleteFile, loadFile, listFiles, renameFile, setCurrentFile, saveNamedVersion, listVersions, updateThumbnail,
+  createSampleFiles, createTokenFileWith,
 } from '../src/files.js';
+import { sampleTokenDocument } from '../src/sample-tokens.js';
 import { db } from '../src/db.js';
 
 const sampleDoc = () => ({
@@ -56,5 +58,25 @@ test('storage: an autosave that races with a delete never brings the file back',
     setCurrentFile(null);
     setPersistence(null);
     state.screen = 'home';
+  }
+});
+
+test('storage: Open sample file reuses the sample token file, skipping one that lost tokens the sample uses', async () => {
+  const before = new Set((await listFiles()).map((f) => f.id));
+  const linked = async (id) => (await loadFile(id)).doc.libraries.map((l) => l.fileId);
+  try {
+    const a = await createSampleFiles();
+    const b = await createSampleFiles();
+    eq(await linked(b), await linked(a));
+    const newTokenFiles = (await listFiles()).filter((f) => !before.has(f.id) && f.kind === 'tokens');
+    ok(newTokenFiles.length <= 1, 'at most one sample token file is created');
+    // A newer sample token file without the Components collection can't back the sample, so it is skipped.
+    const { name, collections } = sampleTokenDocument();
+    const broken = await createTokenFileWith(name, collections.filter((c) => c.name !== 'Components'), 'Broken', { meta: { sample: true } });
+    const c = await createSampleFiles();
+    eq(await linked(c), await linked(a));
+    ok(!(await linked(c)).includes(broken.id), 'the broken file is not linked');
+  } finally {
+    for (const f of await listFiles()) if (!before.has(f.id)) await deleteFile(f.id);
   }
 });

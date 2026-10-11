@@ -5,7 +5,7 @@ import {
   state, uid, setPersistence, flushSave, hasUnsavedChanges, LEGACY_STORAGE_KEY, migrateDocument,
 } from './store.js';
 import { buildSVG, download, toast } from './io.js';
-import { snapshotForLibrary } from './variables.js';
+import { libraryEntry } from './variables.js';
 import { sampleDocument } from './sample.js';
 import { sampleTokenDocument } from './sample-tokens.js';
 import { importTokens } from './tokens-io.js';
@@ -247,14 +247,14 @@ const publishedFrom = (collections, prev, notes) => ({
 });
 
 // Create a token file holding `collections`, already published as v1. `libraries` / `dependencies`: token
-// files those collections point at (linked in the new file, and published with it).
-export async function createTokenFileWith(name, collections, notes = 'Initial version', { libraries = [], dependencies = [] } = {}) {
+// files those collections point at (linked in the new file, and published with it). `meta`: extra file metadata.
+export async function createTokenFileWith(name, collections, notes = 'Initial version', { libraries = [], dependencies = [], meta = {} } = {}) {
   const doc = newTokenDocument(name);
   doc.variables.collections = structuredClone(collections);
   doc.published = publishedFrom(collections, null, notes);
   if (libraries.length) doc.libraries = structuredClone(libraries);
   if (dependencies.length) doc.published.dependencies = structuredClone(dependencies);
-  const id = await createFile(doc);
+  const id = await createFile(doc, {}, meta);
   return { id, name, published: doc.published };
 }
 
@@ -281,15 +281,35 @@ export async function appendToTokenFile(id, collections, notes, { libraries = []
   return { id, name, published: doc.published };
 }
 
-// The sample: the sample token file, and a sample design file that links it.
+// The sample token file, created marked as the sample so the sample design file can link it again.
+export async function createSampleTokenFile() {
+  const { name, collections } = sampleTokenDocument();
+  return createTokenFileWith(name, collections, 'Sample tokens', { meta: { sample: true } });
+}
+
+// The sample: a design file that links the sample token file. It reuses the most recently edited sample
+// token file (marked, or an earlier one with the sample's name) whose published tokens still have
+// everything the design file uses, and creates a new one only when there is none.
 export async function createSampleFiles() {
-  const tokens = sampleTokenDocument();
-  const doc = sampleDocument(tokens.collections);
-  const lib = await createTokenFileWith(tokens.name, tokens.collections, 'Sample tokens');
-  doc.libraries = [{
-    fileId: lib.id, name: lib.name, version: lib.published.version,
-    collections: snapshotForLibrary(lib.published.collections, lib.id),
-  }];
+  const sampleName = sampleTokenDocument().name;
+  const candidates = (await listTokenFiles())
+    .filter((m) => m.sample || m.name === sampleName)
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+  for (const meta of candidates) {
+    const published = (await loadPublished(meta.id))?.published;
+    if (!published) continue;
+    let doc;
+    try {
+      doc = sampleDocument(published.collections);
+    } catch {
+      continue; // tokens the sample uses were renamed or deleted
+    }
+    doc.libraries = [libraryEntry(meta.id, meta.name, published)];
+    return createFile(doc);
+  }
+  const lib = await createSampleTokenFile();
+  const doc = sampleDocument(lib.published.collections);
+  doc.libraries = [libraryEntry(lib.id, lib.name, lib.published)];
   return createFile(doc);
 }
 

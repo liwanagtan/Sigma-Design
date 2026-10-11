@@ -5,7 +5,7 @@
 // publishes a new version and this file accepts the update.
 import { state, commit, emit, reindex, walk } from './store.js';
 import {
-  localCollections, snapshotForLibrary, diffCollections, collections, referencedIds, detachAliasesTo, dependencyLibraries,
+  localCollections, libraryEntry, diffCollections, collections, referencedIds, detachAliasesTo, dependencyLibraries,
   dependencyChanges, libraryCollections,
 } from './variables.js';
 import { publishableComponents } from './components.js';
@@ -29,10 +29,8 @@ export const usesLibrary = (fileId) => libraries().some((l) => l.fileId === file
 
 function setLibrary(fileId, name, published) {
   const libs = (state.doc.libraries ||= []);
-  const entry = { fileId, name, version: published.version, collections: snapshotForLibrary(published.collections, fileId) };
-  // Token files it references (a "Brand" file aliasing "Core"), as published with it.
-  const deps = (published.dependencies || []).filter((d) => d.fileId !== getCurrentFileId());
-  if (deps.length) entry.dependencies = deps.map((d) => ({ ...d, collections: snapshotForLibrary(d.collections, d.fileId) }));
+  // With the token files it references (a "Brand" file aliasing "Core"), as published with it.
+  const entry = libraryEntry(fileId, name, published, getCurrentFileId());
   const i = libs.findIndex((l) => l.fileId === fileId);
   if (i >= 0) libs[i] = entry;
   else libs.push(entry);

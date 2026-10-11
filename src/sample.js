@@ -9,9 +9,19 @@ export function blankDocument() {
 }
 
 // The sample design file: components built entirely from the sample token file's tokens
-// (sample-tokens.js), which it links as a library. `collections` are that file's collections.
+// (sample-tokens.js), which it links as a library. `collections` are that file's published collections;
+// throws if a token, collection or mode it uses is missing.
 export function sampleDocument(collections) {
-  const col = (name) => collections.find((c) => c.name === name);
+  const col = (name) => {
+    const c = collections.find((x) => x.name === name);
+    if (!c) throw new Error(`Sample collection ${name} is missing`);
+    return c;
+  };
+  const mode = (c, name) => {
+    const m = c.modes.find((x) => x.name === name);
+    if (!m) throw new Error(`Sample mode ${c.name} ${name} is missing`);
+    return m.id;
+  };
   const token = (colName, path) => {
     const v = col(colName).variables.find((x) => x.name === path);
     if (!v) throw new Error(`Sample token ${colName} ${path} is missing`);
@@ -89,8 +99,8 @@ export function sampleDocument(collections) {
     children: [
       buttonSet, card,
       showcase('Light', 0, undefined),
-      showcase('Dark', 380, { [semantic.id]: semantic.modes[1].id }),
-      showcase('Brand B', 760, { [brand.id]: brand.modes[0].id }),
+      showcase('Dark', 380, { [semantic.id]: mode(semantic, 'Dark') }),
+      showcase('Brand B', 760, { [brand.id]: mode(brand, 'Light') }),
     ],
   };
   return { name: 'Sample design file', pages: [page], currentPageId: page.id };

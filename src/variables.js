@@ -95,6 +95,14 @@ export function snapshotForLibrary(cols, fileId) {
   return structuredClone(cols || []).map((c) => ({ ...c, fromLibrary: fileId }));
 }
 
+// A design file's link to a published token file version, with the token files it references.
+export function libraryEntry(fileId, name, published, selfId = null) {
+  const entry = { fileId, name, version: published.version, collections: snapshotForLibrary(published.collections, fileId) };
+  const deps = (published.dependencies || []).filter((d) => d.fileId !== selfId);
+  if (deps.length) entry.dependencies = deps.map((d) => ({ ...d, collections: snapshotForLibrary(d.collections, d.fileId) }));
+  return entry;
+}
+
 // What changed between two published versions: token and collection names added, changed or removed.
 export function diffCollections(before, after) {
   const index = (cols) => {
