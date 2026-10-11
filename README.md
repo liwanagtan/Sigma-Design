@@ -46,6 +46,7 @@ Then open http://localhost:5173.
 - **Components and instances** (they work like Figma's):
   - ⌥⌘K turns a frame, or any selection, into a component; with several layers selected, right-click → **Create multiple components** makes one component each
   - make instances by duplicating (⌘D), ⌥-dragging or pasting a component, or from the **Assets** tab (a component set inserts its default variant: the top-left one)
+  - **deprecate** a component or component set from its ⋯ menu: it's hidden from Assets (**Show N deprecated** brings it back) and the swap picker, and its instances keep working with a note saying what to use instead (from its description). **Mark as not deprecated** undoes it
   - **search** in Assets and in the swap picker matches component names and the words in their descriptions (and a variant's set), so keywords like "timer, speed" in a stopwatch icon's description find it
   - **component playground:** in Assets, the ⓘ on a component (or right-click → **Open in playground…**) previews it with all its properties (variants, toggles, text, swaps) to try out, then **Insert instance** places it with those choices
   - changes to the main component flow to every instance, live; an instance can change appearance and text, and size and position come from the main component
@@ -88,6 +89,7 @@ Then open http://localhost:5173.
   - **typography tokens** bundle font family, weight, size, line height and letter spacing, and each part can alias a number or text token
   - a typography token is edited in the inspector, with a live sample
   - in design files, the Text section's **Text style** links a typography token to a text layer; changing any font property by hand detaches it
+  - **deprecated tokens:** tick **Deprecated** in a token's inspector. It's struck through and hidden from token pickers, while layers and tokens that use it keep working (their chips are flagged). tokens.json writes `$deprecated` and CSS adds a `/* deprecated */` comment; both import back
   - **contrast pairs:** a color token's inspector has **Contrast**: **+ Check contrast with…** pairs it with the colors it's used with (text on a surface), and every pair shows its WCAG ratio and level (AA 4.5:1, AAA 7:1) in each mode, from either token. The sample pairs its text colors with the surfaces, and the on-accent text with the accent
   - **shadow tokens** hold a color (with opacity), X, Y, blur and spread; like typography, each part can point at a token (the color at an alpha color, say), and they're edited in the inspector with a live preview. A layer's effect uses one with **Shadow token**
   - **motion tokens:** **Duration** tokens are milliseconds and **Easing** tokens are cubic Bézier curves (`0.4, 0, 0.2, 1`, like CSS `cubic-bezier()`), with a small curve preview. Layers don't use them (Sigma has no prototyping); they're there for code, through tokens.json and CSS

@@ -4,9 +4,9 @@ import { useDoc } from './core.test.js';
 import { state, createNode, editNode, makePaint } from '../src/store.js';
 import { gridBands, gridLines, gridSnapTargets, newGrid, retypeGrid } from '../src/grids.js';
 import { caseText, measureText } from '../src/text.js';
-import { syncInstances, createInstance } from '../src/components.js';
+import { syncInstances, createInstance, isDeprecated, setDeprecated } from '../src/components.js';
 import { buildSVG } from '../src/io.js';
-import { parseEasing, resolveVariables, shiftPaintBindings, resolveIn, addContrastPair, deleteVariable } from '../src/variables.js';
+import { parseEasing, resolveVariables, shiftPaintBindings, resolveIn, addContrastPair, deleteVariable, setTokenDeprecated, diffCollections } from '../src/variables.js';
 import { contrastRatio, contrastLevel, formatRatio, isLargeText, backgroundBehind, textContrast } from '../src/contrast.js';
 import { sampleTokenDocument } from '../src/sample-tokens.js';
 import { nodeSVG, effectOverhang } from '../src/render.js';
@@ -230,4 +230,44 @@ test('sample tokens: contrast pairs are defined for text on surfaces and on the 
   const named = (n) => semantic.variables.find((v) => v.name === n);
   eq(named('text/primary').contrastWith, [named('surface/default').id, named('surface/raised').id]);
   ok(named('text/on-accent').contrastWith.includes(named('accent/default').id), 'on-accent on the accent');
+});
+
+test('deprecation: a deprecated component (or set, for its variants) is flagged and can be restored', () => {
+  const v1 = createNode('component', { name: 'Size=Small' });
+  const set = createNode('componentSet', { name: 'Old button', children: [v1] });
+  const card = createNode('component', { name: 'Card' });
+  useDoc([set, card]);
+  ok(!isDeprecated(v1) && !isDeprecated(card), 'not deprecated yet');
+  setDeprecated(v1, true); // a variant deprecates its whole set
+  ok(set.deprecated && isDeprecated(v1), 'the set and its variants');
+  const inst = createInstance(card, { x: 400 });
+  setDeprecated(card, true);
+  ok(isDeprecated(card), 'a component');
+  syncInstances();
+  eq(inst.children.length, card.children.length); // instances keep working
+  setDeprecated(card, false);
+  ok(!isDeprecated(card) && !('deprecated' in card), 'restored');
+});
+
+test('deprecation: deprecated tokens keep working, show in the publish summary, and round-trip through tokens.json and CSS', () => {
+  const m = 'm';
+  const old = { id: 'o', name: 'color/brand-old', type: 'color', valuesByMode: { [m]: '#FF0000' }, description: 'Use color/brand.' };
+  const col = { id: 'c', name: 'Color', modes: [{ id: m, name: 'Default' }], defaultModeId: m, variables: [old] };
+  const before = structuredClone([col]);
+  setTokenDeprecated(old, true);
+  eq(diffCollections(before, [col]).changed, ['color/brand-old']);
+  const rect = createNode('rect', { fills: [makePaint('#000000')], bindings: { 'fills.0.color': 'o' } });
+  const doc = useDoc([rect]);
+  doc.variables = { collections: [col] };
+  resolveVariables();
+  eq(rect.fills[0].color, '#FF0000'); // still applies
+  const json = exportDTCG([col]);
+  eq(json['Color/Default'].color['brand-old'].$deprecated, true);
+  ok(exportCSS([col]).includes('--color-brand-old: #ff0000; /* deprecated */'), 'flagged in CSS');
+  const back = importTokens(JSON.parse(JSON.stringify(json))).collections[0].variables[0];
+  ok(back.deprecated, 'comes back deprecated');
+  const other = importTokens({ gray: { $type: 'color', $value: '#999999', $deprecated: 'Use neutral/500.' } }).collections[0].variables[0];
+  eq([other.deprecated, other.description], [true, 'Use neutral/500.']);
+  setTokenDeprecated(old, false);
+  ok(!('deprecated' in old), 'restored');
 });

@@ -57,7 +57,7 @@ export function openTokenPicker({ anchor, type, exclude = () => false, currentId
   const options = [];
   for (const c of collections()) {
     for (const v of c.variables || []) {
-      if (v.type !== type || exclude(v.id)) continue;
+      if (v.type !== type || exclude(v.id) || (v.deprecated && v.id !== currentId)) continue; // deprecated: nothing new uses it
       options.push({ v, c, label: collectionLabel(c), lib: isLibraryCollection(c), haystack: `${collectionLabel(c)} ${v.name}`.toLowerCase().replace(/[./]/g, ' ') });
     }
   }

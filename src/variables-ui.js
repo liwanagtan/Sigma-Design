@@ -9,7 +9,7 @@ import {
   defaultValue, localCollections, libraryCollections, inFamily, isLibraryCollection, libraryOf, aliasChain, findByReference,
   groupTree, groupOf, leafOf, createGroup, renameGroup, moveGroup, ungroup, deleteGroup, moveTokensToGroup, findGroup,
   groupIdOf, groupPathOf, tokenInGroup, tokensInOrder, setTokenName, setGroupDescription, parseEasing, resolveIn,
-  addContrastPair, removeContrastPair,
+  addContrastPair, removeContrastPair, setTokenDeprecated,
 } from './variables.js';
 import { contrastRatio, contrastBadge } from './contrast.js';
 import { openTokenPicker, closeTokenPicker, valuePreview, collectionLabel, easingCurve } from './token-picker.js';
@@ -182,7 +182,7 @@ function refChip(col, mode, v, raw, attrs) {
   const title = `Points to ${steps.map((st) => (st.missing ? 'a missing token' : st.variable.name)).join(' → ')}`;
   const name = target ? target.variable.name : 'Missing token';
   const group = target ? groupOf(name) : '';
-  return `<button class="alias-chip${target ? '' : ' missing'}" ${attrs} title="${esc(title)}${lib ? `\nFrom ${esc(lib.name)}` : ''}"><span class="ref-arrow">→</span>` +
+  return `<button class="alias-chip${target ? '' : ' missing'}${target?.variable.deprecated ? ' deprecated' : ''}" ${attrs} title="${esc(title)}${lib ? `\nFrom ${esc(lib.name)}` : ''}${target?.variable.deprecated ? '\nThis token is deprecated' : ''}"><span class="ref-arrow">→</span>` +
     (lib ? `<span class="ref-lib">${LIB_ICON}</span>` : '') +
     (group ? `<span class="ref-group">${esc(group)}/</span>` : '') + `<span class="ref-leaf">${esc(target ? leafOf(name) : name)}</span>` +
     `<span class="ref-value">${valuePreview(v.type, value)}</span></button>`;
@@ -317,7 +317,9 @@ function inspector(col) {
     <div class="inspector-head"><span class="var-type">${TYPE_ICON[v.type]}</span><span class="inspector-name">${esc(v.name)}</span></div>
     <div class="muted">${VAR_TYPES[v.type]} · ${esc(collectionLabel(home))}</div>
     <label class="inspector-label">Description</label>
-    <textarea class="desc inspector-desc" data-token-desc="${v.id}" rows="3" placeholder="${ro ? 'No description' : 'What is this token for?'}" spellcheck="false" ${ext || ro ? `disabled title="${ro ? 'Edit it in its token file' : 'Edit descriptions in the root collection'}"` : ''}>${esc(v.description || '')}</textarea>
+    <textarea class="desc inspector-desc" data-token-desc="${v.id}" rows="3" placeholder="${ro ? 'No description' : v.deprecated ? 'What should be used instead?' : 'What is this token for?'}" spellcheck="false" ${ext || ro ? `disabled title="${ro ? 'Edit it in its token file' : 'Edit descriptions in the root collection'}"` : ''}>${esc(v.description || '')}</textarea>
+    <label class="check-row deprecate-row" title="Hidden from token pickers so nothing new uses it. Layers and tokens that use it keep working."><input type="checkbox" data-token-deprecated="${v.id}" ${v.deprecated ? 'checked' : ''} ${ext || ro ? 'disabled' : ''}> Deprecated</label>
+    ${v.deprecated ? '<div class="muted">Hidden from token pickers. Layers and tokens that use it keep working; say what to use instead in the description.</div>' : ''}
     <label class="inspector-label">Values in ${esc(col.name)}</label>
     ${modeRows}
     ${contrast}
@@ -436,10 +438,11 @@ function render() {
       const desc = g && g !== scope ? findGroup(col, g)?.description : '';
       return (rel ? `<div class="vars-group" data-group-head="${esc(g)}" title="Show only this group">${esc(rel).replace(/\//g, ' <span class="muted">/</span> ')}` +
         `${desc ? `<span class="group-desc-inline">${esc(desc)}</span>` : ''}</div>` : '') +
-      list.map((v) => `<div class="vars-row${v.id === selectedId ? ' selected' : ''}" data-row="${v.id}" style="grid-template-columns:${gridCols}"${editable ? ' data-drop-row' : ''}>` +
+      list.map((v) => `<div class="vars-row${v.id === selectedId ? ' selected' : ''}${v.deprecated ? ' deprecated' : ''}" data-row="${v.id}" style="grid-template-columns:${gridCols}"${editable ? ' data-drop-row' : ''}>` +
         `<div class="var-name"><span class="var-type${editable ? ' drag-handle' : ''}" title="${VAR_TYPES[v.type]}${editable ? ' · drag to a group' : ''}"${editable ? ` draggable="true" data-drag-token="${v.id}"` : ''}>${TYPE_ICON[v.type]}</span>` +
         (ext || ro ? `<span class="var-name-text" title="${esc(v.name)}">${esc(leafOf(v.name))}</span>`
           : `<input data-var-name="${v.id}" value="${esc(leafOf(v.name))}" spellcheck="false" title="${esc(v.name)} · type a/b to put it in a group a, /b for the top of the collection">`) +
+        (v.deprecated ? `<span class="deprecated-tag" title="Deprecated${v.description ? `: ${esc(v.description)}` : ''}">Deprecated</span>` : '') +
         (v.description ? `<span class="desc-dot" title="${esc(v.description)}"></span>` : '') + '</div>' +
         col.modes.map((m) => cell(col, v, m)).join('') +
         `<div>${ext || ro ? '' : `<button class="icon-btn" data-delete-var="${v.id}" title="Delete token">${icons.close}</button>`}</div></div>`).join('');
@@ -834,6 +837,10 @@ function bind() {
       typeFilter = t.value;
       return render();
     }
+    if (t.dataset.tokenDeprecated) return change(() => {
+      const v = findVariable(t.dataset.tokenDeprecated)?.variable;
+      if (v) setTokenDeprecated(v, t.checked);
+    });
     if (t.dataset.tokenDesc) return change(() => {
       const v = findVariable(t.dataset.tokenDesc)?.variable;
       if (v) v.description = t.value.trim() || undefined;

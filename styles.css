@@ -118,6 +118,14 @@ body.scrubbing, body.scrubbing * { cursor: ew-resize !important; user-select: no
 .paint-row .icon-btn:hover { color: var(--text); }
 .mixed-paints { color: var(--muted); padding: 4px 0; }
 .effect-row { display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; }
+.deprecated-tag { flex: none; margin-left: 6px; padding: 1px 5px; border-radius: 3px; background: #fff4d6; color: #9e6a00; font-size: 10px; font-weight: 500; }
+.asset.deprecated { opacity: 0.55; }
+.vars-row.deprecated .var-name input, .vars-row.deprecated .var-name-text { text-decoration: line-through; color: var(--muted); }
+.var-chip.deprecated, .alias-chip.deprecated { text-decoration: line-through; }
+.var-chip.deprecated { background: #fff4d6; color: #9e6a00; }
+.deprecate-row { margin-top: 6px; }
+.asset.deprecated .asset-name { text-decoration: line-through; }
+.assets-deprecated { display: block; margin: 8px 12px; color: var(--muted); }
 .contrast-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 28px; margin-right: 24px; }
 .contrast-pair { display: inline-flex; align-items: center; gap: 6px; }
 .contrast-pair .mini-swatch { width: 18px; height: 18px; display: grid; place-items: center; font-size: 10px; font-weight: 600; background: var(--c); }

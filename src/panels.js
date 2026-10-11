@@ -12,6 +12,7 @@ import {
 import { isAutoLayout, getSizing } from './layout.js';
 import {
   isInsideInstance, owningInstance, canPlaceInside, listComponents, overrideCount, defaultVariant, setInstanceProp, componentMatches,
+  isDeprecated,
 } from './components.js';
 import { exportNodes, saveFile, pickImages } from './io.js';
 import { createFile, openFile, goHome, pickFilesToImport, createSampleFiles } from './files.js';
@@ -554,7 +555,7 @@ function boundVar(nodes, path) {
 }
 
 const varChip = (path, v) =>
-  `<button class="var-chip" data-var-menu="${path}" title="${esc(v.name)} — click to change or detach">${VAR_ICON}<span>${esc(v.name.split('/').pop())}</span></button>`;
+  `<button class="var-chip${v.deprecated ? ' deprecated' : ''}" data-var-menu="${path}" title="${esc(v.name)}${v.deprecated ? ` is deprecated${v.description ? `: ${esc(v.description)}` : ''}` : ''} — click to change or detach">${VAR_ICON}<span>${esc(v.name.split('/').pop())}</span></button>`;
 const varButton = (path) => `<button class="icon-btn var-btn" data-var-menu="${path}" title="Apply design token">${VAR_ICON}</button>`;
 const varControl = (nodes, path) => {
   const pill = propBinding(nodes, path); // a component property wins over a token
@@ -595,6 +596,7 @@ function variableMenu(btn, path) {
     // Group by where the tokens come from: a linked token file, or this file's local tokens.
     items.push({ label: `${libraryOf(col)?.name || 'Local'} / ${col.name}`, disabled: true });
     for (const v of vars) {
+      if (v.deprecated && !(current && current !== MIXED && current.id === v.id)) continue; // nothing new uses a deprecated token
       items.push({
         label: v.name, shortcut: previewText(v), checked: current && current !== MIXED && current.id === v.id,
         action: () => applyVariable(nodes, path, v.id),
@@ -1091,6 +1093,7 @@ function instanceLayerPanel(nodes) {
 // ---------- assets ----------
 let leftTab = 'layers';
 let assetQuery = '';
+let showDeprecated = false;
 
 function initAssets() {
   document.querySelector('.left-tabs').addEventListener('click', (e) => {
@@ -1109,6 +1112,10 @@ function initAssets() {
   });
   const list = $('#assets-list');
   list.addEventListener('click', (e) => {
+    if (e.target.closest('[data-show-deprecated]')) {
+      showDeprecated = !showDeprecated;
+      return renderAssets();
+    }
     const info = e.target.closest('[data-asset-info]');
     if (info) return openPlayground(info.dataset.assetInfo);
     const tile = e.target.closest('[data-component]');
@@ -1158,10 +1165,14 @@ export function renderAssets() {
       if (defaultVariant(set) === c.node) comps.push({ node: set, page: c.page, library: c.library, insert: c.node }); // inserts the default (top-left) variant
     } else comps.push({ ...c, insert: c.node });
   }
-  const matches = comps.filter(({ node, insert }) => componentMatches(node, q) || componentMatches(insert, q));
+  const found = comps.filter(({ node, insert }) => componentMatches(node, q) || componentMatches(insert, q));
+  // Deprecated components are hidden unless asked for, so nothing new uses them.
+  const hidden = found.filter(({ insert }) => isDeprecated(insert)).length;
+  const matches = showDeprecated ? found : found.filter(({ insert }) => !isDeprecated(insert));
+  const toggle = hidden ? `<button class="link-btn assets-deprecated" data-show-deprecated>${showDeprecated ? 'Hide' : 'Show'} ${hidden} deprecated</button>` : '';
   const list = $('#assets-list');
   if (!matches.length) {
-    list.innerHTML = `<div class="empty-hint">${q ? 'No components match.' : 'No components yet. Select layers and press ⌥⌘K to create one.'}</div>`;
+    list.innerHTML = `<div class="empty-hint">${q || hidden ? 'No components match.' : 'No components yet. Select layers and press ⌥⌘K to create one.'}</div>${toggle}`;
     return;
   }
   // Local components are grouped by page, library components by library (after the local ones).
@@ -1175,7 +1186,7 @@ export function renderAssets() {
   const tile = ({ node, insert }) => {
     const leaf = node.name.slice(node.name.lastIndexOf('/') + 1);
     const desc = node.description || insert.description;
-    return `<div class="asset" draggable="true" data-component="${insert.id}" title="${esc(node.name)}${desc ? `\n${esc(desc)}` : ''}\nClick to insert, or drag onto the canvas">` +
+    return `<div class="asset${isDeprecated(insert) ? ' deprecated' : ''}" draggable="true" data-component="${insert.id}" title="${isDeprecated(insert) ? 'Deprecated · ' : ''}"${esc(node.name)}${desc ? `\n${esc(desc)}` : ''}\nClick to insert, or drag onto the canvas">` +
       `<div class="asset-thumb">${componentThumb(insert)}<button class="asset-info" data-asset-info="${insert.id}" title="Component details: try its properties, then insert">${ASSET_INFO_ICON}</button></div>` +
       `<div class="asset-name">${esc(leaf)}${node.type === 'componentSet' ? ` <span class="muted">· ${node.children.length}</span>` : ''}</div></div>`;
   };
@@ -1191,7 +1202,7 @@ export function renderAssets() {
     return `<div class="assets-group"><div class="assets-group-title">${title}</div>` +
       [...groups].map(([g, list]) => (g ? `<div class="assets-subgroup">${esc(g)}</div>` : '') + `<div class="assets-grid">${list.map(tile).join('')}</div>`).join('') +
       '</div>';
-  }).join('');
+  }).join('') + toggle;
 }
 
 function componentThumb(n) {

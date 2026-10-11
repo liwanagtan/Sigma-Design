@@ -123,6 +123,7 @@ export function exportDTCG(cols, { external = [] } = {}) {
         for (const p of path.slice(0, -1)) node = node[p] ||= {};
         const token = { $type: typeOut(v), $value: valueOut(v, raw(c, m.id, v)) };
         if (v.description) token.$description = v.description;
+        if (v.deprecated) token.$deprecated = true;
         node[path[path.length - 1]] = token;
       }
       out[set] = tree;
@@ -194,7 +195,7 @@ export function exportCSS(cols, { title = 'Design tokens', external = [] } = {})
       default: return [`${name}: "${String(value ?? '').replace(/"/g, '\\"')}";`];
     }
   };
-  const body = (c, modeId) => (rootOf(c).variables || []).flatMap((v) => lines(v, raw(c, modeId, v)));
+  const body = (c, modeId) => (rootOf(c).variables || []).flatMap((v) => lines(v, raw(c, modeId, v)).map((l) => (v.deprecated ? `${l} /* deprecated */` : l)));
   const block = (selector, list) => (list.length ? `${selector} {\n${list.map((l) => `  ${l}`).join('\n')}\n}` : '');
   const rootLines = [];
   const blocks = [];
@@ -331,7 +332,7 @@ export function importTokens(json, { external = [] } = {}) {
       if ('$value' in node) {
         const type = TYPE_IN[node.$type || inherited];
         if (!type) return void skipped++;
-        found.push({ c, m, name: path.join('/'), type, value: node.$value, description: node.$description });
+        found.push({ c, m, name: path.join('/'), type, value: node.$value, description: node.$description, deprecated: node.$deprecated });
         return;
       }
       for (const [k, child] of Object.entries(node)) if (!k.startsWith('$')) walkTree(child, [...path, k], groupType);
@@ -358,6 +359,11 @@ export function importTokens(json, { external = [] } = {}) {
       root.variables.push(v);
     }
     if (f.description && !v.description) v.description = f.description;
+    // DTCG's $deprecated is true or an explanation (kept as the description when there is none).
+    if (f.deprecated) {
+      v.deprecated = true;
+      if (typeof f.deprecated === 'string' && !v.description) v.description = f.deprecated;
+    }
   }
 
   // Resolve "{a.b.c}" references: same collection family first, then anywhere.
@@ -514,6 +520,7 @@ export function mergeCollections(target, incoming) {
       idMap.set(v.id, ev.id);
       for (const [mid, value] of Object.entries(v.valuesByMode)) if (modeMap.has(mid)) ev.valuesByMode[modeMap.get(mid)] = value;
       if (v.description) ev.description = v.description;
+      if (v.deprecated) ev.deprecated = true;
       if (v.contrastWith && ev !== v) ev.contrastWith = [...new Set([...(ev.contrastWith || []), ...v.contrastWith])];
       touched++;
     }

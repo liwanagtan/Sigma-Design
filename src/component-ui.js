@@ -24,6 +24,7 @@ import {
   instancesOf, overrideCount, orphanedOverrides, clearOrphanedOverrides, isInsideInstance, owningInstance, listComponents,
   canPlaceInside, nestedInstances, layersUsingProp, libraryOfComponent, setPropDefaultVar, pushOverridesToMain, syncInstances,
   slotDef, slotLimits, isSlotModified, resetSlot, clearSlot, setSlot, insideMainSlot, createInstance, componentMatches,
+  isDeprecated, setDeprecated, deprecationTarget,
 } from './components.js';
 import {
   addVariant, goToMainComponent, resetSelectionOverrides, detachSelection, duplicateSelection, makeComponentSet,
@@ -79,6 +80,11 @@ function headActions(node) {
     `<button class="icon-btn" data-comp-menu="${node.id}" title="More actions">${MORE_ICON}</button>`;
 }
 
+// A "Deprecated" tag after a component's name, and the note under it.
+const deprecatedTag = (node) => (isDeprecated(node) ? '<span class="deprecated-tag" title="Hidden from Assets and the swap picker; existing instances keep working">Deprecated</span>' : '');
+const deprecatedNote = (node) => (isDeprecated(node)
+  ? '<div class="warn">Deprecated: it’s hidden from Assets and the swap picker so nothing new uses it. Instances keep working. Say what to use instead in the description.</div>' : '');
+
 function description(node) {
   if (editingDescription === node.id) {
     return `<textarea class="desc comp-desc-edit" data-desc rows="3" placeholder="Describe this component…" spellcheck="false">${esc(node.description || '')}</textarea>`;
@@ -89,15 +95,15 @@ let editingDescription = null;
 
 function mainPanel(comp) {
   const count = instancesOf(comp.id).length;
-  const head = `<div class="comp-head"><span class="comp-icon">${COMPONENT_ICON}</span><span class="comp-name">${esc(comp.name)}</span>${headActions(comp)}</div>`;
-  return `<div class="section comp-panel">${head}${description(comp)}` +
+  const head = `<div class="comp-head"><span class="comp-icon">${COMPONENT_ICON}</span><span class="comp-name">${esc(comp.name)}</span>${deprecatedTag(comp)}${headActions(comp)}</div>`;
+  return `<div class="section comp-panel">${head}${deprecatedNote(comp)}${description(comp)}` +
     `<div class="comp-meta">${count} instance${count === 1 ? '' : 's'}</div></div>` + propertiesSection(comp);
 }
 
 function setPanel(set) {
   const n = variantsOf(set).length;
-  const head = `<div class="comp-head"><span class="comp-icon">${SET_ICON}</span><span class="comp-name">${esc(set.name)}</span>${headActions(set)}</div>`;
-  return `<div class="section comp-panel">${head}${description(set)}` +
+  const head = `<div class="comp-head"><span class="comp-icon">${SET_ICON}</span><span class="comp-name">${esc(set.name)}</span>${deprecatedTag(set)}${headActions(set)}</div>`;
+  return `<div class="section comp-panel">${head}${deprecatedNote(set)}${description(set)}` +
     `<div class="comp-meta">${n} variant${n === 1 ? '' : 's'}</div>${conflictNote(set)}</div>` + propertiesSection(set);
 }
 
@@ -119,9 +125,9 @@ function variantPanel(variant) {
       `<input class="prop-input combo" list="${id}" data-variant-value="${esc(prop)}" value="${esc(own[prop] ?? '')}" spellcheck="false" title="Pick a value, or type a new one">` +
       `<datalist id="${id}">${values.map((v) => `<option value="${esc(v)}"></option>`).join('')}</datalist></div>`;
   }).join('');
-  const head = `<div class="comp-head"><span class="comp-icon">${COMPONENT_ICON}</span><span class="comp-name">${esc(set.name)}</span>` +
+  const head = `<div class="comp-head"><span class="comp-icon">${COMPONENT_ICON}</span><span class="comp-name">${esc(set.name)}</span>${deprecatedTag(set)}` +
     `<button class="link-btn comp-up" data-select-node="${set.id}" title="Select the component set">Select set</button>${headActions(variant)}</div>`;
-  return `<div class="section comp-panel">${head}${description(variant)}<div class="comp-sub">Variant</div>${rows}${conflictNote(set)}</div>` + propertiesSection(variant);
+  return `<div class="section comp-panel">${head}${deprecatedNote(set)}${description(variant)}<div class="comp-sub">Variant</div>${rows}${conflictNote(set)}</div>` + propertiesSection(variant);
 }
 
 // ---------- Properties ----------
@@ -186,8 +192,10 @@ function instancePanel(inst, { nested = false, inComponent = null } = {}) {
     `<button class="icon-btn" data-inst-menu="${inst.id}" title="More actions">${MORE_ICON}</button></div>`;
   const lib = main && libraryOfComponent(main);
   const sub = nested ? `<div class="comp-sub">In “${esc(owningInstance(inst).name)}”</div>` : lib ? `<div class="comp-sub">From ${esc(lib.name)}</div>` : '';
+  const gone = main && isDeprecated(main)
+    ? `<div class="warn">“${esc(name)}” is deprecated.${(deprecationTarget(main).description) ? ` ${esc(deprecationTarget(main).description)}` : ' Swap it for another component.'}</div>` : '';
   const body = main
-    ? instanceControls(inst, main) + exposedControls(inst)
+    ? gone + instanceControls(inst, main) + exposedControls(inst)
     : '<div class="warn">The main component is missing. Detach the instance to keep editing it freely.</div>';
   return `<div class="section comp-panel inst-panel">${head}${sub}${body}${nested ? '' : orphanNote(inst)}</div>`;
 }
@@ -764,7 +772,7 @@ export function openComponentPicker({ anchor, currentId = null, preferred = [], 
   let shown = [];
   let active = 0;
   const render = () => {
-    const match = (c) => componentMatches(c.node, search.value);
+    const match = (c) => (!isDeprecated(c.node) || c.node.id === currentId) && componentMatches(c.node, search.value);
     const pref = preferred.map((id) => all.find((c) => c.node.id === id)).filter(Boolean).filter(match);
     const rest = all.filter((c) => match(c) && !preferred.includes(c.node.id));
     shown = [...pref.map((c) => ({ ...c, head: 'Preferred' })), ...rest.map((c) => ({ ...c, head: groupOf(c) }))];
@@ -1136,6 +1144,10 @@ function compMenu(btn, node) {
     ...(node.type !== 'componentSet' ? [{ label: 'Create instance', action: () => duplicateSelection() }] : []),
     { label: 'Add variant', action: () => (set ? addVariant(set) : addVariantProp(node, r)) },
     { label: 'Edit description', action: () => { editingDescription = node.id; window.dispatchEvent(new CustomEvent('sigma:refresh-panel')); setTimeout(() => document.querySelector('.comp-desc-edit')?.focus(), 0); } },
+    '-',
+    isDeprecated(node)
+      ? { label: 'Mark as not deprecated', action: () => { setDeprecated(node, false); commit(); } }
+      : { label: set ? 'Deprecate component set' : 'Deprecate component', action: () => { setDeprecated(node, true); commit(); } },
   ]);
 }
 

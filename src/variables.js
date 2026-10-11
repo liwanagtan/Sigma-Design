@@ -133,7 +133,7 @@ export function diffCollections(before, after) {
     const m = new Map();
     for (const c of cols || []) {
       m.set(`col:${c.id}`, { name: `Collection “${c.name}”`, sig: JSON.stringify([c.name, c.modes?.map((x) => x.name), c.extends || null]) });
-      for (const v of c.variables || []) m.set(v.id, { name: v.name, sig: JSON.stringify([v.name, v.type, v.valuesByMode, v.description || '']) });
+      for (const v of c.variables || []) m.set(v.id, { name: v.name, sig: JSON.stringify([v.name, v.type, v.valuesByMode, v.description || '', !!v.deprecated]) });
       const paths = groupPaths((c.groups || []).filter((g) => g && typeof g === 'object'));
       for (const g of (c.groups || []).filter((x) => x && typeof x === 'object')) {
         m.set(`grp:${g.id}`, { name: `Group “${paths.get(g.id)}”`, sig: JSON.stringify([paths.get(g.id), g.description || '']) });
@@ -574,6 +574,14 @@ export function wouldCycle(varId, targetId) {
 export function resolveIn(col, modeId, varId) {
   reindexVariables();
   return resolveValue(varId, (root) => (inFamily(col, root) ? { collection: col, modeId } : { collection: root, modeId: root.defaultModeId }));
+}
+
+// ---------- deprecation ----------
+// A deprecated token keeps working everywhere it's used (layers, references), but it's hidden from pickers
+// and flagged, so nothing new uses it. Its description should say what to use instead.
+export function setTokenDeprecated(v, on) {
+  if (on) v.deprecated = true;
+  else delete v.deprecated;
 }
 
 // ---------- contrast pairs ----------

@@ -92,6 +92,22 @@ export function listComponents() {
   return out;
 }
 
+// ---------- deprecation ----------
+// A deprecated component (or component set, for all its variants) stays usable: instances keep working and
+// show a note, but it's hidden from Assets and the swap picker so nothing new uses it. A variant follows its set.
+export function deprecationTarget(node) {
+  return node?.type === 'component' && getParent(node.id)?.type === 'componentSet' ? getParent(node.id) : node;
+}
+export const isDeprecated = (node) => !!node && (!!node.deprecated || !!deprecationTarget(node)?.deprecated);
+
+export function setDeprecated(node, on) {
+  const target = deprecationTarget(node);
+  editNode(target, ['deprecated'], () => {
+    if (on) target.deprecated = true;
+    else delete target.deprecated;
+  });
+}
+
 // Does a component (or component set) match a search? Every word of `query` must appear in its name or
 // description, or in its set's name or description, so keywords kept in descriptions find it too.
 export function componentMatches(node, query) {
