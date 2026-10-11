@@ -7,7 +7,7 @@
 import { createNode, uid, makePaint } from './store.js';
 import { DEFAULT_LAYOUT } from './layout.js';
 
-export const WELCOME_VERSION = 1;
+export const WELCOME_VERSION = 2;
 export const WELCOME_NAME = 'Welcome to Sigma';
 
 const autoLayout = (props) => ({ ...DEFAULT_LAYOUT, ...props });
@@ -315,7 +315,7 @@ export function welcomeDocument(collections) {
     ] },
     { h: 'This file’s tokens', bullets: [
       'With nothing selected, the panel shows the Sigma Tokens file this file uses. Design tokens… (Σ menu) changes it; files with the same token names are interchangeable.',
-      'A file can keep a few local tokens too (Local design tokens…), and move them to a Sigma Tokens file later.',
+      'Browse design tokens… (Σ menu, or the panel) shows them all: this file’s local tokens (most files have none) and the Sigma Tokens file’s, read-only. Local tokens can move to a Sigma Tokens file later.',
       'Audit design tokens… finds the values that don’t use a token yet. See page 7.',
     ] },
   ]);

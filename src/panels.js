@@ -115,7 +115,7 @@ function initFileHeader() {
       { label: 'Show version history', action: () => openHistory() },
       '-',
       { label: 'Design tokens…', action: () => openDesignTokensDialog() },
-      { label: 'Local design tokens…', action: () => openVariablesEditor() },
+      { label: 'Browse design tokens…', action: () => openVariablesEditor() },
       { label: 'Audit design tokens…', action: () => openAuditDialog() },
       '-',
       { label: 'Component libraries…', action: () => openLibrariesDialog() },
@@ -911,7 +911,7 @@ function buildProps() {
         : '<div class="muted">Choose a Sigma Tokens file to use its design tokens in this file.</div>') +
       `<button class="btn wide" data-action="open-design-tokens">${tokens.length ? 'Change Sigma Tokens file…' : 'Choose Sigma Tokens file…'}</button>` +
       `<div class="muted">${vcount ? `${vcount} local token${vcount === 1 ? '' : 's'} in this file` : 'No local tokens in this file.'}</div>` +
-      '<button class="btn wide" data-action="open-variables">Open local tokens</button>' +
+      '<button class="btn wide" data-action="open-variables" title="This file’s local tokens and the Sigma Tokens file it uses">Browse design tokens</button>' +
       '<button class="btn wide" data-action="audit" title="Find colors, text styles, spacing, radii and shadows that don’t use tokens">Audit design tokens…</button>');
     const comps = componentLibraries();
     html += section('Component libraries',

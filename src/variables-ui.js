@@ -114,9 +114,10 @@ subscribe((kind) => {
 
 // This file's own collections are edited here. Collections of linked token files can be browsed (read-only);
 // they're edited in their own file.
+// With no local collections, the Sigma Tokens file's first collection is shown.
 function active() {
   const cols = localCollections();
-  return cols.find((c) => c.id === activeId) || libraryCollections().find((c) => c.id === activeId) || cols[0] || null;
+  return cols.find((c) => c.id === activeId) || libraryCollections().find((c) => c.id === activeId) || cols[0] || libraryCollections()[0] || null;
 }
 const readOnly = (c) => isLibraryCollection(c);
 const editableGroups = (c) => !!c && !readOnly(c) && !isExtension(c);
@@ -403,11 +404,26 @@ function render() {
   const caret = searching ? document.activeElement.selectionStart : 0;
   const col = active();
   if (col && activeGroup && !findGroup(col, activeGroup)) activeGroup = null;
-  const libCols = libraryCollections();
-  const sidebar = collectionTree().map(({ c, depth }) => colRow(c, col, depth)).join('') +
+  // The sidebar: this file's own collections, then each Sigma Tokens file it uses (read-only), by file.
+  const design = state.doc?.kind !== 'tokens';
+  const locals = collectionTree();
+  const libFiles = new Map();
+  for (const c of libraryCollections()) {
+    const lib = libraryOf(c);
+    const key = lib?.fileId || c.fromLibrary;
+    if (!libFiles.has(key)) libFiles.set(key, { lib, cols: [] });
+    libFiles.get(key).cols.push(c);
+  }
+  const sidebar = (design ? '<div class="vars-side-head first">In this file</div>' : '') +
+    locals.map(({ c, depth }) => colRow(c, col, depth)).join('') +
+    (design && !locals.length ? '<div class="muted vars-side-note">No local tokens. Tokens usually live in the Sigma Tokens file; a collection here is just for this file.</div>' : '') +
     '<button class="vars-add" data-act="new-collection">+ New collection</button>' +
-    (libCols.length ? `<div class="vars-side-head" title="Edit these tokens in their own Sigma Tokens file.">${state.doc?.kind === 'tokens' ? 'Linked Sigma Tokens files' : 'From the Sigma Tokens file'}</div>` +
-      libCols.map((c) => colRow(c, col, 0, collectionLabel(c))).join('') : '');
+    [...libFiles.values()].map(({ lib, cols }) =>
+      `<div class="vars-side-head lib-file" title="Edit these tokens in their own Sigma Tokens file">` +
+      `<span class="lib-file-name">${LIB_ICON} ${esc(lib?.name || 'Sigma Tokens')}</span>` +
+      `<span class="lib-file-meta">v${lib?.version ?? '?'}${lib?.via ? ` · via ${esc(lib.via)}` : ''} · read-only</span>` +
+      (lib?.fileId ? `<button class="link-btn" data-act="open-library" data-file="${lib.fileId}" title="Open it to edit these tokens">Open</button>` : '') + '</div>' +
+      cols.map((c) => colRow(c, col, 0)).join('')).join('');
   let main;
   if (!col) {
     main = '<div class="vars-empty"><div class="home-empty-title">No design tokens yet</div><p>Design tokens store reusable colors, numbers, text and booleans. Create a collection to start.</p><button class="btn primary" data-act="new-collection">Create collection</button></div>';
@@ -453,7 +469,7 @@ function render() {
       ? `<div class="muted vars-none">${scope ? 'No tokens in this group yet. Drag tokens here or create one.' : 'No tokens match the search or filter.'}</div>`
       : '<div class="muted vars-none">No tokens in this collection yet.</div>';
     main = `<div class="vars-toolbar"><div class="vars-title">` +
-      (ro ? `<span class="vars-col-name static">${esc(col.name)}</span><span class="ext-badge lib" title="Edit these tokens in their Sigma Tokens file">${esc(lib?.name || 'Sigma Tokens')}${lib?.via ? ` · via ${esc(lib.via)}` : ''} · v${lib?.version ?? '?'} · read-only</span>`
+      (ro ? `<span class="vars-col-name static">${esc(col.name)}</span><span class="ext-badge lib" title="From ${esc(lib?.name || 'a Sigma Tokens file')} v${lib?.version ?? '?'}${lib?.via ? ` (via ${esc(lib.via)})` : ''}. Edit these tokens in that file.">Read-only</span>`
         : `<input class="vars-col-name" data-col-name="${col.id}" value="${esc(col.name)}" spellcheck="false">`) +
       (ext ? `<span class="ext-badge" title="Inherits tokens and modes from ${esc(parent ? collectionLabel(parent) : 'a missing collection')}">Extends ${esc(parent ? collectionLabel(parent) : '?')}</span>` : '') + '</div>' +
       `<div class="vars-actions"><input type="search" class="vars-search" data-search placeholder="Search tokens" value="${esc(query)}" spellcheck="false">` +
@@ -466,7 +482,7 @@ function render() {
   }
   rendering = true; // replacing the HTML blurs a focused field; that's not the user finishing an edit
   modal.querySelector('.vars-modal').innerHTML =
-    (inline ? '' : `<div class="modal-head">Local design tokens<span class="head-actions">` +
+    (inline ? '' : `<div class="modal-head">Design tokens<span class="head-actions">` +
       (localCollections().length ? '<button class="btn" data-act="move-to-file" title="Move these tokens into a Sigma Tokens file and link it">Move to Sigma Tokens…</button>' : '') +
       `<button class="icon-btn" data-close>${icons.close}</button></span></div>`) +
     `<div class="vars-body"><aside class="vars-side">${sidebar}</aside>` +
