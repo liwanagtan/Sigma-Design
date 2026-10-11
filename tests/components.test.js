@@ -3,6 +3,7 @@ import { useDoc } from './core.test.js';
 import { createNode, getNode, editNode, makePaint, walk } from '../src/store.js';
 import {
   syncInstances, createInstance, detachInstance, canPlaceInside, resetOverrides, overrideCount, isInsideInstance,
+  orphanedOverrides, clearOrphanedOverrides,
 } from '../src/components.js';
 
 // A "Button" component: a frame with a Label text and a Bg rectangle.
@@ -124,4 +125,17 @@ test('components: an instance whose main is deleted keeps its last state', () =>
   walk(doc.pages[0].children, () => void count++);
   eq(count, 3);
   ok(!getNode(main.id), 'main is gone');
+});
+
+test('components: overrides on layers renamed in the main component are reported and can be cleared', () => {
+  const main = makeButton();
+  useDoc([main]);
+  const inst = createInstance(main);
+  editNode(childNamed(inst, 'Label'), ['text'], (n) => void (n.text = 'Kept?'));
+  eq(orphanedOverrides(inst), []);
+  main.children[1].name = 'Title';
+  syncInstances();
+  eq(orphanedOverrides(inst), ['Label']);
+  clearOrphanedOverrides(inst);
+  eq(Object.keys(inst.overrides), []);
 });

@@ -14,11 +14,13 @@ import {
   isInsideInstance, owningInstance, canPlaceInside, listComponents, instancesOf, mainComponentOf, overrideCount,
   containingComponent, propsOf, PROP_TYPES, PROP_TARGET, addComponentProp, removeComponentProp, bindLayerProp,
   setInstanceProp, isVariant, variantDefs, parseVariantName, switchVariant, renameVariantProperty, setVariantValue,
+  orphanedOverrides, clearOrphanedOverrides,
   addVariantProperty, displayName,
 } from './components.js';
 import { exportNodes, saveFile, pickImages } from './io.js';
 import { createFile, openFile, goHome, pickFilesToImport, createSampleFiles } from './files.js';
 import { libraries, openLibrariesDialog } from './libraries.js';
+import { H_CONSTRAINTS, V_CONSTRAINTS } from './constraints.js';
 import { sampleDocument } from './sample.js';
 import {
   collections, findVariable, typeForPath, previewValue, bindVariable, unbindVariable, shiftPaintBindings, createCollection,
@@ -765,6 +767,20 @@ function buildProps() {
     const clip = common(nodes, (n) => !!n.clip);
     layout += `<label class="check-row"><input type="checkbox" data-bool="clip" ${clip === true ? 'checked' : ''}> Clip content</label>`;
   }
+  // Constraints: for layers placed freely inside a frame (not in an auto layout flow).
+  const constrained = nodes.every((n) => {
+    const p = getParent(n.id);
+    return p && isFrameLike(p) && (!isAutoLayout(p) || n.absolute);
+  });
+  if (constrained) {
+    const pick = (axisKey, options, def) => {
+      const cur = common(nodes, (n) => n.constraints?.[axisKey] || def);
+      return `<select class="select" data-constraint="${axisKey}" title="${axisKey === 'h' ? 'Horizontal' : 'Vertical'} constraint">` +
+        (cur === MIXED ? '<option selected disabled>Mixed</option>' : '') +
+        Object.entries(options).map(([k, l]) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${l}</option>`).join('') + '</select>';
+    };
+    layout += `<div class="constraint-label muted">Constraints</div><div class="grid2">${pick('h', H_CONSTRAINTS, 'left')}${pick('v', V_CONSTRAINTS, 'top')}</div>`;
+  }
   if (nodes.every((n) => isAutoLayout(getParent(n.id)))) {
     const abs = common(nodes, (n) => !!n.absolute);
     layout += `<label class="check-row" title="Ignore auto layout and position freely"><input type="checkbox" data-bool="absolute" ${abs === true ? 'checked' : ''}> Absolute position</label>`;
@@ -873,7 +889,8 @@ function componentSection(nodes) {
       : '<div class="warn">The main component is missing. Detach the instance to keep editing it freely.</div>') +
       instanceControls(single, main) +
       `<div class="btn-row"><button class="btn" data-action="reset-overrides" ${n ? '' : 'disabled'}>Reset ${n ? `${n} ` : ''}override${n === 1 ? '' : 's'}</button>` +
-      '<button class="btn" data-action="detach" title="⌥⌘B">Detach</button></div>';
+      '<button class="btn" data-action="detach" title="⌥⌘B">Detach</button></div>' +
+      orphanNote(single);
     return section('Instance', body);
   }
   if (nodes.length && nodes.every(isInsideInstance)) {
@@ -886,6 +903,14 @@ function componentSection(nodes) {
   }
   if (single && containingComponent(single)) return bindingSection(single, containingComponent(single));
   return '';
+}
+
+// Overrides that target layers renamed or removed in the main component.
+function orphanNote(inst) {
+  const orphans = orphanedOverrides(inst);
+  if (!orphans.length) return '';
+  return `<div class="warn orphan-note" title="${esc(orphans.join('\n'))}">${orphans.length} override${orphans.length === 1 ? '' : 's'} no longer appl${orphans.length === 1 ? 'ies' : 'y'}: ` +
+    'the layers were renamed or removed in the main component. <button class="link-btn" data-action="clear-orphans">Clear</button></div>';
 }
 
 function componentOptions(selectedId, { exclude } = {}) {
@@ -1150,6 +1175,7 @@ function initProps() {
     if (t.dataset.paintColor) return updatePaint(t.dataset.paintColor, 'color', (p) => void (p.color = t.value.toUpperCase()));
     if (t.dataset.bool) return setProps({ [t.dataset.bool]: t.checked });
     if (t.dataset.modeCol) return setMode(t.dataset.modeTarget, t.dataset.modeCol, t.value);
+    if (t.dataset.constraint) return setProps({ [`constraints.${t.dataset.constraint}`]: t.value });
     if (t.dataset.vpropRename !== undefined) {
       renameVariantProperty(selectedNodes()[0], t.dataset.vpropRename, t.value);
       return commit();
@@ -1286,6 +1312,9 @@ function initProps() {
         return resetSelectionOverrides();
       case 'detach':
         return detachSelection();
+      case 'clear-orphans':
+        for (const n of nodes) clearOrphanedOverrides(n);
+        return commit();
       case 'add-al':
         return addAutoLayout();
       case 'remove-al':

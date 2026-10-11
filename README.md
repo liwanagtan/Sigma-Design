@@ -50,6 +50,7 @@ Then open http://localhost:5173.
   - an instance can override appearance and text, such as fills, strokes, text and visibility; size and position come from the main component
   - the Instance section in the panel has Go to main component, Reset overrides and Detach (⌥⌘B)
   - a component can never end up containing an instance of itself
+  - if a layer in the main component is renamed or removed, its instances show "N overrides no longer apply", with a Clear button
   - **component properties** are defined on the main component: Boolean (show or hide a layer), Text and Instance swap
   - to link a layer, select it inside the main component and use the Component properties section
   - each instance gets a control per property, plus a Swap picker for the component itself
@@ -94,6 +95,9 @@ Then open http://localhost:5173.
   - copied layers remember their variables' names, so pasting into another file reconnects them to same-named variables there
   - a binding to a variable the other file doesn't have is dropped, and the layer keeps its value
 - **Sample file:** **Open sample file** includes a **Design system** page: Light/Dark color variables, a "Brand B" extension, spacing variables, a Button component set with a Label property, and a Card shown in all three contexts
+- **Constraints:** layers placed freely in a frame have horizontal (Left, Right, Left & right, Center, Scale) and vertical (Top, Bottom, Top & bottom, Center, Scale) rules
+  - the rules apply when the frame is resized by its handles or its W/H fields; hold ⌘ while dragging to ignore them
+  - they also apply when an instance is sized differently from its main component
 - **Resizing:** each layer can be **Fixed**, **Hug** contents (auto-layout frames and text) or **Fill** container (children of auto-layout frames), separately for width and height
 - **Lock aspect ratio:** the link button next to W/H. It applies to typed sizes and to resize handles (hold ⇧ to override).
 - **Layers panel:** tree view, rename (double-click or ⌘R), hide, lock, drag to reorder or nest

@@ -472,3 +472,9 @@ fieldset.readonly .field-label { cursor: default; }
 .status-chip.warn { background: #fff4e5; color: #b54708; }
 .tokens-header-actions .btn { height: 30px; padding: 0 12px; margin-right: 8px; }
 .tokens-header-actions .btn:disabled { opacity: 0.45; }
+
+.orphan-note { display: block; }
+.link-btn { color: var(--accent); font-weight: 600; padding: 0 2px; }
+.link-btn:hover { text-decoration: underline; }
+
+.constraint-label { margin-top: 2px; font-size: 11px; }

@@ -6,6 +6,7 @@ import {
 import { mul, inv, apply, translate, aabb, unionBoxes, round, IDENTITY } from './geom.js';
 import { measureText } from './text.js';
 import { isAutoLayout, guessLayout, setSizing } from './layout.js';
+import { applyConstraints } from './constraints.js';
 import {
   isInsideInstance, owningInstance, createInstance, detachInstance, resetOverrides, mainComponentOf, canPlaceInside,
   parseVariantName, formatVariantName, variantsOf, variantDefs,
@@ -376,6 +377,10 @@ export function setProps(props, { live = false, nodes = selectedNodes() } = {}) 
           if (n.layout) n.layout[k.slice(7)] = v;
           continue;
         }
+        if (k.startsWith('constraints.')) {
+          n.constraints = { ...(n.constraints || {}), [k.slice(12)]: v };
+          continue;
+        }
         if (k === 'sizingH' || k === 'sizingV') {
           const axis = k === 'sizingH' ? 'w' : 'h';
           if (v === 'hug' && !(isAutoLayout(n) || n.type === 'text')) continue;
@@ -402,8 +407,11 @@ export function setProps(props, { live = false, nodes = selectedNodes() } = {}) 
           if (n.type === 'group' && n[k] > 0) {
             scaleKids(n.children, JSON.parse(JSON.stringify(n.children)), k === 'w' || lock ? ratio : 1, k === 'h' || lock ? ratio : 1);
           }
+          const frameKids0 = ['frame', 'component', 'componentSet'].includes(n.type) ? JSON.parse(JSON.stringify(n.children)) : null;
+          const w0 = n.w, h0 = n.h;
           n[k] = next;
           if (lock) n[other] = Math.max(0.01, round(n[other] * ratio));
+          if (frameKids0) applyConstraints(n, frameKids0, w0, h0);
           setWorldMatrix(n, M);
           if (n.type === 'text') {
             n.autoResize = lock || k === 'h' ? 'fixed' : n.autoResize === 'width' ? 'height' : n.autoResize;

@@ -386,7 +386,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 Things noticed while building, not yet done:
 
 - **Rendering performance.** With 200 card instances (about 400 text layers), a frame takes about 17 ms: normalize about 2 ms (instances whose main and settings haven't changed are skipped), scene about 5 ms (only changed top-level layers are re-rendered), and the rest is the browser's layout of HTML text. The next step would be drawing text as SVG `<text>` instead of `foreignObject`.
-- **Orphaned overrides.** Renaming a layer inside a main component orphans existing overrides keyed by its old name, as in Figma. The instance panel could show "N overrides no longer apply".
-- **Constraints.** Resizing an instance only reflows auto-layout children; fixed-position children stay pinned top-left. Basic constraints (left / right / left-and-right / center / scale) are still open.
+- ~~**Orphaned overrides.**~~ Done: instances show "N overrides no longer apply" with a Clear button.
+- ~~**Constraints.**~~ Done: Left / Right / Left & right / Center / Scale (and vertical), applied to frames and resized instances.
 - **Exposed nested properties.** An outer instance can't show its nested instances' properties in its own panel; you select the nested instance instead.
 - **Libraries.** Components and variables are local to a file. Pasting an instance into a file without its main keeps the look but marks it "main component missing".

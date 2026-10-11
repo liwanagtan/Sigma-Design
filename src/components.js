@@ -14,6 +14,7 @@ import {
 } from './store.js';
 import { translate } from './geom.js';
 import { measureText } from './text.js';
+import { applyConstraints } from './constraints.js';
 
 export const isInstance = (n) => n?.type === 'instance';
 export const isComponent = (n) => n?.type === 'component';
@@ -202,6 +203,8 @@ function applyMain(inst, main, comps) {
   const prev = new Map();
   walk(inst.children || [], (c) => void prev.set(c.id, c));
   inst.children = deriveChildren(main.children, inst.id, '', overrides, prev, comps, propValuesFor(main, inst), [main.id]);
+  // An instance sized differently from its main repositions its layers by their constraints.
+  if (inst.w !== main.w || inst.h !== main.h) applyConstraints(inst, main.children, main.w, main.h);
 }
 
 // Instances whose main component and own settings haven't changed since the last pass are skipped.
@@ -316,6 +319,18 @@ addEditHook({
     }
   },
 });
+
+// Overrides whose layer no longer exists in the main component (renamed or deleted there).
+export function orphanedOverrides(inst) {
+  if (!inst?.overrides || inst.missingMain) return [];
+  const paths = new Set();
+  walk(inst.children || [], (n) => void (n.pathKey && paths.add(n.pathKey)));
+  return Object.keys(inst.overrides).filter((k) => k !== '' && !paths.has(k) && Object.keys(inst.overrides[k]).length);
+}
+
+export function clearOrphanedOverrides(inst) {
+  for (const k of orphanedOverrides(inst)) delete inst.overrides[k];
+}
 
 export function overrideCount(inst, path = null) {
   const ov = inst?.overrides || {};

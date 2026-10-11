@@ -17,6 +17,7 @@ import {
 import { copySelection, cutSelection, paste, importImages, pickImages, exportNodes } from './io.js';
 import { isAutoLayout, flowInsertBefore } from './layout.js';
 import { isInsideInstance, isTransparentContainer, canPlaceInside, createInstance } from './components.js';
+import { applyConstraints } from './constraints.js';
 import { showContextMenu, hideContextMenu } from './menu.js';
 
 let canvasEl;
@@ -700,6 +701,8 @@ function beginTransform(h, wp, sp, e) {
   const snapItem = (n) => ({
     n, M0: worldMatrix(n), w0: n.w, h0: n.h,
     kids0: n.type === 'group' ? JSON.parse(JSON.stringify(n.children)) : null,
+    // Frames reposition their children by constraints (instances do it when they re-sync).
+    frameKids0: ['frame', 'component', 'componentSet'].includes(n.type) ? JSON.parse(JSON.stringify(n.children)) : null,
   });
   if (g.kind === 'single') {
     drag = { type: 'resize-single', start: sp, hx: h.hx, hy: h.hy, T, ...snapItem(g.node) };
@@ -752,6 +755,7 @@ function updateResizeSingle(wp, e) {
   if (d.hx || n.lockAspect) n.sizingH = 'fixed';
   if (d.hy || n.lockAspect) n.sizingV = 'fixed';
   if (d.kids0) scaleKids(n.children, d.kids0, r.w / d.w0, r.h / d.h0);
+  if (d.frameKids0) applyConstraints(n, d.frameKids0, d.w0, d.h0, { ignore: e.metaKey || e.ctrlKey }); // ⌘ ignores constraints
   if (n.type === 'text') {
     n.autoResize = d.hy === 0 ? 'height' : 'fixed';
     measureText(n);
@@ -777,6 +781,7 @@ function updateResizeMulti(wp, e) {
     n.w = Math.max(1, it.w0 * sx);
     n.h = n.type === 'line' ? 0 : Math.max(1, it.h0 * sy);
     if (it.kids0) scaleKids(n.children, it.kids0, n.w / it.w0, n.h / it.h0);
+    if (it.frameKids0) applyConstraints(n, it.frameKids0, it.w0, it.h0, { ignore: e.metaKey || e.ctrlKey });
     if (n.type === 'text') n.autoResize = 'fixed';
     if (d.hx || locked) n.sizingH = 'fixed';
     if (d.hy || locked) n.sizingV = 'fixed';
