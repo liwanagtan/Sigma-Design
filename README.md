@@ -74,6 +74,12 @@ Then open http://localhost:5173.
   - when a newer version is published, the design file shows "Token updates available"; **Review** lists added, changed and removed tokens, and you accept when ready
   - **Move to token file…** in the local tokens window sends a file's local tokens to a new or existing token file and links it
   - files from before token libraries move their variables into a linked token file the first time they're opened
+- **Version history** (Σ menu → **Show version history**, in design and token files):
+  - Sigma keeps an autosave version before each editing session and every 10 minutes while you work (the newest 50), plus one for every publish
+  - **Save to version history…** (⌥⌘S) adds a named version with a description; named and published versions are kept until you delete them
+  - click a version to view it read-only in place; **Restore this version** makes it current (the state it replaces is kept as a version first), and the ⋯ menu can copy it to a new file, name it or delete it
+  - restoring never rolls back publish numbers, so linked files still see a consistent version sequence
+  - versions are stored in this browser with the file and are deleted with it
 - **Component libraries:**
   - **Publish components…** (Σ menu, or the panel with nothing selected) publishes a design file's components as a numbered version, with notes and a list of what changed
   - another design file links it from **Libraries…**; its components appear in Assets under the library's name, ready to insert or drag
@@ -137,6 +143,7 @@ Press `?` in the app to see every keyboard shortcut.
 | `src/variables-ui.js` | The design token editor (a modal in design files, full-screen in token files) |
 | `src/tokens-screen.js` | The token file screen |
 | `src/libraries.js` | Token and component libraries: publishing, linking, updates, migration |
+| `src/history.js` | Version history panel: viewing a version read-only, restore, duplicate, named versions |
 | `src/tokens-io.js` | Token export (DTCG `tokens.json`, CSS) and import |
 | `tests/` | In-browser test runner (`tests/index.html`) and tests |
 | `src/text.js` | Text measurement and the in-place text editor |

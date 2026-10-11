@@ -21,7 +21,7 @@ let inFlight = 0; // autosaves started but not yet written
 const PENDING_KEY = 'sigma.pending';
 
 function stashPending() {
-  if (!currentFileId || currentDeleted || !state.doc) return;
+  if (!currentFileId || currentDeleted || !state.doc || state.readOnly) return;
   if (!hasUnsavedChanges() && !inFlight) return;
   try {
     localStorage.setItem(PENDING_KEY, JSON.stringify({ id: currentFileId, doc: state.doc, views: state.pageViews, t: Date.now() }));
@@ -292,7 +292,7 @@ export function setCurrentFile(id) {
 // Called (debounced) by the store whenever the open document changes.
 function persistCurrent(doc, views, { edited }) {
   const id = currentFileId;
-  if (!id || currentDeleted) return saving;
+  if (!id || currentDeleted || state.readOnly) return saving; // read-only: viewing an older version
   inFlight++;
   saving = saving.then(async () => {
     const meta = await db.get('files', id);
@@ -311,13 +311,20 @@ function persistCurrent(doc, views, { edited }) {
     const publishedBefore = `${meta.tokenVersion || 0}/${meta.componentVersion || 0}`;
     meta.tokenVersion = doc.published?.version || 0;
     meta.componentVersion = doc.publishedComponents?.version || 0;
-    if (edited) meta.updatedAt = Date.now();
+    await autosaveVersion(id, meta);
+    meta.updatedAt = Date.now();
+    const published = `${meta.tokenVersion}/${meta.componentVersion}` !== publishedBefore;
+    if (published) meta.lastVersionAt = Date.now();
     await db.putFile(meta, { id, doc, views });
-    if (edited) {
-      broadcast('saved', id);
-      scheduleThumbnail();
+    broadcast('saved', id);
+    scheduleThumbnail();
+    if (published) {
+      // Every publish is kept in the version history.
+      const tokens = (doc.published?.version || 0) !== +publishedBefore.split('/')[0];
+      const pub = tokens ? doc.published : doc.publishedComponents;
+      await addVersion(id, doc, { kind: 'publish', title: `Published ${tokens ? 'tokens' : 'components'} v${pub.version}`, description: pub.notes || '' });
+      broadcast('published', id);
     }
-    if (`${meta.tokenVersion}/${meta.componentVersion}` !== publishedBefore) broadcast('published', id);
   }).catch((err) => {
     console.error(err);
     toast(`Autosave failed: ${err.message}. Use Save file… to keep a copy.`);
@@ -347,6 +354,115 @@ export async function closeCurrentFile() {
   if (!currentFileId) return;
   await saveNow();
   currentFileId = null;
+}
+
+// ---------- version history ----------
+// Autosave versions: when a file is edited and its newest version is at least AUTO_INTERVAL old, the
+// state before this edit is kept, stamped with when it was last edited. So there's a version before
+// every editing session, and one every 10 minutes during a long one. Named versions come from "Save to
+// version history…", and every publish adds one. The newest MAX_AUTO autosave versions are kept.
+const AUTO_INTERVAL = 10 * 60 * 1000;
+const MAX_AUTO = 50;
+
+export async function listVersions(fileId) {
+  return (await db.versionsOf(fileId)).sort((a, b) => b.createdAt - a.createdAt);
+}
+
+export const loadVersionDoc = (versionId) => db.versionDoc(versionId);
+
+async function addVersion(fileId, doc, { kind = 'auto', title = '', description = '', createdAt = Date.now() } = {}) {
+  const record = { id: uid() + uid(), fileId, kind, title, description, createdAt, name: doc.name || 'Untitled' };
+  await db.putVersion(record, doc);
+  if (kind === 'auto') {
+    const autos = (await listVersions(fileId)).filter((v) => v.kind === 'auto');
+    if (autos.length > MAX_AUTO) await db.deleteVersions(autos.slice(MAX_AUTO).map((v) => v.id));
+  }
+  versionsChanged(fileId);
+  return record;
+}
+
+function versionsChanged(fileId) {
+  broadcast('versions', fileId);
+  window.dispatchEvent(new CustomEvent('sigma:versions', { detail: fileId }));
+}
+
+// Before writing an edit (inside the save queue): keep the stored state as an autosave version if due.
+async function autosaveVersion(id, meta) {
+  const due = Date.now() - (meta.lastVersionAt || 0) >= AUTO_INTERVAL;
+  if (!due) return;
+  // A brand-new file has nothing worth keeping yet.
+  const edited = meta.lastVersionAt || meta.updatedAt - meta.createdAt > 2000;
+  meta.lastVersionAt = Date.now();
+  if (!edited) return;
+  const rec = await db.get('docs', id);
+  if (rec?.doc) await addVersion(id, rec.doc, { createdAt: meta.updatedAt });
+}
+
+// Run `fn` in the open file's save queue, after any pending change is written.
+async function afterSave(fn) {
+  await flushSave();
+  const run = saving.then(fn);
+  saving = run.catch(() => {});
+  return run;
+}
+
+// "Save to version history…": keep the current state with a title and description.
+export async function saveNamedVersion(fileId, title, description = '') {
+  const write = async () => {
+    const [meta, rec] = await Promise.all([db.get('files', fileId), db.get('docs', fileId)]);
+    if (!meta || !rec?.doc) return null;
+    const version = await addVersion(fileId, rec.doc, { kind: 'named', title: title.trim() || 'Untitled version', description: description.trim() });
+    await db.put('files', { ...meta, lastVersionAt: Date.now() });
+    return version;
+  };
+  return fileId === currentFileId ? afterSave(write) : write();
+}
+
+export async function updateVersion(version, changes) {
+  const record = { ...version, ...changes };
+  if (record.kind === 'auto' && record.title) record.kind = 'named'; // naming an autosave keeps it for good
+  await db.putVersion(record);
+  versionsChanged(version.fileId);
+  return record;
+}
+
+export async function deleteVersion(version) {
+  await db.deleteVersions([version.id]);
+  versionsChanged(version.fileId);
+}
+
+const versionLabel = (v) => (v.title ? `“${v.title}”`
+  : `the autosave from ${new Date(v.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`);
+
+// Make `version` the file's current state. The state it replaces is kept as a version first, and
+// publish records stay as they are (consumers' version numbers never go backwards): restored
+// content that differs from the last publish simply shows as unpublished changes.
+export async function restoreVersion(fileId, version) {
+  const write = async () => {
+    const [meta, rec, old] = await Promise.all([db.get('files', fileId), db.get('docs', fileId), loadVersionDoc(version.id)]);
+    if (!meta || !rec?.doc || !old) throw new Error('That version could not be found.');
+    await addVersion(fileId, rec.doc, { kind: 'auto', title: `Before restoring ${versionLabel(version)}` });
+    const doc = migrateDocument(structuredClone(old));
+    doc.name = rec.doc.name;
+    for (const key of ['published', 'publishedComponents']) {
+      if (rec.doc[key]) doc[key] = rec.doc[key];
+      else delete doc[key];
+    }
+    const now = Date.now();
+    await db.putFile({ ...meta, updatedAt: now, lastVersionAt: now }, { id: fileId, doc, views: rec.views || {} });
+    broadcast('saved', fileId);
+  };
+  return fileId === currentFileId ? afterSave(write) : write();
+}
+
+// Copy a version into a new file. The copy is not a library: publish records are left out.
+export async function duplicateVersion(version) {
+  const doc = structuredClone(await loadVersionDoc(version.id));
+  if (!doc) throw new Error('That version could not be found.');
+  delete doc.published;
+  delete doc.publishedComponents;
+  doc.name = `${doc.name || 'Untitled'} (${version.title || new Date(version.createdAt).toLocaleDateString()})`;
+  return createFile(doc);
 }
 
 // ---------- thumbnails ----------

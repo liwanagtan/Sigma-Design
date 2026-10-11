@@ -1,5 +1,6 @@
 // The screen for token files: no canvas, just the design token editor full-screen.
 import { state, commit, subscribe, undo, redo } from './store.js';
+import { openHistory, openSaveVersionDialog } from './history.js';
 import { diffCollections } from './variables.js';
 import { mountTokenEditor, unmountTokenEditor } from './variables-ui.js';
 import { goHome } from './files.js';
@@ -36,6 +37,9 @@ export function initTokensScreen(el) {
       { label: 'Import tokens.json…', action: importIntoThisFile },
       '-',
       { label: 'Download a copy (.sigma.json)', action: saveFile },
+      '-',
+      { label: 'Save to version history…', shortcut: '⌥⌘S', action: () => openSaveVersionDialog() },
+      { label: 'Show version history', action: () => openHistory() },
       '-',
       { label: 'Undo', shortcut: '⌘Z', action: undo },
       { label: 'Redo', shortcut: '⇧⌘Z', action: redo },

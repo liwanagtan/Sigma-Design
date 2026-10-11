@@ -1,8 +1,10 @@
 // Minimal promise wrapper around IndexedDB.
 // Stores: `files` holds small metadata records (listed by the files home),
-//         `docs` holds full documents, loaded only when a file is opened.
+//         `docs` holds full documents, loaded only when a file is opened,
+//         `versions` holds each file's version history (small records, indexed by fileId); the document
+//         of a version lives in `docs` under the key `v:<version id>`.
 const DB_NAME = 'sigma';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise = null;
 
@@ -14,10 +16,20 @@ function openDB() {
         const db = req.result;
         if (!db.objectStoreNames.contains('files')) db.createObjectStore('files', { keyPath: 'id' });
         if (!db.objectStoreNames.contains('docs')) db.createObjectStore('docs', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('versions')) db.createObjectStore('versions', { keyPath: 'id' }).createIndex('fileId', 'fileId');
       };
-      req.onsuccess = () => resolve(req.result);
+      req.onsuccess = () => {
+        const db = req.result;
+        // A newer Sigma in another tab needs to upgrade storage: let it, and reconnect on next use.
+        db.onversionchange = () => {
+          db.close();
+          dbPromise = null;
+        };
+        resolve(db);
+      };
       req.onerror = () => reject(req.error);
-      req.onblocked = () => reject(new Error('Sigma storage is blocked by another tab. Close other Sigma tabs and reload.'));
+      // An older Sigma in another tab still has storage open: the upgrade finishes once it reloads or closes.
+      req.onblocked = () => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'Sigma was updated. Reload or close other Sigma tabs to continue.' }));
     });
   }
   return dbPromise;
@@ -48,8 +60,29 @@ export const db = {
     return tx.objectStore('files').put(meta);
   }),
 
-  deleteFile: (id) => transact(['files', 'docs'], 'readwrite', (tx) => {
-    tx.objectStore('docs').delete(id);
+  deleteFile: (id) => transact(['files', 'docs', 'versions'], 'readwrite', (tx) => {
+    const docs = tx.objectStore('docs');
+    const versions = tx.objectStore('versions');
+    docs.delete(id);
+    versions.index('fileId').getAllKeys(id).onsuccess = (e) => {
+      for (const k of e.target.result) {
+        versions.delete(k);
+        docs.delete(`v:${k}`);
+      }
+    };
     return tx.objectStore('files').delete(id);
+  }),
+
+  versionsOf: (fileId) => transact('versions', 'readonly', (tx) => tx.objectStore('versions').index('fileId').getAll(fileId)),
+  putVersion: (record, doc) => transact(['versions', 'docs'], 'readwrite', (tx) => {
+    if (doc) tx.objectStore('docs').put({ id: `v:${record.id}`, doc });
+    return tx.objectStore('versions').put(record);
+  }),
+  versionDoc: async (id) => (await transact('docs', 'readonly', (tx) => tx.objectStore('docs').get(`v:${id}`)))?.doc || null,
+  deleteVersions: (ids) => transact(['versions', 'docs'], 'readwrite', (tx) => {
+    for (const id of ids) {
+      tx.objectStore('versions').delete(id);
+      tx.objectStore('docs').delete(`v:${id}`);
+    }
   }),
 };

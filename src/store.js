@@ -19,6 +19,7 @@ export const state = {
   collapsed: new Set(),
   pageViews: {}, // pageId -> {x, y, zoom}
   layoutSkip: new Set(), // ids auto layout must not reposition (being dragged/drawn)
+  readOnly: false, // viewing an older version: edits are put back and nothing is saved
 };
 
 // Passes that derive props from the document, run in registration order before every render and
@@ -357,10 +358,25 @@ let saveTimer = null;
 
 const snapshot = () => JSON.stringify(state.doc);
 
+let readOnlyHintAt = 0;
+
 export function commit() {
   normalizeDocument();
   const snap = snapshot();
   if (snap === lastSnapshot) return;
+  if (state.readOnly) {
+    // Viewing an older version: put back whatever was changed.
+    state.doc = JSON.parse(lastSnapshot);
+    state.editingTextId = null;
+    reindex();
+    state.selection = state.selection.filter((id) => getNode(id));
+    emit('doc');
+    if (Date.now() - readOnlyHintAt > 3000) {
+      readOnlyHintAt = Date.now();
+      window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'You’re viewing an older version. Restore it to make changes.' }));
+    }
+    return;
+  }
   if (lastSnapshot) past.push({ doc: lastSnapshot, selection: [...state.selection] });
   if (past.length > 200) past.shift();
   future = [];

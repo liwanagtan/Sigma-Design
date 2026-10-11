@@ -233,7 +233,7 @@ function reviewUpdates() {
 }
 
 // ---------- dialogs ----------
-function modal(title, body, footer = '') {
+export function modal(title, body, footer = '') {
   const wrap = document.createElement('div');
   wrap.className = 'modal-backdrop';
   wrap.innerHTML = `<div class="modal lib-modal"><div class="modal-head">${title}<button class="icon-btn" data-close>${icons.close}</button></div>` +

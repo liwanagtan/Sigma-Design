@@ -22,6 +22,7 @@ import { createFile, openFile, goHome, pickFilesToImport, createSampleFiles } fr
 import {
   libraries, componentLibraries, openLibrariesDialog, openPublishComponentsDialog, componentPublishStatus,
 } from './libraries.js';
+import { openHistory, openSaveVersionDialog } from './history.js';
 import { H_CONSTRAINTS, V_CONSTRAINTS } from './constraints.js';
 import { sampleDocument } from './sample.js';
 import {
@@ -107,6 +108,9 @@ function initFileHeader() {
       { label: 'Undo', shortcut: '⌘Z', action: undo },
       { label: 'Redo', shortcut: '⇧⌘Z', action: redo },
       '-',
+      { label: 'Save to version history…', shortcut: '⌥⌘S', action: () => openSaveVersionDialog() },
+      { label: 'Show version history', action: () => openHistory() },
+      '-',
       { label: 'Libraries…', action: () => openLibrariesDialog() },
       { label: 'Publish components…', action: () => openPublishComponentsDialog() },
       { label: 'Local design tokens…', action: () => openVariablesEditor() },
@@ -137,7 +141,7 @@ function showShortcuts() {
     ['Tools', [['Move', 'V'], ['Hand / pan', 'H or hold Space'], ['Frame', 'F'], ['Rectangle', 'R'], ['Ellipse', 'O'], ['Line', 'L'], ['Text', 'T'], ['Place image', '⇧⌘K']]],
     ['Canvas', [['Zoom in / out', '⌘+ / ⌘−  or ⌘-scroll / pinch'], ['Zoom to 100%', '⇧0'], ['Zoom to fit', '⇧1'], ['Zoom to selection', '⇧2'], ['Pan', 'Scroll / Space-drag']]],
     ['Selection', [['Select all', '⌘A'], ['Deep select', '⌘-click'], ['Select inside', 'Double-click / Enter'], ['Select parent', '⇧Enter'], ['Measure distance', 'Hold ⌥']]],
-    ['Edit', [['Undo / Redo', '⌘Z / ⇧⌘Z'], ['Copy / Paste / Cut', '⌘C / ⌘V / ⌘X'], ['Duplicate', '⌘D or ⌥-drag'], ['Delete', '⌫'], ['Group / Ungroup', '⌘G / ⇧⌘G'], ['Frame selection', '⌥⌘G'], ['Add / remove auto layout', '⇧A / ⌥⇧A'], ['Create component', '⌥⌘K'], ['Detach instance', '⌥⌘B'], ['Reorder in auto layout', 'Drag or arrow keys'], ['Nudge', 'Arrows (⇧ = 10px)'], ['Bring forward / Send backward', '⌘] / ⌘['], ['To front / To back', '⌥⌘] / ⌥⌘['], ['Hide / Lock', '⇧⌘H / ⇧⌘L'], ['Rename', '⌘R'], ['Flip', '⇧H / ⇧V']]],
+    ['Edit', [['Undo / Redo', '⌘Z / ⇧⌘Z'], ['Copy / Paste / Cut', '⌘C / ⌘V / ⌘X'], ['Duplicate', '⌘D or ⌥-drag'], ['Delete', '⌫'], ['Group / Ungroup', '⌘G / ⇧⌘G'], ['Frame selection', '⌥⌘G'], ['Add / remove auto layout', '⇧A / ⌥⇧A'], ['Create component', '⌥⌘K'], ['Detach instance', '⌥⌘B'], ['Save to version history', '⌥⌘S'], ['Reorder in auto layout', 'Drag or arrow keys'], ['Nudge', 'Arrows (⇧ = 10px)'], ['Bring forward / Send backward', '⌘] / ⌘['], ['To front / To back', '⌥⌘] / ⌥⌘['], ['Hide / Lock', '⇧⌘H / ⇧⌘L'], ['Rename', '⌘R'], ['Flip', '⇧H / ⇧V']]],
     ['Transform', [['Keep proportions', 'Hold ⇧ while resizing'], ['Resize from center', 'Hold ⌥ while resizing'], ['Snap rotation to 15°', 'Hold ⇧ while rotating'], ['Disable snapping', 'Hold ⌘ while dragging']]],
   ];
   const wrap = document.createElement('div');

@@ -20,6 +20,7 @@ import { initHome, renderHome, setHomeNotice } from './home.js';
 import { initTokensScreen, showTokensScreen, hideTokensScreen } from './tokens-screen.js';
 import { checkLibraryUpdates, migrateLegacyTokens, usesLibrary } from './libraries.js';
 import { hideContextMenu } from './menu.js';
+import { clearViewing, resetHistory } from './history.js';
 
 const appEl = document.getElementById('app');
 const homeEl = document.getElementById('home');
@@ -82,19 +83,34 @@ function remeasureAllText() {
 }
 
 // ---------- banner (changes from other tabs) ----------
-function showBanner(text, actionLabel, action) {
-  banner.innerHTML = `<span>${text}</span><button class="btn">${actionLabel}</button>`;
-  banner.querySelector('button').onclick = action;
+// `extra`: more buttons after the main one, [{ label, action }].
+function showBanner(text, actionLabel, action, extra = []) {
+  const actions = [{ label: actionLabel, action }, ...extra];
+  banner.innerHTML = `<span>${text}</span>${actions.map((a) => `<button class="btn">${a.label}</button>`).join('')}`;
+  banner.querySelectorAll('button').forEach((b, i) => (b.onclick = actions[i].action));
   banner.hidden = false;
 }
 const hideBanner = () => void (banner.hidden = true);
-// Other modules raise or clear the banner with a 'sigma:banner' event ({ text, label, action } or null).
-window.addEventListener('sigma:banner', (e) => (e.detail ? showBanner(e.detail.text, e.detail.label, e.detail.action) : hideBanner()));
+// Other modules raise or clear the banner with a 'sigma:banner' event ({ text, label, action, extra } or null).
+window.addEventListener('sigma:banner', (e) => (e.detail ? showBanner(e.detail.text, e.detail.label, e.detail.action, e.detail.extra) : hideBanner()));
+
+// Version history swapped the document for an older version (read-only) …
+window.addEventListener('sigma:doc-replaced', () => {
+  if (state.screen === 'tokens') showTokensScreen();
+  else remeasureAllText();
+  emit('view');
+});
+// … or needs the open file reloaded from storage (back to current, after a restore).
+window.addEventListener('sigma:reopen', (e) => {
+  const id = getCurrentFileId();
+  routing = routing.then(() => id && showFile(id, { force: true, discard: true })).finally(e.detail);
+});
 
 // ---------- screens ----------
 // `discard`: drop unsaved local changes instead of writing them (reloading another tab's version).
 async function leaveEditor({ discard = false } = {}) {
   if (!getCurrentFileId()) return;
+  clearViewing(); // an older version on screen is never saved over the file
   if (state.editingTextId) stopEditing();
   hideContextMenu();
   if (discard) {
@@ -109,6 +125,7 @@ async function leaveEditor({ discard = false } = {}) {
 }
 
 async function showHome() {
+  resetHistory();
   await leaveEditor();
   state.screen = 'home';
   appEl.hidden = true;
@@ -125,6 +142,7 @@ async function showFile(id, { force = false, discard = false } = {}) {
     setHomeNotice('That file could not be found. It may have been deleted.');
     return goHome();
   }
+  if (id !== getCurrentFileId()) resetHistory();
   await leaveEditor({ discard });
   setCurrentFile(id);
   homeEl.hidden = true;
@@ -164,6 +182,7 @@ function route() {
 
 function onRemoteChange(msg) {
   const current = getCurrentFileId();
+  if (msg.type === 'versions') return void window.dispatchEvent(new CustomEvent('sigma:versions', { detail: msg.id }));
   if (state.screen === 'home') return void renderHome();
   // A linked token file or component library published a new version.
   if (msg.type === 'published' && state.screen === 'editor' && usesLibrary(msg.id)) {

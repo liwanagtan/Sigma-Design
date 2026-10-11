@@ -358,7 +358,7 @@ doc.variables.collections  // local (scratchpad) tokens, as today
 ### Later (needs a backend)
 
 - **Real sharing:** token files shared across people and devices, with roles (who can publish).
-- **History:** published version history with diffs and rollback.
+- ~~**History:**~~ Done locally: every file has a version history in the browser (autosave versions, named versions, one per publish), with read-only viewing, restore and "duplicate as new file". Syncing it between devices still needs a backend.
 
 ## How to resume in a new session
 
