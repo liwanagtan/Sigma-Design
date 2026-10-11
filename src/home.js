@@ -411,14 +411,17 @@ function card(f) {
     thumb = `<img src="${url}" alt="" draggable="false">`;
   }
   const tokens = fileKind(f) === 'tokens';
+  const sample = isSampleFile(f);
   if (!thumb && tokens) thumb = `<span class="thumb-placeholder">${NAV_TOKENS}</span>`;
   const name = renaming === f.id
     ? `<input class="rename-input" value="${esc(f.name)}" spellcheck="false">`
     : `<div class="card-name" title="${esc(f.name)}">${esc(f.name)}</div>`;
   return `<a class="file-card${tokens ? ' tokens' : ''}" href="${fileHref(f.id)}" data-id="${f.id}" draggable="false">
     <div class="file-thumb" style="background:${tokens ? '#FFFFFF' : esc(f.background || '#F5F5F5')}">${thumb}</div>
-    <div class="file-info">${name}<div class="file-time">${tokens ? '<span class="kind-badge">Tokens</span>' : ''}Edited ${ago(f.updatedAt)}</div></div>
-    <div class="file-created">${new Date(f.createdAt).toLocaleDateString()}</div>
+    <div class="file-info">${name}<div class="file-time">${tokens ? '<span class="kind-badge">Tokens</span>' : ''}${sample
+      ? `<span class="kind-badge sample" title="A sample file: try anything; nothing is saved, and it resets when reopened">Sample</span>${tokens ? 'For the guide' : 'Guide to Sigma'}` // never edited, so no "Edited … ago"
+      : `Edited ${ago(f.updatedAt)}`}</div></div>
+    <div class="file-created">${sample ? '' : new Date(f.createdAt).toLocaleDateString()}</div>
     <button class="icon-btn file-more" data-more title="More actions">${MORE_ICON}</button>
   </a>`;
 }
