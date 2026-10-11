@@ -281,16 +281,10 @@ export async function appendToTokenFile(id, collections, notes, { libraries = []
   return { id, name, published: doc.published };
 }
 
-// The sample token file, created marked as the sample so the sample design file can link it again.
-export async function createSampleTokenFile() {
-  const { name, collections } = sampleTokenDocument();
-  return createTokenFileWith(name, collections, 'Sample tokens', { meta: { sample: true } });
-}
-
-// The sample: a design file that links the sample token file. It reuses the most recently edited sample
-// token file (marked, or an earlier one with the sample's name) whose published tokens still have
-// everything the design file uses, and creates a new one only when there is none.
-export async function createSampleFiles() {
+// The sample token file: the most recently edited one (marked as the sample when created, or an earlier
+// one with the sample's name) whose published tokens still have everything the sample design file uses.
+// Only when there is none is a new one created, marked as the sample. Returns { id, name, published }.
+export async function sampleTokenFile() {
   const sampleName = sampleTokenDocument().name;
   const candidates = (await listTokenFiles())
     .filter((m) => m.sample || m.name === sampleName)
@@ -298,16 +292,20 @@ export async function createSampleFiles() {
   for (const meta of candidates) {
     const published = (await loadPublished(meta.id))?.published;
     if (!published) continue;
-    let doc;
     try {
-      doc = sampleDocument(published.collections);
+      sampleDocument(published.collections);
     } catch {
       continue; // tokens the sample uses were renamed or deleted
     }
-    doc.libraries = [libraryEntry(meta.id, meta.name, published)];
-    return createFile(doc);
+    return { id: meta.id, name: meta.name, published };
   }
-  const lib = await createSampleTokenFile();
+  const { name, collections } = sampleTokenDocument();
+  return createTokenFileWith(name, collections, 'Sample tokens', { meta: { sample: true } });
+}
+
+// The sample: a design file that links the sample token file.
+export async function createSampleFiles() {
+  const lib = await sampleTokenFile();
   const doc = sampleDocument(lib.published.collections);
   doc.libraries = [libraryEntry(lib.id, lib.name, lib.published)];
   return createFile(doc);

@@ -1,7 +1,7 @@
 // The files home: lists every Sigma file stored in this browser.
 import {
   listFiles, createFile, renameFile, duplicateFile, deleteFile, downloadFile, importFiles, pickFilesToImport,
-  storageSummary, openFile, fileHref, fileKind, newTokenDocument, createSampleFiles, createSampleTokenFile,
+  storageSummary, openFile, fileHref, fileKind, newTokenDocument, createSampleFiles, sampleTokenFile,
 } from './files.js';
 import { blankDocument } from './sample.js';
 import { showContextMenu } from './menu.js';
@@ -192,9 +192,9 @@ async function newSampleFile() {
 }
 
 // A complete sample design system: primitives, semantic Light/Dark colors, a brand, text styles and
-// component tokens, published so design files can link it right away.
+// component tokens, published so design files can link it right away. Opens the existing one if there is one.
 async function newSampleTokenFile() {
-  const lib = await createSampleTokenFile();
+  const lib = await sampleTokenFile();
   openFile(lib.id);
 }
 
