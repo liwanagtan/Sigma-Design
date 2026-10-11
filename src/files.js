@@ -48,28 +48,45 @@ const currentGuide = async () => (await listFiles())
   .filter((m) => m.welcome === WELCOME_VERSION && fileKind(m) === 'design')
   .sort((a, b) => b.updatedAt - a.updatedAt)[0] || null;
 
-// Once, for sample files made before older ones were archived automatically: keep the current guide and the
-// Sigma Tokens file it uses (or, with no current guide, the latest Sigma Tokens), archive the rest.
-async function archiveOlderSamplesOnce() {
-  const KEY = 'sigma.olderSamplesArchived';
+// Once per guide version: make the Welcome to Sigma folder hold exactly the current Sigma Design (the guide)
+// and the Sigma Tokens it uses. If you've had sample files before but there's no current guide, one is
+// made (reusing your sample tokens, renamed Sigma Tokens); then older sample files move to the Archive.
+// A browser that never had sample files is left alone (the first visit makes them).
+async function setUpWelcomeFolder() {
+  const KEY = 'sigma.welcomeFolder';
   try {
-    if (localStorage.getItem(KEY)) return;
+    if (localStorage.getItem(KEY) === String(WELCOME_VERSION)) return;
   } catch {
     return;
   }
-  const keep = new Set();
-  const guide = await currentGuide();
-  if (guide) {
-    keep.add(guide.id);
-    for (const l of (await loadFile(guide.id))?.doc.libraries || []) keep.add(l.fileId);
-  } else {
-    const tokens = (await listFiles()).filter((m) => m.sample && m.name === sampleTokenDocument().name).sort((a, b) => b.updatedAt - a.updatedAt)[0];
-    if (tokens) keep.add(tokens.id);
+  if ((await db.getAll('files')).some(isSampleFile)) {
+    const guide = await currentGuide();
+    if (!guide) await welcomeFile(); // makes the current pair and archives the rest
+    else {
+      const keep = new Set([guide.id]);
+      for (const l of (await loadFile(guide.id))?.doc.libraries || []) {
+        keep.add(l.fileId);
+        await nameSampleTokens(l.fileId);
+      }
+      await archiveSamples(keep);
+    }
   }
-  await archiveSamples(keep);
   try {
-    localStorage.setItem(KEY, '1');
+    localStorage.setItem(KEY, String(WELCOME_VERSION));
   } catch {}
+}
+
+// The guide's token file is marked as a sample and named Sigma Tokens (it was "Sample design tokens").
+async function nameSampleTokens(id) {
+  const meta = (await db.getAll('files')).find((m) => m.id === id);
+  if (!meta || fileKind(meta) !== 'tokens' || (meta.sample && meta.name !== LEGACY_SAMPLE_TOKENS_NAME)) return meta?.name;
+  const name = meta.name === LEGACY_SAMPLE_TOKENS_NAME || meta.sampleLegacy ? sampleTokenDocument().name : meta.name;
+  await db.updateFile(id, (m, rec) => {
+    const { sampleLegacy, ...rest } = m;
+    return { meta: { ...rest, sample: true, name }, doc: rec && { ...rec, doc: { ...rec.doc, name } } };
+  });
+  broadcast('renamed', id);
+  return name;
 }
 import { sampleTokenDocument } from './sample-tokens.js';
 import { importTokens } from './tokens-io.js';
@@ -131,7 +148,7 @@ export async function initFiles(handlers = {}) {
   document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && stashPending());
   await migrateLegacyDocument();
   await migrateLegacySamples();
-  await archiveOlderSamplesOnce();
+  await setUpWelcomeFolder();
 }
 
 function broadcast(type, id) {
@@ -410,14 +427,7 @@ export async function welcomeFile() {
   const current = await currentGuide();
   if (current) return current.id;
   const lib = await sampleTokenFile();
-  // An older sample token file gets its current name and joins the Welcome to Sigma folder.
-  const meta = (await listFiles()).find((m) => m.id === lib.id);
-  if (meta && (!meta.sample || meta.name === LEGACY_SAMPLE_TOKENS_NAME)) {
-    const name = sampleTokenDocument().name;
-    await db.updateFile(lib.id, (m, rec) => ({ meta: { ...m, sample: true, name: m.name === LEGACY_SAMPLE_TOKENS_NAME ? name : m.name }, doc: rec && { ...rec, doc: { ...rec.doc, name: m.name === LEGACY_SAMPLE_TOKENS_NAME ? name : rec.doc.name } } }));
-    if (meta.name === LEGACY_SAMPLE_TOKENS_NAME) lib.name = name;
-    broadcast('renamed', lib.id);
-  }
+  lib.name = (await nameSampleTokens(lib.id)) || lib.name; // an older sample token file becomes Sigma Tokens
   const doc = welcomeDocument(lib.published.collections);
   doc.libraries = [libraryEntry(lib.id, lib.name, lib.published)];
   const id = await createFile(doc, {}, { welcome: WELCOME_VERSION });
