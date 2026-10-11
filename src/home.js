@@ -3,7 +3,7 @@ import {
   listFiles, createFile, renameFile, duplicateFile, deleteFile, downloadFile, importFiles, pickFilesToImport,
   storageSummary, openFile, fileHref, fileKind, newTokenDocument, createSampleFiles, createTokenFileWith,
 } from './files.js';
-import { sampleDocument } from './sample.js';
+import { blankDocument } from './sample.js';
 import { sampleTokenDocument } from './sample-tokens.js';
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
@@ -184,12 +184,12 @@ async function newTokenFile() {
 }
 
 async function newBlankFile() {
-  openFile(await createFile(sampleDocument({ blank: true })));
+  openFile(await createFile(blankDocument()));
 }
 
-// The sample comes as a token file plus a design file that links it.
+// The sample comes as the sample token file plus a design file that links it.
 async function newSampleFile() {
-  openFile(await createSampleFiles(sampleDocument()));
+  openFile(await createSampleFiles());
 }
 
 // A complete sample design system: primitives, semantic Light/Dark colors, a brand, text styles and

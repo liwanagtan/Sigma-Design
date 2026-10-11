@@ -130,7 +130,7 @@ Then open http://localhost:5173.
   - apply an extension with the mode picker on a frame, page or instance to re-skin it (for example, a second brand); extensions can be extended again
   - copied layers remember their variables' names, so pasting into another file reconnects them to same-named variables there
   - a binding to a variable the other file doesn't have is dropped, and the layer keeps its value
-- **Sample file:** **Open sample file** includes a **Design system** page: Light/Dark color variables, a "Brand B" extension, spacing variables, a Button component set with a Label property, and a Card shown in all three contexts
+- **Sample file:** **Open sample file** (Σ menu, or **Open the sample file** on an empty files page) creates the **Sample design tokens** token file and a **Sample design file** that links it. Its **Design system** page has a Button component set with a Label property and a Card that uses it, built entirely from the sample tokens (component tokens for color, radius and padding; text styles), with the Card shown in Light, Dark and Brand B
 - **Constraints:** layers placed freely in a frame have horizontal (Left, Right, Left & right, Center, Scale) and vertical (Top, Bottom, Top & bottom, Center, Scale) rules
   - the rules apply when the frame is resized by its handles or its W/H fields; hold ⌘ while dragging to ignore them
   - they also apply when an instance is sized differently from its main component
@@ -167,6 +167,7 @@ Press `?` in the app to see every keyboard shortcut.
 | `src/tokens-screen.js` | The token file screen |
 | `src/libraries.js` | Token and component libraries: publishing, linking, updates, migration |
 | `src/sample-tokens.js` | The sample token file (a complete small design system) |
+| `src/sample.js` | The blank design file, and the sample design file built on the sample tokens |
 | `src/component-ui.js` | Figma-style component, component set, variant and instance panels; the property window; the component picker |
 | `src/history.js` | Version history panel: viewing a version read-only, restore, duplicate, named versions |
 | `src/tokens-io.js` | Token export (DTCG `tokens.json`, CSS) and import |

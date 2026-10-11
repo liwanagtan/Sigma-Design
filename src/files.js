@@ -6,6 +6,8 @@ import {
 } from './store.js';
 import { buildSVG, download, toast } from './io.js';
 import { snapshotForLibrary } from './variables.js';
+import { sampleDocument } from './sample.js';
+import { sampleTokenDocument } from './sample-tokens.js';
 import { importTokens } from './tokens-io.js';
 
 const TAB_ID = uid();
@@ -279,15 +281,14 @@ export async function appendToTokenFile(id, collections, notes, { libraries = []
   return { id, name, published: doc.published };
 }
 
-// The sample: a token file with the design-system tokens, and a design file that links it.
-export async function createSampleFiles(doc) {
-  const cols = doc.variables?.collections || [];
-  if (!cols.length) return createFile(doc);
-  doc.variables.collections = [];
-  const lib = await createTokenFileWith(`${doc.name} tokens`, cols);
+// The sample: the sample token file, and a sample design file that links it.
+export async function createSampleFiles() {
+  const tokens = sampleTokenDocument();
+  const doc = sampleDocument(tokens.collections);
+  const lib = await createTokenFileWith(tokens.name, tokens.collections, 'Sample tokens');
   doc.libraries = [{
     fileId: lib.id, name: lib.name, version: lib.published.version,
-    collections: snapshotForLibrary(cols, lib.id),
+    collections: snapshotForLibrary(lib.published.collections, lib.id),
   }];
   return createFile(doc);
 }

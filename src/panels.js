@@ -23,7 +23,7 @@ import {
 } from './libraries.js';
 import { openHistory, openSaveVersionDialog } from './history.js';
 import { H_CONSTRAINTS, V_CONSTRAINTS } from './constraints.js';
-import { sampleDocument } from './sample.js';
+import { blankDocument } from './sample.js';
 import {
   collections, findVariable, typeForPath, previewValue, bindVariable, unbindVariable, shiftPaintBindings, createCollection,
   createVariable, VAR_TYPES, multiModeCollections, inheritedMode, splitColor, localCollections, libraryOf,
@@ -92,12 +92,12 @@ function initFileHeader() {
     showContextMenu(r.left, r.bottom + 4, [
       { label: 'Back to files', action: goHome },
       '-',
-      { label: 'New design file', action: async () => openFile(await createFile(sampleDocument({ blank: true }))) },
+      { label: 'New design file', action: async () => openFile(await createFile(blankDocument())) },
       { label: 'Import file…', action: async () => {
         const [id] = await pickFilesToImport();
         if (id) openFile(id);
       } },
-      { label: 'Open sample file', action: async () => openFile(await createSampleFiles(sampleDocument())) },
+      { label: 'Open sample file', action: async () => openFile(await createSampleFiles()) },
       { label: 'Download a copy (.sigma.json)', action: saveFile },
       '-',
       { label: 'Place image…', shortcut: '⇧⌘K', action: () => pickImages() },
