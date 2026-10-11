@@ -1,6 +1,7 @@
 // The files home: lists every Sigma file stored in this browser.
 import {
   listFiles, createFile, renameFile, duplicateFile, deleteFile, downloadFile, importFiles, pickFilesToImport,
+  listArchivedFiles, archiveFile, restoreFile, emptyArchive,
   storageSummary, openFile, fileHref, fileKind, newTokenDocument, createSampleFiles, sampleTokenFile,
 } from './files.js';
 import { blankDocument } from './sample.js';
@@ -25,7 +26,14 @@ try {
   if (prefs.section === 'all') prefs.section = 'design'; // "All files" became "Design files"
 } catch {}
 
-const SECTIONS = { recents: 'Recents', design: 'Sigma Design', tokens: 'Sigma Tokens' };
+const SECTIONS = { recents: 'Recents', design: 'Sigma Design', tokens: 'Sigma Tokens', archive: 'Archive' };
+
+// Open the files home on a section (e.g. the Archive, when an archived file's link is opened).
+export function showHomeSection(section) {
+  if (!SECTIONS[section]) return;
+  prefs.section = section;
+  savePrefs();
+}
 const savePrefs = () => {
   try {
     localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
@@ -57,6 +65,8 @@ export function initHome(el) {
         <div class="nav-label">Files</div>
         <button class="nav-item" data-section="design">${NAV_DESIGN} Sigma Design</button>
         <button class="nav-item" data-section="tokens">${NAV_TOKENS} Sigma Tokens</button>
+        <div class="nav-spacer"></div>
+        <button class="nav-item" data-section="archive" title="Deleted files, until you delete them forever">${NAV_ARCHIVE} Archive</button>
       </nav>
       <div class="home-storage" id="home-storage"></div>
     </aside>
@@ -119,6 +129,15 @@ export function initHome(el) {
 
   const list = root.querySelector('#home-files');
   list.addEventListener('click', (e) => {
+    const archived = e.target.closest('[data-archived]');
+    if (archived) {
+      e.preventDefault();
+      if (e.target.closest('[data-restore]')) return restore(archived.dataset.archived);
+      if (e.target.closest('[data-empty-archive]')) return confirmEmptyArchive();
+      const r = (e.target.closest('[data-more]') || archived).getBoundingClientRect();
+      return archivedMenu(archived.dataset.archived, e.target.closest('[data-more]') ? r.left : e.clientX, e.target.closest('[data-more]') ? r.bottom + 4 : e.clientY);
+    }
+    if (e.target.closest('[data-empty-archive]')) return confirmEmptyArchive();
     const more = e.target.closest('[data-more]');
     const action = e.target.closest('[data-empty-action]');
     if (action) {
@@ -136,6 +155,11 @@ export function initHome(el) {
     if (e.target.closest('input')) e.preventDefault(); // typing a new name must not open the file
   });
   list.addEventListener('contextmenu', (e) => {
+    const archived = e.target.closest('[data-archived]');
+    if (archived) {
+      e.preventDefault();
+      return archivedMenu(archived.dataset.archived, e.clientX, e.clientY);
+    }
     const card = e.target.closest('[data-id]');
     if (!card) return;
     e.preventDefault();
@@ -216,15 +240,47 @@ function fileMenu(id, x, y) {
     } },
     { label: 'Download .sigma.json', action: () => downloadFile(id) },
     '-',
-    { label: 'Delete…', action: () => confirmDelete(id) },
+    { label: 'Move to Archive', action: () => moveToArchive(id) },
   ]);
 }
 
-async function confirmDelete(id) {
+// Deleting a file moves it to the Archive; it can be restored from there.
+async function moveToArchive(id) {
   const meta = (await listFiles()).find((f) => f.id === id);
-  if (!meta || !confirm(`Delete “${meta.name}”? This can't be undone. Download it first if you want a copy.`)) return;
+  if (!meta || !(await archiveFile(id))) return;
+  toast(`Moved “${meta.name}” to the Archive`);
+  renderHome();
+}
+
+function archivedMenu(id, x, y) {
+  showContextMenu(x, y, [
+    { label: 'Restore', action: () => restore(id) },
+    { label: 'Download .sigma.json', action: () => downloadFile(id) },
+    '-',
+    { label: 'Delete forever…', action: () => deleteForever(id) },
+  ]);
+}
+
+async function restore(id) {
+  const meta = (await listArchivedFiles()).find((f) => f.id === id);
+  if (!meta || !(await restoreFile(id))) return;
+  toast(`Restored “${meta.name}”`);
+  renderHome();
+}
+
+async function deleteForever(id) {
+  const meta = (await listArchivedFiles()).find((f) => f.id === id);
+  if (!meta || !confirm(`Delete “${meta.name}” forever? It and its version history are erased from this browser. This can't be undone; download it first if you want a copy.`)) return;
   await deleteFile(id);
-  toast(`Deleted “${meta.name}”`);
+  toast(`Deleted “${meta.name}” forever`);
+  renderHome();
+}
+
+async function confirmEmptyArchive() {
+  const n = (await listArchivedFiles()).length;
+  if (!n || !confirm(`Delete all ${n} file${n === 1 ? '' : 's'} in the Archive forever? They and their version history are erased from this browser. This can't be undone.`)) return;
+  await emptyArchive();
+  toast('The Archive is empty');
   renderHome();
 }
 
@@ -254,10 +310,12 @@ async function startRename(id) {
 export async function renderHome() {
   if (!root) return;
   if (!SECTIONS[prefs.section]) prefs.section = 'recents';
+  const section = prefs.section;
+  const archive = section === 'archive';
   let files = await listFiles();
   const total = files.length;
-  const section = prefs.section;
-  if (section !== 'recents') files = files.filter((f) => fileKind(f) === section);
+  if (archive) files = await listArchivedFiles();
+  else if (section !== 'recents') files = files.filter((f) => fileKind(f) === section);
   const inSection = files.length;
 
   root.querySelectorAll('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.section === section));
@@ -269,13 +327,13 @@ export async function renderHome() {
   root.querySelector('#home-new-tokens').classList.toggle('primary', section === 'tokens');
   root.querySelector('#home-new-tokens-more').classList.toggle('primary', section === 'tokens');
   const sortSel = root.querySelector('#home-sort');
-  sortSel.hidden = recents;
+  sortSel.hidden = recents || archive;
   sortSel.value = prefs.sort;
 
   const q = query.trim().toLowerCase();
   if (q) files = files.filter((f) => f.name.toLowerCase().includes(q));
-  const sort = recents ? 'edited' : prefs.sort;
-  files.sort((a, b) => sort === 'name'
+  const sort = recents ? 'edited' : archive ? 'archived' : prefs.sort;
+  files.sort((a, b) => sort === 'archived' ? b.archivedAt - a.archivedAt : sort === 'name'
     ? a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
     : sort === 'created' ? b.createdAt - a.createdAt : b.updatedAt - a.updatedAt);
   if (recents && !q) files = files.slice(0, 24);
@@ -293,7 +351,11 @@ export async function renderHome() {
   const list = root.querySelector('#home-files');
   list.className = `home-files ${prefs.layout}`;
 
-  if (!total) {
+  if (archive) {
+    list.innerHTML = `<div class="archive-intro"><p class="muted">Deleted files wait here until you delete them forever. Restore one to open it again.</p>` +
+      (files.length ? '<button class="btn" data-empty-archive>Empty Archive…</button>' : '') + '</div>' +
+      (files.length ? files.map(archivedCard).join('') : `<div class="home-empty"><p>${q ? `No archived files match “${esc(query)}”.` : 'The Archive is empty.'}</p></div>`);
+  } else if (!total) {
     list.innerHTML = `<div class="home-empty"><div class="home-empty-title">Create your first file</div>
       <p>Files are saved in this browser. You can also drag <b>.sigma.json</b> files here to import them.</p>
       <div class="home-empty-actions"><button class="btn primary" data-empty-action="blank">${icons.plus} New design file</button>
@@ -313,6 +375,23 @@ export async function renderHome() {
     list.innerHTML = files.map(card).join('');
   }
   root.querySelector('#home-storage').textContent = await storageSummary();
+}
+
+function archivedCard(f) {
+  let thumb = '';
+  if (f.thumbnail instanceof Blob) {
+    const url = URL.createObjectURL(f.thumbnail);
+    thumbURLs.push(url);
+    thumb = `<img src="${url}" alt="" draggable="false">`;
+  }
+  const tokens = fileKind(f) === 'tokens';
+  if (!thumb && tokens) thumb = `<span class="thumb-placeholder">${NAV_TOKENS}</span>`;
+  return `<div class="file-card archived${tokens ? ' tokens' : ''}" data-archived="${f.id}" title="Click for Restore or Delete forever">
+    <div class="file-thumb" style="background:${tokens ? '#FFFFFF' : esc(f.background || '#F5F5F5')}">${thumb}</div>
+    <div class="file-info"><div class="card-name" title="${esc(f.name)}">${esc(f.name)}</div><div class="file-time">${tokens ? '<span class="kind-badge">Tokens</span>' : ''}Archived ${ago(f.archivedAt)}</div></div>
+    <button class="btn archive-restore" data-restore>Restore</button>
+    <button class="icon-btn file-more" data-more title="More actions">${MORE_ICON}</button>
+  </div>`;
 }
 
 function card(f) {
@@ -336,6 +415,7 @@ function card(f) {
 }
 
 const NAV_DESIGN = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4.5 1.5v11M9.5 1.5v11M1.5 4.5h11M1.5 9.5h11"/></svg>';
+const NAV_ARCHIVE = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><rect x="1.5" y="2" width="11" height="3" rx=".5"/><path d="M2.5 5v6.5h9V5M5.5 7.5h3"/></svg>';
 const NAV_TOKENS = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 1.2l5 2.9v5.8L7 12.8 2 9.9V4.1z"/><circle cx="7" cy="7" r="1.6"/></svg>';
 
 const MORE_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="3.5" cy="8" r="1.25"/><circle cx="8" cy="8" r="1.25"/><circle cx="12.5" cy="8" r="1.25"/></svg>';

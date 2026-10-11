@@ -23,7 +23,8 @@ Then open http://localhost:5173.
   - Recents shows both; the **Sigma Design** and **Sigma Tokens** sections show one kind each
   - lists every file saved in this browser, with thumbnails (Sigma Tokens files show a palette of their colors) and "Edited … ago"
   - has Recents and All files views, search, sorting, and a grid or list layout
-  - lets you rename, duplicate, delete and download files from the card menu, or import `.sigma.json` files by dragging them onto the page
+  - lets you rename, duplicate, download and archive files from the card menu, or import `.sigma.json` files by dragging them onto the page
+  - **Archive:** deleting a file (**Move to Archive**) is a soft delete. The file leaves Recents, the file lists and library pickers but keeps everything, version history included. The **Archive** section lists archived files with **Restore**, **Download** and **Delete forever…**, and **Empty Archive…** clears it; only those two erase files, after asking. Opening an archived file's link shows it in the Archive, and a tab that has it open stops saving
   - gives each file its own link (`#/file/<id>`), so back/forward, bookmarks and "open in new tab" work
 - **Infinite canvas:** pan by scrolling or Space-dragging, zoom with ⌘-scroll or pinch, ⇧0 / ⇧1 / ⇧2
 - **Tools:** Move (V), Hand (H), Frame (F), Rectangle (R), Ellipse (O), Line (L), Text (T), Place image (⇧⌘K, drag-and-drop or paste)

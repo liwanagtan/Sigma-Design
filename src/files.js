@@ -14,7 +14,7 @@ const TAB_ID = uid();
 const channel = 'BroadcastChannel' in window ? new BroadcastChannel('sigma-files') : null;
 
 let currentFileId = null;
-let currentDeleted = false; // the open file was deleted in another tab: stop writing it
+let currentDeleted = false; // the open file was deleted or archived in another tab: stop writing it
 let saving = Promise.resolve();
 let inFlight = 0; // autosaves started but not yet written
 
@@ -59,7 +59,7 @@ export async function initFiles(handlers = {}) {
   channel?.addEventListener('message', (e) => {
     const msg = e.data;
     if (!msg || msg.from === TAB_ID) return;
-    if (msg.type === 'deleted' && msg.id === currentFileId) currentDeleted = true;
+    if ((msg.type === 'deleted' || msg.type === 'archived') && msg.id === currentFileId) currentDeleted = true;
     handlers.onRemoteChange?.(msg);
   });
   navigator.storage?.persist?.().catch(() => {});
@@ -92,8 +92,41 @@ async function migrateLegacyDocument() {
 }
 
 // ---------- queries ----------
+// Files in use (not in the Archive).
 export async function listFiles() {
-  return db.getAll('files');
+  return (await db.getAll('files')).filter((f) => !f.archivedAt);
+}
+
+// ---------- the Archive ----------
+// Deleting a file moves it to the Archive (soft delete): it keeps everything, including its version history,
+// but leaves Recents, the file lists and library pickers until it's restored. Only "Delete forever" in the
+// Archive erases a file.
+export const isArchived = (meta) => !!meta?.archivedAt;
+
+export async function listArchivedFiles() {
+  return (await db.getAll('files')).filter((f) => f.archivedAt);
+}
+
+export async function archiveFile(id) {
+  if (id === currentFileId) await flushSave();
+  const done = await db.updateFile(id, (meta) => ({ meta: { ...meta, archivedAt: Date.now() } }));
+  if (done) broadcast('archived', id);
+  return done;
+}
+
+export async function restoreFile(id) {
+  const done = await db.updateFile(id, (meta) => {
+    const { archivedAt, ...rest } = meta;
+    return { meta: rest };
+  });
+  if (done) broadcast('restored', id);
+  return done;
+}
+
+export async function emptyArchive() {
+  const files = await listArchivedFiles();
+  for (const f of files) await deleteFile(f.id);
+  return files.length;
 }
 
 export async function loadFile(id) {
@@ -122,7 +155,7 @@ export async function storageSummary() {
 }
 
 // ---------- mutations ----------
-// Files are design files (a canvas) or token files (design tokens only, no canvas).
+// Files are Sigma Design files (a canvas) or Sigma Tokens files (design tokens only, no canvas).
 export const fileKind = (metaOrDoc) => (metaOrDoc?.kind === 'tokens' ? 'tokens' : 'design');
 
 export function newTokenDocument(name = 'Untitled tokens') {
@@ -168,6 +201,7 @@ export async function duplicateFile(id) {
   return createFile(doc, structuredClone(file.views), { thumbnail: file.meta.thumbnail });
 }
 
+// Erase a file for good (with its versions). The files home only does this from the Archive.
 export async function deleteFile(id) {
   await db.deleteFile(id);
   broadcast('deleted', id);

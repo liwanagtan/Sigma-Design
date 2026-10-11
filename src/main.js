@@ -14,9 +14,9 @@ import {
   renderAssets,
 } from './panels.js';
 import {
-  initFiles, loadFile, setCurrentFile, closeCurrentFile, discardCurrentFile, saveNow, getCurrentFileId, goHome, fileKind,
+  initFiles, loadFile, setCurrentFile, closeCurrentFile, discardCurrentFile, saveNow, getCurrentFileId, goHome, fileKind, isArchived,
 } from './files.js';
-import { initHome, renderHome, setHomeNotice } from './home.js';
+import { initHome, renderHome, setHomeNotice, showHomeSection } from './home.js';
 import { initTokensScreen, showTokensScreen, hideTokensScreen } from './tokens-screen.js';
 import { checkLibraryUpdates, migrateLegacyTokens, usesLibrary } from './libraries.js';
 import { hideContextMenu } from './menu.js';
@@ -142,6 +142,11 @@ async function showFile(id, { force = false, discard = false } = {}) {
     setHomeNotice('That file could not be found. It may have been deleted.');
     return goHome();
   }
+  if (isArchived(file.meta)) {
+    setHomeNotice(`“${file.meta.name}” is in the Archive. Restore it to open it.`);
+    showHomeSection('archive');
+    return goHome();
+  }
   if (id !== getCurrentFileId()) resetHistory();
   await leaveEditor({ discard });
   setCurrentFile(id);
@@ -197,6 +202,8 @@ function onRemoteChange(msg) {
     });
   } else if (msg.type === 'deleted') {
     showBanner('This file was deleted in another tab. Changes here are no longer saved.', 'Back to files', goHome);
+  } else if (msg.type === 'archived') {
+    showBanner('This file was moved to the Archive in another tab. Changes here are no longer saved.', 'Back to files', goHome);
   } else if (msg.type === 'renamed') {
     loadFile(current).then((f) => {
       if (f && state.doc) {

@@ -2,7 +2,7 @@ import { test, eq, ok } from './harness.js';
 import { state, createNode, commit, loadDocument, flushSave, setPersistence, editNode } from '../src/store.js';
 import {
   initFiles, createFile, deleteFile, loadFile, listFiles, renameFile, setCurrentFile, saveNamedVersion, listVersions, updateThumbnail,
-  createSampleFiles, createTokenFileWith, sampleTokenFile,
+  createSampleFiles, createTokenFileWith, sampleTokenFile, archiveFile, restoreFile, listArchivedFiles, listTokenFiles,
 } from '../src/files.js';
 import { sampleTokenDocument } from '../src/sample-tokens.js';
 import { db } from '../src/db.js';
@@ -79,5 +79,27 @@ test('storage: Open sample file and Sample token file reuse the sample token fil
     ok(!(await linked(c)).includes(broken.id), 'the broken file is not linked');
   } finally {
     for (const f of await listFiles()) if (!before.has(f.id)) await deleteFile(f.id);
+  }
+});
+
+test('storage: deleting moves a file to the Archive; it can be restored, and only Delete forever erases it', async () => {
+  const id = await createFile(sampleDoc());
+  const tokens = await createTokenFileWith('Archive test tokens (temporary)', sampleTokenDocument().collections, 'x');
+  try {
+    ok(await archiveFile(id), 'archived');
+    ok(!(await exists(id)), 'gone from the file lists');
+    ok((await listArchivedFiles()).some((f) => f.id === id), 'in the Archive');
+    ok(await loadFile(id), 'still stored, with its document');
+    await archiveFile(tokens.id);
+    ok(!(await listTokenFiles()).some((f) => f.id === tokens.id), 'archived Sigma Tokens files aren’t offered as libraries');
+    ok(await restoreFile(id), 'restored');
+    ok(await exists(id), 'back in the file lists');
+    eq((await loadFile(id)).meta.archivedAt, undefined);
+    await archiveFile(id);
+    await deleteFile(id);
+    ok(!(await loadFile(id)), 'Delete forever erases it');
+  } finally {
+    await deleteFile(id);
+    await deleteFile(tokens.id);
   }
 });
