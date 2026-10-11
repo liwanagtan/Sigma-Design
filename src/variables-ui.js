@@ -392,7 +392,7 @@ function render() {
       (ro ? (lib ? `<button class="btn" data-act="open-library" data-file="${lib.fileId}">Open token file</button>` : '') : '<button class="btn" data-act="delete-collection">Delete</button>') + '</div></div>' +
       (ext ? '<div class="vars-hint">Greyed values are inherited. Edit a value to override it for this collection; ↺ resets it. Add tokens and modes in the root collection.</div>' : '') +
       `<div class="vars-work"><div class="vars-table">${groupHeading(col, scope)}${head}${body || empty}</div>${inspector(col)}</div>` +
-      (ext || ro ? '' : `<div class="vars-footer"><button class="btn" data-act="new-variable">+ Create token${scope ? ` in ${esc(findGroup(col, scope)?.name || '')}` : ''}</button></div>`);
+      (ext || ro ? '' : '<div class="vars-footer"><button class="btn" data-act="new-variable">+ Create token</button></div>');
   }
   rendering = true; // replacing the HTML blurs a focused field; that's not the user finishing an edit
   modal.querySelector('.vars-modal').innerHTML =
@@ -483,6 +483,7 @@ function groupMenu(btn, col, id) {
   const r = btn.getBoundingClientRect();
   const count = col.variables.filter((v) => tokenInGroup(col, v, id)).length;
   showContextMenu(r.left, r.bottom + 4, [
+    { label: 'New token in this group…', action: () => newTokenMenu(r.left, r.bottom + 4, col, id) },
     { label: 'New group inside', action: () => change(() => { collapsedGroups.delete(id); activeGroup = renamingGroup = createGroup(col, id); }) },
     { label: 'Rename', action: () => { renamingGroup = id; render(); } },
     { label: 'Edit description', action: () => { activeGroup = id; render(); modal.querySelector('[data-group-desc]')?.focus(); } },
@@ -493,6 +494,18 @@ function groupMenu(btn, col, id) {
       change(() => { activeGroup = g.parentId || null; deleteGroup(col, id); });
     } },
   ]);
+}
+
+// Pick a type and create a token in group `groupId` (null: the top level), then show it.
+function newTokenMenu(x, y, col, groupId) {
+  showContextMenu(x, y, Object.entries(VAR_TYPES).map(([type, label]) => ({
+    label, action: () => change(() => {
+      selectedId = createVariable(col, type, undefined, groupId).id;
+      query = '';
+      if (!groupId) activeGroup = null; // make sure the new token is in view
+      else if (!tokenInGroup(col, findVariable(selectedId).variable, activeGroup)) activeGroup = groupId;
+    }),
+  })));
 }
 
 // Move a token to a group (right-click a row).
@@ -607,10 +620,8 @@ function bind() {
         return change(() => addMode(col));
       case 'new-variable': {
         const r = t.getBoundingClientRect();
-        const scope = query.trim() ? null : activeGroup;
-        return showContextMenu(r.left, r.top - 120, Object.entries(VAR_TYPES).map(([type, label]) => ({
-          label, action: () => change(() => void (selectedId = createVariable(col, type, undefined, scope).id)),
-        })));
+        // New tokens go at the top level of the collection; a group's ⋯ menu adds one inside it.
+        return newTokenMenu(r.left, r.top - 120, col, null);
       }
     }
   });
