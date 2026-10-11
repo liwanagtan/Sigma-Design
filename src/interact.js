@@ -13,7 +13,7 @@ import {
   setTool, zoomAt, zoomIn, zoomOut, zoomTo100, zoomToFit, zoomToSelection, deleteSelection, duplicateSelection,
   wrapSelection, ungroupSelection, reorder, nudge, selectAll, selectParent, selectChildren, toggleVisible,
   toggleLocked, scaleKids, sortByZ, flip, addAutoLayout, removeAutoLayout, createComponent, detachSelection, goToMainComponent, resetSelectionOverrides, placeInstance, combineAsVariants,
-  addVariant, makeComponentSet,
+  addVariant, makeComponentSet, createMultipleComponents,
 } from './commands.js';
 import { copySelection, cutSelection, paste, importImages, pickImages, exportNodes } from './io.js';
 import { isAutoLayout, flowInsertBefore } from './layout.js';
@@ -885,6 +885,8 @@ function onContextMenu(e) {
     { label: 'Group selection', shortcut: '⌘G', action: () => wrapSelection('group') },
     { label: 'Frame selection', shortcut: '⌥⌘G', action: () => wrapSelection('frame') },
     { label: 'Create component', shortcut: '⌥⌘K', action: createComponent },
+    ...(nodes.length > 1 && !nodes.some((n) => n.type === 'component' || n.type === 'componentSet' || n.type === 'instance')
+      ? [{ label: 'Create multiple components', action: createMultipleComponents }] : []),
     ...(nodes.length > 1 && nodes.every((n) => n.type === 'component' && getParent(n.id)?.type !== 'componentSet') ? [{ label: 'Combine as variants', action: combineAsVariants }] : []),
     // Main component / set: add a variant (a main component becomes a set), like Figma's Main component menu.
     ...(nodes.length === 1 && (nodes[0].type === 'component' || nodes[0].type === 'componentSet') ? [{

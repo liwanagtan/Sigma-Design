@@ -44,13 +44,14 @@ Then open http://localhost:5173.
   - drag children to reorder them (siblings reflow live), or use the arrow keys
   - children can opt out with **Absolute position**
 - **Components and instances** (they work like Figma's):
-  - ⌥⌘K turns a frame, or any selection, into a component
+  - ⌥⌘K turns a frame, or any selection, into a component; with several layers selected, right-click → **Create multiple components** makes one component each
   - make instances by duplicating (⌘D), ⌥-dragging or pasting a component, or from the **Assets** tab (a component set inserts its default variant: the top-left one)
   - changes to the main component flow to every instance, live; an instance can change appearance and text, and size and position come from the main component
   - a component can never end up containing an instance of itself
 - **Component properties:** select a main component or component set; its **Properties** section lists variant properties first, then the others, each with its type and value
   - **+** creates a property: **Variant**, **Boolean**, **Instance swap** or **Text**. A window asks for its **Name** and **Value** (True/False for a boolean, the default text, or the default component plus **Preferred values** for an instance swap)
-  - click a property (or its settings icon) to edit it in the same window; double-click its name to rename it; drag it to reorder; − or right-click → **Delete property**
+  - click a property (or its settings icon) to edit it in the same window; double-click its name to rename it; drag it to reorder; − , right-click → **Delete property**, or select it and press Delete. Hovering a property outlines the layers it controls
+  - **Apply variable** in the window lets a Boolean or Text default come from a design token (boolean or string); instances that keep the default follow the token in every mode, and a value set on an instance still wins
   - **apply a property to a layer** in the main component: the apply variable/property button next to **Visibility** (boolean) or **Text content** (text) lists the component's properties and **Create … property…**; a nested instance has **Apply instance swap property** in its header. A bound layer shows a purple pill; click it to switch, edit or detach
   - a property's default is what the main component shows: changing the default updates the bound layers, and editing a bound layer in the main component updates the default
   - **Nested instances:** "Show properties of nested instances…" lists nested instances that have properties; the chosen ones show their controls on instances of the outer component
@@ -59,7 +60,8 @@ Then open http://localhost:5173.
   - select components and right-click → **Combine as variants** to make a set from existing components
   - editing a variant property shows its **Values**: rename one and every variant using it follows; drag to reorder
   - select a variant to set its own values (pick one, or type a new value); variants with the same values are flagged as a conflict
-- **Instances:** the panel shows the component name (click it to swap with a searchable picker, preferred components first) and ⋯ with **Go to main component**, **Reset all changes** and **Detach instance** (⌥⌘B); ↺ appears when the instance has changes
+- **Instances:** the panel shows the component name (click it to swap with a searchable picker with thumbnails, preferred components first) and ⋯ with **Go to main component**, **Reset all changes**, **Push changes to main component** and **Detach instance** (⌥⌘B); ↺ appears when the instance has changes
+  - select several instances of the same component to change their properties together (differing values show as Mixed)
   - a dropdown for each variant property, or an **on/off toggle** when its values are true/false (or yes/no, on/off)
   - an **on/off toggle** for each boolean property, a text field for each text property, and a component picker for each instance swap property
   - exposed nested instances follow, each with its own controls; changing properties or switching variants keeps your overrides

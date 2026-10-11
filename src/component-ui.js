@@ -9,14 +9,17 @@
 //   Layers inside a main component get properties from the "Apply variable/property" button on
 //     Visibility and Text content, and nested instances from "Apply instance swap property"; a bound
 //     layer shows a purple pill (see propBinding / propMenuItems, used by panels.js).
-import { state, getNode, getParent, commit, select, editNode } from './store.js';
+import { state, getNode, getParent, commit, select, editNode, emit, walk, worldBounds, subscribe } from './store.js';
+import { findVariable, previewValue } from './variables.js';
+import { openTokenPicker } from './token-picker.js';
+import { nodeWorldSVG } from './render.js';
 import {
   propsOf, propsHost, PROP_TYPES, addComponentProp, removeComponentProp, updateComponentProp, reorderComponentProp,
   bindLayerProp, setInstanceProp, isVariant, variantsOf, variantDefs, parseVariantName, switchVariant, renameVariantProperty,
   setVariantValue, toggleValues, defaultVariant, variantConflicts, renameVariantValue, reorderVariantValues,
   reorderVariantProperty, removeVariantProperty, addVariantProperty, containingComponent, mainComponentOf, displayName,
   instancesOf, overrideCount, orphanedOverrides, clearOrphanedOverrides, isInsideInstance, owningInstance, listComponents,
-  canPlaceInside, nestedInstances, layersUsingProp, libraryOfComponent,
+  canPlaceInside, nestedInstances, layersUsingProp, libraryOfComponent, setPropDefaultVar, pushOverridesToMain,
 } from './components.js';
 import {
   addVariant, goToMainComponent, resetSelectionOverrides, detachSelection, duplicateSelection, makeComponentSet,
@@ -115,7 +118,13 @@ function variantPanel(variant) {
 }
 
 // ---------- Properties ----------
+const TOKEN_TYPE = { boolean: 'boolean', text: 'string' };
+const tokenName = (id) => findVariable(id)?.variable.name || 'Missing token';
+// A property's default as shown: the token's value when it comes from one.
+const effectiveDefault = (def) => (def.defaultVar && findVariable(def.defaultVar) ? previewValue(def.defaultVar) : def.default);
+
 function valuePreview(def) {
+  if (def.defaultVar) return `<span class="token-ref">${esc(tokenName(def.defaultVar))}</span>`;
   if (def.type === 'boolean') return def.default ? 'True' : 'False';
   if (def.type === 'text') return `“${esc(def.default ?? '')}”`;
   const main = def.default && getNode(def.default);
@@ -127,7 +136,7 @@ function propertiesSection(comp) {
   const rows = [];
   if (host.type === 'componentSet') {
     for (const [prop, values] of Object.entries(variantDefs(host))) {
-      rows.push(`<div class="prop-row" draggable="true" data-prop-row="v:${esc(prop)}" title="Click to edit">` +
+      rows.push(`<div class="prop-row" draggable="true" tabindex="0" data-prop-row="v:${esc(prop)}" title="Click to edit · Delete removes it">` +
         `<span class="prop-grip">${GRIP_ICON}</span><span class="prop-icon variant">${PROP_ICONS.variant}</span>` +
         `<span class="prop-row-name">${esc(prop)}</span><span class="prop-row-value">${esc(values.join(', '))}</span>` +
         `<button class="icon-btn prop-edit" data-prop-edit="v:${esc(prop)}" title="Edit property">${SETTINGS_ICON}</button>` +
@@ -135,7 +144,7 @@ function propertiesSection(comp) {
     }
   }
   for (const [pid, def] of Object.entries(propsOf(comp))) {
-    rows.push(`<div class="prop-row" draggable="true" data-prop-row="${pid}" title="Click to edit">` +
+    rows.push(`<div class="prop-row" draggable="true" tabindex="0" data-prop-row="${pid}" title="Click to edit · Delete removes it">` +
       `<span class="prop-grip">${GRIP_ICON}</span><span class="prop-icon ${def.type}">${PROP_ICONS[def.type]}</span>` +
       `<span class="prop-row-name">${esc(def.name)}</span><span class="prop-row-value">${valuePreview(def)}</span>` +
       `<button class="icon-btn prop-edit" data-prop-edit="${pid}" title="Edit property">${SETTINGS_ICON}</button>` +
@@ -225,7 +234,7 @@ function instanceControls(inst, main, group = [inst]) {
     }
   }
   for (const [pid, def] of Object.entries(propsOf(main))) {
-    const v = shared((n) => (n.propValues || {})[pid] ?? def.default);
+    const v = shared((n) => (n.propValues || {})[pid] ?? effectiveDefault(def));
     let control;
     if (def.type === 'boolean') control = toggle(`${tgt} data-instance-prop="${pid}"${v === MIXED ? ' data-mixed' : ''}`, v === true);
     else if (def.type === 'text') control = `<input class="prop-input" ${tgt} data-instance-prop="${pid}" value="${v === MIXED ? '' : esc(v ?? '')}" placeholder="${v === MIXED ? 'Mixed' : ''}" spellcheck="false">`;
@@ -392,16 +401,29 @@ function suggestName(comp, type, layer) {
 
 function renderWin() {
   if (!win) return;
+  // Keep what's typed in a new property's fields across re-renders (before their change events).
+  if (win.creating && win.el.firstChild) {
+    const name = win.el.querySelector('[data-w-name]');
+    const text = win.el.querySelector('[data-w-text]');
+    if (name) win.draft.name = name.value;
+    if (text) win.draft.default = text.value;
+  }
   const { comp, pid, type, variantProp, creating, draft } = win;
   const host = propsHost(comp);
   const def = creating ? draft : pid ? propsOf(comp)[pid] : null;
   const title = creating ? 'Create component property' : 'Edit component property';
   let body = `<label class="w-label">Name</label><input class="prop-input" data-w-name value="${esc(variantProp || def?.name || '')}" spellcheck="false">`;
-  if (type === 'boolean') {
-    body += '<label class="w-label">Value</label><div class="seg w-seg">' +
+  const varBtn = (type === 'boolean' || type === 'text')
+    ? `<button class="icon-btn w-var" data-w-var title="Apply variable (a design token)">${APPLY_PROP_ICON}</button>` : '';
+  const valueLabel = `<div class="w-label-row"><label class="w-label">Value</label>${def?.defaultVar ? '' : varBtn}</div>`;
+  if (def?.defaultVar && (type === 'boolean' || type === 'text')) {
+    body += valueLabel + `<div class="w-token"><span class="var-chip-like">${esc(tokenName(def.defaultVar))}</span>` +
+      `<span class="muted">${esc(String(effectiveDefault(def) ?? ''))}</span><button class="icon-btn" data-w-unvar title="Detach variable">${icons.close}</button></div>`;
+  } else if (type === 'boolean') {
+    body += valueLabel + '<div class="seg w-seg">' +
       `<button class="${def.default ? 'on' : ''}" data-w-bool="1">True</button><button class="${def.default ? '' : 'on'}" data-w-bool="0">False</button></div>`;
   } else if (type === 'text') {
-    body += `<label class="w-label">Value</label><input class="prop-input" data-w-text value="${esc(def.default ?? '')}" spellcheck="false">`;
+    body += valueLabel + `<input class="prop-input" data-w-text value="${esc(def.default ?? '')}" spellcheck="false">`;
   } else if (type === 'instance') {
     const main = def.default && getNode(def.default);
     body += '<label class="w-label">Value</label>' +
@@ -432,6 +454,27 @@ function onWinClick(e) {
   const { comp, pid, creating, draft } = win;
   const def = creating ? draft : propsOf(comp)[pid];
   if (b.hasAttribute('data-w-close')) return closePropWindow();
+  if (b.hasAttribute('data-w-var')) {
+    return openTokenPicker({
+      anchor: b.getBoundingClientRect(), type: TOKEN_TYPE[win.type],
+      onPick: (id) => {
+        if (creating) draft.defaultVar = id;
+        else {
+          setPropDefaultVar(comp, pid, id);
+          commit();
+        }
+        renderWin();
+      },
+    });
+  }
+  if (b.hasAttribute('data-w-unvar')) {
+    if (creating) delete draft.defaultVar;
+    else {
+      setPropDefaultVar(comp, pid, null);
+      commit();
+    }
+    return renderWin();
+  }
   if (b.hasAttribute('data-w-create')) return createFromWin();
   if (b.dataset.wBool !== undefined) {
     const v = b.dataset.wBool === '1';
@@ -545,6 +588,7 @@ function createFromWin() {
   const pid = addComponentProp(comp, type, { name, value: draft.default });
   if (draft.preferred?.length) updateComponentProp(comp, pid, { preferred: draft.preferred });
   if (bind) bindLayerProp(bind.layer, bind.path, pid);
+  if (draft.defaultVar) setPropDefaultVar(comp, pid, draft.defaultVar);
   closePropWindow();
   commit();
 }
@@ -554,6 +598,12 @@ let picker = null;
 export function closeComponentPicker() {
   picker?.remove();
   picker = null;
+}
+
+function thumb(node) {
+  const b = worldBounds(node);
+  if (!(b.w > 0 && b.h > 0)) return COMPONENT_ICON;
+  return `<svg viewBox="${b.x} ${b.y} ${b.w} ${b.h}" preserveAspectRatio="xMidYMid meet">${nodeWorldSVG(node)}</svg>`;
 }
 
 // A searchable list of components: preferred ones first, then each page / library and set.
@@ -582,7 +632,7 @@ export function openComponentPicker({ anchor, currentId = null, preferred = [], 
       const head = c.head !== last ? `<div class="token-picker-head">${esc(c.head || 'Components')}</div>` : '';
       last = c.head;
       return `${head}<button class="token-picker-item${i === active ? ' active' : ''}${c.node.id === currentId ? ' current' : ''}" data-i="${i}">` +
-        `<span class="token-picker-name"><span class="comp-icon">${COMPONENT_ICON}</span> ${esc(label(c.node))}</span></button>`;
+        `<span class="picker-thumb">${thumb(c.node)}</span><span class="token-picker-name">${esc(label(c.node))}</span></button>`;
     }).join('') || '<div class="muted token-picker-empty">No components match.</div>';
     list.querySelector('.active')?.scrollIntoView({ block: 'nearest' });
   };
@@ -766,7 +816,38 @@ export function onComponentChange(t) {
 }
 
 // Drag property rows to reorder them (variant properties among themselves).
+// A property highlight never outlives the selection it was for.
+subscribe((kind) => {
+  if ((kind === 'selection' || kind === 'doc') && state.highlightIds?.length && !document.querySelector('.prop-row:hover, .inst-row:hover')) state.highlightIds = [];
+});
+
 export function bindPropertyDrag(root) {
+  // Hovering a property highlights the layers it controls (in the main component, or in the instance).
+  root.addEventListener('mouseover', (e) => {
+    const row = e.target.closest?.('.prop-row[data-prop-row], .inst-row');
+    const ids = row ? highlightFor(row) : [];
+    if (JSON.stringify(ids) === JSON.stringify(state.highlightIds || [])) return;
+    state.highlightIds = ids;
+    emit('overlay');
+  });
+  root.addEventListener('mouseleave', () => {
+    if (!state.highlightIds?.length) return;
+    state.highlightIds = [];
+    emit('overlay');
+  });
+  // Select a property (click or Tab) and press Delete to remove it, like Figma.
+  root.addEventListener('keydown', (e) => {
+    const row = e.target.closest?.('.prop-row[data-prop-row]');
+    if (!row || e.target !== row) return;
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      e.stopPropagation();
+      deleteProp(selected()[0], row.dataset.propRow);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      openPropWindow({ comp: selected()[0], ...(row.dataset.propRow.startsWith('v:') ? { variantProp: row.dataset.propRow.slice(2) } : { pid: row.dataset.propRow }), anchor: row.getBoundingClientRect() });
+    }
+  });
   let dragging = null;
   root.addEventListener('dragstart', (e) => {
     const row = e.target.closest?.('.prop-row[data-prop-row]');
@@ -841,6 +922,29 @@ export function bindPropertyDrag(root) {
   });
 }
 
+// Layer ids a property row controls: bound layers of the main component, or (for an instance row) the
+// instance's layers derived from them.
+function highlightFor(row) {
+  const node = selected()[0];
+  if (!node) return [];
+  if (row.dataset.propRow) {
+    const key = row.dataset.propRow;
+    if (key.startsWith('v:')) return [];
+    return layersUsingProp(node, key).map((u) => u.layer.id);
+  }
+  const control = row.querySelector('[data-instance-prop], [data-prop-swap]');
+  const pid = control?.dataset.instanceProp || control?.dataset.propSwap;
+  const inst = control && targetOf(control);
+  const main = inst && mainComponentOf(inst);
+  if (!pid || !main) return [];
+  const sources = new Set(layersUsingProp(main, pid).map((u) => u.layer.id));
+  const out = [];
+  walk(inst.children || [], (n) => {
+    if (sources.has(n.sourceId) && n.id.startsWith(`${inst.id}/`)) out.push(n.id);
+  });
+  return out;
+}
+
 // ---------- menus ----------
 function addPropMenu(btn, node) {
   const r = btn.getBoundingClientRect();
@@ -897,6 +1001,15 @@ function instMenu(btn, inst) {
   showContextMenu(r.right - 200, r.bottom + 4, [
     { label: 'Go to main component', disabled: !mainComponentOf(inst), action: () => { select([inst.id]); goToMainComponent(); } },
     { label: n ? `Reset all changes (${n})` : 'Reset all changes', disabled: !n, action: () => { select([inst.id]); resetSelectionOverrides(); } },
+    ...(nested ? [] : [{
+      label: 'Push changes to main component', disabled: !n || !mainComponentOf(inst) || !!libraryOfComponent(mainComponentOf(inst)),
+      action: () => {
+        if (pushOverridesToMain(inst)) {
+          commit();
+          toast('Pushed the changes to the main component');
+        }
+      },
+    }]),
     ...(nested ? [] : [{ label: 'Detach instance', shortcut: '⌥⌘B', action: () => { select([inst.id]); detachSelection(); } }]),
   ]);
 }

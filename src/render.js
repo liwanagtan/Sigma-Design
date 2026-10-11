@@ -300,6 +300,11 @@ export function renderOverlay(svg) {
   // Hover outline
   const hover = state.hoverId && !sel.has(state.hoverId) ? getNode(state.hoverId) : null;
   if (hover && !state.marquee) out += outline(hover, 2, isComponentish(hover) ? COMPONENT_ACCENT : ACCENT);
+  // Layers a hovered component property controls.
+  for (const id of state.highlightIds || []) {
+    const n = getNode(id);
+    if (n) out += outline(n, 2, COMPONENT_ACCENT);
+  }
   if (state.measureTarget) {
     const t = getNode(state.measureTarget);
     if (t) out += outline(t, 1, GUIDE);

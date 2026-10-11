@@ -159,12 +159,21 @@ export function propsOf(main) {
   return (set?.type === 'componentSet' ? set.props : main.props) || {};
 }
 
-// Property values for one instance: its own values over the definitions' defaults.
+// Property values for one instance: its own values over the definitions' defaults. Which ones the
+// instance set itself is remembered (ownValues), so a default that comes from a token stays live.
+const ownValues = new WeakMap(); // values object -> Set of property ids the instance set
 function propValuesFor(main, inst) {
   const defs = propsOf(main);
   const out = {};
+  const own = new Set();
   for (const [pid, def] of Object.entries(defs)) out[pid] = def.default;
-  for (const [pid, v] of Object.entries(inst.propValues || {})) if (pid in defs && v !== undefined) out[pid] = v;
+  for (const [pid, v] of Object.entries(inst.propValues || {})) {
+    if (pid in defs && v !== undefined) {
+      out[pid] = v;
+      own.add(pid);
+    }
+  }
+  ownValues.set(out, own);
   return out;
 }
 
@@ -195,10 +204,16 @@ function deriveChildren(srcList, ownerId, parentPath, overrides, prev, comps, va
     let textChanged = !!ov && TEXT_PROPS.some((k) => k in ov);
     // Component property bindings win over overrides; editing a bound layer edits the property instead.
     if (values && src.propRefs) {
+      const own = ownValues.get(values);
       for (const [prop, pid] of Object.entries(src.propRefs)) {
         if (values[pid] === undefined) continue;
         n[prop] = clone(values[pid]);
         if (prop === 'text') textChanged = true;
+        // A value set on the instance wins over a token the default comes from.
+        if (own?.has(pid) && n.bindings?.[prop]) {
+          delete n.bindings[prop];
+          if (!Object.keys(n.bindings).length) delete n.bindings;
+        }
       }
     }
     if (n.type === 'text' && textChanged) remeasure(n);
@@ -357,7 +372,10 @@ addEditHook({
       const comp = containingComponent(node);
       for (const k of roots) {
         const pid = node.propRefs[k];
-        if (pid && comp && propsOf(comp)[pid]) updateComponentProp(comp, pid, { default: clone(node[k]) });
+        if (!pid || !comp || !propsOf(comp)[pid]) continue;
+        // Typing a value by hand detaches the token (the variables hook drops the layer's binding).
+        if (propsOf(comp)[pid].defaultVar) setPropDefaultVar(comp, pid, null);
+        updateComponentProp(comp, pid, { default: clone(node[k]) });
       }
     }
   },
@@ -397,6 +415,59 @@ export function resetOverrides(inst, path = null) {
     return;
   }
   for (const k of Object.keys(inst.overrides)) if (k === path || k.startsWith(path + '/')) delete inst.overrides[k];
+}
+
+// "Push changes to main component": an instance's changes become the main component's (Figma's
+// command). Root changes go to the main itself, layer changes to the matching layers (or, below a
+// nested instance, to that nested instance's overrides), and property values become the defaults.
+// The instance is then reset; it looks the same, now through its main.
+export function pushOverridesToMain(inst) {
+  const main = mainComponentOf(inst);
+  if (!main || libraryOfComponent(main)) return false;
+  const pathMap = new Map();
+  const visit = (nodes, prefix) => {
+    const counts = new Map();
+    for (const n of nodes) {
+      const c = (counts.get(n.name) || 0) + 1;
+      counts.set(n.name, c);
+      const path = (prefix ? `${prefix}/` : '') + escKey(n.name) + (c > 1 ? `#${c}` : '');
+      pathMap.set(path, n);
+      if (n.children && n.type !== 'instance') visit(n.children, path);
+    }
+  };
+  visit(main.children, '');
+  for (const [path, ov] of Object.entries(inst.overrides || {})) {
+    if (!path) {
+      for (const [k, v] of Object.entries(ov)) if (ROOT_PROPS.includes(k) && k !== 'name') main[k] = clone(v);
+      continue;
+    }
+    let target = pathMap.get(path);
+    if (target) {
+      for (const [k, v] of Object.entries(ov)) {
+        if (target.propRefs?.[k]) continue; // bound layers take property values (pushed below)
+        target[k] = clone(v);
+      }
+      if (target.type === 'text') measureText(target);
+      continue;
+    }
+    // Inside a nested instance of the main: keep it as that nested instance's override.
+    const parts = path.split('/');
+    for (let i = parts.length - 1; i > 0; i--) {
+      const head = parts.slice(0, i).join('/');
+      target = pathMap.get(head);
+      if (target?.type === 'instance') {
+        const rest = parts.slice(i).join('/');
+        ((target.overrides ||= {})[rest] ||= {});
+        Object.assign(target.overrides[rest], clone(ov));
+        break;
+      }
+    }
+  }
+  for (const [pid, v] of Object.entries(inst.propValues || {})) {
+    if (propsOf(main)[pid]) updateComponentProp(main, pid, { default: clone(v) });
+  }
+  resetOverrides(inst);
+  return true;
 }
 
 // ---------- create / detach ----------
@@ -530,6 +601,23 @@ export function updateComponentProp(comp, pid, changes) {
   if ('preferred' in changes) {
     if (changes.preferred?.length) def.preferred = [...new Set(changes.preferred)];
     else delete def.preferred;
+  }
+}
+
+// Let a property's default come from a design token (Boolean ↔ boolean token, Text ↔ string token), or
+// stop (varId null). The main component's bound layers bind the token, so they (and every instance that
+// keeps the default) follow the token in each mode.
+export function setPropDefaultVar(comp, pid, varId) {
+  const def = propsHost(comp).props?.[pid];
+  if (!def || def.type === 'instance') return;
+  if (varId) def.defaultVar = varId;
+  else delete def.defaultVar;
+  for (const { layer, target } of layersUsingProp(comp, pid)) {
+    if (varId) (layer.bindings ||= {})[target] = varId;
+    else if (layer.bindings) {
+      delete layer.bindings[target];
+      if (!Object.keys(layer.bindings).length) delete layer.bindings;
+    }
   }
 }
 

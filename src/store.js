@@ -21,6 +21,7 @@ export const state = {
   pageViews: {}, // pageId -> {x, y, zoom}
   layoutSkip: new Set(), // ids auto layout must not reposition (being dragged/drawn)
   readOnly: false, // viewing an older version: edits are put back and nothing is saved
+  highlightIds: [], // layers outlined while a component property is hovered in the panel
 };
 
 // Passes that derive props from the document, run in registration order before every render and

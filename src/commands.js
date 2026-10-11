@@ -459,6 +459,33 @@ export function createComponent() {
   commit();
 }
 
+// "Create multiple components": each selected layer becomes its own component (frames are converted,
+// other layers are wrapped), like Figma's option for a multi-layer selection.
+export function createMultipleComponents() {
+  const nodes = selectedNodes();
+  if (nodes.length < 2) return createComponent();
+  if (nodes.some(isInsideInstance) || nodes.some((n) => n.type === 'component' || ancestors(n).some((a) => a.type === 'component'))) {
+    return hint("Components can't be created inside another component or an instance.");
+  }
+  const made = [];
+  for (const n of nodes) {
+    if (n.type === 'frame') {
+      n.type = 'component';
+      made.push(n);
+      continue;
+    }
+    select([n.id]);
+    const c = wrapSelection('frame', { commitAfter: false });
+    if (!c) continue;
+    c.type = 'component';
+    c.name = n.name;
+    c.fills = [];
+    made.push(c);
+  }
+  select(made.map((c) => c.id));
+  commit();
+}
+
 // ⌥⌘B: turn selected instances into plain frames.
 export function detachSelection() {
   const insts = selectedNodes().filter((n) => n.type === 'instance' && !isInsideInstance(n));

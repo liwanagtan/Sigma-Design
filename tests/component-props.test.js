@@ -1,11 +1,12 @@
 import { test, eq, ok } from './harness.js';
 import { useDoc } from './core.test.js';
-import { state, createNode, makePaint, select, getParent, editNode } from '../src/store.js';
+import { state, createNode, makePaint, select, getParent, editNode, uid } from '../src/store.js';
+import { resolveVariables } from '../src/variables.js';
 import {
   syncInstances, createInstance, addComponentProp, bindLayerProp, setInstanceProp, propsOf, updateComponentProp,
   reorderComponentProp, toggleValues, renameVariantValue, reorderVariantValues, reorderVariantProperty, removeVariantProperty,
   variantDefs, variantConflicts, defaultVariant, overrideCount, resetOverrides, switchVariant, layersUsingProp, nestedInstances,
-  mainComponentOf,
+  mainComponentOf, setPropDefaultVar, pushOverridesToMain,
 } from '../src/components.js';
 import { makeComponentSet, combineAsVariants, addVariant } from '../src/commands.js';
 
@@ -135,4 +136,38 @@ test('component props: the default value and the main component stay linked, lik
   eq(propsOf(main)[text].default, 'Submit'); // editing the main's text sets the default
   syncInstances();
   eq([inst.children[0].visible, inst.children[1].text], [false, 'Submit']);
+});
+
+test('component props: a default can come from a token; an instance value still wins', () => {
+  const main = button();
+  useDoc([main]);
+  const m = uid();
+  state.doc.variables = { collections: [{ id: uid(), name: 'Flags', modes: [{ id: m, name: 'Default' }], defaultModeId: m,
+    variables: [{ id: 'tok-show', name: 'show-icons', type: 'boolean', valuesByMode: { [m]: false } }] }] };
+  const show = addComponentProp(main, 'boolean', { name: 'Show icon', value: true });
+  bindLayerProp(main.children[0], 'visible', show);
+  setPropDefaultVar(main, show, 'tok-show');
+  const a = createInstance(main);
+  const b = createInstance(main);
+  setInstanceProp(b, show, true);
+  syncInstances();
+  resolveVariables();
+  eq([main.children[0].visible, a.children[0].visible, b.children[0].visible], [false, false, true]);
+  setPropDefaultVar(main, show, null);
+  eq(main.children[0].bindings, undefined);
+});
+
+test("component props: Push changes to main component moves an instance's changes to its main", () => {
+  const main = button();
+  useDoc([main]);
+  const text = addComponentProp(main, 'text', { name: 'Label', value: 'Button' });
+  bindLayerProp(main.children[1], 'text', text);
+  const inst = createInstance(main);
+  editNode(inst.children[0], ['fills'], (n) => void (n.fills = [makePaint('#FF0000')]));
+  setInstanceProp(inst, text, 'Save');
+  syncInstances();
+  ok(pushOverridesToMain(inst), 'pushed');
+  syncInstances();
+  eq([main.children[0].fills[0].color, propsOf(main)[text].default, main.children[1].text], ['#FF0000', 'Save', 'Save']);
+  eq([overrideCount(inst), inst.children[0].fills[0].color, inst.children[1].text], [0, '#FF0000', 'Save']);
 });
