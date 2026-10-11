@@ -70,10 +70,16 @@ Then open http://localhost:5173.
   - in design files, the Text section's **Text style** links a typography token to a text layer; changing any font property by hand detaches it
 - **Token libraries:**
   - **Publish…** in a token file creates a numbered version, with optional notes and a summary of what changed
-  - in a design file, **Token libraries…** (Σ menu, or the panel with nothing selected) links published token files; the file keeps a copy of the version it accepted
+  - in a design file, **Libraries…** (Σ menu, or the panel with nothing selected) links published token files; the file keeps a copy of the version it accepted
   - when a newer version is published, the design file shows "Token updates available"; **Review** lists added, changed and removed tokens, and you accept when ready
   - **Move to token file…** in the local tokens window sends a file's local tokens to a new or existing token file and links it
   - files from before token libraries move their variables into a linked token file the first time they're opened
+- **Component libraries:**
+  - **Publish components…** (Σ menu, or the panel with nothing selected) publishes a design file's components as a numbered version, with notes and a list of what changed
+  - another design file links it from **Libraries…**; its components appear in Assets under the library's name, ready to insert or drag
+  - a library update shows a banner in files that use it; after **Review** and accept, instances update and keep their overrides
+  - **Go to main component** on a library instance offers to open the library file
+  - unlinking keeps instances as they look, marked "main component missing"
 - **Export and import:**
   - in a token file's Σ menu, **Export tokens.json** writes the W3C Design Tokens format (DTCG):
     - groups come from `/` in names, and aliases are written `{group.token}`
@@ -130,7 +136,7 @@ Press `?` in the app to see every keyboard shortcut.
 | `src/variables.js` | Variables, aliases, modes and binding (normalize step `resolveVariables`) |
 | `src/variables-ui.js` | The design token editor (a modal in design files, full-screen in token files) |
 | `src/tokens-screen.js` | The token file screen |
-| `src/libraries.js` | Linking token files to design files: publish snapshots, updates, migration |
+| `src/libraries.js` | Token and component libraries: publishing, linking, updates, migration |
 | `src/tokens-io.js` | Token export (DTCG `tokens.json`, CSS) and import |
 | `tests/` | In-browser test runner (`tests/index.html`) and tests |
 | `src/text.js` | Text measurement and the in-place text editor |

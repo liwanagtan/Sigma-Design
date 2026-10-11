@@ -60,17 +60,51 @@ export function containingComponent(node) {
 
 export function componentMap(doc = state.doc) {
   const map = new Map();
-  for (const pg of doc?.pages || []) walk(pg.children, (n) => {
-    if (n.type === 'component') map.set(n.id, n);
+  const collect = (nodes) => walk(nodes, (n) => {
+    if (n.type === 'component' && !map.has(n.id)) map.set(n.id, n); // local components win over library copies
     if (n.type === 'instance') return false; // components never live inside instances
   });
+  for (const pg of doc?.pages || []) collect(pg.children);
+  for (const lib of doc?.componentLibraries || []) collect(lib.components || []);
   return map;
 }
 
+// Components available in this file: local ones ({ node, page }) and ones from linked component
+// libraries ({ node, page: null, library: { fileId, name } }).
 export function listComponents() {
   const out = [];
   for (const pg of state.doc?.pages || []) walk(pg.children, (n) => {
     if (n.type === 'component') out.push({ node: n, page: pg });
+    if (n.type === 'instance') return false;
+  });
+  for (const lib of state.doc?.componentLibraries || []) walk(lib.components || [], (n) => {
+    if (n.type === 'component') out.push({ node: n, page: null, library: lib });
+    if (n.type === 'instance') return false;
+  });
+  return out;
+}
+
+// The component library a component comes from, or null for local components.
+export function libraryOfComponent(node) {
+  for (const lib of state.doc?.componentLibraries || []) {
+    let found = false;
+    walk(lib.components || [], (n) => {
+      if (n === node) found = true;
+      return found ? false : undefined;
+    });
+    if (found) return lib;
+  }
+  return null;
+}
+
+// Top-level components and component sets of the file (what "Publish components" publishes).
+export function publishableComponents(doc = state.doc) {
+  const out = [];
+  for (const pg of doc?.pages || []) walk(pg.children, (n) => {
+    if (n.type === 'component' || n.type === 'componentSet') {
+      out.push(n);
+      return false; // variants come with their set
+    }
     if (n.type === 'instance') return false;
   });
   return out;

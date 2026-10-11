@@ -389,4 +389,4 @@ Things noticed while building, not yet done:
 - ~~**Orphaned overrides.**~~ Done: instances show "N overrides no longer apply" with a Clear button.
 - ~~**Constraints.**~~ Done: Left / Right / Left & right / Center / Scale (and vertical), applied to frames and resized instances.
 - ~~**Exposed nested properties.**~~ Done: a nested instance can expose its properties; outer instances show its controls.
-- **Libraries.** Components and variables are local to a file. Pasting an instance into a file without its main keeps the look but marks it "main component missing".
+- ~~**Libraries.**~~ Done: a design file publishes its components as numbered versions. Other design files link them in **Libraries…**, use them from Assets, and review and accept updates, the same way as token files. Library components are stored as a snapshot in `doc.componentLibraries`.

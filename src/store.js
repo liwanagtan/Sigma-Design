@@ -96,6 +96,17 @@ export function reindex() {
     };
     walk(pg.children, null);
   }
+  // Components from linked component libraries live outside the pages but resolve like local ones.
+  for (const lib of state.doc.componentLibraries || []) {
+    const walkLib = (nodes, parent) => {
+      for (const n of nodes) {
+        if (index.has(n.id)) continue; // e.g. a duplicated file linking its original: local layers win
+        index.set(n.id, { node: n, parent, page: null, library: lib.fileId });
+        if (n.children) walkLib(n.children, n);
+      }
+    };
+    walkLib(lib.components || [], null);
+  }
   // Drop stale selection
   const sel = state.selection.filter((id) => index.has(id) && index.get(id).page === page());
   if (sel.length !== state.selection.length) state.selection = sel;

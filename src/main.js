@@ -18,7 +18,7 @@ import {
 } from './files.js';
 import { initHome, renderHome, setHomeNotice } from './home.js';
 import { initTokensScreen, showTokensScreen, hideTokensScreen } from './tokens-screen.js';
-import { checkLibraryUpdates, migrateLegacyTokens, libraries } from './libraries.js';
+import { checkLibraryUpdates, migrateLegacyTokens, usesLibrary } from './libraries.js';
 import { hideContextMenu } from './menu.js';
 
 const appEl = document.getElementById('app');
@@ -165,8 +165,8 @@ function route() {
 function onRemoteChange(msg) {
   const current = getCurrentFileId();
   if (state.screen === 'home') return void renderHome();
-  // A linked token file published a new version.
-  if (msg.type === 'published' && state.screen === 'editor' && libraries().some((l) => l.fileId === msg.id)) {
+  // A linked token file or component library published a new version.
+  if (msg.type === 'published' && state.screen === 'editor' && usesLibrary(msg.id)) {
     return void checkLibraryUpdates();
   }
   if (msg.id !== current) return;

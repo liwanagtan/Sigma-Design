@@ -9,7 +9,7 @@ import { isAutoLayout, guessLayout, setSizing } from './layout.js';
 import { applyConstraints } from './constraints.js';
 import {
   isInsideInstance, owningInstance, createInstance, detachInstance, resetOverrides, mainComponentOf, canPlaceInside,
-  parseVariantName, formatVariantName, variantsOf, variantDefs,
+  parseVariantName, formatVariantName, variantsOf, variantDefs, libraryOfComponent,
 } from './components.js';
 
 const hint = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
@@ -482,6 +482,12 @@ export function goToMainComponent() {
   const inst = n?.type === 'instance' && !isInsideInstance(n) ? n : n && owningInstance(n);
   const main = mainComponentOf(inst);
   if (!main) return hint(inst ? 'The main component for this instance is missing.' : 'Select an instance first.');
+  const lib = libraryOfComponent(main);
+  if (lib) {
+    // Library components live in another file: open it to edit them.
+    if (confirm(`“${main.name}” comes from the library “${lib.name}”. Open that file in a new tab?`)) window.open(`#/file/${lib.fileId}`, '_blank');
+    return;
+  }
   revealNode(main);
 }
 

@@ -19,7 +19,9 @@ import {
 } from './components.js';
 import { exportNodes, saveFile, pickImages } from './io.js';
 import { createFile, openFile, goHome, pickFilesToImport, createSampleFiles } from './files.js';
-import { libraries, openLibrariesDialog } from './libraries.js';
+import {
+  libraries, componentLibraries, openLibrariesDialog, openPublishComponentsDialog, componentPublishStatus,
+} from './libraries.js';
 import { H_CONSTRAINTS, V_CONSTRAINTS } from './constraints.js';
 import { sampleDocument } from './sample.js';
 import {
@@ -105,7 +107,8 @@ function initFileHeader() {
       { label: 'Undo', shortcut: '⌘Z', action: undo },
       { label: 'Redo', shortcut: '⇧⌘Z', action: redo },
       '-',
-      { label: 'Token libraries…', action: () => openLibrariesDialog() },
+      { label: 'Libraries…', action: () => openLibrariesDialog() },
+      { label: 'Publish components…', action: () => openPublishComponentsDialog() },
       { label: 'Local design tokens…', action: () => openVariablesEditor() },
       { label: 'Keyboard shortcuts', shortcut: '?', action: showShortcuts },
     ]);
@@ -712,12 +715,18 @@ function buildProps() {
     }
     const locals = localCollections();
     const vcount = locals.reduce((n, c) => n + c.variables.length, 0);
-    const libs = libraries();
+    const libLine = (icon, l) => `<div class="lib-line"><span class="licon purple">${icon}</span><span class="link-name">${esc(l.name)}</span><span class="muted">v${l.version}</span></div>`;
+    const libs = [...libraries().map((l) => libLine(TOKEN_ICON, l)), ...componentLibraries().map((l) => libLine(COMPONENT_LIB_ICON, l))];
+    html += section('Libraries',
+      (libs.length ? libs.join('') : '<div class="muted">Link token files and component libraries to use their tokens and components here.</div>') +
+      '<button class="btn wide" data-action="open-libraries">Manage libraries…</button>');
+    const pub = componentPublishStatus();
+    if (pub.count) {
+      html += section('Components',
+        `<div class="muted">${pub.count} component${pub.count === 1 ? '' : 's'} in this file · ${!pub.pub ? 'not published' : pub.dirty ? `v${pub.pub.version} published, changes not published` : `v${pub.pub.version} published`}</div>` +
+        `<button class="btn wide" data-action="publish-components" ${pub.pub && !pub.dirty ? 'disabled' : ''}>Publish components…</button>`);
+    }
     html += section('Design tokens',
-      (libs.length
-        ? libs.map((l) => `<div class="lib-line"><span class="licon purple">${TOKEN_ICON}</span><span class="link-name">${esc(l.name)}</span><span class="muted">v${l.version}</span></div>`).join('')
-        : '<div class="muted">Link token files to use their design tokens here.</div>') +
-      '<button class="btn wide" data-action="open-libraries">Manage libraries…</button>' +
       `<div class="muted">${vcount ? `${vcount} local token${vcount === 1 ? '' : 's'} in this file` : 'No local tokens in this file.'}</div>` +
       '<button class="btn wide" data-action="open-variables">Open local tokens</button>');
     html += section('Page', modeRows(null) + `<div class="color-row"><label class="swatch" style="--c:${page().background}"><input type="color" data-page-bg value="${page().background.toLowerCase()}"></label>` +
@@ -1096,6 +1105,8 @@ function initAssets() {
   });
 }
 
+const COMPONENT_LIB_ICON = '<svg class="lib-glyph" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M6 1.2l1.9 1.9L6 5 4.1 3.1zM6 7l1.9 1.9L6 10.8 4.1 8.9zM3.1 4.1L5 6 3.1 7.9 1.2 6zM8.9 4.1L10.8 6 8.9 7.9 7 6z"/></svg> ';
+
 export function renderAssets() {
   if (leftTab !== 'assets' || !state.doc) return;
   const q = assetQuery.trim().toLowerCase();
@@ -1104,7 +1115,7 @@ export function renderAssets() {
   for (const c of listComponents()) {
     const set = getParent(c.node.id);
     if (set?.type === 'componentSet') {
-      if (set.children.find((k) => k.type === 'component') === c.node) comps.push({ node: set, page: c.page, insert: c.node });
+      if (set.children.find((k) => k.type === 'component') === c.node) comps.push({ node: set, page: c.page, library: c.library, insert: c.node });
     } else comps.push({ ...c, insert: c.node });
   }
   const matches = comps.filter(({ node }) => !q || node.name.toLowerCase().includes(q));
@@ -1113,10 +1124,12 @@ export function renderAssets() {
     list.innerHTML = `<div class="empty-hint">${q ? 'No components match.' : 'No components yet. Select layers and press ⌥⌘K to create one.'}</div>`;
     return;
   }
+  // Local components are grouped by page, library components by library (after the local ones).
   const byPage = new Map();
   for (const c of matches) {
-    if (!byPage.has(c.page)) byPage.set(c.page, []);
-    byPage.get(c.page).push(c);
+    const key = c.page || c.library;
+    if (!byPage.has(key)) byPage.set(key, []);
+    byPage.get(key).push(c);
   }
   // Within a page, "/" in component names groups them, e.g. "Buttons/Primary".
   const tile = ({ node, insert }) => {
@@ -1133,7 +1146,8 @@ export function renderAssets() {
       if (!groups.has(g)) groups.set(g, []);
       groups.get(g).push(it);
     }
-    return `<div class="assets-group"><div class="assets-group-title">${esc(pg.name)}</div>` +
+    const title = pg.fileId ? `${COMPONENT_LIB_ICON}${esc(pg.name)} <span class="muted">v${pg.version}</span>` : esc(pg.name);
+    return `<div class="assets-group"><div class="assets-group-title">${title}</div>` +
       [...groups].map(([g, list]) => (g ? `<div class="assets-subgroup">${esc(g)}</div>` : '') + `<div class="assets-grid">${list.map(tile).join('')}</div>`).join('') +
       '</div>';
   }).join('');
@@ -1337,6 +1351,8 @@ function initProps() {
         return openVariablesEditor();
       case 'open-libraries':
         return openLibrariesDialog();
+      case 'publish-components':
+        return openPublishComponentsDialog();
       case 'add-instance':
         return duplicateSelection();
       case 'add-variant':

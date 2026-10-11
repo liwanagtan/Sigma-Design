@@ -480,3 +480,6 @@ fieldset.readonly .field-label { cursor: default; }
 .constraint-label { margin-top: 2px; font-size: 11px; }
 
 .exposed-head { display: flex; align-items: center; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-weight: 600; margin-right: 24px; }
+
+.lib-section { font-weight: 600; margin-top: 8px; }
+.assets-group-title .lib-glyph { vertical-align: -1px; margin-right: 2px; }

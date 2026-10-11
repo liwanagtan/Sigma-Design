@@ -130,6 +130,7 @@ const metaFor = (id, doc, extra = {}) => ({
   id,
   kind: fileKind(doc),
   tokenVersion: doc.published?.version || 0,
+  componentVersion: doc.publishedComponents?.version || 0,
   name: doc.name || 'Untitled',
   background: doc.pages?.[0]?.background || '#F5F5F5',
   createdAt: Date.now(),
@@ -216,6 +217,19 @@ export function pickFilesToImport() {
   });
 }
 
+// ---------- design files as component libraries ----------
+// Design files that have published components.
+export async function listComponentLibraries() {
+  return (await listFiles()).filter((f) => fileKind(f) === 'design' && f.componentVersion > 0);
+}
+
+// The latest published components of a design file: { meta, published } or null.
+export async function loadPublishedComponents(id) {
+  const file = await loadFile(id);
+  if (!file || fileKind(file.meta) !== 'design') return null;
+  return { meta: file.meta, published: file.doc.publishedComponents || null };
+}
+
 // ---------- token files as libraries ----------
 export async function listTokenFiles() {
   return (await listFiles()).filter((f) => fileKind(f) === 'tokens');
@@ -294,15 +308,16 @@ function persistCurrent(doc, views, { edited }) {
     }
     meta.name = doc.name || 'Untitled';
     meta.background = doc.pages?.[0]?.background || meta.background;
-    const publishedBefore = meta.tokenVersion || 0;
+    const publishedBefore = `${meta.tokenVersion || 0}/${meta.componentVersion || 0}`;
     meta.tokenVersion = doc.published?.version || 0;
+    meta.componentVersion = doc.publishedComponents?.version || 0;
     if (edited) meta.updatedAt = Date.now();
     await db.putFile(meta, { id, doc, views });
     if (edited) {
       broadcast('saved', id);
       scheduleThumbnail();
     }
-    if (meta.tokenVersion !== publishedBefore) broadcast('published', id);
+    if (`${meta.tokenVersion}/${meta.componentVersion}` !== publishedBefore) broadcast('published', id);
   }).catch((err) => {
     console.error(err);
     toast(`Autosave failed: ${err.message}. Use Save file… to keep a copy.`);
