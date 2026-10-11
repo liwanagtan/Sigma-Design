@@ -393,4 +393,11 @@ Things noticed while building, not yet done:
 - ~~**Constraints.**~~ Done: Left / Right / Left & right / Center / Scale (and vertical), applied to frames and resized instances.
 - ~~**Exposed nested properties.**~~ Done: a nested instance can expose its properties; outer instances show its controls.
 - ~~**Libraries.**~~ Done: a design file publishes its components as numbered versions. Other design files link them in **Libraries…**, use them from Assets, and review and accept updates, the same way as token files. Library components are stored as a snapshot in `doc.componentLibraries`.
+- ~~**Design system foundations**~~ (from Figma's designsystems.com starter guides). Done:
+  - **Layout grids:** columns, rows and square grids on frames, snapping, ⌃G, token-bound count, gutter and margin (`grids.js`).
+  - **Contrast:** text layers against what's behind them, and contrast pairs on color tokens, per mode (`contrast.js`).
+  - **Effects and shadow tokens:** drop shadow, inner shadow and layer blur (SVG filters); a composite Shadow token type, in DTCG and CSS.
+  - **Component search** matches description keywords.
+  - **Motion tokens:** Duration and Easing types, in DTCG and CSS. Nothing on the canvas uses them yet (no prototyping).
+  - **Text case:** as typed, upper, lower and title case on text layers.
 - **Drawing icons (later).** A pen tool, vector editing and boolean shapes (union, subtract, intersect, exclude), so icons can be drawn in Sigma. Not needed yet: icons come from free icon libraries for now. Pick this up once the rest of Sigma is set up.
