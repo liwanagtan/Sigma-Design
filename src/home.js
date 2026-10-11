@@ -25,7 +25,7 @@ try {
   if (prefs.section === 'all') prefs.section = 'design'; // "All files" became "Design files"
 } catch {}
 
-const SECTIONS = { recents: 'Recents', design: 'Design files', tokens: 'Design tokens' };
+const SECTIONS = { recents: 'Recents', design: 'Sigma Design', tokens: 'Sigma Tokens' };
 const savePrefs = () => {
   try {
     localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
@@ -55,8 +55,8 @@ export function initHome(el) {
       <nav class="home-nav">
         <button class="nav-item" data-section="recents">Recents</button>
         <div class="nav-label">Files</div>
-        <button class="nav-item" data-section="design">${NAV_DESIGN} Design files</button>
-        <button class="nav-item" data-section="tokens">${NAV_TOKENS} Design tokens</button>
+        <button class="nav-item" data-section="design">${NAV_DESIGN} Sigma Design</button>
+        <button class="nav-item" data-section="tokens">${NAV_TOKENS} Sigma Tokens</button>
       </nav>
       <div class="home-storage" id="home-storage"></div>
     </aside>
@@ -71,8 +71,8 @@ export function initHome(el) {
             <button class="icon-btn" data-layout="list" title="List view">${LIST_ICON}</button>
           </div>
           <button class="btn" id="home-import">Import</button>
-          <span class="split-btn"><button class="btn" id="home-new-tokens">${icons.plus} New token file</button><button class="btn split-more" id="home-new-tokens-more" title="More token files">${icons.chevronDown}</button></span>
-          <button class="btn primary" id="home-new">${icons.plus} New design file</button>
+          <span class="split-btn"><button class="btn" id="home-new-tokens" title="New Sigma Tokens file">${icons.plus} Sigma Tokens</button><button class="btn split-more" id="home-new-tokens-more" title="More Sigma Tokens options">${icons.chevronDown}</button></span>
+          <button class="btn primary" id="home-new" title="New Sigma Design file">${icons.plus} Sigma Design</button>
         </div>
       </header>
       <div id="home-notice"></div>
@@ -108,8 +108,8 @@ export function initHome(el) {
   root.querySelector('#home-new-tokens-more').addEventListener('click', (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     showContextMenu(r.right - 220, r.bottom + 4, [
-      { label: 'Blank token file', action: newTokenFile },
-      { label: 'Open sample token file', action: openSampleTokenFile },
+      { label: 'Blank Sigma Tokens file', action: newTokenFile },
+      { label: 'Open sample tokens', action: openSampleTokenFile },
     ]);
   });
   root.querySelector('#home-import').addEventListener('click', async () => {
@@ -299,12 +299,12 @@ export async function renderHome() {
       <div class="home-empty-actions"><button class="btn primary" data-empty-action="blank">${icons.plus} New design file</button>
       <button class="btn" data-empty-action="sample">Open the sample file</button></div></div>`;
   } else if (!inSection && section === 'tokens') {
-    list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No token files yet</div>
-      <p>A token file holds your design tokens — colors, spacing, type — for design files to use. It has no canvas.</p>
-      <div class="home-empty-actions"><button class="btn primary" data-empty-action="tokens">${icons.plus} New token file</button>
-      <button class="btn" data-empty-action="sample-tokens">Open the sample token file</button></div></div>`;
+    list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No Sigma Tokens files yet</div>
+      <p>A Sigma Tokens file holds your design tokens (colors, spacing, type, shadows, motion) for Sigma Design files to use. It has no canvas.</p>
+      <div class="home-empty-actions"><button class="btn primary" data-empty-action="tokens">${icons.plus} New Sigma Tokens file</button>
+      <button class="btn" data-empty-action="sample-tokens">Open the sample tokens</button></div></div>`;
   } else if (!inSection) {
-    list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No design files yet</div>
+    list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No Sigma Design files yet</div>
       <div class="home-empty-actions"><button class="btn primary" data-empty-action="blank">${icons.plus} New design file</button>
       <button class="btn" data-empty-action="sample">Open the sample file</button></div></div>`;
   } else if (!files.length) {

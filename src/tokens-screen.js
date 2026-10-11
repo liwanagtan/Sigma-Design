@@ -17,8 +17,8 @@ export function initTokensScreen(el) {
   el.innerHTML = `
     <header class="tokens-header">
       <button class="logo-btn" data-tokens-menu title="Main menu">${icons.logo}${icons.chevronDown}</button>
-      <input class="file-name tokens-file-name" spellcheck="false" aria-label="Token file name">
-      <span class="kind-badge tokens-kind">Token file</span>
+      <input class="file-name tokens-file-name" spellcheck="false" aria-label="Sigma Tokens file name">
+      <span class="kind-badge tokens-kind">Sigma Tokens</span>
       <div class="tokens-header-actions">
         <span class="publish-status" data-publish-status></span>
         <button class="btn primary" data-publish>Publish…</button>
@@ -148,9 +148,9 @@ function openPublishDialog() {
   wrap.className = 'modal-backdrop';
   wrap.innerHTML = `<div class="modal lib-modal"><div class="modal-head">Publish ${esc(state.doc.name)}<button class="icon-btn" data-close>${icons.close}</button></div>
     <div class="lib-body">
-      <p class="muted">This becomes version ${(pub?.version || 0) + 1}. Design files that use this token file will be offered the update.</p>
-      ${list('Added', d.added) + list('Changed', d.changed) + list('Removed', d.removed) + list('Token files it points at', depChanges) || '<div class="muted">No changes since the last version.</div>'}
-      ${deps.length ? `<p class="muted">Includes the tokens it points at from ${deps.map((x) => `${esc(x.name)} v${x.version}`).join(', ')}, so design files resolve them.</p>` : ''}
+      <p class="muted">This becomes version ${(pub?.version || 0) + 1}. Sigma Design files that use this file will be offered the update.</p>
+      ${list('Added', d.added) + list('Changed', d.changed) + list('Removed', d.removed) + list('Sigma Tokens files it points at', depChanges) || '<div class="muted">No changes since the last version.</div>'}
+      ${deps.length ? `<p class="muted">Includes the tokens it points at from ${deps.map((x) => `${esc(x.name)} v${x.version}`).join(', ')}, so Sigma Design files resolve them.</p>` : ''}
       <label class="inspector-label">Notes (optional)</label>
       <textarea class="desc publish-notes" rows="3" placeholder="What changed and why?"></textarea>
     </div>

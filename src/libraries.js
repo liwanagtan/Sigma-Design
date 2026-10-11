@@ -70,10 +70,10 @@ function instancesFrom(lib) {
 
 export async function linkLibrary(fileId) {
   if (isDesignFile()) return useTokenFile(fileId); // design files use one token file
-  if (fileId === getCurrentFileId()) return toast('A token file can’t link itself.');
+  if (fileId === getCurrentFileId()) return toast('A Sigma Tokens file can’t link itself.');
   if (libraries().some((l) => l.fileId === fileId)) return;
   const res = await loadPublished(fileId);
-  if (!res?.published) return toast('That token file has no published version yet. Publish it from the token file first.');
+  if (!res?.published) return toast('That Sigma Tokens file has no published version yet. Publish it from the file first.');
   if ((res.published.dependencies || []).some((d) => d.fileId === getCurrentFileId())) {
     return toast(`“${res.meta.name}” already uses this file’s tokens, so this file can’t use its tokens in return.`);
   }
@@ -132,7 +132,7 @@ function tokenUses(ids) {
 export async function useTokenFile(fileId) {
   if (tokenFile()?.fileId === fileId && libraries().length === 1) return;
   const res = await loadPublished(fileId);
-  if (!res?.published) return toast('That token file has no published version yet. Publish it from the token file first.');
+  if (!res?.published) return toast('That Sigma Tokens file has no published version yet. Publish it from the file first.');
   const old = libraries();
   const before = new Map(libraryCollections().flatMap((c) => (c.variables || []).map((v) => [v.id, v])));
   // What the new file provides, by id and by name.
@@ -276,7 +276,7 @@ export function openPublishComponentsDialog() {
   const d = diffComponents(pub?.components || [], componentSnapshot());
   const version = (pub?.version || 0) + 1;
   const body = `<p class="muted">Publishes this file's ${count} component${count === 1 ? '' : 's'} as version ${version}. ` +
-    'Design files that use them as a library will be offered the update.</p>' +
+    'Sigma Design files that use them as a library will be offered the update.</p>' +
     (diffList('Added', d.added, 'added') + diffList('Changed', d.changed, 'changed') + diffList('Removed', d.removed, 'removed') || '<div class="muted">No changes since the last version.</div>') +
     '<label class="inspector-label">Notes (optional)</label><textarea class="desc publish-notes" rows="3" placeholder="What changed and why?"></textarea>';
   const wrap = modal('Publish components', body, `<button class="btn" data-close>Cancel</button><button class="btn primary" data-confirm>Publish v${version}</button>`);
@@ -312,7 +312,7 @@ export async function checkLibraryUpdates() {
   if (found.length) {
     const names = (kind) => found.filter((u) => u.kind === kind).map((u) => `${esc(u.meta.name)} v${u.published.version}`).join(', ');
     const parts = [
-      names('tokens') && `${isDesignFile() ? 'Design token' : 'Token file'} updates: ${names('tokens')}`,
+      names('tokens') && `${isDesignFile() ? 'Design token' : 'Sigma Tokens'} updates: ${names('tokens')}`,
       names('components') && `Component library updates: ${names('components')}`,
     ].filter(Boolean);
     banner({ text: `${parts.join(' · ')} available`, label: 'Review', action: reviewUpdates });
@@ -340,7 +340,7 @@ function reviewUpdates() {
     return `<div class="update-card"><div class="update-head"><b>${esc(u.meta.name)}${comps ? ' · components' : ' · design tokens'}</b><span class="muted">v${u.lib.version} → v${u.published.version}</span></div>` +
       (u.published.notes ? `<div class="update-notes">“${esc(u.published.notes)}”</div>` : '') +
       (diffList('Added', d.added, 'added') + diffList('Changed', d.changed, 'changed') + diffList('Removed', d.removed, 'removed') +
-        diffList('Token files it points at', deps, 'changed') || '<div class="muted">No changes.</div>') +
+        diffList('Sigma Tokens files it points at', deps, 'changed') || '<div class="muted">No changes.</div>') +
       (d.removed.length ? `<div class="muted">${comps ? 'Instances of removed components keep their current look.' : 'Layers using removed tokens keep their current values.'}</div>` : '') +
       `<button class="btn primary" data-accept="${i}">Accept update</button></div>`;
   }).join('');
@@ -406,13 +406,13 @@ export async function openDesignTokensDialog() {
       : `<button class="btn${using.size ? '' : ' primary'}" data-use="${f.id}" ${f.tokenVersion ? '' : 'disabled title="Publish it first"'}>${using.size ? 'Switch to this' : 'Use'}</button>`;
     return libraryRow(TOKEN_ICON, f.name, versionStatus(f.tokenVersion, lib), openBtn(f.id) + action);
   }).join('') + libraries().filter((l) => !files.some((f) => f.id === l.fileId)).map((l) =>
-    libraryRow(TOKEN_ICON, l.name, `<span class="muted">Token file deleted · using v${l.version}</span>`, `<button class="btn" data-stop="${l.fileId}">Stop using</button>`)).join('');
+    libraryRow(TOKEN_ICON, l.name, `<span class="muted">Sigma Tokens file deleted · using v${l.version}</span>`, `<button class="btn" data-stop="${l.fileId}">Stop using</button>`)).join('');
   const deps = dependencyLibraries();
-  const body = '<p class="muted lib-intro">A design file uses one token file for its design tokens (and can keep a few local ones). ' +
-    'Switching moves layers to the tokens with the same names in the new file. Updates arrive when the token file publishes and you accept them.</p>' +
-    (several ? '<div class="warn">This file uses several token files, from before a design file used one. Choose the one to keep: layers move to its tokens with the same names.</div>' : '') +
-    (rows || '<div class="muted lib-empty">No token files yet. Create one from the home page and publish it.</div>') +
-    (deps.length ? `<p class="muted">Also included, because the token file points at them: ${deps.map((d) => `${esc(d.name)} v${d.version}`).join(', ')}.</p>` : '');
+  const body = '<p class="muted lib-intro">A Sigma Design file uses one Sigma Tokens file for its design tokens (and can keep a few local ones). ' +
+    'Switching moves layers to the tokens with the same names in the new file. Updates arrive when the Sigma Tokens file publishes and you accept them.</p>' +
+    (several ? '<div class="warn">This file uses several Sigma Tokens files, from before a Sigma Design file used one. Choose the one to keep: layers move to its tokens with the same names.</div>' : '') +
+    (rows || '<div class="muted lib-empty">No Sigma Tokens files yet. Create one from the home page and publish it.</div>') +
+    (deps.length ? `<p class="muted">Also included, because the Sigma Tokens file points at them: ${deps.map((d) => `${esc(d.name)} v${d.version}`).join(', ')}.</p>` : '');
   const footer = tokenFile() && !several ? `<button class="btn" data-stop="${tokenFile().fileId}">Stop using “${esc(tokenFile().name)}”</button><span class="spacer"></span><button class="btn" data-close>Done</button>` : '<button class="btn" data-close>Done</button>';
   const wrap = modal('Design tokens', body, footer);
   wrap.addEventListener('click', async (e) => {
@@ -441,8 +441,8 @@ export async function openLibrariesDialog() {
     return libraryRow(COMPONENT_ICON, f.name, versionStatus(f.componentVersion, lib), openBtn(f.id) + action);
   }).join('') + componentLibraries().filter((l) => !compFiles.some((f) => f.id === l.fileId)).map((l) =>
     libraryRow(COMPONENT_ICON, l.name, `<span class="muted">File deleted · using v${l.version}</span>`, `<button class="btn" data-unlink-components="${l.fileId}">Unlink</button>`)).join('');
-  const body = '<p class="muted lib-intro">Component libraries are design files that publish their components. Link one to use its components from Assets; changes arrive when it publishes a new version and you accept it.</p>' +
-    (compRows || '<div class="muted lib-empty">No other design file has published components yet. Use <b>Publish components…</b> in a design file’s main menu.</div>');
+  const body = '<p class="muted lib-intro">Component libraries are Sigma Design files that publish their components. Link one to use its components from Assets; changes arrive when it publishes a new version and you accept it.</p>' +
+    (compRows || '<div class="muted lib-empty">No other Sigma Design file has published components yet. Use <b>Publish components…</b> in a Sigma Design file’s main menu.</div>');
   const wrap = modal('Component libraries', body);
   wrap.addEventListener('click', async (e) => {
     const b = e.target.closest('button');
@@ -469,10 +469,10 @@ async function openLinkedTokenFilesDialog() {
     const status = dep ? `<span class="muted">Included with “${esc(dep.via)}” (v${dep.version}) · link it to choose the version yourself</span>` : versionStatus(f.tokenVersion, lib);
     return libraryRow(TOKEN_ICON, f.name, status, openBtn(f.id) + action);
   }).join('') + libraries().filter((l) => !tokenFiles.some((f) => f.id === l.fileId)).map((l) =>
-    libraryRow(TOKEN_ICON, l.name, `<span class="muted">Token file deleted · using v${l.version}</span>`, `<button class="btn" data-unlink="${l.fileId}">Unlink</button>`)).join('');
-  const body = '<p class="muted lib-intro">Link other token files to point this file’s tokens at theirs, e.g. brand colors that use core colors. When you publish, the token files you point at go along, so design files resolve them too.</p>' +
-    (rows || '<div class="muted lib-empty">No other token files yet. Create one from the home page and publish it.</div>');
-  const wrap = modal('Linked token files', body);
+    libraryRow(TOKEN_ICON, l.name, `<span class="muted">Sigma Tokens file deleted · using v${l.version}</span>`, `<button class="btn" data-unlink="${l.fileId}">Unlink</button>`)).join('');
+  const body = '<p class="muted lib-intro">Link other Sigma Tokens files to point this file’s tokens at theirs, e.g. brand colors that use core colors. When you publish, the Sigma Tokens files you point at go along, so design files resolve them too.</p>' +
+    (rows || '<div class="muted lib-empty">No other Sigma Tokens files yet. Create one from the home page and publish it.</div>');
+  const wrap = modal('Linked Sigma Tokens files', body);
   wrap.addEventListener('click', async (e) => {
     const b = e.target.closest('button');
     if (!b) return;
@@ -518,7 +518,7 @@ export async function moveLocalTokensMenu(anchor) {
   const files = await listTokenFiles();
   const r = anchor.getBoundingClientRect();
   showContextMenu(r.left, r.bottom + 4, [
-    { label: 'New token file', action: () => moveLocal(null) },
+    { label: 'New Sigma Tokens file', action: () => moveLocal(null) },
     ...(files.length ? ['-', ...files.map((f) => ({ label: f.name, action: () => moveLocal(f.id) }))] : []),
   ]);
 }
@@ -528,7 +528,7 @@ export async function moveLocalTokensMenu(anchor) {
 export async function migrateLegacyTokens(wasVersion) {
   if (wasVersion >= 3 || !localCollections().length || state.screen !== 'editor') return;
   await moveLocal(null);
-  toast(`Your design tokens now live in the token file “${state.doc.name} tokens”, linked to this file.`);
+  toast(`Your design tokens now live in the Sigma Tokens file “${state.doc.name} tokens”, linked to this file.`);
 }
 
 export const hasLibraries = () => libraries().length > 0;

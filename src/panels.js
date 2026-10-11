@@ -96,7 +96,7 @@ function initFileHeader() {
     showContextMenu(r.left, r.bottom + 4, [
       { label: 'Back to files', action: goHome },
       '-',
-      { label: 'New design file', action: async () => openFile(await createFile(blankDocument())) },
+      { label: 'New Sigma Design file', action: async () => openFile(await createFile(blankDocument())) },
       { label: 'Import file…', action: async () => {
         const [id] = await pickFilesToImport();
         if (id) openFile(id);
@@ -907,15 +907,15 @@ function buildProps() {
     const tokens = libraries();
     html += section('Design tokens',
       (tokens.length ? tokens.map((l) => libLine(TOKEN_ICON, l)).join('') +
-        (tokens.length > 1 ? '<div class="warn">This file uses several token files. Choose one in Design tokens.</div>' : '')
-        : '<div class="muted">Choose a token file to use its design tokens in this file.</div>') +
-      `<button class="btn wide" data-action="open-design-tokens">${tokens.length ? 'Change token file…' : 'Choose token file…'}</button>` +
+        (tokens.length > 1 ? '<div class="warn">This file uses several Sigma Tokens files. Choose one in Design tokens.</div>' : '')
+        : '<div class="muted">Choose a Sigma Tokens file to use its design tokens in this file.</div>') +
+      `<button class="btn wide" data-action="open-design-tokens">${tokens.length ? 'Change Sigma Tokens file…' : 'Choose Sigma Tokens file…'}</button>` +
       `<div class="muted">${vcount ? `${vcount} local token${vcount === 1 ? '' : 's'} in this file` : 'No local tokens in this file.'}</div>` +
       '<button class="btn wide" data-action="open-variables">Open local tokens</button>' +
       '<button class="btn wide" data-action="audit" title="Find colors, text styles, spacing, radii and shadows that don’t use tokens">Audit design tokens…</button>');
     const comps = componentLibraries();
     html += section('Component libraries',
-      (comps.length ? comps.map((l) => libLine(COMPONENT_LIB_ICON, l)).join('') : '<div class="muted">Link design files that publish components to use them from Assets.</div>') +
+      (comps.length ? comps.map((l) => libLine(COMPONENT_LIB_ICON, l)).join('') : '<div class="muted">Link Sigma Design files that publish components to use them from Assets.</div>') +
       '<button class="btn wide" data-action="open-libraries">Manage component libraries…</button>');
     const pub = componentPublishStatus();
     if (pub.count) {

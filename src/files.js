@@ -261,7 +261,7 @@ export async function createTokenFileWith(name, collections, notes = 'Initial ve
 // Add collections to an existing (closed) token file and publish a new version.
 export async function appendToTokenFile(id, collections, notes, { libraries = [], dependencies = [] } = {}) {
   const file = await loadFile(id);
-  if (!file) throw new Error('That token file no longer exists.');
+  if (!file) throw new Error('That Sigma Tokens file no longer exists.');
   const doc = file.doc;
   doc.variables ||= { collections: [] };
   doc.variables.collections.push(...structuredClone(collections));
@@ -275,7 +275,7 @@ export async function appendToTokenFile(id, collections, notes, { libraries = []
     name = meta.name;
     return { meta: { ...meta, updatedAt: Date.now(), tokenVersion: doc.published.version }, doc: { id, doc, views: file.views } };
   });
-  if (!exists) throw new Error('That token file no longer exists.');
+  if (!exists) throw new Error('That Sigma Tokens file no longer exists.');
   broadcast('saved', id);
   broadcast('published', id);
   return { id, name, published: doc.published };

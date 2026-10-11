@@ -79,7 +79,7 @@ export function openTokenPicker({ anchor, type, exclude = () => false, currentId
     if (active >= shown.length) active = Math.max(0, shown.length - 1);
     let lastLabel = null;
     list.innerHTML = shown.map((o, i) => {
-      const head = o.label !== lastLabel ? `<div class="token-picker-head">${o.lib ? '<span class="lib-tag">Token file</span>' : ''}${esc(o.label)}</div>` : '';
+      const head = o.label !== lastLabel ? `<div class="token-picker-head">${o.lib ? '<span class="lib-tag">Sigma Tokens</span>' : ''}${esc(o.label)}</div>` : '';
       lastLabel = o.label;
       const group = groupOf(o.v.name);
       return `${head}<button class="token-picker-item${i === active ? ' active' : ''}${o.v.id === currentId ? ' current' : ''}" data-i="${i}">` +

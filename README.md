@@ -19,9 +19,9 @@ Then open http://localhost:5173.
 ## Features
 
 - **Files home:**
-  - two kinds of file: **design files** (a canvas) and **token files** (design tokens only, no canvas)
-  - Recents shows both; the **Design files** and **Design tokens** groups show one kind each
-  - lists every file saved in this browser, with thumbnails (token files show a palette of their colors) and "Edited … ago"
+  - two kinds of file: **Sigma Design** files (a canvas) and **Sigma Tokens** files (design tokens only, no canvas)
+  - Recents shows both; the **Sigma Design** and **Sigma Tokens** sections show one kind each
+  - lists every file saved in this browser, with thumbnails (Sigma Tokens files show a palette of their colors) and "Edited … ago"
   - has Recents and All files views, search, sorting, and a grid or list layout
   - lets you rename, duplicate, delete and download files from the card menu, or import `.sigma.json` files by dragging them onto the page
   - gives each file its own link (`#/file/<id>`), so back/forward, bookmarks and "open in new tab" work
@@ -76,9 +76,9 @@ Then open http://localhost:5173.
   - exposed nested instances follow, each with its own controls; changing properties or switching variants keeps your overrides
   - if a layer in the main component is renamed or removed, its instances show "N overrides no longer apply", with a Clear button
 - **Design tokens** (Sigma's name for Figma's variables):
-  - **New token file** creates a token file, which opens straight into a full-screen token editor
-  - **New token file ▾ → Open sample token file** (or **Open the sample token file** under Design tokens) opens the sample token file, creating it the first time: a complete example with Primitives (a palette with transparent colors, spacing, radii, type scales, text and a boolean), Semantic colors in Light and Dark, Brand B (an extension that only changes the accent), Typography styles built from the type primitives, and Components tokens that point at semantic tokens (button → accent → blue). It's published, so design files can link it right away
-  - a design file can also keep **local design tokens**; open them from the Σ menu or the panel (with nothing selected)
+  - **+ Sigma Tokens** creates a Sigma Tokens file, which opens straight into a full-screen token editor
+  - **Sigma Tokens ▾ → Open sample tokens** (or **Open the sample tokens** under Sigma Tokens) opens the sample tokens, creating it the first time: a complete example with Primitives (a palette with transparent colors, spacing, radii, type scales, text and a boolean), Semantic colors in Light and Dark, Brand B (an extension that only changes the accent), Typography styles built from the type primitives, and Components tokens that point at semantic tokens (button → accent → blue). It's published, so Sigma Design files can link it right away
+  - a Sigma Design file can also keep **local design tokens**; open them from the Σ menu or the panel (with nothing selected)
   - the token editor has search and a type filter
   - **structure:** a collection holds tokens and groups, and groups hold tokens and other groups (Collection → Group → Tokens). The sidebar shows the whole tree: every collection with its groups, nested and collapsible, with token counts
   - **groups** are their own objects, with a name, an optional description and an order. Click a group to show its tokens, with its description above them; **+ New group**, and ⋯ or right-click to add a token or a group inside, rename, describe, ungroup or delete. **+ Create token** always adds the token at the top level of the collection; grouping is up to you. Drag a token by its type icon onto a group, a collection (top level) or between other tokens; drag a group into another group, or above or below one to reorder. Typing `a/b` as a token's name puts it in group `a`. A token's full path (`color/blue/500`) comes from its groups, and that's the name used in references and in `tokens.json` (where groups become nested groups, with `$description`). Files from before groups were objects convert automatically
@@ -88,7 +88,7 @@ Then open http://localhost:5173.
   - **color tokens carry opacity** (a hex value plus an opacity %); a fill or stroke using the token gets its opacity from it
   - **typography tokens** bundle font family, weight, size, line height and letter spacing, and each part can alias a number or text token
   - a typography token is edited in the inspector, with a live sample
-  - in design files, the Text section's **Text style** links a typography token to a text layer; changing any font property by hand detaches it
+  - in Sigma Design files, the Text section's **Text style** links a typography token to a text layer; changing any font property by hand detaches it
   - **deprecated tokens:** tick **Deprecated** in a token's inspector. It's struck through and hidden from token pickers, while layers and tokens that use it keep working (their chips are flagged). tokens.json writes `$deprecated` and CSS adds a `/* deprecated */` comment; both import back
   - **contrast pairs:** a color token's inspector has **Contrast**: **+ Check contrast with…** pairs it with the colors it's used with (text on a surface), and every pair shows its WCAG ratio and level (AA 4.5:1, AAA 7:1) in each mode, from either token. The sample pairs its text colors with the surfaces, and the on-accent text with the accent
   - **shadow tokens** hold a color (with opacity), X, Y, blur and spread; like typography, each part can point at a token (the color at an alpha color, say), and they're edited in the inspector with a live preview. A layer's effect uses one with **Shadow token**
@@ -98,36 +98,36 @@ Then open http://localhost:5173.
   - **Use** binds the layers to it, **Choose…** picks another token, **Select** shows the layers, and **Use all exact matches** does every exact one at once
   - it also lists layers using deprecated tokens (**Replace with…**) and instances of deprecated components (**Swap to…**)
   - layers inside instances aren't listed (their values come from the main component), and a gap only counts when two or more layers are in the flow
-- **Design tokens in design files:**
-  - a design file uses **one token file** for its design tokens, chosen in **Design tokens…** (Σ menu, or the panel with nothing selected), plus any local tokens it keeps. Its tokens show up everywhere a value can use a token
-  - **Switch to this** changes the token file: layers move to the tokens with the same names in the new file (so token files with the same structure, like two brands, are interchangeable); tokens with no match keep their current values
-  - **Publish…** in a token file creates a numbered version, with optional notes and a summary of what changed; the design file keeps a copy of the version it uses, and when a newer one is published it shows "Design token updates available" so you can review and accept
-  - **Move to token file…** in the local tokens window sends a file's local tokens to a new or existing token file, which the design file then uses
-  - files from before token files move their variables into a token file the first time they're opened
-- **Token files linking token files:**
-  - a token file can link other token files (**Linked token files…**), so its tokens can point at theirs (a "Brand" file whose colors point at a "Core" file). Linked collections show read-only in the token editor
-  - publishing a token file includes copies of the token files it points at, so a design file that uses "Brand" still resolves the "Core" values
-  - unlinking a token file turns references to it into plain values
-- **Version history** (Σ menu → **Show version history**, in design and token files):
+- **Design tokens in Sigma Design files:**
+  - a Sigma Design file uses **one Sigma Tokens file** for its design tokens, chosen in **Design tokens…** (Σ menu, or the panel with nothing selected), plus any local tokens it keeps. Its tokens show up everywhere a value can use a token
+  - **Switch to this** changes the Sigma Tokens file: layers move to the tokens with the same names in the new file (so Sigma Tokens files with the same structure, like two brands, are interchangeable); tokens with no match keep their current values
+  - **Publish…** in a Sigma Tokens file creates a numbered version, with optional notes and a summary of what changed; the Sigma Design file keeps a copy of the version it uses, and when a newer one is published it shows "Design token updates available" so you can review and accept
+  - **Move to Sigma Tokens…** in the local tokens window sends a file's local tokens to a new or existing Sigma Tokens file, which the Sigma Design file then uses
+  - files from before Sigma Tokens files move their variables into a Sigma Tokens file the first time they're opened
+- **Sigma Tokens files linking Sigma Tokens files:**
+  - a Sigma Tokens file can link other Sigma Tokens files (**Linked Sigma Tokens files…**), so its tokens can point at theirs (a "Brand" file whose colors point at a "Core" file). Linked collections show read-only in the token editor
+  - publishing a Sigma Tokens file includes copies of the Sigma Tokens files it points at, so a Sigma Design file that uses "Brand" still resolves the "Core" values
+  - unlinking a Sigma Tokens file turns references to it into plain values
+- **Version history** (Σ menu → **Show version history**, in design and Sigma Tokens files):
   - Sigma keeps an autosave version before each editing session and every 10 minutes while you work (the newest 50), plus one for every publish
   - **Save to version history…** (⌥⌘S) adds a named version with a description; named and published versions are kept until you delete them
   - click a version to view it read-only in place; **Restore this version** makes it current (the state it replaces is kept as a version first), and the ⋯ menu can copy it to a new file, name it or delete it
   - restoring never rolls back publish numbers, so linked files still see a consistent version sequence
   - versions are stored in this browser with the file and are deleted with it
 - **Component libraries:**
-  - **Publish components…** (Σ menu, or the panel with nothing selected) publishes a design file's components as a numbered version, with notes and a list of what changed
-  - another design file links it from **Component libraries…**; its components appear in Assets under the library's name, ready to insert or drag
+  - **Publish components…** (Σ menu, or the panel with nothing selected) publishes a Sigma Design file's components as a numbered version, with notes and a list of what changed
+  - another Sigma Design file links it from **Component libraries…**; its components appear in Assets under the library's name, ready to insert or drag
   - a library update shows a banner in files that use it; after **Review** and accept, instances update and keep their overrides
   - **Go to main component** on a library instance offers to open the library file
   - unlinking keeps instances as they look, marked "main component missing"
 - **Export and import:**
-  - in a token file's Σ menu, **Export tokens.json** writes the W3C Design Tokens format (DTCG):
+  - in a Sigma Tokens file's Σ menu, **Export tokens.json** writes the W3C Design Tokens format (DTCG):
     - groups come from `/` in names, and aliases are written `{group.token}`
     - colors use the DTCG color object with alpha, sizes are `{ value, unit: "px" }`, durations `{ value, unit: "ms" }`, easings `cubicBezier` arrays, and typography and shadow are composite types (CSS gets a `box-shadow` value)
     - each collection × mode is a token set, such as `Color/Dark`, the multi-set layout Tokens Studio and Style Dictionary setups use
     - re-importing a Sigma export rebuilds it exactly, including modes and extended collections
   - **Export CSS variables** writes custom properties: default modes go on `:root`, and each other mode or brand gets a selector such as `[data-color="dark"]` that swaps values on any element
-  - **Import tokens.json…** merges tokens into the open token file, matching by name; dropping a `tokens.json` on the home page creates a new token file
+  - **Import tokens.json…** merges tokens into the open Sigma Tokens file, matching by name; dropping a `tokens.json` on the home page creates a new Sigma Tokens file
   - token types Sigma doesn't support yet, like gradients, are skipped with a note; a list of layered shadows keeps its first shadow
   - organise color, number, string and boolean variables into collections; use `/` in names to group them
   - each collection has modes (columns), and a cell can alias another variable
@@ -141,7 +141,7 @@ Then open http://localhost:5173.
   - apply an extension with the mode picker on a frame, page or instance to re-skin it (for example, a second brand); extensions can be extended again
   - copied layers remember their variables' names, so pasting into another file reconnects them to same-named variables there
   - a binding to a variable the other file doesn't have is dropped, and the layer keeps its value
-- **Sample file:** **Open sample file** (Σ menu, or **Open the sample file** on an empty files page) creates a **Sample design file** that links the **Sample design tokens** token file. It reuses the most recently edited sample token file, and creates one only if there is none (or the existing ones no longer have the tokens the sample uses). **Open sample token file** opens that same file. Its **Design system** page has a Button component set with a Label property and a Card that uses it, built entirely from the sample tokens (component tokens for color, radius, padding and the card's shadow; text styles), with the Card shown in Light, Dark and Brand B, and a frame on the 12-column layout grid whose gutter and margin are layout tokens
+- **Sample file:** **Open sample file** (Σ menu, or **Open the sample file** on an empty files page) creates a **Sample design file** that links the **Sample design tokens** Sigma Tokens file. It reuses the most recently edited sample token file, and creates one only if there is none (or the existing ones no longer have the tokens the sample uses). **Open sample token file** opens that same file. Its **Design system** page has a Button component set with a Label property and a Card that uses it, built entirely from the sample tokens (component tokens for color, radius, padding and the card's shadow; text styles), with the Card shown in Light, Dark and Brand B, and a frame on the 12-column layout grid whose gutter and margin are layout tokens
 - **Constraints:** layers placed freely in a frame have horizontal (Left, Right, Left & right, Center, Scale) and vertical (Top, Bottom, Top & bottom, Center, Scale) rules
   - the rules apply when the frame is resized by its handles or its W/H fields; hold ⌘ while dragging to ignore them
   - they also apply when an instance is sized differently from its main component
@@ -159,7 +159,7 @@ Then open http://localhost:5173.
 - **Export:** PNG, JPG or SVG at 0.5x–4x, for the selection or the whole page
 - **Saving:**
   - files autosave to IndexedDB, in this browser only
-  - the Σ menu has Back to files, New design file, Import file… and Download a copy
+  - the Σ menu has Back to files, New Sigma Design file, Import file… and Download a copy
   - if the same file is open in two tabs, the other tab shows a reload banner
   - the first time you open this version, a document saved by an earlier version is moved in as a file
 
@@ -178,11 +178,11 @@ Press `?` in the app to see every keyboard shortcut.
 | `src/layout.js` | Auto layout engine: hug/fill sizing, flow positioning, layout inference for ⇧A |
 | `src/components.js` | Components and instances (normalize step `syncInstances`) |
 | `src/variables.js` | Variables, aliases, modes and binding (normalize step `resolveVariables`) |
-| `src/variables-ui.js` | The design token editor (a modal in design files, full-screen in token files) |
-| `src/tokens-screen.js` | The token file screen |
+| `src/variables-ui.js` | The design token editor (a modal in Sigma Design files, full-screen in Sigma Tokens files) |
+| `src/tokens-screen.js` | The Sigma Tokens file screen |
 | `src/libraries.js` | Token and component libraries: publishing, linking, updates, migration |
 | `src/sample-tokens.js` | The sample token file (a complete small design system) |
-| `src/sample.js` | The blank design file, and the sample design file built on the sample tokens |
+| `src/sample.js` | The blank Sigma Design file, and the sample Sigma Design file built on the sample tokens |
 | `src/component-ui.js` | Figma-style component, component set, variant and instance panels; the property window; the component picker |
 | `src/history.js` | Version history panel: viewing a version read-only, restore, duplicate, named versions |
 | `src/tokens-io.js` | Token export (DTCG `tokens.json`, CSS) and import |
