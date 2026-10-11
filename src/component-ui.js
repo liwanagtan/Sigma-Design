@@ -23,7 +23,7 @@ import {
   reorderVariantProperty, removeVariantProperty, addVariantProperty, containingComponent, mainComponentOf, displayName,
   instancesOf, overrideCount, orphanedOverrides, clearOrphanedOverrides, isInsideInstance, owningInstance, listComponents,
   canPlaceInside, nestedInstances, layersUsingProp, libraryOfComponent, setPropDefaultVar, pushOverridesToMain, syncInstances,
-  slotDef, slotLimits, isSlotModified, resetSlot, clearSlot, setSlot, insideMainSlot, createInstance,
+  slotDef, slotLimits, isSlotModified, resetSlot, clearSlot, setSlot, insideMainSlot, createInstance, componentMatches,
 } from './components.js';
 import {
   addVariant, goToMainComponent, resetSelectionOverrides, detachSelection, duplicateSelection, makeComponentSet,
@@ -764,8 +764,7 @@ export function openComponentPicker({ anchor, currentId = null, preferred = [], 
   let shown = [];
   let active = 0;
   const render = () => {
-    const q = search.value.trim().toLowerCase();
-    const match = (c) => !q || label(c.node).toLowerCase().includes(q);
+    const match = (c) => componentMatches(c.node, search.value);
     const pref = preferred.map((id) => all.find((c) => c.node.id === id)).filter(Boolean).filter(match);
     const rest = all.filter((c) => match(c) && !preferred.includes(c.node.id));
     shown = [...pref.map((c) => ({ ...c, head: 'Preferred' })), ...rest.map((c) => ({ ...c, head: groupOf(c) }))];

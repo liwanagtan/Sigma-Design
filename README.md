@@ -46,6 +46,7 @@ Then open http://localhost:5173.
 - **Components and instances** (they work like Figma's):
   - ⌥⌘K turns a frame, or any selection, into a component; with several layers selected, right-click → **Create multiple components** makes one component each
   - make instances by duplicating (⌘D), ⌥-dragging or pasting a component, or from the **Assets** tab (a component set inserts its default variant: the top-left one)
+  - **search** in Assets and in the swap picker matches component names and the words in their descriptions (and a variant's set), so keywords like "timer, speed" in a stopwatch icon's description find it
   - **component playground:** in Assets, the ⓘ on a component (or right-click → **Open in playground…**) previews it with all its properties (variants, toggles, text, swaps) to try out, then **Insert instance** places it with those choices
   - changes to the main component flow to every instance, live; an instance can change appearance and text, and size and position come from the main component
   - a component can never end up containing an instance of itself

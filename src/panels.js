@@ -11,7 +11,7 @@ import {
 } from './commands.js';
 import { isAutoLayout, getSizing } from './layout.js';
 import {
-  isInsideInstance, owningInstance, canPlaceInside, listComponents, overrideCount, defaultVariant, setInstanceProp,
+  isInsideInstance, owningInstance, canPlaceInside, listComponents, overrideCount, defaultVariant, setInstanceProp, componentMatches,
 } from './components.js';
 import { exportNodes, saveFile, pickImages } from './io.js';
 import { createFile, openFile, goHome, pickFilesToImport, createSampleFiles } from './files.js';
@@ -976,7 +976,7 @@ export function renderAssets() {
       if (defaultVariant(set) === c.node) comps.push({ node: set, page: c.page, library: c.library, insert: c.node }); // inserts the default (top-left) variant
     } else comps.push({ ...c, insert: c.node });
   }
-  const matches = comps.filter(({ node }) => !q || node.name.toLowerCase().includes(q));
+  const matches = comps.filter(({ node, insert }) => componentMatches(node, q) || componentMatches(insert, q));
   const list = $('#assets-list');
   if (!matches.length) {
     list.innerHTML = `<div class="empty-hint">${q ? 'No components match.' : 'No components yet. Select layers and press ⌥⌘K to create one.'}</div>`;

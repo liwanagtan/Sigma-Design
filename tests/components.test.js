@@ -3,7 +3,7 @@ import { useDoc } from './core.test.js';
 import { createNode, getNode, editNode, makePaint, walk } from '../src/store.js';
 import {
   syncInstances, createInstance, detachInstance, canPlaceInside, resetOverrides, overrideCount, isInsideInstance,
-  orphanedOverrides, clearOrphanedOverrides,
+  orphanedOverrides, clearOrphanedOverrides, componentMatches,
 } from '../src/components.js';
 
 // A "Button" component: a frame with a Label text and a Bg rectangle.
@@ -138,4 +138,17 @@ test('components: overrides on layers renamed in the main component are reported
   eq(orphanedOverrides(inst), ['Label']);
   clearOrphanedOverrides(inst);
   eq(Object.keys(inst.overrides), []);
+});
+
+test('components: search matches names and the keywords in descriptions (a variant also matches its set)', () => {
+  const icon = createNode('component', { name: 'stopwatch', description: 'speed, timer, fast' });
+  const variant = createNode('component', { name: 'Size=Small' });
+  const set = createNode('componentSet', { name: 'Button', description: 'call to action, CTA', children: [variant] });
+  useDoc([icon, set]);
+  ok(componentMatches(icon, 'stopwatch'), 'by name');
+  ok(componentMatches(icon, 'Timer'), 'by a description keyword, any case');
+  ok(componentMatches(icon, 'fast stop'), 'every word must match somewhere');
+  ok(!componentMatches(icon, 'speed button'), 'a word that matches nothing fails');
+  ok(componentMatches(variant, 'cta small'), 'a variant matches its set’s description');
+  ok(componentMatches(icon, ''), 'an empty search matches everything');
 });

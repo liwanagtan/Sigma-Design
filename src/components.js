@@ -92,6 +92,16 @@ export function listComponents() {
   return out;
 }
 
+// Does a component (or component set) match a search? Every word of `query` must appear in its name or
+// description, or in its set's name or description, so keywords kept in descriptions find it too.
+export function componentMatches(node, query) {
+  const words = String(query || '').toLowerCase().split(/[\s/]+/).filter(Boolean);
+  if (!words.length) return true;
+  const set = getParent(node.id)?.type === 'componentSet' ? getParent(node.id) : null;
+  const haystack = [node.name, node.description, set?.name, set?.description].filter(Boolean).join(' ').toLowerCase();
+  return words.every((w) => haystack.includes(w));
+}
+
 // The component library a component comes from, or null for local components.
 export function libraryOfComponent(node) {
   for (const lib of state.doc?.componentLibraries || []) {
