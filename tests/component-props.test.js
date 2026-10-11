@@ -187,3 +187,43 @@ test('component props: the playground previews without changing the document', a
   eq(JSON.stringify(doc), before); // nothing in the document changed
   closePlayground();
 });
+
+test('reset: a resized instance counts as changed and Reset all changes restores its size', () => {
+  const main = button();
+  useDoc([main]);
+  const inst = createInstance(main);
+  syncInstances();
+  inst.w = 300; // resized (fixed size)
+  syncInstances();
+  eq([inst.w, overrideCount(inst)], [300, 1]);
+  resetOverrides(inst);
+  syncInstances();
+  eq([inst.w, overrideCount(inst)], [120, 0]);
+});
+
+test('reset: resetting a layer also resets the property value set through it', () => {
+  const main = button();
+  useDoc([main]);
+  const text = addComponentProp(main, 'text', { name: 'Label', value: 'Button' });
+  bindLayerProp(main.children[1], 'text', text);
+  const inst = createInstance(main);
+  editNode(inst.children[1], ['text'], (n) => void (n.text = 'Edited')); // typed on the canvas
+  editNode(inst.children[1], ['fills'], (n) => void (n.fills = [makePaint('#FF0000')]));
+  syncInstances();
+  const path = inst.children[1].pathKey;
+  eq([inst.children[1].text, overrideCount(inst, path)], ['Edited', 2]);
+  resetOverrides(inst, path);
+  syncInstances();
+  eq([inst.children[1].text, inst.children[1].fills?.length ? inst.children[1].fills[0].color : null, overrideCount(inst, path)], ['Button', main.children[1].fills?.[0]?.color ?? null, 0]);
+});
+
+test('reset: the rebuild never gets skipped, even when nothing recorded changed', () => {
+  const main = button();
+  useDoc([main]);
+  const inst = createInstance(main);
+  syncInstances();
+  inst.children[0].fills[0].color = '#123456'; // a change no override recorded
+  resetOverrides(inst);
+  syncInstances();
+  eq(inst.children[0].fills[0].color, '#FFFFFF');
+});

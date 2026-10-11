@@ -421,28 +421,89 @@ export function clearOrphanedOverrides(inst) {
   for (const k of orphanedOverrides(inst)) delete inst.overrides[k];
 }
 
-// Changes made on an instance: overridden layers, plus (for the whole instance) property values that
-// differ from their defaults, which Figma also counts as changes.
+// The main component's layers by path (the same naming as an instance's derived layers), not looking
+// inside nested instances.
+function mainLayersByPath(main) {
+  const map = new Map();
+  const visit = (nodes, prefix) => {
+    const counts = new Map();
+    for (const n of nodes) {
+      const c = (counts.get(n.name) || 0) + 1;
+      counts.set(n.name, c);
+      const path = (prefix ? `${prefix}/` : '') + escKey(n.name) + (c > 1 ? `#${c}` : '');
+      map.set(path, n);
+      if (n.children && n.type !== 'instance') visit(n.children, path);
+    }
+  };
+  visit(main?.children || [], '');
+  return map;
+}
+
+// Property ids bound to the main layer at `path` or below it (whose values an instance sets through
+// that layer, e.g. its text).
+function propsUnderPath(main, path) {
+  const out = new Set();
+  for (const [p, layer] of mainLayersByPath(main)) {
+    if (p !== path && !p.startsWith(`${path}/`)) continue;
+    for (const pid of Object.values(layer.propRefs || {})) out.add(pid);
+  }
+  return out;
+}
+
+// Property values an instance changed (differing from the defaults), optionally only those bound under `path`.
+function changedProps(inst, path = null) {
+  const main = mainComponentOf(inst);
+  const defs = propsOf(main);
+  const under = path === null ? null : propsUnderPath(main, path);
+  return Object.entries(inst?.propValues || {})
+    .filter(([pid, v]) => pid in defs && (!under || under.has(pid)) && JSON.stringify(v) !== JSON.stringify(defs[pid].default))
+    .map(([pid]) => pid);
+}
+
+// Is the instance resized away from its main component (a change, like in Figma)? Hug and fill sizes
+// follow their content or container, so only a different sizing mode or a different fixed size counts.
+function sizeChanged(inst) {
+  const main = mainComponentOf(inst);
+  if (!main) return false;
+  return [['w', 'sizingH'], ['h', 'sizingV']].some(([dim, mode]) => {
+    const m = inst[mode] || 'fixed';
+    if (m !== (main[mode] || 'fixed')) return true;
+    return m === 'fixed' && Math.round(inst[dim]) !== Math.round(main[dim]);
+  });
+}
+
+// Changes made on an instance: overridden layers, property values that differ from their defaults, and
+// (for the whole instance) a resize. A `path` counts the changes of that layer and the layers in it.
 export function overrideCount(inst, path = null) {
   const ov = inst?.overrides || {};
   const layers = Object.keys(ov).filter((k) => (path === null || k === path || k.startsWith(path + '/')) && Object.keys(ov[k]).length).length;
-  if (path !== null) return layers;
-  const defs = propsOf(mainComponentOf(inst));
-  const props = Object.entries(inst?.propValues || {}).filter(([pid, v]) => pid in defs && JSON.stringify(v) !== JSON.stringify(defs[pid].default)).length;
-  return layers + props;
+  const slots = Object.keys(inst?.slots || {}).filter((k) => path === null || k === path || k.startsWith(path + '/')).length;
+  if (path !== null) return layers + changedProps(inst, path).length + slots;
+  return layers + changedProps(inst).length + (sizeChanged(inst) ? 1 : 0) + slots;
 }
 
-// Remove overrides of an instance (all of them, or those at/under `path`).
+// Undo an instance's changes (all of them, or those of the layer at `path` and the layers in it): the
+// overrides, the property values set through those layers, and (for the whole instance) its size.
+// The variant stays. The instance is always rebuilt from its main afterwards.
 export function resetOverrides(inst, path = null) {
   if (!inst) return;
   inst.overrides ||= {};
   if (path === null) {
     inst.overrides = {};
-    delete inst.propValues; // properties go back to their defaults (the variant stays)
+    delete inst.propValues; // properties go back to their defaults
+    delete inst.slots; // slots show their default content again
     delete inst.synced; // size follows the main component again
-    return;
+    const main = mainComponentOf(inst);
+    if (main) for (const k of ['w', 'h', 'sizingH', 'sizingV']) inst[k] = main[k];
+  } else {
+    for (const k of Object.keys(inst.overrides)) if (k === path || k.startsWith(path + '/')) delete inst.overrides[k];
+    for (const k of Object.keys(inst.slots || {})) if (k === path || k.startsWith(path + '/')) delete inst.slots[k];
+    for (const pid of propsUnderPath(mainComponentOf(inst), path)) {
+      if (inst.propValues) delete inst.propValues[pid];
+    }
+    if (inst.propValues && !Object.keys(inst.propValues).length) delete inst.propValues;
   }
-  for (const k of Object.keys(inst.overrides)) if (k === path || k.startsWith(path + '/')) delete inst.overrides[k];
+  lastSync.delete(inst); // never skip the rebuild: layers may hold changes nothing else records
 }
 
 // "Push changes to main component": an instance's changes become the main component's (Figma's
@@ -452,18 +513,7 @@ export function resetOverrides(inst, path = null) {
 export function pushOverridesToMain(inst) {
   const main = mainComponentOf(inst);
   if (!main || libraryOfComponent(main)) return false;
-  const pathMap = new Map();
-  const visit = (nodes, prefix) => {
-    const counts = new Map();
-    for (const n of nodes) {
-      const c = (counts.get(n.name) || 0) + 1;
-      counts.set(n.name, c);
-      const path = (prefix ? `${prefix}/` : '') + escKey(n.name) + (c > 1 ? `#${c}` : '');
-      pathMap.set(path, n);
-      if (n.children && n.type !== 'instance') visit(n.children, path);
-    }
-  };
-  visit(main.children, '');
+  const pathMap = mainLayersByPath(main);
   for (const [path, ov] of Object.entries(inst.overrides || {})) {
     if (!path) {
       for (const [k, v] of Object.entries(ov)) if (ROOT_PROPS.includes(k) && k !== 'name') main[k] = clone(v);
