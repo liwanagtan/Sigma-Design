@@ -12,7 +12,21 @@ import {
   groupOf, leafOf, cleanSegment, cleanPath, normalizeGroups, groupPaths, structureOf,
 } from './token-groups.js';
 
-export const VAR_TYPES = { color: 'Color', number: 'Number', string: 'String', boolean: 'Boolean', typography: 'Typography' };
+export const VAR_TYPES = {
+  color: 'Color', number: 'Number', string: 'String', boolean: 'Boolean', typography: 'Typography',
+  duration: 'Duration', easing: 'Easing',
+};
+
+// Motion tokens: a duration is milliseconds; an easing is a cubic Bézier curve [x1, y1, x2, y2] (like CSS
+// cubic-bezier(), x1 and x2 between 0 and 1). Layers can't use them yet (Sigma has no prototyping); they're
+// part of the system for code, through tokens.json and CSS.
+export function parseEasing(value) {
+  const nums = Array.isArray(value) ? value : String(value ?? '').replace(/cubic-bezier|[()]/gi, '').split(/[\s,]+/).filter(Boolean);
+  if (nums.length !== 4) return null;
+  const e = nums.map(Number);
+  if (!e.every(Number.isFinite) || e[0] < 0 || e[0] > 1 || e[2] < 0 || e[2] > 1) return null;
+  return e.map((x) => Math.round(x * 1000) / 1000);
+}
 
 // A typography token bundles five text properties. Each field is a value or { alias: tokenId } of the
 // field's primitive type. lineHeight is a percentage, or null for "auto".
@@ -50,6 +64,7 @@ export function typeForPath(path) {
 const DEFAULTS = {
   color: '#000000', number: 0, string: '', boolean: true,
   typography: { fontFamily: 'Inter', fontWeight: 400, fontSize: 16, lineHeight: null, letterSpacing: 0 },
+  duration: 200, easing: [0.25, 0.1, 0.25, 1],
 };
 export const defaultValue = (type) => structuredClone(DEFAULTS[type]);
 const MAX_ALIAS_DEPTH = 16;

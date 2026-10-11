@@ -88,6 +88,7 @@ Then open http://localhost:5173.
   - **typography tokens** bundle font family, weight, size, line height and letter spacing, and each part can alias a number or text token
   - a typography token is edited in the inspector, with a live sample
   - in design files, the Text section's **Text style** links a typography token to a text layer; changing any font property by hand detaches it
+  - **motion tokens:** **Duration** tokens are milliseconds and **Easing** tokens are cubic Bézier curves (`0.4, 0, 0.2, 1`, like CSS `cubic-bezier()`), with a small curve preview. Layers don't use them (Sigma has no prototyping); they're there for code, through tokens.json and CSS
 - **Design tokens in design files:**
   - a design file uses **one token file** for its design tokens, chosen in **Design tokens…** (Σ menu, or the panel with nothing selected), plus any local tokens it keeps. Its tokens show up everywhere a value can use a token
   - **Switch to this** changes the token file: layers move to the tokens with the same names in the new file (so token files with the same structure, like two brands, are interchangeable); tokens with no match keep their current values
@@ -113,7 +114,7 @@ Then open http://localhost:5173.
 - **Export and import:**
   - in a token file's Σ menu, **Export tokens.json** writes the W3C Design Tokens format (DTCG):
     - groups come from `/` in names, and aliases are written `{group.token}`
-    - colors use the DTCG color object with alpha, sizes are `{ value, unit: "px" }`, and typography is the composite type
+    - colors use the DTCG color object with alpha, sizes are `{ value, unit: "px" }`, durations `{ value, unit: "ms" }`, easings `cubicBezier` arrays, and typography is the composite type
     - each collection × mode is a token set, such as `Color/Dark`, the multi-set layout Tokens Studio and Style Dictionary setups use
     - re-importing a Sigma export rebuilds it exactly, including modes and extended collections
   - **Export CSS variables** writes custom properties: default modes go on `:root`, and each other mode or brand gets a selector such as `[data-color="dark"]` that swaps values on any element

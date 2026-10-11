@@ -1,6 +1,6 @@
 // The sample token file: a small but complete design system, showing what token files can do.
 //
-//   Primitives  raw values: a color palette (with transparent colors), spacing, radii, type scales, text
+//   Primitives  raw values: a color palette (with transparent colors), spacing, radii, type scales, motion, text
 //   Semantic    what colors mean, in Light and Dark modes; every value points at a primitive
 //   Brand B     an extension of Semantic that only changes the accent colors
 //   Typography  text styles whose parts point at the type primitives
@@ -85,6 +85,16 @@ export function sampleTokenDocument() {
 
   const opacity = group(p, 'opacity');
   token(p, opacity, 'disabled', 'number', 40, 'Opacity of disabled controls, in percent.');
+
+  const motion = group(p, 'motion', null, 'Durations and easing curves for transitions and animations.');
+  const durations = group(p, 'duration', motion, 'Short for small elements and short distances, longer for big ones.');
+  const dur = { fast: token(p, durations, 'fast', 'duration', 100), normal: token(p, durations, 'normal', 'duration', 200), slow: token(p, durations, 'slow', 'duration', 300) };
+  const easings = group(p, 'easing', motion);
+  const ease = {
+    standard: token(p, easings, 'standard', 'easing', [0.2, 0, 0, 1], 'Most transitions.'),
+    enter: token(p, easings, 'enter', 'easing', [0, 0, 0, 1], 'Elements coming into view.'),
+    exit: token(p, easings, 'exit', 'easing', [0.3, 0, 1, 1], 'Elements leaving the view.'),
+  };
 
   const content = group(p, 'content', null, 'Text that appears in products.');
   token(p, content, 'product-name', 'string', 'Sigma');
@@ -174,6 +184,8 @@ export function sampleTokenDocument() {
   token(c, button, 'padding-y', 'number', ref(sp[2]));
   token(c, button, 'gap', 'number', ref(sp[2]));
   token(c, button, 'label', 'typography', ref(labelDefault));
+  token(c, button, 'transition-duration', 'duration', ref(dur.fast), 'Hover and press feedback.');
+  token(c, button, 'transition-easing', 'easing', ref(ease.standard));
 
   const input = group(c, 'input');
   token(c, input, 'background', 'color', ref(surfaceDefault));

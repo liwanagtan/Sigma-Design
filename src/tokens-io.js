@@ -6,7 +6,7 @@
 // and Style Dictionary setups. A "$extensions" → "app.sigma" block records Sigma's collections, modes and
 // extended collections, so re-importing an export rebuilds them exactly.
 import { uid } from './store.js';
-import { TYPO_FIELDS, splitColor, joinColor, defaultValue } from './variables.js';
+import { TYPO_FIELDS, splitColor, joinColor, defaultValue, parseEasing } from './variables.js';
 import { normalizeGroups, groupPaths } from './token-groups.js';
 
 const SIGMA = 'app.sigma';
@@ -72,6 +72,8 @@ export function exportDTCG(cols, { external = [] } = {}) {
     switch (v.type) {
       case 'color': return colorOut(value);
       case 'number': return isDimension(v.name) ? dimension(value) : Number(value) || 0;
+      case 'duration': return { value: Number(value) || 0, unit: 'ms' };
+      case 'easing': return parseEasing(value) || defaultValue('easing');
       case 'typography': {
         const t = { ...defaultValue('typography'), ...(value || {}) };
         const f = (k, conv) => (isAlias(t[k]) ? ref(t[k].alias) : conv(t[k]));
@@ -89,7 +91,7 @@ export function exportDTCG(cols, { external = [] } = {}) {
   };
   const typeOut = (v) => ({
     color: 'color', number: isDimension(v.name) ? 'dimension' : 'number', string: /font-?family/i.test(v.name) ? 'fontFamily' : 'string',
-    boolean: 'boolean', typography: 'typography',
+    boolean: 'boolean', typography: 'typography', duration: 'duration', easing: 'cubicBezier',
   }[v.type]);
 
   for (const c of cols) {
@@ -155,6 +157,8 @@ export function exportCSS(cols, { title = 'Design tokens', external = [] } = {})
       }
       case 'number': return [`${name}: ${num(v, value)};`];
       case 'boolean': return [`${name}: ${value ? 1 : 0};`];
+      case 'duration': return [`${name}: ${Number(value) || 0}ms;`];
+      case 'easing': return [`${name}: cubic-bezier(${(parseEasing(value) || defaultValue('easing')).join(', ')});`];
       case 'typography': {
         const t = { ...defaultValue('typography'), ...(value || {}) };
         const f = (k, conv) => (isAlias(t[k]) ? varRef(t[k].alias) : conv(t[k]));
@@ -198,8 +202,8 @@ export function exportCSS(cols, { title = 'Design tokens', external = [] } = {})
 // ---------- import ----------
 const WEIGHT_NAMES = { thin: 100, hairline: 100, extralight: 200, ultralight: 200, light: 300, normal: 400, regular: 400, book: 400, medium: 500, semibold: 600, demibold: 600, bold: 700, extrabold: 800, ultrabold: 800, black: 900, heavy: 900 };
 const TYPE_IN = {
-  color: 'color', dimension: 'number', number: 'number', fontWeight: 'number', duration: 'number', fontFamily: 'string',
-  string: 'string', text: 'string', boolean: 'boolean', typography: 'typography',
+  color: 'color', dimension: 'number', number: 'number', fontWeight: 'number', duration: 'duration', cubicBezier: 'easing',
+  fontFamily: 'string', string: 'string', text: 'string', boolean: 'boolean', typography: 'typography',
 };
 
 function hexIn(value) {
@@ -231,6 +235,17 @@ function numIn(value) {
   const m = /^(-?[\d.]+)\s*(px|rem|em|%)?$/i.exec(String(value).trim());
   if (!m) return null;
   return Number(m[1]) * (/r?em/i.test(m[2] || '') ? 16 : 1);
+}
+
+// Milliseconds from 200, "200ms", "0.2s" or { value, unit: "ms" | "s" }.
+function durationIn(value) {
+  if (typeof value === 'number') return value;
+  const [n, unit] = value && typeof value === 'object' ? [Number(value.value), value.unit] : (() => {
+    const m = /^(-?[\d.]+)\s*(ms|s)?$/i.exec(String(value).trim());
+    return m ? [Number(m[1]), m[2]] : [NaN];
+  })();
+  if (!Number.isFinite(n)) return null;
+  return String(unit).toLowerCase() === 's' ? Math.round(n * 1000) : n;
 }
 
 const refIn = (value) => (typeof value === 'string' && /^\{[^{}]+\}$/.test(value.trim()) ? value.trim().slice(1, -1) : null);
@@ -351,6 +366,8 @@ export function importTokens(json, { external = [] } = {}) {
         return numIn(value) ?? undefined;
       }
       case 'string': return Array.isArray(value) ? String(value[0]) : String(value);
+      case 'duration': return durationIn(value) ?? undefined;
+      case 'easing': return parseEasing(value) ?? undefined;
       case 'boolean': return value === true || value === 'true' || value === 1;
       case 'typography': {
         if (!value || typeof value !== 'object') return undefined;

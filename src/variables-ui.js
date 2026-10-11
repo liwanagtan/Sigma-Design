@@ -8,9 +8,9 @@ import {
   rawValueIn, setOverride, setOverrideAlias, clearOverride, parentOf, isExtension, TYPO_FIELDS, splitColor, joinColor,
   defaultValue, localCollections, libraryCollections, inFamily, isLibraryCollection, libraryOf, aliasChain, findByReference,
   groupTree, groupOf, leafOf, createGroup, renameGroup, moveGroup, ungroup, deleteGroup, moveTokensToGroup, findGroup,
-  groupIdOf, groupPathOf, tokenInGroup, tokensInOrder, setTokenName, setGroupDescription,
+  groupIdOf, groupPathOf, tokenInGroup, tokensInOrder, setTokenName, setGroupDescription, parseEasing,
 } from './variables.js';
-import { openTokenPicker, closeTokenPicker, valuePreview, collectionLabel } from './token-picker.js';
+import { openTokenPicker, closeTokenPicker, valuePreview, collectionLabel, easingCurve } from './token-picker.js';
 import { moveLocalTokensMenu } from './libraries.js';
 import { FONTS, WEIGHTS } from './fonts.js';
 import { showContextMenu } from './menu.js';
@@ -37,6 +37,8 @@ const TYPE_ICON = {
   string: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M2 3V2h8v1M6 2v8M4.5 10h3"/></svg>',
   boolean: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><rect x="1" y="3.5" width="10" height="5" rx="2.5"/><circle cx="8.5" cy="6" r="1.5" fill="currentColor"/></svg>',
   typography: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M1.5 10L4.5 2l3 8M2.6 7.2h3.8M8.5 6.5h2.5M9.75 6.5V10"/></svg>',
+  duration: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><circle cx="6" cy="6.5" r="4.5"/><path d="M6 4v2.5l1.6 1M4.5 1h3"/></svg>',
+  easing: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M1.5 10.5C6 10.5 6 1.5 10.5 1.5"/></svg>',
 };
 const FIELD_LABELS = { fontFamily: 'Family', fontWeight: 'Weight', fontSize: 'Size', lineHeight: 'Line height', letterSpacing: 'Letter spacing' };
 const LINK_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M5 7l2-2M5.5 3.5l.8-.8a2 2 0 0 1 2.8 2.8l-.8.8M6.5 8.5l-.8.8a2 2 0 0 1-2.8-2.8l.8-.8"/></svg>';
@@ -150,6 +152,14 @@ function valueEditor(type, raw, data, v) {
       `<span class="typo-sample" style="${typoStyle(t)}">Ag</span><span class="typo-meta">${esc(typoSummary(t))}</span></button>`;
   }
   if (type === 'number') return `<input class="cell-input" ${data} data-cell="number" value="${esc(raw)}" spellcheck="false">`;
+  if (type === 'duration') {
+    return `<span class="unit-wrap"><input class="cell-input" ${data} data-cell="duration" value="${esc(raw)}" spellcheck="false">ms</span>`;
+  }
+  if (type === 'easing') {
+    const e = parseEasing(raw) || defaultValue('easing');
+    return `<span class="easing-preview" title="cubic-bezier(${e.join(', ')})">${easingCurve(e)}</span>` +
+      `<input class="cell-input" ${data} data-cell="easing" value="${esc(e.join(', '))}" spellcheck="false" title="x1, y1, x2, y2 — like CSS cubic-bezier()">`;
+  }
   if (type === 'string') return `<input class="cell-input" ${data} data-cell="string" value="${esc(raw)}" spellcheck="false">`;
   return `<label class="cell-bool"><input type="checkbox" ${data} data-cell="boolean" ${raw ? 'checked' : ''}> ${raw ? 'True' : 'False'}</label>`;
 }
@@ -804,6 +814,12 @@ function bind() {
       } else if (t.dataset.cell === 'number') {
         value = Number(t.value);
         if (!Number.isFinite(value)) return render();
+      } else if (t.dataset.cell === 'duration') {
+        value = Number(t.value.replace(/ms$/i, '').trim());
+        if (!Number.isFinite(value) || value < 0) return render();
+      } else if (t.dataset.cell === 'easing') {
+        value = parseEasing(t.value);
+        if (!value) return toast('An easing is four numbers, like 0.4, 0, 0.2, 1 (the first and third between 0 and 1).'), render();
       } else if (t.dataset.cell === 'boolean') value = t.checked;
       else value = t.value;
       change(() => writeCell(col, t.dataset.var, t.dataset.mode, value));

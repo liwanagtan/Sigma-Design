@@ -431,6 +431,10 @@ fieldset.readonly .field-label { cursor: default; }
 
 /* ---------- color opacity & typography tokens ---------- */
 .alpha-wrap { display: inline-flex; align-items: center; color: var(--muted); flex: none; }
+.unit-wrap { display: inline-flex; align-items: center; color: var(--muted); flex: 1; min-width: 0; }
+.unit-wrap .cell-input { color: var(--text); }
+.easing-preview { display: inline-flex; color: var(--muted); flex: none; padding-left: 4px; }
+.easing-curve { flex: none; vertical-align: middle; margin-right: 4px; }
 .cell-input.alpha { width: 34px; flex: none; text-align: right; padding: 0 2px; }
 .typo-cell { display: flex; align-items: center; gap: 8px; min-width: 0; height: 30px; padding: 0 6px; border-radius: 5px; text-align: left; }
 .typo-cell:hover { background: var(--hover); }

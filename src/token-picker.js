@@ -19,8 +19,18 @@ export function valuePreview(type, value) {
     return `<span>${esc(value.fontFamily)} ${esc(value.fontSize)}${value.lineHeight ? `/${esc(value.lineHeight)}%` : ''}</span>`;
   }
   if (type === 'boolean') return `<span>${value ? 'True' : 'False'}</span>`;
+  if (type === 'duration') return `<span>${esc(value)}ms</span>`;
+  if (type === 'easing' && Array.isArray(value)) return `${easingCurve(value)}<span>${value.join(', ')}</span>`;
   if (type === 'string') return `<span>“${esc(value)}”</span>`;
   return `<span>${esc(value)}</span>`;
+}
+
+// A small picture of an easing curve.
+export function easingCurve(e, size = 14) {
+  const [x1, y1, x2, y2] = e.map(Number);
+  const p = (x, y) => `${(x * size).toFixed(1)} ${((1 - y) * size).toFixed(1)}`;
+  return `<svg class="easing-curve" width="${size}" height="${size}" viewBox="-1 -4 ${size + 2} ${size + 8}" fill="none" stroke="currentColor" stroke-width="1.2">` +
+    `<path d="M${p(0, 0)} C${p(x1, y1)} ${p(x2, y2)} ${p(1, 1)}"/></svg>`;
 }
 
 // Where a collection lives, for labels: "Color" or "Core tokens › Color".
