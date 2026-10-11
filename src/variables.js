@@ -5,7 +5,7 @@
 // A layer binds a property path to a variable: node.bindings = { 'fills.0.color': varId, 'radius': varId, ... }.
 // resolveVariables() (a normalize step) writes each bound variable's value into the bound property, so the
 // renderer, layout and export only ever see plain values.
-import { state, walk, addEditHook, uid } from './store.js';
+import { state, walk, addEditHook, uid, ancestors, pageOf } from './store.js';
 import { measureText } from './text.js';
 import { owningInstance } from './components.js';
 import {
@@ -574,6 +574,34 @@ export function wouldCycle(varId, targetId) {
 export function resolveIn(col, modeId, varId) {
   reindexVariables();
   return resolveValue(varId, (root) => (inFamily(col, root) ? { collection: col, modeId } : { collection: root, modeId: root.defaultModeId }));
+}
+
+// The token modes in effect for a layer (from its page, then its ancestors, nearest last), as a picker for
+// resolveValue, and a key that's the same for layers in the same modes.
+export function modeContextOf(node) {
+  reindexVariables();
+  let ctx = { ...(pageOf(node.id)?.modes || {}) };
+  for (const a of [...ancestors(node).reverse(), node]) {
+    if (!a.modes) continue;
+    ctx = Object.assign(Object.fromEntries(Object.entries(ctx).filter(([k]) => !(k in a.modes))), a.modes);
+  }
+  return { pick: contextPicker(ctx), key: JSON.stringify(ctx), ctx };
+}
+
+// How many references a token follows (with `pick` choosing modes) before reaching a value: 0 for a
+// primitive, 1 for a semantic token pointing at one, and so on.
+export function aliasDepth(varId, pick) {
+  reindexVariables();
+  let depth = 0;
+  for (let id = varId; depth <= MAX_ALIAS_DEPTH; depth++) {
+    const hit = index.get(id);
+    if (!hit) break;
+    const { collection, modeId } = pick(hit.collection);
+    const raw = rawValueIn(collection, modeId, hit.variable);
+    if (!isAlias(raw)) break;
+    id = raw.alias;
+  }
+  return depth;
 }
 
 // ---------- deprecation ----------

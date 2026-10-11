@@ -6,6 +6,7 @@ import { gridBands, gridLines, gridSnapTargets, newGrid, retypeGrid } from '../s
 import { caseText, measureText } from '../src/text.js';
 import { syncInstances, createInstance, isDeprecated, setDeprecated } from '../src/components.js';
 import { buildSVG } from '../src/io.js';
+import { auditDocument, applyToken, colorDistance } from '../src/audit.js';
 import { parseEasing, resolveVariables, shiftPaintBindings, resolveIn, addContrastPair, deleteVariable, setTokenDeprecated, diffCollections } from '../src/variables.js';
 import { contrastRatio, contrastLevel, formatRatio, isLargeText, backgroundBehind, textContrast } from '../src/contrast.js';
 import { sampleTokenDocument } from '../src/sample-tokens.js';
@@ -270,4 +271,48 @@ test('deprecation: deprecated tokens keep working, show in the publish summary, 
   eq([other.deprecated, other.description], [true, 'Use neutral/500.']);
   setTokenDeprecated(old, false);
   ok(!('deprecated' in old), 'restored');
+});
+
+test('audit: one-off values are grouped with the token that matches, in each layer’s modes; using it binds them', () => {
+  const L = 'l', D = 'd', S = 's';
+  const surface = { id: 'surf', name: 'surface/default', type: 'color', valuesByMode: { [L]: '#FFFFFF', [D]: '#1A1D22' } };
+  const old = { id: 'old', name: 'color/old', type: 'color', valuesByMode: { [L]: '#123456', [D]: '#123456' }, deprecated: true };
+  const semantic = { id: 'sem', name: 'Semantic', modes: [{ id: L, name: 'Light' }, { id: D, name: 'Dark' }], defaultModeId: L, variables: [surface, old] };
+  const space = { id: 'sp4', name: 'space/4', type: 'number', valuesByMode: { [S]: 16 } };
+  const columns = { id: 'cols', name: 'layout/columns', type: 'number', valuesByMode: { [S]: 12 } };
+  const prims = { id: 'pri', name: 'Primitives', modes: [{ id: S, name: 'Value' }], defaultModeId: S, variables: [space, columns] };
+  const white1 = createNode('rect', { name: 'A', fills: [makePaint('#FFFFFF')] });
+  const white2 = createNode('rect', { name: 'B', fills: [makePaint('#FFFFFF')] });
+  const darkCard = createNode('rect', { name: 'C', fills: [makePaint('#1A1D22')] });
+  const darkFrame = createNode('frame', { name: 'Dark', modes: { sem: D }, fills: [], children: [darkCard] });
+  const stack = createNode('frame', { name: 'Stack', fills: [], children: [createNode('rect', { fills: [] }), createNode('rect', { fills: [] })], layout: { mode: 'vertical', gap: 12, pt: 16, pr: 16, pb: 16, pl: 16, spacing: 'packed', alignP: 'start', alignC: 'start' } });
+  const legacy = createNode('rect', { name: 'Legacy', fills: [makePaint('#123456')], bindings: { 'fills.0.color': 'old' } });
+  const oldComp = createNode('component', { name: 'Old card', deprecated: true, fills: [] });
+  const doc = useDoc([white1, white2, darkFrame, stack, legacy, oldComp]);
+  doc.variables = { collections: [semantic, prims] };
+  const inst = createInstance(oldComp, { x: 500 });
+  const report = auditDocument();
+  const colors = report.groups.filter((g) => g.kind === 'color');
+  const white = colors.find((g) => g.value === '#FFFFFF');
+  eq(white.layers.map((l) => l.id), [white1.id, white2.id]);
+  eq([white.suggestion.name, white.suggestion.exact], ['surface/default', true]);
+  const dark = colors.find((g) => g.value === '#1A1D22');
+  eq([dark.suggestion.name, dark.suggestion.exact], ['surface/default', true]); // matches the token's Dark value
+  const pad = report.groups.find((g) => g.kind === 'spacing' && g.value === 16);
+  eq([pad.layers.length, pad.suggestion.name, pad.suggestion.exact], [4, 'space/4', true]);
+  const gap = report.groups.find((g) => g.kind === 'spacing' && g.value === 12);
+  eq([gap.suggestion.name, gap.suggestion.exact], ['space/4', false]); // not layout/columns (12): spacing looks at space tokens
+  ok(!report.groups.some((g) => g.suggestion?.name === 'color/old'), 'deprecated tokens are never suggested');
+  eq(report.deprecatedTokens.map((t) => [t.name, t.layers.length]), [['color/old', 1]]);
+  eq(report.deprecatedComponents.map((c) => [c.name, c.instances]), [['Old card', [inst.id]]]);
+  // Use the matches: the layers bind, and the audit no longer lists them.
+  applyToken(white.layers, white.suggestion.id);
+  applyToken(pad.layers, pad.suggestion.id);
+  eq(white1.bindings, { 'fills.0.color': 'surf' });
+  eq(stack.bindings['layout.pl'], 'sp4');
+  const after = auditDocument();
+  ok(!after.groups.some((g) => g.value === '#FFFFFF' || (g.kind === 'spacing' && g.value === 16)), 'used values are gone');
+  stack.children.pop();
+  ok(!auditDocument().groups.some((g) => g.kind === 'spacing' && g.value === 12), 'a gap with one layer in the flow does nothing, so it isn’t listed');
+  ok(colorDistance('#FFFFFF', '#FEFEFE') < 1 && colorDistance('#FFFFFF', '#000000') > 90, 'color distance');
 });

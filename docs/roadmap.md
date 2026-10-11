@@ -429,6 +429,8 @@ Close the gap between design and code: a developer selects a layer and gets code
 
 ## Phase 17: Design system use report
 
+The **token audit** (done, `audit.js`) already finds one-off values and deprecated uses in the open file; this phase measures across files.
+
 Like Pinterest's FigStats, measured across every design file in this browser:
 
 - the share of layers that come from library components

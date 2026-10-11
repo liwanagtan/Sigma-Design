@@ -35,6 +35,7 @@ import { stopEditing, TEXT_CASES } from './text.js';
 import { toWorld, nodeWorldSVG } from './render.js';
 import { GRID_TYPES, newGrid, retypeGrid } from './grids.js';
 import { textContrast, contrastBadge } from './contrast.js';
+import { openAuditDialog } from './audit-ui.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -115,6 +116,7 @@ function initFileHeader() {
       '-',
       { label: 'Design tokens…', action: () => openDesignTokensDialog() },
       { label: 'Local design tokens…', action: () => openVariablesEditor() },
+      { label: 'Audit design tokens…', action: () => openAuditDialog() },
       '-',
       { label: 'Component libraries…', action: () => openLibrariesDialog() },
       { label: 'Publish components…', action: () => openPublishComponentsDialog() },
@@ -909,7 +911,8 @@ function buildProps() {
         : '<div class="muted">Choose a token file to use its design tokens in this file.</div>') +
       `<button class="btn wide" data-action="open-design-tokens">${tokens.length ? 'Change token file…' : 'Choose token file…'}</button>` +
       `<div class="muted">${vcount ? `${vcount} local token${vcount === 1 ? '' : 's'} in this file` : 'No local tokens in this file.'}</div>` +
-      '<button class="btn wide" data-action="open-variables">Open local tokens</button>');
+      '<button class="btn wide" data-action="open-variables">Open local tokens</button>' +
+      '<button class="btn wide" data-action="audit" title="Find colors, text styles, spacing, radii and shadows that don’t use tokens">Audit design tokens…</button>');
     const comps = componentLibraries();
     html += section('Component libraries',
       (comps.length ? comps.map((l) => libLine(COMPONENT_LIB_ICON, l)).join('') : '<div class="muted">Link design files that publish components to use them from Assets.</div>') +
@@ -1405,6 +1408,8 @@ function initProps() {
     switch (b.dataset.action) {
       case 'open-variables':
         return openVariablesEditor();
+      case 'audit':
+        return openAuditDialog();
       case 'open-libraries':
         return openLibrariesDialog();
       case 'open-design-tokens':
