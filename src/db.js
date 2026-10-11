@@ -49,7 +49,34 @@ async function transact(stores, mode, fn) {
   });
 }
 
+// Change an existing file in one transaction: `update(meta, docRecord)` returns { meta?, doc? } to write
+// (or nothing). Resolves false, writing nothing, when the file no longer exists, so a save that races
+// with a delete (in this tab or another) can never bring the file back.
+async function updateFile(id, update) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(['files', 'docs'], 'readwrite');
+    const files = tx.objectStore('files'), docs = tx.objectStore('docs');
+    let exists = false, meta, rec, pending = 2;
+    const ready = () => {
+      if (--pending) return;
+      if (!meta) return;
+      exists = true;
+      const out = update(meta, rec);
+      if (out?.meta) files.put(out.meta);
+      if (out?.doc) docs.put(out.doc);
+    };
+    files.get(id).onsuccess = (e) => { meta = e.target.result; ready(); };
+    docs.get(id).onsuccess = (e) => { rec = e.target.result; ready(); };
+    tx.oncomplete = () => resolve(exists);
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error || new Error('Storage transaction aborted'));
+  });
+}
+
 export const db = {
+  updateFile,
+
   get: (store, id) => transact(store, 'readonly', (tx) => tx.objectStore(store).get(id)),
   getAll: (store) => transact(store, 'readonly', (tx) => tx.objectStore(store).getAll()),
   put: (store, value) => transact(store, 'readwrite', (tx) => tx.objectStore(store).put(value)),
@@ -74,9 +101,13 @@ export const db = {
   }),
 
   versionsOf: (fileId) => transact('versions', 'readonly', (tx) => tx.objectStore('versions').index('fileId').getAll(fileId)),
-  putVersion: (record, doc) => transact(['versions', 'docs'], 'readwrite', (tx) => {
-    if (doc) tx.objectStore('docs').put({ id: `v:${record.id}`, doc });
-    return tx.objectStore('versions').put(record);
+  // Only while the file exists (no orphaned versions from a save that raced with a delete).
+  putVersion: (record, doc) => transact(['files', 'versions', 'docs'], 'readwrite', (tx) => {
+    tx.objectStore('files').getKey(record.fileId).onsuccess = (e) => {
+      if (e.target.result === undefined) return;
+      if (doc) tx.objectStore('docs').put({ id: `v:${record.id}`, doc });
+      tx.objectStore('versions').put(record);
+    };
   }),
   versionDoc: async (id) => (await transact('docs', 'readonly', (tx) => tx.objectStore('docs').get(`v:${id}`)))?.doc || null,
   deleteVersions: (ids) => transact(['versions', 'docs'], 'readwrite', (tx) => {

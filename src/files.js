@@ -102,8 +102,9 @@ export async function loadFile(id) {
     if (pending.t > meta.updatedAt) {
       // Changes from the last session that didn't reach IndexedDB before the page closed.
       meta.updatedAt = pending.t;
-      await db.putFile(meta, { id, doc: pending.doc, views: pending.views || {} });
       localStorage.removeItem(PENDING_KEY);
+      const exists = await db.updateFile(id, (cur) => ({ meta: { ...cur, updatedAt: pending.t }, doc: { id, doc: pending.doc, views: pending.views || {} } }));
+      if (!exists) return null;
       return { meta, doc: pending.doc, views: pending.views || {} };
     }
     localStorage.removeItem(PENDING_KEY);
@@ -152,11 +153,8 @@ export async function renameFile(id, name) {
   if (id === currentFileId && state.doc) {
     state.doc.name = name; // the open editor saves it (and the meta) on its next autosave
   }
-  const file = await loadFile(id);
-  if (!file) return;
-  file.doc.name = name;
-  await db.putFile({ ...file.meta, name }, { id, doc: file.doc, views: file.views });
-  broadcast('renamed', id);
+  const renamed = await db.updateFile(id, (meta, rec) => ({ meta: { ...meta, name }, doc: rec && { ...rec, doc: { ...rec.doc, name } } }));
+  if (renamed) broadcast('renamed', id);
 }
 
 export async function duplicateFile(id) {
@@ -270,11 +268,15 @@ export async function appendToTokenFile(id, collections, notes, { libraries = []
   for (const l of libraries) if (l.fileId !== id && !(doc.libraries ||= []).some((x) => x.fileId === l.fileId)) doc.libraries.push(structuredClone(l));
   doc.published = publishedFrom(doc.variables.collections, doc.published, notes);
   if (deps.size) doc.published.dependencies = [...deps.values()];
-  const meta = { ...file.meta, updatedAt: Date.now(), tokenVersion: doc.published.version };
-  await db.putFile(meta, { id, doc, views: file.views });
+  let name = file.meta.name;
+  const exists = await db.updateFile(id, (meta) => {
+    name = meta.name;
+    return { meta: { ...meta, updatedAt: Date.now(), tokenVersion: doc.published.version }, doc: { id, doc, views: file.views } };
+  });
+  if (!exists) throw new Error('That token file no longer exists.');
   broadcast('saved', id);
   broadcast('published', id);
-  return { id, name: meta.name, published: doc.published };
+  return { id, name, published: doc.published };
 }
 
 // The sample: a token file with the design-system tokens, and a design file that links it.
@@ -302,32 +304,35 @@ function persistCurrent(doc, views, { edited }) {
   if (!id || currentDeleted || state.readOnly) return saving; // read-only: viewing an older version
   inFlight++;
   saving = saving.then(async () => {
-    const meta = await db.get('files', id);
-    if (!meta) {
-      currentDeleted = true; // deleted elsewhere; don't resurrect it
-      return;
-    }
+    // Every write below checks, in the same transaction, that the file still exists: a file deleted
+    // elsewhere (or just now) is never brought back.
+    const gone = () => void (currentDeleted = true);
     if (!edited) {
       // View-only change (pan/zoom): never rewrite the document, which another tab may have updated.
-      const rec = await db.get('docs', id);
-      if (rec) await db.put('docs', { ...rec, views });
+      if (!(await db.updateFile(id, (meta, rec) => rec && { doc: { ...rec, views } }))) gone();
       return;
     }
-    meta.name = doc.name || 'Untitled';
-    meta.background = doc.pages?.[0]?.background || meta.background;
-    const publishedBefore = `${meta.tokenVersion || 0}/${meta.componentVersion || 0}`;
-    meta.tokenVersion = doc.published?.version || 0;
-    meta.componentVersion = doc.publishedComponents?.version || 0;
-    await autosaveVersion(id, meta);
-    meta.updatedAt = Date.now();
-    const published = `${meta.tokenVersion}/${meta.componentVersion}` !== publishedBefore;
-    if (published) meta.lastVersionAt = Date.now();
-    await db.putFile(meta, { id, doc, views });
+    const before = await db.get('files', id);
+    if (!before) return gone();
+    await autosaveVersion(id, before);
+    let publishedBefore = '0/0';
+    const written = await db.updateFile(id, (meta) => {
+      publishedBefore = `${meta.tokenVersion || 0}/${meta.componentVersion || 0}`;
+      const next = {
+        ...meta, name: doc.name || 'Untitled', background: doc.pages?.[0]?.background || meta.background,
+        tokenVersion: doc.published?.version || 0, componentVersion: doc.publishedComponents?.version || 0,
+        updatedAt: Date.now(), lastVersionAt: before.lastVersionAt,
+      };
+      if (`${next.tokenVersion}/${next.componentVersion}` !== publishedBefore) next.lastVersionAt = Date.now();
+      return { meta: next, doc: { id, doc, views } };
+    });
+    if (!written) return gone();
     broadcast('saved', id);
     scheduleThumbnail();
-    if (published) {
+    const tokenVersion = doc.published?.version || 0, componentVersion = doc.publishedComponents?.version || 0;
+    if (`${tokenVersion}/${componentVersion}` !== publishedBefore) {
       // Every publish is kept in the version history.
-      const tokens = (doc.published?.version || 0) !== +publishedBefore.split('/')[0];
+      const tokens = tokenVersion !== +publishedBefore.split('/')[0];
       const pub = tokens ? doc.published : doc.publishedComponents;
       await addVersion(id, doc, { kind: 'publish', title: `Published ${tokens ? 'tokens' : 'components'} v${pub.version}`, description: pub.notes || '' });
       broadcast('published', id);
@@ -419,7 +424,7 @@ export async function saveNamedVersion(fileId, title, description = '') {
     const [meta, rec] = await Promise.all([db.get('files', fileId), db.get('docs', fileId)]);
     if (!meta || !rec?.doc) return null;
     const version = await addVersion(fileId, rec.doc, { kind: 'named', title: title.trim() || 'Untitled version', description: description.trim() });
-    await db.put('files', { ...meta, lastVersionAt: Date.now() });
+    await db.updateFile(fileId, (m) => ({ meta: { ...m, lastVersionAt: Date.now() } }));
     return version;
   };
   return fileId === currentFileId ? afterSave(write) : write();
@@ -456,7 +461,8 @@ export async function restoreVersion(fileId, version) {
       else delete doc[key];
     }
     const now = Date.now();
-    await db.putFile({ ...meta, updatedAt: now, lastVersionAt: now }, { id: fileId, doc, views: rec.views || {} });
+    const exists = await db.updateFile(fileId, (m, cur) => ({ meta: { ...m, updatedAt: now, lastVersionAt: now }, doc: { id: fileId, doc, views: cur?.views || {} } }));
+    if (!exists) throw new Error('This file was deleted.');
     broadcast('saved', fileId);
   };
   return fileId === currentFileId ? afterSave(write) : write();
@@ -546,9 +552,5 @@ export async function updateThumbnail() {
     console.warn('Thumbnail failed', err);
     return;
   }
-  const meta = await db.get('files', id);
-  if (!meta) return;
-  meta.thumbnail = thumbnail;
-  await db.put('files', meta);
-  broadcast('thumbnail', id);
+  if (await db.updateFile(id, (meta) => ({ meta: { ...meta, thumbnail } }))) broadcast('thumbnail', id);
 }
