@@ -109,7 +109,7 @@ export function initHome(el) {
     const r = e.currentTarget.getBoundingClientRect();
     showContextMenu(r.right - 220, r.bottom + 4, [
       { label: 'Blank token file', action: newTokenFile },
-      { label: 'Sample token file', action: newSampleTokenFile },
+      { label: 'Open sample token file', action: openSampleTokenFile },
     ]);
   });
   root.querySelector('#home-import').addEventListener('click', async () => {
@@ -124,7 +124,7 @@ export function initHome(el) {
     if (action) {
       e.preventDefault();
       const act = action.dataset.emptyAction;
-      if (act === 'sample-tokens') return newSampleTokenFile();
+      if (act === 'sample-tokens') return openSampleTokenFile();
       return act === 'sample' ? newSampleFile() : act === 'tokens' ? newTokenFile() : newBlankFile();
     }
     if (more) {
@@ -193,7 +193,7 @@ async function newSampleFile() {
 
 // A complete sample design system: primitives, semantic Light/Dark colors, a brand, text styles and
 // component tokens, published so design files can link it right away. Opens the existing one if there is one.
-async function newSampleTokenFile() {
+async function openSampleTokenFile() {
   const lib = await sampleTokenFile();
   openFile(lib.id);
 }
