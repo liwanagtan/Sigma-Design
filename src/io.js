@@ -3,7 +3,7 @@ import {
   insertNode, removeNodes, worldMatrix, worldBounds, setWorldMatrix, walk, migratePaints,
 } from './store.js';
 import { mul, translate, unionBoxes, intersects } from './geom.js';
-import { nodeWorldSVG, strokeOverhang } from './render.js';
+import { nodeWorldSVG, strokeOverhang, effectOverhang } from './render.js';
 import { frameAt } from './hit.js';
 import { sortByZ, viewportSize } from './commands.js';
 import { toWorld } from './render.js';
@@ -259,10 +259,10 @@ const safeName = (s) => (s || 'Untitled').replace(/[\\/:*?"<>|]+/g, '-').trim();
 // `ordered`: nodes are already in z-order (e.g. a page's children), so skip sorting.
 export function buildSVG(nodes, { ordered = false } = {}) {
   let box = unionBoxes(nodes.map(worldBounds));
-  // Grow the canvas so center/outside strokes aren't cropped.
+  // Grow the canvas so center/outside strokes and shadows aren't cropped.
   let pad = 0;
   walk(nodes, (n) => {
-    pad = Math.max(pad, strokeOverhang(n));
+    pad = Math.max(pad, strokeOverhang(n) + (n.visible ? effectOverhang(n) : 0));
   });
   pad = Math.ceil(pad);
   box = { x: box.x - pad, y: box.y - pad, w: box.w + pad * 2, h: box.h + pad * 2 };

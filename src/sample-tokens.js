@@ -1,7 +1,7 @@
 // The sample token file: a small but complete design system, showing what token files can do.
 //
 //   Primitives  raw values: a color palette (with transparent colors), spacing, radii, type scales, motion, text
-//   Semantic    what colors mean, in Light and Dark modes; every value points at a primitive
+//   Semantic    what colors and shadows mean, in Light and Dark modes; every value points at a primitive
 //   Brand B     an extension of Semantic that only changes the accent colors
 //   Typography  text styles whose parts point at the type primitives
 //   Components  tokens for buttons, inputs and cards, pointing at semantic tokens (three levels deep)
@@ -137,6 +137,14 @@ export function sampleTokenDocument() {
     token(s, sg, 'subtle', 'color', modes(ref(palette[hue][100]), ref(palette[hue][700])));
   }
 
+  const elevation = group(s, 'elevation', null, 'Shadows that lift surfaces off the page; darker in Dark mode, where light shadows don’t show.');
+  const raisedShadow = token(s, elevation, 'raised', 'shadow',
+    modes({ color: ref(palette.alpha['black-10']), x: 0, y: 2, blur: 8, spread: 0 }, { color: ref(palette.alpha['black-40']), x: 0, y: 2, blur: 8, spread: 0 }),
+    'Cards and other raised surfaces.');
+  token(s, elevation, 'overlay', 'shadow',
+    modes({ color: ref(palette.alpha['black-10']), x: 0, y: 12, blur: 32, spread: -4 }, { color: ref(palette.alpha['black-40']), x: 0, y: 12, blur: 32, spread: -4 }),
+    'Menus, popovers and dialogs.');
+
   // ---------- Brand B: Semantic with a violet accent ----------
   const brand = {
     id: uid(), name: 'Brand B', extends: s.id, variables: [], overrides: {},
@@ -199,7 +207,7 @@ export function sampleTokenDocument() {
   const card = group(c, 'card');
   token(c, card, 'background', 'color', ref(raised));
   token(c, card, 'border', 'color', ref(bDefault));
-  token(c, card, 'shadow', 'color', ref(palette.alpha['black-10']));
+  token(c, card, 'shadow', 'shadow', ref(raisedShadow));
   token(c, card, 'radius', 'number', ref(rad.lg));
   token(c, card, 'padding', 'number', ref(sp[6]));
 

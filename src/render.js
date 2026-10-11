@@ -62,6 +62,56 @@ function strokeLayers(n, shape) {
     .map((p) => `${geom} fill="none" ${paint(p.color, p.opacity, 'stroke')} stroke-width="${sw}"/>`).join('');
 }
 
+// ---------- effects ----------
+// node.effects = [{ type: 'drop-shadow' | 'inner-shadow' | 'layer-blur', color, opacity, x, y, blur, spread, visible }],
+// listed bottom to top like paints. They render as one SVG filter on the layer (its fills, strokes and children):
+// drop shadows under it, inner shadows over it, then a layer blur over everything. Blur is Figma's blur
+// radius; SVG's standard deviation is half of it.
+const visibleEffects = (n) => (n.effects || []).filter((e) => e.visible !== false);
+
+// How far a node's effects reach beyond its bounds (used to pad exports and the filter region).
+export function effectOverhang(n) {
+  let pad = 0;
+  for (const e of visibleEffects(n)) {
+    if (e.type === 'inner-shadow') continue;
+    const blur = Math.max(0, Number(e.blur) || 0) * 1.5;
+    pad = e.type === 'layer-blur' ? Math.max(pad, blur)
+      : Math.max(pad, blur + Math.max(0, Number(e.spread) || 0) + Math.max(Math.abs(Number(e.x) || 0), Math.abs(Number(e.y) || 0)));
+  }
+  return Math.ceil(pad);
+}
+
+function effectsFilter(n, id) {
+  const fx = visibleEffects(n);
+  if (!fx.length) return null;
+  const pad = effectOverhang(n) + strokeOverhang(n) + 2;
+  const sd = (e) => Math.max(0, Number(e.blur) || 0) / 2;
+  let body = '';
+  const under = [], over = [];
+  fx.forEach((e, i) => {
+    const flood = `<feFlood flood-color="${e.color || '#000000'}" flood-opacity="${e.opacity ?? 1}" result="c${i}"/>`;
+    const spread = Number(e.spread) || 0;
+    if (e.type === 'drop-shadow') {
+      const src = spread ? `<feMorphology in="SourceAlpha" operator="${spread > 0 ? 'dilate' : 'erode'}" radius="${Math.abs(spread)}" result="m${i}"/>` : '';
+      body += src + `<feOffset in="${spread ? `m${i}` : 'SourceAlpha'}" dx="${Number(e.x) || 0}" dy="${Number(e.y) || 0}" result="o${i}"/>` +
+        `<feGaussianBlur in="o${i}" stdDeviation="${sd(e)}" result="b${i}"/>${flood}<feComposite in="c${i}" in2="b${i}" operator="in" result="s${i}"/>`;
+      under.push(`s${i}`);
+    } else if (e.type === 'inner-shadow') {
+      // The shadow of everything outside the shape, kept inside it.
+      body += `<feComponentTransfer in="SourceAlpha" result="i${i}"><feFuncA type="table" tableValues="1 0"/></feComponentTransfer>` +
+        (spread > 0 ? `<feMorphology in="i${i}" operator="dilate" radius="${spread}" result="m${i}"/>` : '') +
+        `<feOffset in="${spread > 0 ? `m${i}` : `i${i}`}" dx="${Number(e.x) || 0}" dy="${Number(e.y) || 0}" result="o${i}"/>` +
+        `<feGaussianBlur in="o${i}" stdDeviation="${sd(e)}" result="b${i}"/>${flood}<feComposite in="c${i}" in2="b${i}" operator="in" result="t${i}"/>` +
+        `<feComposite in="t${i}" in2="SourceAlpha" operator="in" result="s${i}"/>`;
+      over.push(`s${i}`);
+    }
+  });
+  body += `<feMerge result="all">${[...under, 'SourceGraphic', ...over].map((r) => `<feMergeNode in="${r}"/>`).join('')}</feMerge>`;
+  const blur = fx.filter((e) => e.type === 'layer-blur').reduce((m, e) => Math.max(m, sd(e)), 0);
+  if (blur) body += `<feGaussianBlur in="all" stdDeviation="${blur}"/>`;
+  return `<filter id="${id}" filterUnits="userSpaceOnUse" x="${-pad}" y="${-pad}" width="${n.w + pad * 2}" height="${Math.max(n.h, 0) + pad * 2}" color-interpolation-filters="sRGB">${body}</filter>`;
+}
+
 // Renders a node in its parent's coordinate space.
 export function nodeSVG(n, opts = {}) {
   if (!n.visible) return '';
@@ -116,6 +166,8 @@ export function nodeSVG(n, opts = {}) {
       break;
     }
   }
+  const filter = effectsFilter(n, `fx-${n.id}`);
+  if (filter) inner = `${filter}<g filter="url(#fx-${n.id})">${inner}</g>`;
   const op = n.opacity < 1 ? ` opacity="${n.opacity}"` : '';
   return `<g transform="${css(localMatrix(n))}"${op}>${inner}</g>`;
 }

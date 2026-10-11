@@ -569,6 +569,7 @@ function previewText(v) {
   const val = previewValue(v.id);
   if (v.type === 'boolean') return val ? 'True' : 'False';
   if (v.type === 'typography') return val ? `${val.fontFamily} ${val.fontSize}` : '';
+  if (v.type === 'shadow') return val ? `${val.x ?? 0} ${val.y ?? 0} ${val.blur ?? 0} ${val.spread ?? 0}` : '';
   if (v.type === 'color') {
     const { hex, alpha } = splitColor(val);
     return alpha < 1 ? `${hex} ${Math.round(alpha * 100)}%` : hex;
@@ -620,6 +621,14 @@ function variableFromValue(nodes, path, type) {
     const n = nodes[0];
     value = { fontFamily: n.fontFamily, fontWeight: n.fontWeight, fontSize: n.fontSize, lineHeight: n.lineHeight ?? null, letterSpacing: n.letterSpacing || 0 };
   }
+  if (type === 'shadow') {
+    const e = nodes[0].effects?.[+path.split('.')[1]] || {};
+    const alpha = e.opacity ?? 1;
+    value = {
+      color: alpha < 1 ? (e.color || '#000000') + Math.round(alpha * 255).toString(16).padStart(2, '0').toUpperCase() : e.color || '#000000',
+      x: e.x || 0, y: e.y || 0, blur: e.blur || 0, spread: e.spread || 0,
+    };
+  }
   if (type === 'color') {
     // Keep the paint's opacity in the new token.
     const [kind, i] = path.split('.');
@@ -630,7 +639,7 @@ function variableFromValue(nodes, path, type) {
   if (type === 'number') value = Number(value) || 0;
   if (type === 'boolean') value = value !== false;
   if (type === 'string') value = String(value ?? '');
-  const name = type === 'color' ? 'color' : type === 'typography' ? 'text/style' : path.split('.').pop();
+  const name = type === 'color' ? 'color' : type === 'typography' ? 'text/style' : type === 'shadow' ? 'shadow' : path.split('.').pop();
   const v = createVariable(col, type, name);
   for (const m of col.modes) v.valuesByMode[m.id] = value;
   applyVariable(nodes, path, v.id);
@@ -701,12 +710,82 @@ function addPaint(kind) {
   if (!nodes.length) return;
   const replace = !samePaints(nodes, kind);
   for (const n of nodes) {
-    editNode(n, [kind], () => {
+    // Adding a paint keeps the tokens on the others (replacing mixed paints doesn't).
+    editNode(n, [replace ? kind : `${kind}.${(n[kind] || []).length}`], () => {
       const list = replace ? [] : (n[kind] || []);
       // The first paint gets the layer's default color; extra ones start as a translucent black overlay.
       list.push(list.length ? makePaint('#000000', 0.2) : makePaint(defaultPaintColor(n, kind)));
       n[kind] = list;
     });
+  }
+  commit();
+}
+
+// ---------- effects ----------
+const EFFECT_TYPES = { 'drop-shadow': 'Drop shadow', 'inner-shadow': 'Inner shadow', 'layer-blur': 'Layer blur' };
+const sameEffects = (nodes) => nodes.every((n) => JSON.stringify(n.effects || []) === JSON.stringify(nodes[0].effects || []));
+
+// Rows are listed top effect first, like paints; ids are the underlying (bottom-up) index.
+function effectRows(nodes) {
+  if (!sameEffects(nodes)) return '<div class="mixed-paints">Click + to replace mixed effects</div>';
+  const list = nodes[0].effects || [];
+  return list.map((e, i) => ({ e, i })).reverse().map(({ e, i }) => {
+    const hidden = e.visible === false;
+    const path = `effects.${i}`;
+    const bound = boundVar(nodes, path);
+    const isBound = bound && bound !== MIXED;
+    const blurOnly = e.type === 'layer-blur';
+    const f = (key, label) => `<label class="field"><span class="field-label">${label}</span><input data-effect-input="${i}:${key}" value="${esc(fmtNum(e[key] ?? 0))}" spellcheck="false"></label>`;
+    let body = '';
+    if (!isBound) {
+      body = blurOnly
+        ? `<div class="grid2">${f('blur', 'Blur')}<span></span></div>`
+        : `<div class="grid2">${f('x', 'X')}${f('y', 'Y')}</div><div class="grid2">${f('blur', 'Blur')}${f('spread', 'Spread')}</div>` +
+          `<div class="color-row"><label class="swatch" style="--c:${e.color || '#000000'}"><input type="color" data-effect-color="${i}" value="${(e.color || '#000000').toLowerCase()}"></label>` +
+          `<input class="hex" data-effect-input="${i}:hex" value="${esc((e.color || '#000000').replace('#', ''))}" spellcheck="false">` +
+          `<input class="op" data-effect-input="${i}:opacity" value="${Math.round((e.opacity ?? 1) * 100)}"><span class="op-suffix">%</span></div>`;
+    }
+    return `<div class="effect-row${hidden ? ' is-hidden' : ''}"><div class="effect-head">` +
+      `<select class="select" data-effect-type="${i}">${Object.entries(EFFECT_TYPES).map(([k, l]) => `<option value="${k}" ${k === e.type ? 'selected' : ''}>${l}</option>`).join('')}</select>` +
+      `<button class="icon-btn" data-effect-act="toggle" data-effect="${i}" title="${hidden ? 'Show' : 'Hide'} effect">${hidden ? icons.eyeOff : icons.eye}</button>` +
+      `<button class="icon-btn" data-effect-act="remove" data-effect="${i}" title="Remove effect">${icons.minus}</button></div>` +
+      (blurOnly ? '' : `<div class="bind-inline wide"><span class="muted">Shadow token</span>${isBound ? varChip(path, bound) : varButton(path)}</div>`) +
+      `${body}</div>`;
+  }).join('');
+}
+
+// Apply fn to effect `i` on every selected node. Editing an effect detaches a shadow token bound to it.
+// `field`: a change that keeps the token (showing, hiding or changing the type).
+function updateEffect(i, fn, { live = false, field = null } = {}) {
+  for (const n of selectedNodes()) {
+    if (!n.effects?.[i]) continue;
+    editNode(n, [field ? `effects.${i}.${field}` : `effects.${i}`], () => fn(n.effects[i]));
+  }
+  if (live) emit('doc');
+  else commit();
+}
+
+function addEffect() {
+  const nodes = selectedNodes();
+  const replace = !sameEffects(nodes);
+  for (const n of nodes) {
+    const list = replace ? [] : [...(n.effects || [])];
+    editNode(n, [replace ? 'effects' : `effects.${list.length}`], () => {
+      list.push({ type: 'drop-shadow', color: '#000000', opacity: 0.25, x: 0, y: 4, blur: 4, spread: 0, visible: true });
+      n.effects = list;
+    });
+  }
+  commit();
+}
+
+function removeEffect(i) {
+  for (const n of selectedNodes()) {
+    if (!n.effects?.[i]) continue;
+    editNode(n, [`effects.${i}`], () => {
+      n.effects.splice(i, 1);
+      if (!n.effects.length) delete n.effects;
+    });
+    if (n.bindings) editNode(n, ['bindings'], () => shiftPaintBindings(n, 'effects', i));
   }
   commit();
 }
@@ -862,6 +941,9 @@ function buildProps() {
     }
     html += section('Stroke', body, addPaintButton('strokes'));
   }
+
+  // Effects
+  html += section('Effects', effectRows(nodes), `<button class="icon-btn" data-action="add-effect" title="Add effect">${icons.plus}</button>`);
 
   // Export
   html += section('Export', `<div class="export-row">${exportControls()}</div><button class="btn wide" data-action="export">Export ${single ? esc(single.name) : `${nodes.length} layers`}</button>`);
@@ -1043,7 +1125,7 @@ export function renderProps() {
     tmp.innerHTML = buildProps();
     for (const el of panel.querySelectorAll('input:not([type=color]):not([type=checkbox])')) {
       if (el === active) continue;
-      const attr = ['data-key', 'data-paint-hex', 'data-paint-op', 'data-page-hex'].find((a) => el.hasAttribute(a));
+      const attr = ['data-key', 'data-paint-hex', 'data-paint-op', 'data-page-hex', 'data-effect-input'].find((a) => el.hasAttribute(a));
       if (!attr) continue;
       const twin = tmp.querySelector(`[${attr}${el.getAttribute(attr) ? `="${el.getAttribute(attr)}"` : ''}]`);
       if (twin) el.value = twin.value;
@@ -1084,6 +1166,19 @@ function initProps() {
       return updatePaint(t.dataset.paintOp, 'opacity', (p) => void (p.opacity = Math.min(100, Math.max(0, v)) / 100));
     }
     if (t.dataset.paintColor) return updatePaint(t.dataset.paintColor, 'color', (p) => void (p.color = t.value.toUpperCase()));
+    if (t.dataset.effectType) return updateEffect(+t.dataset.effectType, (fx) => void (fx.type = t.value), { field: 'type' });
+    if (t.dataset.effectColor) return updateEffect(+t.dataset.effectColor, (fx) => void (fx.color = t.value.toUpperCase()));
+    if (t.dataset.effectInput) {
+      const [i, key] = t.dataset.effectInput.split(':');
+      if (key === 'hex') {
+        const hex = normHex(t.value);
+        return hex ? updateEffect(+i, (fx) => void (fx.color = hex)) : emit('selection');
+      }
+      const v = evalNum(t.value);
+      if (v === null) return emit('selection');
+      if (key === 'opacity') return updateEffect(+i, (fx) => void (fx.opacity = Math.min(100, Math.max(0, v)) / 100));
+      return updateEffect(+i, (fx) => void (fx[key] = key === 'blur' ? Math.max(0, v) : v));
+    }
     if (t.dataset.bool) return setProps({ [t.dataset.bool]: t.checked });
     if (t.dataset.modeCol) return setMode(t.dataset.modeTarget, t.dataset.modeCol, t.value);
     if (t.dataset.constraint) return setProps({ [`constraints.${t.dataset.constraint}`]: t.value });
@@ -1107,6 +1202,10 @@ function initProps() {
     const t = e.target;
     if (t.dataset.paintColor) {
       updatePaint(t.dataset.paintColor, 'color', (p) => void (p.color = t.value.toUpperCase()), { live: true });
+      t.parentElement.style.setProperty('--c', t.value);
+    }
+    if (t.dataset.effectColor) {
+      updateEffect(+t.dataset.effectColor, (fx) => void (fx.color = t.value.toUpperCase()), { live: true });
       t.parentElement.style.setProperty('--c', t.value);
     }
     if (t.hasAttribute('data-page-bg')) {
@@ -1146,6 +1245,8 @@ function initProps() {
     if (b.dataset.varMenu) return variableMenu(b, b.dataset.varMenu);
     if (b.dataset.paintAct === 'toggle') return updatePaint(b.dataset.paint, 'visible', (p) => void (p.visible = p.visible === false));
     if (b.dataset.paintAct === 'remove') return removePaint(b.dataset.paint);
+    if (b.dataset.effectAct === 'toggle') return updateEffect(+b.dataset.effect, (fx) => void (fx.visible = fx.visible === false), { field: 'visible' });
+    if (b.dataset.effectAct === 'remove') return removeEffect(+b.dataset.effect);
     if (b.dataset.alMode) return setProps({ 'layout.mode': b.dataset.alMode });
     if (b.dataset.alAlign) {
       const [r, c] = b.dataset.alAlign.split(',');
@@ -1196,6 +1297,8 @@ function initProps() {
         return addPaint('fills');
       case 'add-strokes':
         return addPaint('strokes');
+      case 'add-effect':
+        return addEffect();
       case 'export':
         return exportNodes(nodes, { format: exportFormat, scale: exportScale });
       case 'export-page':

@@ -10,7 +10,7 @@ export function blankDocument() {
 
 // The sample design file: components built entirely from the sample token file's tokens
 // (sample-tokens.js), which it links as a library. `collections` are that file's published collections;
-// throws if a token, collection or mode it uses is missing.
+// throws if a token, collection or mode it uses is missing (or a token has another type).
 export function sampleDocument(collections) {
   const col = (name) => {
     const c = collections.find((x) => x.name === name);
@@ -22,12 +22,12 @@ export function sampleDocument(collections) {
     if (!m) throw new Error(`Sample mode ${c.name} ${name} is missing`);
     return m.id;
   };
-  const token = (colName, path) => {
+  const token = (colName, path, type = null) => {
     const v = col(colName).variables.find((x) => x.name === path);
-    if (!v) throw new Error(`Sample token ${colName} ${path} is missing`);
+    if (!v || (type && v.type !== type)) throw new Error(`Sample token ${colName} ${path} is missing`);
     return v.id;
   };
-  const C = (path) => token('Components', path);
+  const C = (path, type) => token('Components', path, type);
   const S = (path) => token('Semantic', path);
   const T = (path) => token('Typography', path);
   const P = (path) => token('Primitives', path);
@@ -72,8 +72,9 @@ export function sampleDocument(collections) {
     name: 'Card', x: 0, y: 140, w: 280, h: 160, clip: true,
     layout: autoLayout({ mode: 'vertical' }), sizingH: 'fixed', sizingV: 'hug',
     fills: [makePaint('#FFFFFF')], strokes: [makePaint('#000000')],
+    effects: [{ type: 'drop-shadow', color: '#000000', opacity: 0.1, x: 0, y: 2, blur: 8, spread: 0, visible: true }],
     bindings: {
-      'fills.0.color': C('card/background'), 'strokes.0.color': C('card/border'),
+      'fills.0.color': C('card/background'), 'strokes.0.color': C('card/border'), 'effects.0': C('card/shadow', 'shadow'),
       radius: C('card/radius'), ...padding(C('card/padding')), 'layout.gap': P('space/3'),
     },
     children: [

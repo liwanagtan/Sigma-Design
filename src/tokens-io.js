@@ -6,7 +6,7 @@
 // and Style Dictionary setups. A "$extensions" → "app.sigma" block records Sigma's collections, modes and
 // extended collections, so re-importing an export rebuilds them exactly.
 import { uid } from './store.js';
-import { TYPO_FIELDS, splitColor, joinColor, defaultValue, parseEasing } from './variables.js';
+import { TYPO_FIELDS, ALL_FIELDS, splitColor, joinColor, defaultValue, parseEasing } from './variables.js';
 import { normalizeGroups, groupPaths } from './token-groups.js';
 
 const SIGMA = 'app.sigma';
@@ -74,6 +74,14 @@ export function exportDTCG(cols, { external = [] } = {}) {
       case 'number': return isDimension(v.name) ? dimension(value) : Number(value) || 0;
       case 'duration': return { value: Number(value) || 0, unit: 'ms' };
       case 'easing': return parseEasing(value) || defaultValue('easing');
+      case 'shadow': {
+        const t = { ...defaultValue('shadow'), ...(value || {}) };
+        const f = (k, conv) => (isAlias(t[k]) ? ref(t[k].alias) : conv(t[k]));
+        return {
+          color: f('color', colorOut), offsetX: f('x', dimension), offsetY: f('y', dimension),
+          blur: f('blur', dimension), spread: f('spread', dimension), inset: false,
+        };
+      }
       case 'typography': {
         const t = { ...defaultValue('typography'), ...(value || {}) };
         const f = (k, conv) => (isAlias(t[k]) ? ref(t[k].alias) : conv(t[k]));
@@ -91,7 +99,7 @@ export function exportDTCG(cols, { external = [] } = {}) {
   };
   const typeOut = (v) => ({
     color: 'color', number: isDimension(v.name) ? 'dimension' : 'number', string: /font-?family/i.test(v.name) ? 'fontFamily' : 'string',
-    boolean: 'boolean', typography: 'typography', duration: 'duration', easing: 'cubicBezier',
+    boolean: 'boolean', typography: 'typography', duration: 'duration', easing: 'cubicBezier', shadow: 'shadow',
   }[v.type]);
 
   for (const c of cols) {
@@ -159,6 +167,16 @@ export function exportCSS(cols, { title = 'Design tokens', external = [] } = {})
       case 'boolean': return [`${name}: ${value ? 1 : 0};`];
       case 'duration': return [`${name}: ${Number(value) || 0}ms;`];
       case 'easing': return [`${name}: cubic-bezier(${(parseEasing(value) || defaultValue('easing')).join(', ')});`];
+      case 'shadow': {
+        const t = { ...defaultValue('shadow'), ...(value || {}) };
+        const f = (k, conv) => (isAlias(t[k]) ? varRef(t[k].alias) : conv(t[k]));
+        const px = (x) => `${Number(x) || 0}px`;
+        const color = f('color', (x) => {
+          const { hex, alpha } = splitColor(x);
+          return (alpha < 1 ? joinColor(hex, alpha) : hex).toLowerCase();
+        });
+        return [`${name}: ${f('x', px)} ${f('y', px)} ${f('blur', px)} ${f('spread', px)} ${color};`];
+      }
       case 'typography': {
         const t = { ...defaultValue('typography'), ...(value || {}) };
         const f = (k, conv) => (isAlias(t[k]) ? varRef(t[k].alias) : conv(t[k]));
@@ -203,7 +221,7 @@ export function exportCSS(cols, { title = 'Design tokens', external = [] } = {})
 const WEIGHT_NAMES = { thin: 100, hairline: 100, extralight: 200, ultralight: 200, light: 300, normal: 400, regular: 400, book: 400, medium: 500, semibold: 600, demibold: 600, bold: 700, extrabold: 800, ultrabold: 800, black: 900, heavy: 900 };
 const TYPE_IN = {
   color: 'color', dimension: 'number', number: 'number', fontWeight: 'number', duration: 'duration', cubicBezier: 'easing',
-  fontFamily: 'string', string: 'string', text: 'string', boolean: 'boolean', typography: 'typography',
+  fontFamily: 'string', string: 'string', text: 'string', boolean: 'boolean', typography: 'typography', shadow: 'shadow',
 };
 
 function hexIn(value) {
@@ -369,6 +387,25 @@ export function importTokens(json, { external = [] } = {}) {
       case 'duration': return durationIn(value) ?? undefined;
       case 'easing': return parseEasing(value) ?? undefined;
       case 'boolean': return value === true || value === 'true' || value === 1;
+      case 'shadow': {
+        // One shadow per token: a list (layered shadows) keeps its first layer.
+        const s = Array.isArray(value) ? value[0] : value;
+        if (!s || typeof s !== 'object') return undefined;
+        const t = defaultValue('shadow');
+        const keys = { color: 'color', x: 'offsetX', y: 'offsetY', blur: 'blur', spread: 'spread' };
+        for (const [k, from] of Object.entries(keys)) {
+          const raw = s[from] ?? s[k];
+          if (raw === undefined) continue;
+          const r2 = refIn(raw);
+          if (r2) {
+            const id = resolveRef(r2, c);
+            if (id) t[k] = { alias: id };
+            continue;
+          }
+          t[k] = k === 'color' ? (hexIn(raw) ?? t[k]) : (numIn(raw) ?? t[k]);
+        }
+        return t;
+      }
       case 'typography': {
         if (!value || typeof value !== 'object') return undefined;
         const t = defaultValue('typography');
@@ -479,7 +516,7 @@ export function mergeCollections(target, incoming) {
   const remap = (x) => {
     if (isAlias(x)) return { alias: idMap.get(x.alias) || x.alias };
     if (x && typeof x === 'object') {
-      for (const k of Object.keys(TYPO_FIELDS)) if (isAlias(x[k])) x[k] = { alias: idMap.get(x[k].alias) || x[k].alias };
+      for (const k of ALL_FIELDS) if (isAlias(x[k])) x[k] = { alias: idMap.get(x[k].alias) || x[k].alias };
     }
     return x;
   };

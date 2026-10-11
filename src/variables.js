@@ -14,7 +14,7 @@ import {
 
 export const VAR_TYPES = {
   color: 'Color', number: 'Number', string: 'String', boolean: 'Boolean', typography: 'Typography',
-  duration: 'Duration', easing: 'Easing',
+  duration: 'Duration', easing: 'Easing', shadow: 'Shadow',
 };
 
 // Motion tokens: a duration is milliseconds; an easing is a cubic Bézier curve [x1, y1, x2, y2] (like CSS
@@ -33,6 +33,12 @@ export function parseEasing(value) {
 export const TYPO_FIELDS = {
   fontFamily: 'string', fontWeight: 'number', fontSize: 'number', lineHeight: 'number', letterSpacing: 'number',
 };
+// A shadow token: a color (with opacity) and its offset, blur and spread in px. Each field is a value or
+// { alias: tokenId } of the field's type, like typography.
+export const SHADOW_FIELDS = { color: 'color', x: 'number', y: 'number', blur: 'number', spread: 'number' };
+// Token types made of fields: { type: { field: fieldType } }.
+export const COMPOSITE_FIELDS = { typography: TYPO_FIELDS, shadow: SHADOW_FIELDS };
+const ALL_FIELDS = [...new Set(Object.values(COMPOSITE_FIELDS).flatMap((f) => Object.keys(f)))];
 
 // Color tokens are '#RRGGBB' or '#RRGGBBAA'; the editor shows hex and opacity separately.
 export function splitColor(value) {
@@ -54,6 +60,7 @@ const NUMBER_PATHS = new Set([
 ]);
 export function typeForPath(path) {
   if (/^(fills|strokes)\.\d+\.color$/.test(path)) return 'color';
+  if (/^effects\.\d+$/.test(path)) return 'shadow';
   if (NUMBER_PATHS.has(path)) return 'number';
   if (path === 'text' || path === 'fontFamily') return 'string';
   if (path === 'visible') return 'boolean';
@@ -65,6 +72,7 @@ const DEFAULTS = {
   color: '#000000', number: 0, string: '', boolean: true,
   typography: { fontFamily: 'Inter', fontWeight: 400, fontSize: 16, lineHeight: null, letterSpacing: 0 },
   duration: 200, easing: [0.25, 0.1, 0.25, 1],
+  shadow: { color: '#00000040', x: 0, y: 4, blur: 8, spread: 0 },
 };
 export const defaultValue = (type) => structuredClone(DEFAULTS[type]);
 const MAX_ALIAS_DEPTH = 16;
@@ -231,10 +239,11 @@ export function resolveValue(varId, pick, depth = 0) {
   const { collection, modeId } = pick(hit.collection);
   const v = rawValueIn(collection, modeId, hit.variable);
   if (isAlias(v)) return resolveValue(v.alias, pick, depth + 1);
-  if (hit.variable.type === 'typography' && v && typeof v === 'object') {
-    // Resolve each field; a field may alias a number or string token.
+  const fields = COMPOSITE_FIELDS[hit.variable.type];
+  if (fields && v && typeof v === 'object') {
+    // Resolve each field; a field may alias a token of its own type.
     const out = {};
-    for (const f of Object.keys(TYPO_FIELDS)) out[f] = isAlias(v[f]) ? resolveValue(v[f].alias, pick, depth + 1) : v[f];
+    for (const f of Object.keys(fields)) out[f] = isAlias(v[f]) ? resolveValue(v[f].alias, pick, depth + 1) : v[f];
     return out;
   }
   return v;
@@ -295,6 +304,21 @@ function applyBinding(node, path, value) {
       }
     }
     if (changed) measureText(node);
+    return;
+  }
+  if (type === 'shadow') {
+    const [, i] = path.split('.');
+    const fx = node.effects?.[+i];
+    if (!fx || !value || typeof value !== 'object') return;
+    if (fx.type !== 'layer-blur') {
+      const { hex, alpha } = splitColor(value.color);
+      if (/^#/.test(String(value.color || ''))) {
+        fx.color = hex;
+        fx.opacity = alpha;
+      }
+      for (const f of ['x', 'y', 'spread']) if (Number.isFinite(Number(value[f]))) fx[f] = Number(value[f]);
+    }
+    if (Number.isFinite(Number(value.blur))) fx.blur = Math.max(0, Number(value.blur));
     return;
   }
   if (type === 'number') {
@@ -358,15 +382,16 @@ export function unbindVariable(node, path) {
   if (!Object.keys(node.bindings).length) delete node.bindings;
 }
 
-// After removing paint `index` from node[kind], move bindings of later paints down one slot.
+// After removing item `index` from the list node[kind] (fills, strokes, effects), move bindings of later
+// items down one slot ("fills.2.color" → "fills.1.color", "effects.2" → "effects.1").
 export function shiftPaintBindings(node, kind, index) {
   if (!node.bindings) return;
   const next = {};
   for (const [path, varId] of Object.entries(node.bindings)) {
-    const m = new RegExp(`^${kind}\\.(\\d+)\\.(.+)$`).exec(path);
+    const m = new RegExp(`^${kind}\\.(\\d+)(\\..+)?$`).exec(path);
     if (!m) next[path] = varId;
     else if (+m[1] < index) next[path] = varId;
-    else if (+m[1] > index) next[`${kind}.${+m[1] - 1}.${m[2]}`] = varId;
+    else if (+m[1] > index) next[`${kind}.${+m[1] - 1}${m[2] || ''}`] = varId;
   }
   node.bindings = next;
   if (!Object.keys(next).length) delete node.bindings;
@@ -492,10 +517,10 @@ export function deleteVariable(varId) {
   const hit = index.get(varId);
   if (!hit) return;
   const literal = previewValue(varId) ?? defaultValue(hit.variable.type);
-  // Typography fields that alias the deleted token become plain values too.
+  // Fields of composite tokens (typography, shadow) that alias the deleted token become plain values too.
   const fixFields = (val) => {
     if (!val || typeof val !== 'object' || isAlias(val)) return;
-    for (const f of Object.keys(TYPO_FIELDS)) if (isAlias(val[f]) && val[f].alias === varId) val[f] = literal;
+    for (const f of ALL_FIELDS) if (isAlias(val[f]) && val[f].alias === varId) val[f] = literal;
   };
   for (const c of collections()) {
     for (const v of c.variables || []) {
@@ -543,14 +568,14 @@ export function wouldCycle(varId, targetId) {
 }
 
 // ---------- references ----------
-// Every value a token holds in one mode, including typography fields: [value, write(newValue)].
+// Every value a token holds in one mode, including composite fields: [value, write(newValue)].
 function eachValue(fn) {
   for (const c of localCollections()) {
     const visit = (holder, key) => {
       const val = holder[key];
       fn(val, (x) => void (holder[key] = x));
       if (val && typeof val === 'object' && !isAlias(val)) {
-        for (const f of Object.keys(TYPO_FIELDS)) if (val[f] !== undefined) fn(val[f], (x) => void (val[f] = x));
+        for (const f of ALL_FIELDS) if (val[f] !== undefined) fn(val[f], (x) => void (val[f] = x));
       }
     };
     for (const v of c.variables || []) for (const m of Object.keys(v.valuesByMode)) visit(v.valuesByMode, m);
@@ -799,4 +824,4 @@ export function setAlias(variable, modeId, targetId) {
   return true;
 }
 
-export { isAlias };
+export { isAlias, ALL_FIELDS };

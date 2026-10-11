@@ -89,7 +89,7 @@ test('tokens.json: plain W3C files from other tools import', () => {
     },
     space: { md: { $type: 'dimension', $value: '1rem' } },
     type: { heading: { $type: 'typography', $value: { fontFamily: ['Inter', 'sans-serif'], fontWeight: 'bold', fontSize: '{space.md}', lineHeight: 1.25, letterSpacing: '0px' } } },
-    shadow: { card: { $type: 'shadow', $value: { offsetX: '0px' } } },
+    gradient: { hero: { $type: 'gradient', $value: [{ color: '#000', position: 0 }] } },
   };
   const { collections, skipped } = importTokens(json);
   eq(skipped, 1);

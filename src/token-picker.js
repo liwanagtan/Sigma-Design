@@ -20,6 +20,11 @@ export function valuePreview(type, value) {
   }
   if (type === 'boolean') return `<span>${value ? 'True' : 'False'}</span>`;
   if (type === 'duration') return `<span>${esc(value)}ms</span>`;
+  if (type === 'shadow' && typeof value === 'object') {
+    const { hex, alpha } = splitColor(value.color);
+    return `<span class="mini-swatch shadow-swatch" style="--c:${esc(value.color)}"></span>` +
+      `<span>${[value.x, value.y, value.blur, value.spread].map((n) => Number(n) || 0).join(' ')} · ${hex}${alpha < 1 ? ` ${Math.round(alpha * 100)}%` : ''}</span>`;
+  }
   if (type === 'easing' && Array.isArray(value)) return `${easingCurve(value)}<span>${value.join(', ')}</span>`;
   if (type === 'string') return `<span>“${esc(value)}”</span>`;
   return `<span>${esc(value)}</span>`;

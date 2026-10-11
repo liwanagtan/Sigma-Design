@@ -88,6 +88,7 @@ Then open http://localhost:5173.
   - **typography tokens** bundle font family, weight, size, line height and letter spacing, and each part can alias a number or text token
   - a typography token is edited in the inspector, with a live sample
   - in design files, the Text section's **Text style** links a typography token to a text layer; changing any font property by hand detaches it
+  - **shadow tokens** hold a color (with opacity), X, Y, blur and spread; like typography, each part can point at a token (the color at an alpha color, say), and they're edited in the inspector with a live preview. A layer's effect uses one with **Shadow token**
   - **motion tokens:** **Duration** tokens are milliseconds and **Easing** tokens are cubic Bézier curves (`0.4, 0, 0.2, 1`, like CSS `cubic-bezier()`), with a small curve preview. Layers don't use them (Sigma has no prototyping); they're there for code, through tokens.json and CSS
 - **Design tokens in design files:**
   - a design file uses **one token file** for its design tokens, chosen in **Design tokens…** (Σ menu, or the panel with nothing selected), plus any local tokens it keeps. Its tokens show up everywhere a value can use a token
@@ -114,12 +115,12 @@ Then open http://localhost:5173.
 - **Export and import:**
   - in a token file's Σ menu, **Export tokens.json** writes the W3C Design Tokens format (DTCG):
     - groups come from `/` in names, and aliases are written `{group.token}`
-    - colors use the DTCG color object with alpha, sizes are `{ value, unit: "px" }`, durations `{ value, unit: "ms" }`, easings `cubicBezier` arrays, and typography is the composite type
+    - colors use the DTCG color object with alpha, sizes are `{ value, unit: "px" }`, durations `{ value, unit: "ms" }`, easings `cubicBezier` arrays, and typography and shadow are composite types (CSS gets a `box-shadow` value)
     - each collection × mode is a token set, such as `Color/Dark`, the multi-set layout Tokens Studio and Style Dictionary setups use
     - re-importing a Sigma export rebuilds it exactly, including modes and extended collections
   - **Export CSS variables** writes custom properties: default modes go on `:root`, and each other mode or brand gets a selector such as `[data-color="dark"]` that swaps values on any element
   - **Import tokens.json…** merges tokens into the open token file, matching by name; dropping a `tokens.json` on the home page creates a new token file
-  - token types Sigma doesn't support yet, like shadows, are skipped with a note
+  - token types Sigma doesn't support yet, like gradients, are skipped with a note; a list of layered shadows keeps its first shadow
   - organise color, number, string and boolean variables into collections; use `/` in names to group them
   - each collection has modes (columns), and a cell can alias another variable
   - the ◈ button on a fill, stroke, number field, visibility or text content binds a variable; a bound field shows a purple chip
@@ -132,7 +133,7 @@ Then open http://localhost:5173.
   - apply an extension with the mode picker on a frame, page or instance to re-skin it (for example, a second brand); extensions can be extended again
   - copied layers remember their variables' names, so pasting into another file reconnects them to same-named variables there
   - a binding to a variable the other file doesn't have is dropped, and the layer keeps its value
-- **Sample file:** **Open sample file** (Σ menu, or **Open the sample file** on an empty files page) creates a **Sample design file** that links the **Sample design tokens** token file. It reuses the most recently edited sample token file, and creates one only if there is none (or the existing ones no longer have the tokens the sample uses). **Open sample token file** opens that same file. Its **Design system** page has a Button component set with a Label property and a Card that uses it, built entirely from the sample tokens (component tokens for color, radius and padding; text styles), with the Card shown in Light, Dark and Brand B
+- **Sample file:** **Open sample file** (Σ menu, or **Open the sample file** on an empty files page) creates a **Sample design file** that links the **Sample design tokens** token file. It reuses the most recently edited sample token file, and creates one only if there is none (or the existing ones no longer have the tokens the sample uses). **Open sample token file** opens that same file. Its **Design system** page has a Button component set with a Label property and a Card that uses it, built entirely from the sample tokens (component tokens for color, radius, padding and the card's shadow; text styles), with the Card shown in Light, Dark and Brand B
 - **Constraints:** layers placed freely in a frame have horizontal (Left, Right, Left & right, Center, Scale) and vertical (Top, Bottom, Top & bottom, Center, Scale) rules
   - the rules apply when the frame is resized by its handles or its W/H fields; hold ⌘ while dragging to ignore them
   - they also apply when an instance is sized differently from its main component
@@ -142,6 +143,7 @@ Then open http://localhost:5173.
 - **Pages:** add, rename and delete pages
 - **Fills and strokes:** a layer can have any number of each. They stack bottom to top, and each has its own color, opacity and show/hide toggle. Strokes share one weight and one position: **Inside**, **Center** or **Outside**.
 - **Properties:** position, size, rotation, corner radius, opacity, typography, align and distribute. Number fields accept math like `100/2`, and you can drag a field's label to scrub its value.
+- **Effects:** drop shadow, inner shadow and layer blur, as many as you like per layer (**Effects** +). Each has X, Y, blur, spread, color and opacity, and can use a shadow token. Exports include them and make room for them. Instances follow the main component's effects and can override them.
 - **Text case:** the Text section's **Case** buttons show text as typed, UPPERCASE, lowercase or Title Case. The text keeps what you typed; only how it shows (and exports) changes, and instances can override it. Use it to keep one capitalization rule per component (title case for buttons and table headings, sentence case for longer strings).
 - **Editing:** undo/redo, copy/paste (also between tabs), duplicate (⌘D or ⌥-drag), arrow-key nudging, z-order (⌘[ / ⌘])
 - **Export:** PNG, JPG or SVG at 0.5x–4x, for the selection or the whole page
