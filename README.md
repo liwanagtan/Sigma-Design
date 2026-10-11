@@ -56,6 +56,12 @@ Then open http://localhost:5173.
   - **apply a property to a layer** in the main component: the apply variable/property button next to **Visibility** (boolean) or **Text content** (text) lists the component's properties and **Create … property…**; a nested instance has **Apply instance swap property** in its header. A bound layer shows a purple pill; click it to switch, edit or detach
   - a property's default is what the main component shows: changing the default updates the bound layers, and editing a bound layer in the main component updates the default
   - **Nested instances:** "Show properties of nested instances…" lists nested instances that have properties; the chosen ones show their controls on instances of the outer component
+- **Slots** (Figma's flexible areas in components):
+  - in a main component, select a nested frame and press ⇧⌘S (or right-click → **Convert to slot**, or the panel's **Convert to slot**); other layers can be wrapped with right-click → **Wrap in new slot**. **+ → Slot** creates a slot property to assign later. A slot can't be the component itself, and layers inside a slot can't use component properties
+  - the slot property's settings: name, description, **Minimum / Maximum layers**, **Preferred instances**, **Only allow preferred instances**, **Display empty slots by default** and **Fill items on counter-axis by default**
+  - the frame's layers are the slot's default content. In an instance, draw or drop layers into the slot, paste them, or use **Add instances** (preferred ones first); they're ordinary layers you can edit, move and delete. Until an instance changes a slot, it follows the main's default content
+  - the instance panel shows each slot with **Modified**, its layer count against the limits (a warning when outside them), **Add instances**, and ⋯ → **Reset slot** / **Delete contents**. Going past the maximum warns. Slots show a pink outline when their component or instance is hovered or selected
+  - deleting a slot property resets that slot in every instance (their added layers go), like Figma
 - **Variants:**
   - **+ → Variant** on a main component turns it into a component set (`Property 1=Default`); on a set it adds a variant property. Right-click → **Add variant** works too, and selecting a set or one of its variants shows a **+** below the set on the canvas to add one (`Variant2`, `Variant3`…)
   - select components and right-click → **Combine as variants** to make a set from existing components

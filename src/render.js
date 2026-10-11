@@ -1,5 +1,6 @@
 import {
   state, page, view, getNode, getParent, selectedNodes, localMatrix, worldMatrix, worldCorners, worldBounds, isFrameLike, walk,
+  ancestors,
 } from './store.js';
 import { css, mul, apply, unionBoxes, cornersOf } from './geom.js';
 import { textStyle } from './text.js';
@@ -7,6 +8,7 @@ import { isInsideInstance } from './components.js';
 
 export const ACCENT = '#0D99FF';
 export const COMPONENT_ACCENT = '#9747FF';
+export const SLOT_ACCENT = '#EE46BC'; // Figma shows slots in pink
 const isComponentish = (n) => n && (n.type === 'component' || n.type === 'componentSet' || n.type === 'instance');
 export const GUIDE = '#F24822';
 
@@ -283,6 +285,30 @@ export function renderOverlay(svg) {
   for (const set of sets) {
     out += poly(worldCorners(set).map(toScreen), `fill="none" stroke="${COMPONENT_ACCENT}" stroke-width="1" stroke-dasharray="4 3"`);
   }
+  // Slots: a pink dashed outline while their component or instance is hovered or selected (always, for
+  // empty slots set to show), with the slot's name.
+  const focusRoots = new Set();
+  for (const id of [state.hoverId, ...state.selection]) {
+    const n = id && getNode(id);
+    if (!n) continue;
+    const roots = [n, ...ancestors(n)].filter((a) => a.type === 'instance' || a.type === 'component');
+    for (const r of roots) focusRoots.add(r.id);
+  }
+  walk(page().children, (n) => {
+    if (!n.propRefs?.slot || !n.visible) return;
+    const owner = [n, ...ancestors(n)].find((a) => a !== n && (a.type === 'instance' || a.type === 'component'));
+    const comp = n.sourceId ? owner && getNode(owner.componentId) : owner;
+    const def = comp && (getParent(comp.id)?.type === 'componentSet' ? getParent(comp.id).props : comp.props)?.[n.propRefs.slot];
+    if (!def) return;
+    const inFocus = [n, ...ancestors(n)].some((a) => focusRoots.has(a.id));
+    const empty = !(n.children || []).length;
+    if (!inFocus && !(empty && def.showEmpty)) return;
+    const pts = worldCorners(n).map(toScreen);
+    out += poly(pts, `fill="${empty ? 'rgba(238,70,188,0.06)' : 'none'}" stroke="${SLOT_ACCENT}" stroke-width="1" stroke-dasharray="4 3"`);
+    const x = Math.min(...pts.map((p) => p.x)), y = Math.min(...pts.map((p) => p.y));
+    out += `<text x="${x}" y="${y - 4}" fill="${SLOT_ACCENT}" font-size="10" font-weight="500" font-family="Inter,system-ui,sans-serif">${esc(def.name)}${empty ? ' · empty' : ''}</text>`;
+  });
+
   // A "+" below the selected component set (or the set of a selected variant) adds a variant, like Figma.
   addVariantButton = null;
   const one = state.selection.length === 1 ? getNode(state.selection[0]) : null;

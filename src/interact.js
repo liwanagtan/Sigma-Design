@@ -13,11 +13,12 @@ import {
   setTool, zoomAt, zoomIn, zoomOut, zoomTo100, zoomToFit, zoomToSelection, deleteSelection, duplicateSelection,
   wrapSelection, ungroupSelection, reorder, nudge, selectAll, selectParent, selectChildren, toggleVisible,
   toggleLocked, scaleKids, sortByZ, flip, addAutoLayout, removeAutoLayout, createComponent, detachSelection, goToMainComponent, resetSelectionOverrides, placeInstance, combineAsVariants,
-  addVariant, makeComponentSet, createMultipleComponents,
+  addVariant, makeComponentSet, createMultipleComponents, convertToSlot, wrapInSlot,
 } from './commands.js';
 import { copySelection, cutSelection, paste, importImages, pickImages, exportNodes } from './io.js';
 import { isAutoLayout, flowInsertBefore } from './layout.js';
-import { isInsideInstance, isTransparentContainer, canPlaceInside, createInstance } from './components.js';
+import { isInsideInstance, isTransparentContainer, canPlaceInside, createInstance, containingComponent } from './components.js';
+import { slotMenu } from './component-ui.js';
 import { applyConstraints } from './constraints.js';
 import { showContextMenu, hideContextMenu } from './menu.js';
 
@@ -897,6 +898,12 @@ function onContextMenu(e) {
         if (set) addVariant(set);
       },
     }] : []),
+    // Slots: a frame in a main component converts; other layers there wrap into a new slot.
+    ...(nodes.length && nodes.every((n) => containingComponent(n) && containingComponent(n) !== n && !isInsideInstance(n)) ? [
+      nodes.length === 1 && nodes[0].type === 'frame'
+        ? { label: nodes[0].propRefs?.slot ? 'Change slot…' : 'Convert to slot', shortcut: '⇧⌘S', action: () => (nodes[0].propRefs?.slot ? slotMenu({ left: e.clientX, bottom: e.clientY }, nodes[0]) : convertToSlot()) }
+        : { label: 'Wrap in new slot', action: wrapInSlot },
+    ] : []),
     ...(nodes.some((n) => n.type === 'instance' || isInsideInstance(n)) ? [
       { label: 'Go to main component', action: goToMainComponent },
       { label: 'Reset all changes', action: resetSelectionOverrides },
@@ -950,6 +957,10 @@ function onKeyDown(e) {
   if (mod && e.altKey && e.code === 'KeyK') {
     e.preventDefault();
     return createComponent();
+  }
+  if (mod && e.shiftKey && !e.altKey && e.code === 'KeyS') {
+    e.preventDefault();
+    return convertToSlot();
   }
   if (mod && e.altKey && e.code === 'KeyB') {
     e.preventDefault();

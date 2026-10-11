@@ -1,5 +1,5 @@
 import {
-  state, page, view, emit, commit, select, selectedNodes, getNode, getParent, ancestors, isAncestor,
+  state, page, view, emit, commit, select, selectedNodes, getNode, getParent, ancestors, isAncestor, isSlotArea,
   uid, detach, insertNode, worldMatrix, setWorldMatrix, createNode, undo, redo, makePaint, isFrameLike, editNode, worldBounds,
 } from './store.js';
 import { translate } from './geom.js';
@@ -401,7 +401,7 @@ export function renderLayers(force = false) {
         `<span class="row-actions"><button class="icon-btn" data-act="lock" title="Lock">${n.locked ? icons.lock : icons.unlock}</button>` +
         `<button class="icon-btn" data-act="vis" title="Show/hide">${n.visible ? icons.eye : icons.eyeOff}</button></span></div>`,
       );
-      if (open) walkRows(n.children, depth + 1, inSelected || sel.has(n.id), inInstance || n.type === 'instance');
+      if (open) walkRows(n.children, depth + 1, inSelected || sel.has(n.id), (inInstance || n.type === 'instance') && !isSlotArea(n)); // a slot's contents are editable
     }
   };
   walkRows(page().children, 0, false);

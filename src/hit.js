@@ -1,4 +1,4 @@
-import { page, worldMatrix, getParent, selectedNodes, isFrameLike } from './store.js';
+import { page, worldMatrix, getParent, selectedNodes, isFrameLike, isSlotArea } from './store.js';
 import { apply, inv } from './geom.js';
 import { view } from './store.js';
 
@@ -62,21 +62,25 @@ export function pickFromPath(path, { deep = false } = {}) {
 
 // Deepest frame containing the point (for drawing into / reparenting).
 export function frameAt(pt, exclude = new Set()) {
-  const search = (nodes) => {
+  // `locked`: inside an instance, where only slots (and frames placed in them) take new layers.
+  const search = (nodes, locked) => {
     for (let i = nodes.length - 1; i >= 0; i--) {
       const n = nodes[i];
-      // Nothing can be drawn or dropped into an instance.
-      if (!n.visible || n.locked || exclude.has(n.id) || !n.children || n.type === 'instance') continue;
+      if (!n.visible || n.locked || exclude.has(n.id) || !n.children) continue;
+      const inInstance = (locked || n.type === 'instance') && !isSlotArea(n);
       const L = localPoint(n, pt);
       const inside = L.x >= 0 && L.y >= 0 && L.x <= n.w && L.y <= n.h;
       if (isFrameLike(n)) {
         if (!inside) continue;
-        return search(n.children) || n;
+        const deeper = search(n.children, inInstance);
+        if (deeper) return deeper;
+        if (inInstance) continue; // nothing can be drawn or dropped into an instance itself
+        return n;
       }
-      const deeper = search(n.children);
+      const deeper = search(n.children, inInstance);
       if (deeper) return deeper;
     }
     return null;
   };
-  return search(page().children);
+  return search(page().children, false);
 }

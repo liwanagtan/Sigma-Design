@@ -10,7 +10,7 @@
 // Overrides are keyed by layer name (not id), which is what lets them survive variant switches.
 import {
   state, walk, getNode, getParent, ancestors, addEditHook, editNode, uid, createNode, insertNode, setWorldMatrix,
-  reindex, isFrameLike,
+  reindex, isFrameLike, isSlotArea, addStructureHook,
 } from './store.js';
 import { translate } from './geom.js';
 import { measureText } from './text.js';
@@ -37,16 +37,24 @@ const clone = (v) => (v === undefined || v === null || typeof v !== 'object' ? v
 const escKey = (name) => String(name).replace(/%/g, '%25').replace(/\//g, '%2F').replace(/#/g, '%23');
 
 // The outermost instance that contains `node` (excluding node itself). Overrides live there.
+// A slot is a boundary: what's inside an instance's slot belongs to whoever placed it, not the instance.
 export function owningInstance(node) {
   let owner = null;
-  for (const a of ancestors(node)) if (a.type === 'instance') owner = a;
+  for (const a of ancestors(node)) {
+    if (isSlotArea(a)) break;
+    if (a.type === 'instance') owner = a;
+  }
   return owner;
 }
 export const isInsideInstance = (n) => !!n && !!owningInstance(n);
 
 // The closest instance that contains `node` (excluding node itself).
 export function nearestInstance(node) {
-  return ancestors(node).find((a) => a.type === 'instance') || null;
+  for (const a of ancestors(node)) {
+    if (isSlotArea(a)) return null;
+    if (a.type === 'instance') return a;
+  }
+  return null;
 }
 
 // The main component a layer belongs to (not looking past instances), or null.
@@ -218,6 +226,13 @@ function deriveChildren(srcList, ownerId, parentPath, overrides, prev, comps, va
     }
     if (n.type === 'text' && textChanged) remeasure(n);
 
+    // A slot whose contents this instance changed: those layers (the instance's own) instead of the
+    // main's default content.
+    const owned = src.propRefs?.slot && activeSlots?.[path];
+    if (owned) {
+      n.children = owned.nodes;
+      return n;
+    }
     if (src.children) {
       if (n.type === 'instance') {
         const main = comps.get(n.componentId);
@@ -229,7 +244,10 @@ function deriveChildren(srcList, ownerId, parentPath, overrides, prev, comps, va
           // keeping the overrides it had inside its parent component.
           if (n.componentId !== src.componentId) applyRootProps(n, main, ov || {});
           const merged = { ...prefixKeys(n.overrides, path), ...overrides };
+          const outerSlots = activeSlots;
+          activeSlots = { ...prefixKeys(n.slots, path), ...(outerSlots || {}) };
           n.children = deriveChildren(main.children, id, path, merged, prev, comps, propValuesFor(main, n), [...chain, main.id]);
+          activeSlots = outerSlots;
         } else {
           n.children = deriveChildren(src.children, id, path, overrides, prev, comps, null, chain);
         }
@@ -241,8 +259,11 @@ function deriveChildren(srcList, ownerId, parentPath, overrides, prev, comps, va
   });
 }
 
+let activeSlots = null; // the outermost instance's slots ({ [path]: { nodes } }) while its layers are derived
+
 function applyMain(inst, main, comps) {
   const overrides = inst.overrides || (inst.overrides = {});
+  activeSlots = inst.slots || {};
   applyRootProps(inst, main, overrides[''] || {});
   const synced = inst.synced || {};
   for (const k of ROOT_FOLLOW) {
@@ -252,6 +273,7 @@ function applyMain(inst, main, comps) {
   const prev = new Map();
   walk(inst.children || [], (c) => void prev.set(c.id, c));
   inst.children = deriveChildren(main.children, inst.id, '', overrides, prev, comps, propValuesFor(main, inst), [main.id]);
+  activeSlots = null;
   // An instance sized differently from its main repositions its layers by their constraints.
   if (inst.w !== main.w || inst.h !== main.h) applyConstraints(inst, main.children, main.w, main.h);
 }
@@ -302,11 +324,14 @@ export function syncInstances() {
     // the main's key, so those instances always re-sync.
     const keyOf = () => mainKey(main) + JSON.stringify([
       inst.componentId, inst.overrides, inst.propValues, inst.w, inst.h, inst.sizingH, inst.sizingV, inst.modes,
-      inst.children?.length,
+      inst.children?.length, inst.slots,
     ]);
-    if (lastSync.get(inst) === keyOf() && !hasSwaps(inst, comps)) return;
-    applyMain(inst, main, comps);
-    lastSync.set(inst, keyOf());
+    if (lastSync.get(inst) !== keyOf() || hasSwaps(inst, comps)) {
+      applyMain(inst, main, comps);
+      lastSync.set(inst, keyOf());
+    }
+    // Instances placed in its slots are ordinary instances: keep them in sync too.
+    for (const entry of Object.values(inst.slots || {})) syncTree(entry.nodes);
   }
 
   for (const pg of state.doc.pages) syncTree(pg.children);
@@ -343,6 +368,9 @@ addEditHook({
   },
   after(node, keys) {
     const roots = [...new Set(keys.map((k) => k.split('.')[0]))];
+    // Editing a slot's default content in an instance: the instance takes over the slot's contents.
+    const area = slotAreaOf(node);
+    if (area && area !== node && slotOwner(area)) materializeSlot(area);
     const owner = owningInstance(node);
     const record = (inst, path, allowed) => {
       const props = roots.filter(allowed);
@@ -470,6 +498,107 @@ export function pushOverridesToMain(inst) {
   return true;
 }
 
+// ---------- slots ----------
+// A slot is a frame in a main component bound to a slot property (propRefs.slot). Its children are the
+// default content. In an instance, the slot shows that default content until something in it changes;
+// from then on the instance owns its contents: inst.slots[pathKey] = { nodes } (plain, editable layers).
+// "Reset slot" goes back to the default content.
+
+// The slot area a layer sits in (itself or an ancestor), inside an instance; or null.
+export function slotAreaOf(node) {
+  if (isSlotArea(node)) return node;
+  for (const a of ancestors(node)) if (isSlotArea(a)) return a;
+  return null;
+}
+
+// The instance a slot area belongs to (where its contents are stored).
+export const slotOwner = (area) => owningInstance(area);
+
+export function slotDef(area) {
+  const owner = slotOwner(area);
+  const main = owner && mainComponentOf(owner);
+  return main ? propsOf(main)[area.propRefs.slot] || null : null;
+}
+
+export const isSlotModified = (area) => !!slotOwner(area)?.slots?.[area.pathKey];
+
+// From now on the instance owns the slot's contents. The layers stay the same objects (and ids), so
+// selections and the edit in progress carry on.
+export function materializeSlot(area) {
+  const owner = slotOwner(area);
+  if (!owner || owner.slots?.[area.pathKey]) return;
+  const strip = (n) => {
+    delete n.sourceId;
+    delete n.pathKey;
+    if (n.type === 'instance') return; // a nested instance: its own children are derived from its main
+    n.children?.forEach(strip);
+  };
+  area.children ||= [];
+  area.children.forEach(strip);
+  (owner.slots ||= {})[area.pathKey] = { nodes: area.children };
+}
+
+export function resetSlot(area) {
+  const owner = slotOwner(area);
+  if (owner?.slots) delete owner.slots[area.pathKey];
+}
+
+// "Delete contents": an empty slot (still a change from the default).
+export function clearSlot(area) {
+  materializeSlot(area);
+  area.children.length = 0;
+}
+
+// Layer count against the slot property's limits: { count, min, max, ok }.
+export function slotLimits(area) {
+  const def = slotDef(area) || {};
+  const count = (area.children || []).length;
+  const ok = (def.min == null || count >= def.min) && (def.max == null || count <= def.max);
+  return { count, min: def.min ?? null, max: def.max ?? null, ok };
+}
+
+// Before layers go in or out of a slot in an instance, the instance takes over its contents. New layers
+// can fill the slot's counter axis (a slot setting), and going past the maximum warns.
+addStructureHook((kind, parent, node) => {
+  const area = parent && slotAreaOf(parent);
+  if (!area || !slotOwner(area)) return;
+  materializeSlot(area);
+  if (kind !== 'insert' || parent !== area) return;
+  const def = slotDef(area);
+  if (def?.fillCounter && area.layout?.mode && area.layout.mode !== 'none' && node) {
+    if (area.layout.mode === 'vertical') node.sizingH = 'fill';
+    else node.sizingV = 'fill';
+  }
+  if (def?.max != null && area.children.length + 1 > def.max) {
+    window.dispatchEvent(new CustomEvent('sigma:toast', { detail: `“${def.name}” allows at most ${def.max} layer${def.max === 1 ? '' : 's'}.` }));
+  }
+});
+
+// Turn a frame nested in a main component into a slot for property `pid` (or stop, with null).
+export function setSlot(frame, pid) {
+  const comp = containingComponent(frame);
+  if (!comp || frame === comp || !isFrameLike(frame) || frame.type === 'instance') return false;
+  if (!pid) {
+    if (frame.propRefs) {
+      delete frame.propRefs.slot;
+      if (!Object.keys(frame.propRefs).length) delete frame.propRefs;
+    }
+    return true;
+  }
+  (frame.propRefs ||= {}).slot = pid;
+  return true;
+}
+
+// Is `node` a frame (or a layer inside one) that is a slot in a main component? Component properties
+// can't be applied to layers inside a slot (Figma's rule).
+export function insideMainSlot(node) {
+  for (const a of ancestors(node)) {
+    if (a.type === 'instance' || a.type === 'component') return false;
+    if (a.propRefs?.slot) return true;
+  }
+  return false;
+}
+
 // ---------- create / detach ----------
 export function createInstance(main, { parent = null, at, x = 0, y = 0 } = {}) {
   const inst = createNode('instance', {
@@ -514,7 +643,7 @@ export function detachInstance(inst) {
     n.children?.forEach(convert);
   };
   inst.type = 'frame';
-  for (const k of ['componentId', 'overrides', 'synced', 'missingMain', 'propValues', 'variantProps']) delete inst[k];
+  for (const k of ['componentId', 'overrides', 'synced', 'missingMain', 'propValues', 'variantProps', 'slots']) delete inst[k];
   inst.children.forEach(convert);
   reindex();
 }
@@ -542,8 +671,12 @@ function dependsOn(compId, targets, comps, seen = new Set()) {
 // No children can be added to instances, and a component may not end up containing itself.
 export function canPlaceInside(node, parent) {
   if (!parent) return true;
-  if (parent.type === 'instance' || isInsideInstance(parent)) return false;
-  const targets = new Set([parent, ...ancestors(parent)].filter((a) => a.type === 'component').map((a) => a.id));
+  // Inside an instance, only its slots take new layers.
+  if (parent.type === 'instance' || (isInsideInstance(parent) && !isSlotArea(parent))) return false;
+  const chain = [parent, ...ancestors(parent)];
+  const targets = new Set(chain.filter((a) => a.type === 'component').map((a) => a.id));
+  // In a slot, the instance's own component (and those around it) count too: no component inside itself.
+  for (const a of chain) if (a.type === 'instance' && a.componentId) targets.add(a.componentId);
   if (!targets.size) return true;
   const comps = componentMap();
   let ok = true;
@@ -567,11 +700,11 @@ export function mainComponentOf(inst) {
 
 
 // ---------- component properties ----------
-export const PROP_TYPES = { boolean: 'Boolean', text: 'Text', instance: 'Instance swap' };
+export const PROP_TYPES = { boolean: 'Boolean', text: 'Text', instance: 'Instance swap', slot: 'Slot' };
 // Like Figma, a component's properties are listed variant properties first, then the others in order.
 //   def = { name, type, default, preferred?: [componentId] (instance swap) }
 // Which layer property each property type binds to.
-export const PROP_TARGET = { boolean: 'visible', text: 'text', instance: 'componentId' };
+export const PROP_TARGET = { boolean: 'visible', text: 'text', instance: 'componentId', slot: 'slot' };
 
 // Properties are defined on the component (or on its component set, for variants).
 export function propsHost(comp) {
@@ -669,6 +802,14 @@ export function addComponentProp(comp, type, { name, value } = {}) {
 
 export function removeComponentProp(comp, pid) {
   const host = propsHost(comp);
+  if (host.props?.[pid]?.type === 'slot') {
+    // Like Figma: removing a slot property resets that slot in every instance (their added layers go).
+    for (const { layer } of layersUsingProp(comp, pid)) {
+      for (const inst of instancesOf(variantOrSelf(layer).id)) {
+        for (const key of Object.keys(inst.slots || {})) if (key === pathFrom(variantOrSelf(layer), layer)) delete inst.slots[key];
+      }
+    }
+  }
   delete host.props?.[pid];
   walk([host], (n) => {
     if (n.type === 'instance' && n !== host) return false;
@@ -676,6 +817,11 @@ export function removeComponentProp(comp, pid) {
     for (const [k, v] of Object.entries(n.propRefs)) if (v === pid) delete n.propRefs[k];
     if (!Object.keys(n.propRefs).length) delete n.propRefs;
   });
+}
+
+// The main component (or variant) a layer belongs to.
+function variantOrSelf(layer) {
+  return containingComponent(layer) || layer;
 }
 
 // Path of `node` below `root`, using the same naming rules as derived layers.

@@ -275,7 +275,17 @@ export function cloneNode(n) {
 }
 
 // Insert node into parent (null = page) at index (default top).
+// A slot inside an instance: a layer derived from a main component's frame that is bound to a slot
+// property. Its contents belong to the instance and can be edited freely (see components.js).
+export const isSlotArea = (n) => !!(n?.sourceId && n.propRefs?.slot);
+
+// Called before a layer is inserted into or removed from a parent (components.js takes over a slot's
+// contents for the instance at that moment).
+const structureHooks = [];
+export const addStructureHook = (fn) => structureHooks.push(fn);
+
 export function insertNode(node, parent, at) {
+  for (const h of structureHooks) h('insert', parent, node);
   const list = parent ? parent.children : page().children;
   if (at == null || at > list.length) at = list.length;
   list.splice(at, 0, node);
@@ -283,6 +293,8 @@ export function insertNode(node, parent, at) {
 }
 
 export function detach(node) {
+  const parent = getParent(node.id);
+  if (parent) for (const h of structureHooks) h('remove', parent, node);
   const list = siblingsOf(node);
   const i = list.indexOf(node);
   if (i >= 0) list.splice(i, 1);

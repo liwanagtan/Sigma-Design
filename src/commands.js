@@ -9,7 +9,7 @@ import { isAutoLayout, guessLayout, setSizing } from './layout.js';
 import { applyConstraints } from './constraints.js';
 import {
   isInsideInstance, owningInstance, createInstance, detachInstance, resetOverrides, mainComponentOf, canPlaceInside,
-  parseVariantName, formatVariantName, variantsOf, variantDefs, libraryOfComponent,
+  parseVariantName, formatVariantName, variantsOf, variantDefs, libraryOfComponent, containingComponent, addComponentProp, setSlot,
 } from './components.js';
 
 const hint = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
@@ -483,6 +483,33 @@ export function createMultipleComponents() {
     made.push(c);
   }
   select(made.map((c) => c.id));
+  commit();
+}
+
+// ⌘⇧S "Convert to slot": a frame nested in a main component becomes a slot with a new slot property.
+export function convertToSlot() {
+  const n = selectedNodes()[0];
+  const comp = n && containingComponent(n);
+  if (!comp || comp === n || n.type !== 'frame') return hint('Select a frame inside a main component to convert it to a slot.');
+  if (n.propRefs?.slot) return hint('This frame is already a slot.');
+  const pid = addComponentProp(comp, 'slot', { name: n.name });
+  setSlot(n, pid);
+  commit();
+  hint(`“${n.name}” is now a slot. Its layers are the default content.`);
+}
+
+// "Wrap in new slot": wrap the selected layers (in a main component) in a frame that is a new slot.
+export function wrapInSlot() {
+  const nodes = selectedNodes();
+  const comp = nodes[0] && containingComponent(nodes[0]);
+  if (!comp || nodes.some((n) => n === comp || containingComponent(n) !== comp)) return hint('Select layers inside one main component.');
+  const frame = wrapSelection('frame', { commitAfter: false });
+  if (!frame) return;
+  frame.name = 'Slot';
+  frame.fills = [];
+  const pid = addComponentProp(comp, 'slot', { name: 'Slot' });
+  setSlot(frame, pid);
+  select([frame.id]);
   commit();
 }
 

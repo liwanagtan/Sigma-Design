@@ -11,6 +11,7 @@
 //     layer shows a purple pill (see propBinding / propMenuItems, used by panels.js).
 import {
   state, getNode, getParent, commit, select, editNode, emit, walk, worldBounds, subscribe, createNode, insertNode, detach, reindex,
+  isSlotArea, isFrameLike,
 } from './store.js';
 import { findVariable, previewValue } from './variables.js';
 import { openTokenPicker } from './token-picker.js';
@@ -22,6 +23,7 @@ import {
   reorderVariantProperty, removeVariantProperty, addVariantProperty, containingComponent, mainComponentOf, displayName,
   instancesOf, overrideCount, orphanedOverrides, clearOrphanedOverrides, isInsideInstance, owningInstance, listComponents,
   canPlaceInside, nestedInstances, layersUsingProp, libraryOfComponent, setPropDefaultVar, pushOverridesToMain, syncInstances,
+  slotDef, slotLimits, isSlotModified, resetSlot, clearSlot, setSlot, insideMainSlot, createInstance,
 } from './components.js';
 import {
   addVariant, goToMainComponent, resetSelectionOverrides, detachSelection, duplicateSelection, makeComponentSet,
@@ -39,6 +41,7 @@ export const PROP_ICONS = {
   boolean: SVG('<rect x="1" y="3.5" width="10" height="5" rx="2.5"/><circle cx="8.5" cy="6" r="1.4" fill="currentColor"/>'),
   text: SVG('<path d="M2.5 3V2h7v1M6 2v8M4.5 10h3"/>'),
   instance: SVG('<path d="M6 1.5L10.5 6 6 10.5 1.5 6z"/><path d="M4.5 6h3M6.5 5l1 1-1 1"/>'),
+  slot: SVG('<rect x="1.2" y="1.2" width="9.6" height="9.6" rx="2" stroke-dasharray="2 1.5"/><path d="M6 4v4M4 6h4"/>'),
 };
 const COMPONENT_ICON = SVG('<path d="M6 .9l2 2-2 2-2-2zM6 7.1l2 2-2 2-2-2zM2.9 4l2 2-2 2-2-2zM9.1 4l2 2-2 2-2-2z"/>');
 const INSTANCE_ICON = SVG('<path d="M6 1.2L10.8 6 6 10.8 1.2 6z"/>');
@@ -60,6 +63,8 @@ export function componentPanel(nodes) {
   const single = nodes.length === 1 ? nodes[0] : null;
   if (!single) return multiInstancePanel(nodes);
   if (single.type === 'componentSet') return setPanel(single);
+  if (isSlotArea(single)) return slotAreaPanel(single);
+  if (isFrameLike(single) && single.type === 'frame' && containingComponent(single) && containingComponent(single) !== single) return slotFramePanel(single);
   if (single.type === 'component') return isVariant(single) ? variantPanel(single) : mainPanel(single);
   if (single.type === 'instance') {
     const comp = containingComponent(single);
@@ -126,6 +131,7 @@ const tokenName = (id) => findVariable(id)?.variable.name || 'Missing token';
 const effectiveDefault = (def) => (def.defaultVar && findVariable(def.defaultVar) ? previewValue(def.defaultVar) : def.default);
 
 function valuePreview(def) {
+  if (def.type === 'slot') return def.min != null || def.max != null ? `${def.min ?? 0}–${def.max ?? '∞'} layers` : 'Slot';
   if (def.defaultVar) return `<span class="token-ref">${esc(tokenName(def.defaultVar))}</span>`;
   if (def.type === 'boolean') return def.default ? 'True' : 'False';
   if (def.type === 'text') return `“${esc(def.default ?? '')}”`;
@@ -238,6 +244,7 @@ function instanceControls(inst, main, group = [inst]) {
   for (const [pid, def] of Object.entries(propsOf(main))) {
     const v = shared((n) => (n.propValues || {})[pid] ?? effectiveDefault(def));
     let control;
+    if (def.type === 'slot') continue; // slots get their own rows below
     if (def.type === 'boolean') control = toggle(`${tgt} data-instance-prop="${pid}"${v === MIXED ? ' data-mixed' : ''}`, v === true);
     else if (def.type === 'text') control = `<input class="prop-input" ${tgt} data-instance-prop="${pid}" value="${v === MIXED ? '' : esc(v ?? '')}" placeholder="${v === MIXED ? 'Mixed' : ''}" spellcheck="false">`;
     else {
@@ -247,7 +254,102 @@ function instanceControls(inst, main, group = [inst]) {
     }
     rows.push(`<div class="inst-row"><span class="inst-label" title="${esc(def.name)}">${PROP_ICONS[def.type]}${esc(def.name)}</span>${control}</div>`);
   }
+  if (group.length === 1) rows.push(...slotRows(inst, main));
   return rows.join('');
+}
+
+// ---------- slots ----------
+// The slot areas of an instance (its layers bound to a slot property), with their property.
+function slotAreas(inst, main) {
+  const defs = propsOf(main);
+  const out = [];
+  walk(inst.children || [], (n) => {
+    if (isSlotArea(n) && defs[n.propRefs.slot]) out.push({ area: n, def: defs[n.propRefs.slot] });
+    if (n.type === 'instance' || isSlotArea(n)) return false;
+  });
+  return out;
+}
+
+function limitBadge(area) {
+  const l = slotLimits(area);
+  if (l.min == null && l.max == null) return `<span class="muted">${l.count} layer${l.count === 1 ? '' : 's'}</span>`;
+  const range = `${l.min ?? 0}–${l.max ?? '∞'}`;
+  return `<span class="slot-limit ${l.ok ? 'ok' : 'warn'}" title="${l.ok ? 'Within the limits' : 'Outside the limits'}: ${range} layers">${l.ok ? '✓' : '⚠'} ${l.count} of ${range}</span>`;
+}
+
+function slotRows(inst, main) {
+  return slotAreas(inst, main).map(({ area, def }) =>
+    `<div class="inst-row slot-row" data-hover-node="${area.id}"><span class="inst-label">${PROP_ICONS.slot}${esc(def.name)}` +
+    `${isSlotModified(area) ? '<span class="slot-tag">Modified</span>' : ''}</span>` +
+    `<span class="slot-ctrl">${limitBadge(area)}<button class="icon-btn" data-slot-add="${area.id}" title="Add instances">${icons.plus}</button>` +
+    `<button class="icon-btn" data-slot-menu="${area.id}" title="More actions">${MORE_ICON}</button></span></div>`);
+}
+
+// A slot area selected inside an instance.
+function slotAreaPanel(area) {
+  const def = slotDef(area);
+  const head = `<div class="comp-head"><span class="comp-icon slot">${PROP_ICONS.slot}</span><span class="comp-name slot">${esc(def?.name || area.name)}</span>` +
+    `${isSlotModified(area) ? '<span class="slot-tag">Modified</span>' : ''}<button class="icon-btn" data-slot-menu="${area.id}" title="More actions">${MORE_ICON}</button></div>`;
+  const prefOnly = def?.preferredOnly && def.preferred?.length;
+  return `<div class="section comp-panel">${head}${def?.description ? `<div class="comp-desc">${esc(def.description)}</div>` : ''}` +
+    `<div class="inst-row"><span class="inst-label">Limits</span>${limitBadge(area)}</div>` +
+    `<div class="comp-sub">${prefOnly ? 'Only its preferred instances can go in this slot.' : 'Add any layers: draw or drop them in, or add instances.'}</div>` +
+    `<button class="btn wide" data-slot-add="${area.id}">${icons.plus} Add instances</button></div>`;
+}
+
+// A frame inside a main component: make it a slot (or show the slot it is).
+function slotFramePanel(frame) {
+  const comp = containingComponent(frame);
+  const pid = frame.propRefs?.slot;
+  const def = pid && propsOf(comp)[pid];
+  if (insideMainSlot(frame) && !def) return '';
+  const body = def
+    ? `<div class="inst-row"><button class="prop-pill" data-slot-pill="${frame.id}" title="Slot property: click to change or remove">${PROP_ICONS.slot}<span>${esc(def.name)}</span></button>` +
+      `<span class="muted">${(frame.children || []).length ? `${frame.children.length} default layer${frame.children.length === 1 ? '' : 's'}` : 'Empty by default'}</span></div>`
+    : `<button class="btn wide" data-convert-slot="${frame.id}" title="⌘⇧S">${PROP_ICONS.slot} Convert to slot</button>`;
+  return section('Slot', body);
+}
+
+// Pick a slot property for a frame (or create one).
+export function slotMenu(anchorRect, frame) {
+  const comp = containingComponent(frame);
+  if (!comp || comp === frame) return toast('A slot has to be a frame inside a main component (not the component itself).');
+  if (!isFrameLike(frame) || frame.type === 'instance') return toast('Only frames can be slots. Use Wrap in new slot for other layers.');
+  const current = frame.propRefs?.slot;
+  const defs = Object.entries(propsOf(comp)).filter(([, d]) => d.type === 'slot');
+  showContextMenu(anchorRect.left, anchorRect.bottom + 4, [
+    { label: 'Slot properties', disabled: true },
+    ...defs.map(([pid, d]) => ({ label: `   ${d.name}`, checked: pid === current, action: () => { setSlot(frame, pid); commit(); } })),
+    { label: '   Create slot property…', action: () => openPropWindow({ comp, type: 'slot', anchor: anchorRect, bind: { layer: frame, path: 'slot' } }) },
+    ...(current ? [{ label: '   Remove slot (keep the frame and its layers)', action: () => { setSlot(frame, null); commit(); } }] : []),
+  ]);
+}
+
+function slotActionMenu(btn, area) {
+  const r = btn.getBoundingClientRect();
+  showContextMenu(r.right - 200, r.bottom + 4, [
+    { label: 'Select slot', action: () => { select([area.id]); commit(); } },
+    { label: 'Add instances…', action: () => addToSlot(r, area) },
+    '-',
+    { label: 'Reset slot', disabled: !isSlotModified(area), action: () => { resetSlot(area); commit(); } },
+    { label: 'Delete contents', disabled: !(area.children || []).length, action: () => { clearSlot(area); commit(); } },
+  ]);
+}
+
+// "Add instances": pick a component (preferred ones first, or only those) and add it to the slot.
+function addToSlot(anchorRect, area) {
+  const def = slotDef(area) || {};
+  const only = def.preferredOnly && def.preferred?.length ? new Set(def.preferred) : null;
+  openComponentPicker({
+    anchor: anchorRect, preferred: def.preferred || [],
+    exclude: (c) => (only && !only.has(c.id)) || !canPlaceInside({ type: 'instance', componentId: c.id }, area),
+    onPick: (id) => {
+      const main = getNode(id);
+      const n = createInstance(main, { parent: area, x: 0, y: 0 });
+      select([n.id]);
+      commit();
+    },
+  });
 }
 
 // Nested instances whose properties the main component shows (and, through them, deeper ones).
@@ -305,6 +407,7 @@ export function propMenuItems(nodes, path, anchorRect) {
   const layer = nodes[0];
   const comp = containingComponent(layer);
   if (!comp || isInsideInstance(layer)) return [];
+  if (insideMainSlot(layer)) return [{ label: 'Layers inside a slot can’t use component properties', disabled: true }];
   const current = layer.propRefs?.[path];
   const defs = Object.entries(propsOf(comp)).filter(([, d]) => d.type === type);
   return [
@@ -395,6 +498,7 @@ const isVariantOf = (node, set) => set.type === 'componentSet' && getParent(node
 function suggestName(comp, type, layer) {
   const taken = new Set(Object.values(propsOf(comp)).map((d) => d.name));
   let base = layer ? (type === 'boolean' ? `Show ${layer.name}` : layer.name) : PROP_TYPES[type];
+  if (type === 'slot') base = layer ? layer.name : 'Slot';
   if (!layer && type !== 'variant') base = `${PROP_TYPES[type]}`;
   let name = base;
   for (let i = 2; taken.has(name); i++) name = `${base} ${i}`;
@@ -436,6 +540,23 @@ function renderWin() {
         return `<div class="w-pref"><span class="comp-icon inst">${INSTANCE_ICON}</span><span>${esc(c ? displayName(c) : 'Missing component')}</span><button class="icon-btn" data-w-unprefer="${id}" title="Remove">${icons.minus}</button></div>`;
       }).join('') +
       '<button class="link-btn" data-w-prefer>+ Add preferred value</button>';
+  } else if (type === 'slot') {
+    const num = (k) => (def[k] == null ? '' : def[k]);
+    body += '<label class="w-label">Description</label>' +
+      `<textarea class="desc" data-w-slot="description" rows="2" placeholder="What goes in this slot?" spellcheck="false">${esc(def.description || '')}</textarea>` +
+      '<div class="grid2 w-limits"><label><span class="w-label">Minimum layers</span>' +
+      `<input class="prop-input" data-w-slot="min" value="${num('min')}" placeholder="None" inputmode="numeric"></label>` +
+      '<label><span class="w-label">Maximum layers</span>' +
+      `<input class="prop-input" data-w-slot="max" value="${num('max')}" placeholder="None" inputmode="numeric"></label></div>` +
+      '<label class="w-label">Preferred instances</label>' +
+      (def.preferred || []).map((id) => {
+        const c = getNode(id);
+        return `<div class="w-pref"><span class="comp-icon inst">${INSTANCE_ICON}</span><span>${esc(c ? displayName(c) : 'Missing component')}</span><button class="icon-btn" data-w-unprefer="${id}" title="Remove">${icons.minus}</button></div>`;
+      }).join('') +
+      '<button class="link-btn" data-w-prefer>+ Select preferred instances</button>' +
+      `<label class="check-row"><input type="checkbox" data-w-slot="preferredOnly" ${def.preferredOnly ? 'checked' : ''}> Only allow preferred instances</label>` +
+      `<label class="check-row"><input type="checkbox" data-w-slot="showEmpty" ${def.showEmpty ? 'checked' : ''}> Display empty slots by default</label>` +
+      `<label class="check-row"><input type="checkbox" data-w-slot="fillCounter" ${def.fillCounter ? 'checked' : ''}> Fill items on counter-axis by default</label>`;
   } else if (type === 'variant') {
     const values = variantDefs(host)[variantProp] || [];
     const dv = defaultVariant(host);
@@ -531,6 +652,17 @@ function onWinChange(e) {
     }
     return updateAndCommit({ name: t.value });
   }
+  if (t.dataset.wSlot) {
+    const key = t.dataset.wSlot;
+    let value = t.type === 'checkbox' ? t.checked : t.value.trim();
+    if (key === 'min' || key === 'max') value = value === '' ? null : Math.max(0, Math.round(Number(value)));
+    if ((key === 'min' || key === 'max') && value !== null && !Number.isFinite(value)) return renderWin();
+    const target = creating ? draft : propsOf(comp)[win.pid];
+    if (value === null || value === false || value === '') delete target[key];
+    else target[key] = value;
+    if (!creating) commit();
+    return;
+  }
   if (t.hasAttribute('data-w-text')) {
     if (creating) return void (draft.default = t.value);
     return updateAndCommit({ default: t.value });
@@ -587,9 +719,18 @@ function createFromWin() {
   const name = String(draft.name || '').trim() || PROP_TYPES[type];
   if (Object.values(propsOf(comp)).some((d) => d.name === name)) return toast(`There's already a property named “${name}”.`);
   if (type === 'instance' && !draft.default) return toast('Choose a component for the value.');
-  const pid = addComponentProp(comp, type, { name, value: draft.default });
+  if (bind?.path === 'slot') {
+    // Slot properties go on frames below the component's top level.
+    if (bind.layer === comp || !isFrameLike(bind.layer) || bind.layer.type === 'instance') return toast('A slot has to be a frame inside the component.');
+  }
+  const pid = addComponentProp(comp, type, { name, value: type === 'slot' ? undefined : draft.default });
   if (draft.preferred?.length) updateComponentProp(comp, pid, { preferred: draft.preferred });
-  if (bind) bindLayerProp(bind.layer, bind.path, pid);
+  if (type === 'slot') {
+    const def = propsOf(comp)[pid];
+    for (const k of ['description', 'min', 'max', 'preferredOnly', 'showEmpty', 'fillCounter']) if (draft[k] != null && draft[k] !== false && draft[k] !== '') def[k] = draft[k];
+  }
+  if (bind?.path === 'slot') setSlot(bind.layer, pid);
+  else if (bind) bindLayerProp(bind.layer, bind.path, pid);
   if (draft.defaultVar) setPropDefaultVar(comp, pid, draft.defaultVar);
   closePropWindow();
   commit();
@@ -715,6 +856,9 @@ export function onComponentClick(e) {
     return true;
   }
   if (b.dataset.swapPropMenu) return swapPropMenu(b, getNode(b.dataset.swapPropMenu)), true;
+  if (b.dataset.slotAdd) return addToSlot(b.getBoundingClientRect(), getNode(b.dataset.slotAdd)), true;
+  if (b.dataset.slotMenu) return slotActionMenu(b, getNode(b.dataset.slotMenu)), true;
+  if (b.dataset.convertSlot || b.dataset.slotPill) return slotMenu(b.getBoundingClientRect(), getNode(b.dataset.convertSlot || b.dataset.slotPill)), true;
   if (b.dataset.propSwap) {
     const insts = targetsOf(b);
     const inst = insts[0];
@@ -956,6 +1100,7 @@ function addPropMenu(btn, node) {
     { label: 'Boolean', action: () => openPropWindow({ comp, type: 'boolean', anchor: r }) },
     { label: 'Instance swap', disabled: listComponents().length < 2, action: () => openPropWindow({ comp, type: 'instance', anchor: r }) },
     { label: 'Text', action: () => openPropWindow({ comp, type: 'text', anchor: r }) },
+    { label: 'Slot', action: () => openPropWindow({ comp, type: 'slot', anchor: r }) },
   ]);
 }
 
