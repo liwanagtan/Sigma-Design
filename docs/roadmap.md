@@ -404,7 +404,7 @@ Things noticed while building, not yet done:
 
 # Part D: Design and development (later)
 
-From Figma's "Design & Development" guides on designsystems.com. These are big pieces of work, so they start **after Sigma's design and tokens are final**. Phase 15 comes first: it's the main reason Sigma exists.
+From Figma's "Design & Development" and "Operations" guides on designsystems.com. These are big pieces of work, so they start **after Sigma's design and tokens are final**. Phase 15 comes first: it's the main reason Sigma exists.
 
 Everything here works locally in the browser unless it says it needs a backend.
 
@@ -435,6 +435,15 @@ Like Pinterest's FigStats, measured across every design file in this browser:
 - the share of colors, type and spacing that use tokens rather than one-off values
 - the most-used components and tokens, and those nobody uses
 - per file and overall, with a way to limit it to recently edited files or pages marked as handoff
+
+## Phase 18: Running the system
+
+From Figma's "Operations" guides on designsystems.com. These matter once other designers and developers rely on Sigma's libraries, so they come with or after Phase 15, not before. (Deprecation and the token audit were done earlier, while finalizing the tokens.)
+
+- **Component matrix:** an overview of every component in a library with a status (Draft, In review, Ready, Deprecated) and a readiness checklist ("definition of ready"): named, purpose written, variants and states defined, tokens applied, breakpoint behavior, documented, accessibility checked, code linked. The matrix shows where each component stands and where work is stuck.
+- **Component docs:** beyond one description: the purpose first (what it's for and what it isn't), usage guidance, do and don't examples (linked frames), and a link to the component's code (with Phase 15's code names). Shown in Assets, the playground and the Inspect panel.
+- **Changelog:** one "What's new" history per library, from publish notes and the automatic list of changes, exportable as Markdown to start a newsletter or release notes.
+- **Documentation site:** generate a page from a library's tokens and components to share. Sharing it beyond this browser needs the backend from "Real sharing".
 
 ## Later
 
