@@ -68,3 +68,39 @@ test('libraries: token files publish numbered versions', async () => {
     await deleteFile(lib.id);
   }
 });
+
+test('design tokens: a design file uses one token file; switching moves layers to same-named tokens', async () => {
+  const { useTokenFile, tokenFile } = await import('../src/libraries.js');
+  const { createTokenFileWith, deleteFile, setCurrentFile } = await import('../src/files.js');
+  const brand = (name, primary) => {
+    const m = uid();
+    return [{ id: uid(), name: 'Color', modes: [{ id: m, name: 'Default' }], defaultModeId: m, variables: [
+      { id: uid(), name: 'brand/primary', type: 'color', valuesByMode: { [m]: primary } },
+      { id: uid(), name: `only-in-${name}`, type: 'color', valuesByMode: { [m]: '#000000' } },
+    ] }];
+  };
+  const a = await createTokenFileWith('Brand A (temporary)', brand('a', '#0D99FF'));
+  const b = await createTokenFileWith('Brand B (temporary)', brand('b', '#9747FF'));
+  const realConfirm = window.confirm;
+  window.confirm = () => true;
+  try {
+    setCurrentFile(null);
+    const [aPrimary, aOnly] = a.published.collections[0].variables;
+    const r1 = createNode('rect', { fills: [makePaint('#000000')], bindings: { 'fills.0.color': aPrimary.id } });
+    const r2 = createNode('rect', { fills: [makePaint('#000000')], bindings: { 'fills.0.color': aOnly.id } });
+    useDoc([r1, r2]);
+    await useTokenFile(a.id);
+    resolveVariables();
+    eq([tokenFile().name, r1.fills[0].color], ['Brand A (temporary)', '#0D99FF']);
+    await useTokenFile(b.id);
+    resolveVariables();
+    eq(state.doc.libraries.map((l) => l.name), ['Brand B (temporary)']); // only one
+    eq(r1.bindings['fills.0.color'], b.published.collections[0].variables[0].id);
+    eq(r1.fills[0].color, '#9747FF');
+    eq(r2.fills[0].color, '#000000'); // no match: keeps its value
+  } finally {
+    window.confirm = realConfirm;
+    await deleteFile(a.id);
+    await deleteFile(b.id);
+  }
+});

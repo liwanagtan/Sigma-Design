@@ -20,7 +20,7 @@ import {
 import { exportNodes, saveFile, pickImages } from './io.js';
 import { createFile, openFile, goHome, pickFilesToImport, createSampleFiles } from './files.js';
 import {
-  libraries, componentLibraries, openLibrariesDialog, openPublishComponentsDialog, componentPublishStatus,
+  libraries, componentLibraries, openLibrariesDialog, openPublishComponentsDialog, componentPublishStatus, openDesignTokensDialog,
 } from './libraries.js';
 import { openHistory, openSaveVersionDialog } from './history.js';
 import { H_CONSTRAINTS, V_CONSTRAINTS } from './constraints.js';
@@ -111,9 +111,12 @@ function initFileHeader() {
       { label: 'Save to version history…', shortcut: '⌥⌘S', action: () => openSaveVersionDialog() },
       { label: 'Show version history', action: () => openHistory() },
       '-',
-      { label: 'Libraries…', action: () => openLibrariesDialog() },
-      { label: 'Publish components…', action: () => openPublishComponentsDialog() },
+      { label: 'Design tokens…', action: () => openDesignTokensDialog() },
       { label: 'Local design tokens…', action: () => openVariablesEditor() },
+      '-',
+      { label: 'Component libraries…', action: () => openLibrariesDialog() },
+      { label: 'Publish components…', action: () => openPublishComponentsDialog() },
+      '-',
       { label: 'Keyboard shortcuts', shortcut: '?', action: showShortcuts },
     ]);
   });
@@ -720,19 +723,25 @@ function buildProps() {
     const locals = localCollections();
     const vcount = locals.reduce((n, c) => n + c.variables.length, 0);
     const libLine = (icon, l) => `<div class="lib-line"><span class="licon purple">${icon}</span><span class="link-name">${esc(l.name)}</span><span class="muted">v${l.version}</span></div>`;
-    const libs = [...libraries().map((l) => libLine(TOKEN_ICON, l)), ...componentLibraries().map((l) => libLine(COMPONENT_LIB_ICON, l))];
-    html += section('Libraries',
-      (libs.length ? libs.join('') : '<div class="muted">Link token files and component libraries to use their tokens and components here.</div>') +
-      '<button class="btn wide" data-action="open-libraries">Manage libraries…</button>');
+    // One token file for the design tokens, plus local tokens.
+    const tokens = libraries();
+    html += section('Design tokens',
+      (tokens.length ? tokens.map((l) => libLine(TOKEN_ICON, l)).join('') +
+        (tokens.length > 1 ? '<div class="warn">This file uses several token files. Choose one in Design tokens.</div>' : '')
+        : '<div class="muted">Choose a token file to use its design tokens in this file.</div>') +
+      `<button class="btn wide" data-action="open-design-tokens">${tokens.length ? 'Change token file…' : 'Choose token file…'}</button>` +
+      `<div class="muted">${vcount ? `${vcount} local token${vcount === 1 ? '' : 's'} in this file` : 'No local tokens in this file.'}</div>` +
+      '<button class="btn wide" data-action="open-variables">Open local tokens</button>');
+    const comps = componentLibraries();
+    html += section('Component libraries',
+      (comps.length ? comps.map((l) => libLine(COMPONENT_LIB_ICON, l)).join('') : '<div class="muted">Link design files that publish components to use them from Assets.</div>') +
+      '<button class="btn wide" data-action="open-libraries">Manage component libraries…</button>');
     const pub = componentPublishStatus();
     if (pub.count) {
       html += section('Components',
         `<div class="muted">${pub.count} component${pub.count === 1 ? '' : 's'} in this file · ${!pub.pub ? 'not published' : pub.dirty ? `v${pub.pub.version} published, changes not published` : `v${pub.pub.version} published`}</div>` +
         `<button class="btn wide" data-action="publish-components" ${pub.pub && !pub.dirty ? 'disabled' : ''}>Publish components…</button>`);
     }
-    html += section('Design tokens',
-      `<div class="muted">${vcount ? `${vcount} local token${vcount === 1 ? '' : 's'} in this file` : 'No local tokens in this file.'}</div>` +
-      '<button class="btn wide" data-action="open-variables">Open local tokens</button>');
     html += section('Page', modeRows(null) + `<div class="color-row"><label class="swatch" style="--c:${page().background}"><input type="color" data-page-bg value="${page().background.toLowerCase()}"></label>` +
       `<input class="hex" data-page-hex value="${page().background.replace('#', '')}" spellcheck="false"></div>`);
     html += section('Export', `<div class="export-row">${exportControls()}</div><button class="btn wide" data-action="export-page">Export ${esc(page().name)}</button>`);
@@ -1355,6 +1364,8 @@ function initProps() {
         return openVariablesEditor();
       case 'open-libraries':
         return openLibrariesDialog();
+      case 'open-design-tokens':
+        return openDesignTokensDialog();
       case 'publish-components':
         return openPublishComponentsDialog();
       case 'add-instance':

@@ -267,7 +267,7 @@ function inspector(col) {
     const { steps, value } = aliasChain(col, m.id, v);
     const parts = steps.map((st) => (st.missing ? '<span class="muted">Missing token</span>'
       : `<button class="link-chip" data-select-token="${st.id}" title="${esc(collectionLabel(st.collection))}">${esc(st.variable.name)}` +
-        `${isLibraryCollection(st.collection) ? `<span class="lib-tag">${esc(libraryOf(st.collection)?.name || 'Library')}</span>` : ''}</button>`));
+        `${isLibraryCollection(st.collection) ? `<span class="lib-tag">${esc(libraryOf(st.collection)?.name || 'Token file')}</span>` : ''}</button>`));
     parts.push(`<span class="inspector-value">${valuePreview(v.type, value)}</span>`);
     return `<div class="inspector-row"><span class="muted">${esc(m.name)}</span><span class="chain">${parts.join('<span class="chain-arrow">→</span>')}</span></div>`;
   };
@@ -337,7 +337,7 @@ function render() {
   const libCols = libraryCollections();
   const sidebar = collectionTree().map(({ c, depth }) => colRow(c, col, depth)).join('') +
     '<button class="vars-add" data-act="new-collection">+ New collection</button>' +
-    (libCols.length ? '<div class="vars-side-head" title="Tokens from linked token files. Edit them in their own file.">Linked libraries</div>' +
+    (libCols.length ? `<div class="vars-side-head" title="Edit these tokens in their own token file.">${state.doc?.kind === 'tokens' ? 'Linked token files' : 'From the token file'}</div>` +
       libCols.map((c) => colRow(c, col, 0, collectionLabel(c))).join('') : '');
   let main;
   if (!col) {
@@ -383,7 +383,7 @@ function render() {
       ? `<div class="muted vars-none">${scope ? 'No tokens in this group yet. Drag tokens here or create one.' : 'No tokens match the search or filter.'}</div>`
       : '<div class="muted vars-none">No tokens in this collection yet.</div>';
     main = `<div class="vars-toolbar"><div class="vars-title">` +
-      (ro ? `<span class="vars-col-name static">${esc(col.name)}</span><span class="ext-badge lib" title="Edit these tokens in their token file">${esc(lib?.name || 'Library')}${lib?.via ? ` · via ${esc(lib.via)}` : ''} · v${lib?.version ?? '?'} · read-only</span>`
+      (ro ? `<span class="vars-col-name static">${esc(col.name)}</span><span class="ext-badge lib" title="Edit these tokens in their token file">${esc(lib?.name || 'Token file')}${lib?.via ? ` · via ${esc(lib.via)}` : ''} · v${lib?.version ?? '?'} · read-only</span>`
         : `<input class="vars-col-name" data-col-name="${col.id}" value="${esc(col.name)}" spellcheck="false">`) +
       (ext ? `<span class="ext-badge" title="Inherits tokens and modes from ${esc(parent ? collectionLabel(parent) : 'a missing collection')}">Extends ${esc(parent ? collectionLabel(parent) : '?')}</span>` : '') + '</div>' +
       `<div class="vars-actions"><input type="search" class="vars-search" data-search placeholder="Search tokens" value="${esc(query)}" spellcheck="false">` +

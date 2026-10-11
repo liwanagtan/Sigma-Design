@@ -185,8 +185,8 @@ function onRemoteChange(msg) {
   const current = getCurrentFileId();
   if (msg.type === 'versions') return void window.dispatchEvent(new CustomEvent('sigma:versions', { detail: msg.id }));
   if (state.screen === 'home') return void renderHome();
-  // A linked token file or component library published a new version.
-  if (msg.type === 'published' && state.screen === 'editor' && usesLibrary(msg.id)) {
+  // A token file or component library this file uses published a new version.
+  if (msg.type === 'published' && (state.screen === 'editor' || state.screen === 'tokens') && usesLibrary(msg.id)) {
     return void checkLibraryUpdates();
   }
   if (msg.id !== current) return;

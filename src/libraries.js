@@ -6,7 +6,7 @@
 import { state, commit, emit, reindex, walk } from './store.js';
 import {
   localCollections, snapshotForLibrary, diffCollections, collections, referencedIds, detachAliasesTo, dependencyLibraries,
-  dependencyChanges,
+  dependencyChanges, libraryCollections,
 } from './variables.js';
 import { publishableComponents } from './components.js';
 import { isAutoLayout } from './layout.js';
@@ -71,6 +71,7 @@ function instancesFrom(lib) {
 }
 
 export async function linkLibrary(fileId) {
+  if (isDesignFile()) return useTokenFile(fileId); // design files use one token file
   if (fileId === getCurrentFileId()) return toast('A token file can’t link itself.');
   if (libraries().some((l) => l.fileId === fileId)) return;
   const res = await loadPublished(fileId);
@@ -84,6 +85,92 @@ export async function linkLibrary(fileId) {
 }
 
 const tokenIds = () => new Set(collections().flatMap((c) => (c.variables || []).map((v) => v.id)));
+
+// ---------- a design file's design tokens ----------
+// A design file uses one token file (plus its own local tokens). Token files can link several, to point
+// their tokens at other token files.
+export const isDesignFile = () => state.doc?.kind !== 'tokens';
+export const tokenFile = () => libraries()[0] || null;
+
+// Point every binding and alias at token ids in `remap` (old id → new id). Returns the number of layers
+// changed (instance overrides included).
+function remapTokenUses(remap) {
+  let layers = 0;
+  const fix = (bindings) => {
+    let changed = false;
+    for (const [path, id] of Object.entries(bindings || {})) {
+      if (remap.has(id)) {
+        bindings[path] = remap.get(id);
+        changed = true;
+      }
+    }
+    return changed;
+  };
+  for (const pg of state.doc.pages || []) walk(pg.children, (n) => {
+    let changed = fix(n.bindings);
+    for (const o of Object.values(n.overrides || {})) changed = fix(o.bindings) || changed;
+    if (changed) layers++;
+  });
+  for (const c of localCollections()) {
+    const visit = (holder, key) => {
+      const val = holder[key];
+      if (val?.alias && remap.has(val.alias)) holder[key] = { alias: remap.get(val.alias) };
+      else if (val && typeof val === 'object' && !val.alias) for (const f of Object.keys(val)) if (val[f]?.alias && remap.has(val[f].alias)) val[f] = { alias: remap.get(val[f].alias) };
+    };
+    for (const v of c.variables || []) for (const m of Object.keys(v.valuesByMode)) visit(v.valuesByMode, m);
+    for (const byMode of Object.values(c.overrides || {})) for (const m of Object.keys(byMode)) visit(byMode, m);
+  }
+  return layers;
+}
+
+// Layers (and local tokens) using any of `ids`.
+function tokenUses(ids) {
+  return usesOf(ids) + [...referencedIds()].filter((id) => ids.has(id)).length;
+}
+
+// Use `fileId` as this design file's token file, replacing the one it used. Layers using a token that
+// has the same name (and type) in the new file switch to it, so token files with the same structure
+// (two brands, say) are interchangeable; the rest keep their current values.
+export async function useTokenFile(fileId) {
+  if (tokenFile()?.fileId === fileId && libraries().length === 1) return;
+  const res = await loadPublished(fileId);
+  if (!res?.published) return toast('That token file has no published version yet. Publish it from the token file first.');
+  const old = libraries();
+  const before = new Map(libraryCollections().flatMap((c) => (c.variables || []).map((v) => [v.id, v])));
+  // What the new file provides, by id and by name.
+  state.doc.libraries = [];
+  setLibrary(fileId, res.meta.name, res.published);
+  const byName = new Map(libraryCollections().flatMap((c) => (c.variables || []).map((v) => [`${v.type}:${v.name}`, v.id])));
+  const after = tokenIds();
+  state.doc.libraries = old;
+  const lost = new Set([...before.keys()].filter((id) => !after.has(id)));
+  const remap = new Map();
+  for (const id of lost) {
+    const v = before.get(id);
+    const match = byName.get(`${v.type}:${v.name}`);
+    if (match) remap.set(id, match);
+  }
+  const uses = tokenUses(lost);
+  const matched = tokenUses(new Set(remap.keys()));
+  if (old.length && uses) {
+    const from = old.map((l) => `“${l.name}”`).join(' and ');
+    const kept = uses - matched;
+    if (!confirm(`Use design tokens from “${res.meta.name}” instead of ${from}?\n\n` +
+      `${matched} use${matched === 1 ? '' : 's'} of tokens switch to the token with the same name in “${res.meta.name}”.` +
+      (kept ? ` ${kept} ha${kept === 1 ? 's' : 've'} no match and keep${kept === 1 ? 's' : ''} its current value.` : ''))) return;
+  }
+  detachAliasesTo(new Set([...lost].filter((id) => !remap.has(id)))); // local tokens keep values with no match
+  remapTokenUses(remap);
+  state.doc.libraries = [];
+  setLibrary(fileId, res.meta.name, res.published);
+  commit();
+  toast(`This file now uses design tokens from “${res.meta.name}” (v${res.published.version})`);
+}
+
+// Stop using a token file (layers keep their current values).
+export function stopUsingTokenFile(fileId = tokenFile()?.fileId) {
+  if (fileId) unlinkLibrary(fileId);
+}
 
 export function unlinkLibrary(fileId) {
   const lib = libraries().find((l) => l.fileId === fileId);
@@ -225,8 +312,12 @@ export async function checkLibraryUpdates() {
   if (getCurrentFileId() !== fileId) return []; // the file changed while we were checking
   pending = found;
   if (found.length) {
-    const names = found.map((u) => `${esc(u.meta.name)} ${u.kind === 'components' ? 'components ' : ''}v${u.published.version}`).join(', ');
-    banner({ text: `Library updates available: ${names}`, label: 'Review', action: reviewUpdates });
+    const names = (kind) => found.filter((u) => u.kind === kind).map((u) => `${esc(u.meta.name)} v${u.published.version}`).join(', ');
+    const parts = [
+      names('tokens') && `${isDesignFile() ? 'Design token' : 'Token file'} updates: ${names('tokens')}`,
+      names('components') && `Component library updates: ${names('components')}`,
+    ].filter(Boolean);
+    banner({ text: `${parts.join(' · ')} available`, label: 'Review', action: reviewUpdates });
   }
   return found;
 }
@@ -248,14 +339,14 @@ function reviewUpdates() {
     const comps = u.kind === 'components';
     const d = comps ? diffComponents(u.lib.components, u.published.components) : diffCollections(u.lib.collections, u.published.collections);
     const deps = comps ? [] : dependencyChanges(u.lib.dependencies, u.published.dependencies);
-    return `<div class="update-card"><div class="update-head"><b>${esc(u.meta.name)}${comps ? ' · components' : ' · tokens'}</b><span class="muted">v${u.lib.version} → v${u.published.version}</span></div>` +
+    return `<div class="update-card"><div class="update-head"><b>${esc(u.meta.name)}${comps ? ' · components' : ' · design tokens'}</b><span class="muted">v${u.lib.version} → v${u.published.version}</span></div>` +
       (u.published.notes ? `<div class="update-notes">“${esc(u.published.notes)}”</div>` : '') +
       (diffList('Added', d.added, 'added') + diffList('Changed', d.changed, 'changed') + diffList('Removed', d.removed, 'removed') +
         diffList('Token files it points at', deps, 'changed') || '<div class="muted">No changes.</div>') +
       (d.removed.length ? `<div class="muted">${comps ? 'Instances of removed components keep their current look.' : 'Layers using removed tokens keep their current values.'}</div>` : '') +
       `<button class="btn primary" data-accept="${i}">Accept update</button></div>`;
   }).join('');
-  const wrap = modal('Review library updates', rows, '<button class="btn" data-close>Later</button>' + (pending.length > 1 ? '<button class="btn primary" data-accept-all>Accept all</button>' : ''));
+  const wrap = modal('Review updates', rows, '<button class="btn" data-close>Later</button>' + (pending.length > 1 ? '<button class="btn primary" data-accept-all>Accept all</button>' : ''));
   wrap.addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;
@@ -300,27 +391,50 @@ function libraryRow(icon, name, status, actions) {
   return `<div class="lib-row"><span class="lib-icon">${icon}</span><div class="lib-info"><div class="lib-name">${esc(name)}</div>${status}</div>${actions}</div>`;
 }
 
-// Link or unlink token files and component libraries for this design file.
+const versionStatus = (published, lib) => (!published ? '<span class="muted">Not published yet</span>'
+  : lib ? `<span class="muted">Using v${lib.version}${published > lib.version ? ` · <b class="update-dot">v${published} available</b>` : ''}</span>`
+    : `<span class="muted">Published v${published}</span>`);
+const openBtn = (id) => `<button class="btn" data-open="${id}" title="Open the file">Open</button>`;
+
+// Design files: choose the one token file this file uses.
+export async function openDesignTokensDialog() {
+  const files = (await listTokenFiles()).filter((f) => f.id !== getCurrentFileId());
+  const using = new Map(libraries().map((l) => [l.fileId, l]));
+  const several = libraries().length > 1;
+  const rows = files.map((f) => {
+    const lib = using.get(f.id);
+    const action = lib
+      ? (several ? `<button class="btn primary" data-use="${f.id}">Keep only this one</button>` : '<span class="using-badge">✓ In use</span>')
+      : `<button class="btn${using.size ? '' : ' primary'}" data-use="${f.id}" ${f.tokenVersion ? '' : 'disabled title="Publish it first"'}>${using.size ? 'Switch to this' : 'Use'}</button>`;
+    return libraryRow(TOKEN_ICON, f.name, versionStatus(f.tokenVersion, lib), openBtn(f.id) + action);
+  }).join('') + libraries().filter((l) => !files.some((f) => f.id === l.fileId)).map((l) =>
+    libraryRow(TOKEN_ICON, l.name, `<span class="muted">Token file deleted · using v${l.version}</span>`, `<button class="btn" data-stop="${l.fileId}">Stop using</button>`)).join('');
+  const deps = dependencyLibraries();
+  const body = '<p class="muted lib-intro">A design file uses one token file for its design tokens (and can keep a few local ones). ' +
+    'Switching moves layers to the tokens with the same names in the new file. Updates arrive when the token file publishes and you accept them.</p>' +
+    (several ? '<div class="warn">This file uses several token files, from before a design file used one. Choose the one to keep: layers move to its tokens with the same names.</div>' : '') +
+    (rows || '<div class="muted lib-empty">No token files yet. Create one from the home page and publish it.</div>') +
+    (deps.length ? `<p class="muted">Also included, because the token file points at them: ${deps.map((d) => `${esc(d.name)} v${d.version}`).join(', ')}.</p>` : '');
+  const footer = tokenFile() && !several ? `<button class="btn" data-stop="${tokenFile().fileId}">Stop using “${esc(tokenFile().name)}”</button><span class="spacer"></span><button class="btn" data-close>Done</button>` : '<button class="btn" data-close>Done</button>';
+  const wrap = modal('Design tokens', body, footer);
+  wrap.addEventListener('click', async (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.use) await useTokenFile(b.dataset.use);
+    else if (b.dataset.stop) stopUsingTokenFile(b.dataset.stop);
+    else if (b.dataset.open) {
+      wrap.remove();
+      return window.open(`#/file/${b.dataset.open}`, '_blank');
+    } else return;
+    wrap.remove();
+    openDesignTokensDialog();
+  });
+}
+
+// Design files: link component libraries. Token files: link other token files (to point tokens at theirs).
 export async function openLibrariesDialog() {
-  const tokenFile = state.doc?.kind === 'tokens';
-  const tokenFiles = (await listTokenFiles()).filter((f) => f.id !== getCurrentFileId());
-  const compFiles = tokenFile ? [] : (await listComponentLibraries()).filter((f) => f.id !== getCurrentFileId());
-  const versionStatus = (published, lib) => (!published ? '<span class="muted">Not published yet</span>'
-    : lib ? `<span class="muted">Using v${lib.version}${published > lib.version ? ` · <b class="update-dot">v${published} available</b>` : ''}</span>`
-      : `<span class="muted">Published v${published}</span>`);
-  const openBtn = (id) => `<button class="btn" data-open="${id}" title="Open the file">Open</button>`;
-
-  const linkedTokens = new Map(libraries().map((l) => [l.fileId, l]));
-  const tokenRows = tokenFiles.map((f) => {
-    const lib = linkedTokens.get(f.id);
-    const action = lib ? `<button class="btn" data-unlink="${f.id}">Unlink</button>`
-      : `<button class="btn primary" data-link="${f.id}" ${f.tokenVersion ? '' : 'disabled'}>Link</button>`;
-    const dep = !lib && dependencyLibraries().find((d) => d.fileId === f.id);
-    const status = dep ? `<span class="muted">Included with “${esc(dep.via)}” (v${dep.version}) · link it to choose the version yourself</span>` : versionStatus(f.tokenVersion, lib);
-    return libraryRow(TOKEN_ICON, f.name, status, openBtn(f.id) + action);
-  }).join('') + libraries().filter((l) => !tokenFiles.some((f) => f.id === l.fileId)).map((l) =>
-    libraryRow(TOKEN_ICON, l.name, `<span class="muted">Token file deleted · using v${l.version}</span>`, `<button class="btn" data-unlink="${l.fileId}">Unlink</button>`)).join('');
-
+  if (!isDesignFile()) return openLinkedTokenFilesDialog();
+  const compFiles = (await listComponentLibraries()).filter((f) => f.id !== getCurrentFileId());
   const linkedComps = new Map(componentLibraries().map((l) => [l.fileId, l]));
   const compRows = compFiles.map((f) => {
     const lib = linkedComps.get(f.id);
@@ -329,21 +443,13 @@ export async function openLibrariesDialog() {
     return libraryRow(COMPONENT_ICON, f.name, versionStatus(f.componentVersion, lib), openBtn(f.id) + action);
   }).join('') + componentLibraries().filter((l) => !compFiles.some((f) => f.id === l.fileId)).map((l) =>
     libraryRow(COMPONENT_ICON, l.name, `<span class="muted">File deleted · using v${l.version}</span>`, `<button class="btn" data-unlink-components="${l.fileId}">Unlink</button>`)).join('');
-
-  const body = (tokenFile
-    ? '<p class="muted lib-intro">Link other token files to point this file’s tokens at theirs, e.g. brand colors that use core colors. When you publish, the token files you point at go along, so design files resolve them too.</p>'
-    : '<p class="muted lib-intro">Linked libraries provide design tokens and components to this file. Changes arrive when the source file publishes a new version and you accept it.</p>') +
-    '<div class="lib-section">Design tokens</div>' +
-    (tokenRows || '<div class="muted lib-empty">No other token files yet. Create one from the home page and publish it.</div>') +
-    (tokenFile ? '' : '<div class="lib-section">Components</div>' +
-    (compRows || '<div class="muted lib-empty">No other design file has published components yet. Use <b>Publish components…</b> in a design file’s main menu.</div>'));
-  const wrap = modal('Libraries', body);
+  const body = '<p class="muted lib-intro">Component libraries are design files that publish their components. Link one to use its components from Assets; changes arrive when it publishes a new version and you accept it.</p>' +
+    (compRows || '<div class="muted lib-empty">No other design file has published components yet. Use <b>Publish components…</b> in a design file’s main menu.</div>');
+  const wrap = modal('Component libraries', body);
   wrap.addEventListener('click', async (e) => {
     const b = e.target.closest('button');
     if (!b) return;
-    if (b.dataset.link) await linkLibrary(b.dataset.link);
-    else if (b.dataset.unlink) unlinkLibrary(b.dataset.unlink);
-    else if (b.dataset.linkComponents) await linkComponentLibrary(b.dataset.linkComponents);
+    if (b.dataset.linkComponents) await linkComponentLibrary(b.dataset.linkComponents);
     else if (b.dataset.unlinkComponents) unlinkComponentLibrary(b.dataset.unlinkComponents);
     else if (b.dataset.open) {
       wrap.remove();
@@ -354,18 +460,56 @@ export async function openLibrariesDialog() {
   });
 }
 
+async function openLinkedTokenFilesDialog() {
+  const tokenFiles = (await listTokenFiles()).filter((f) => f.id !== getCurrentFileId());
+  const linked = new Map(libraries().map((l) => [l.fileId, l]));
+  const rows = tokenFiles.map((f) => {
+    const lib = linked.get(f.id);
+    const action = lib ? `<button class="btn" data-unlink="${f.id}">Unlink</button>`
+      : `<button class="btn primary" data-link="${f.id}" ${f.tokenVersion ? '' : 'disabled'}>Link</button>`;
+    const dep = !lib && dependencyLibraries().find((d) => d.fileId === f.id);
+    const status = dep ? `<span class="muted">Included with “${esc(dep.via)}” (v${dep.version}) · link it to choose the version yourself</span>` : versionStatus(f.tokenVersion, lib);
+    return libraryRow(TOKEN_ICON, f.name, status, openBtn(f.id) + action);
+  }).join('') + libraries().filter((l) => !tokenFiles.some((f) => f.id === l.fileId)).map((l) =>
+    libraryRow(TOKEN_ICON, l.name, `<span class="muted">Token file deleted · using v${l.version}</span>`, `<button class="btn" data-unlink="${l.fileId}">Unlink</button>`)).join('');
+  const body = '<p class="muted lib-intro">Link other token files to point this file’s tokens at theirs, e.g. brand colors that use core colors. When you publish, the token files you point at go along, so design files resolve them too.</p>' +
+    (rows || '<div class="muted lib-empty">No other token files yet. Create one from the home page and publish it.</div>');
+  const wrap = modal('Linked token files', body);
+  wrap.addEventListener('click', async (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.link) await linkLibrary(b.dataset.link);
+    else if (b.dataset.unlink) unlinkLibrary(b.dataset.unlink);
+    else if (b.dataset.open) {
+      wrap.remove();
+      return window.open(`#/file/${b.dataset.open}`, '_blank');
+    } else return;
+    wrap.remove();
+    openLinkedTokenFilesDialog();
+  });
+}
+
 // ---------- local tokens → token file ----------
 async function moveLocal(target) {
   const cols = localCollections();
   if (!cols.length) return toast('This file has no local tokens to move.');
-  // Tokens that point at linked token files keep pointing at them from their new home.
-  const dependencies = publishDependencies();
-  const links = structuredClone(libraries().filter((l) => dependencies.some((d) => d.fileId === l.fileId)));
+  // The token file this design file uses (if any) goes along with the moved tokens, linked from their new
+  // home, so the design file can switch to it and still resolve everything it used.
+  const deps = new Map(publishDependencies().map((d) => [d.fileId, d]));
+  const strip = (cols2) => structuredClone(cols2).map(({ fromLibrary, ...c }) => c);
+  for (const l of libraries()) {
+    if (l.fileId === target) continue;
+    deps.set(l.fileId, { fileId: l.fileId, name: l.name, version: l.version, collections: strip(l.collections) });
+    for (const d of l.dependencies || []) if (!deps.has(d.fileId) && d.fileId !== target) deps.set(d.fileId, { ...d, collections: strip(d.collections) });
+  }
+  const dependencies = [...deps.values()];
+  const links = structuredClone(libraries().filter((l) => l.fileId !== target));
   const result = target
     ? await appendToTokenFile(target, cols, `Added from “${state.doc.name}”`, { libraries: links, dependencies })
     : await createTokenFileWith(`${state.doc.name} tokens`, cols, undefined, { libraries: links, dependencies });
-  // Token ids don't change, so every binding keeps working through the library snapshot.
+  // Token ids don't change, so every binding keeps working through the new token file.
   state.doc.variables.collections = [];
+  state.doc.libraries = [];
   setLibrary(result.id, result.name, result.published);
   commit();
   emit('doc');

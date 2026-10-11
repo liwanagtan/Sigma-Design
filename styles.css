@@ -589,3 +589,6 @@ button.group-caret.open { transform: rotate(90deg); }
 .split-btn { display: inline-flex; }
 .split-btn > .btn:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
 .split-btn > .split-more { border-top-left-radius: 0; border-bottom-left-radius: 0; margin-left: 1px; padding: 0 8px; }
+.lib-footer .spacer { flex: 1; }
+.using-badge { color: #0a7f3f; font-weight: 500; white-space: nowrap; padding: 0 8px; }
+.lib-body .warn { margin-right: 0; }

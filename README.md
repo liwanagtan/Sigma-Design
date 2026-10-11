@@ -72,15 +72,16 @@ Then open http://localhost:5173.
   - **typography tokens** bundle font family, weight, size, line height and letter spacing, and each part can alias a number or text token
   - a typography token is edited in the inspector, with a live sample
   - in design files, the Text section's **Text style** links a typography token to a text layer; changing any font property by hand detaches it
-- **Token libraries:**
-  - token files can link other token files, so tokens can point across files (a "Brand" file whose colors point at a "Core" file). Linked collections show read-only under **Linked libraries** in the token editor
-  - publishing a token file includes copies of the token files it points at, so a design file that links only "Brand" still resolves the "Core" values. Linking "Core" directly takes over from the included copy
+- **Design tokens in design files:**
+  - a design file uses **one token file** for its design tokens, chosen in **Design tokens…** (Σ menu, or the panel with nothing selected), plus any local tokens it keeps. Its tokens show up everywhere a value can use a token
+  - **Switch to this** changes the token file: layers move to the tokens with the same names in the new file (so token files with the same structure, like two brands, are interchangeable); tokens with no match keep their current values
+  - **Publish…** in a token file creates a numbered version, with optional notes and a summary of what changed; the design file keeps a copy of the version it uses, and when a newer one is published it shows "Design token updates available" so you can review and accept
+  - **Move to token file…** in the local tokens window sends a file's local tokens to a new or existing token file, which the design file then uses
+  - files from before token files move their variables into a token file the first time they're opened
+- **Token files linking token files:**
+  - a token file can link other token files (**Linked token files…**), so its tokens can point at theirs (a "Brand" file whose colors point at a "Core" file). Linked collections show read-only in the token editor
+  - publishing a token file includes copies of the token files it points at, so a design file that uses "Brand" still resolves the "Core" values
   - unlinking a token file turns references to it into plain values
-  - **Publish…** in a token file creates a numbered version, with optional notes and a summary of what changed
-  - in a design file, **Libraries…** (Σ menu, or the panel with nothing selected) links published token files; the file keeps a copy of the version it accepted
-  - when a newer version is published, the design file shows "Token updates available"; **Review** lists added, changed and removed tokens, and you accept when ready
-  - **Move to token file…** in the local tokens window sends a file's local tokens to a new or existing token file and links it
-  - files from before token libraries move their variables into a linked token file the first time they're opened
 - **Version history** (Σ menu → **Show version history**, in design and token files):
   - Sigma keeps an autosave version before each editing session and every 10 minutes while you work (the newest 50), plus one for every publish
   - **Save to version history…** (⌥⌘S) adds a named version with a description; named and published versions are kept until you delete them
@@ -89,7 +90,7 @@ Then open http://localhost:5173.
   - versions are stored in this browser with the file and are deleted with it
 - **Component libraries:**
   - **Publish components…** (Σ menu, or the panel with nothing selected) publishes a design file's components as a numbered version, with notes and a list of what changed
-  - another design file links it from **Libraries…**; its components appear in Assets under the library's name, ready to insert or drag
+  - another design file links it from **Component libraries…**; its components appear in Assets under the library's name, ready to insert or drag
   - a library update shows a banner in files that use it; after **Review** and accept, instances update and keep their overrides
   - **Go to main component** on a library instance offers to open the library file
   - unlinking keeps instances as they look, marked "main component missing"
