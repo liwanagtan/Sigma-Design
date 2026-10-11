@@ -7,8 +7,11 @@
 import { createNode, uid, makePaint } from './store.js';
 import { DEFAULT_LAYOUT } from './layout.js';
 
-export const WELCOME_VERSION = 2;
-export const WELCOME_NAME = 'Welcome to Sigma';
+export const WELCOME_VERSION = 3;
+// The files home keeps the guide and its tokens in a "Welcome to Sigma" folder, as "Sigma Design" and
+// "Sigma Tokens".
+export const WELCOME_FOLDER = 'Welcome to Sigma';
+export const WELCOME_NAME = 'Sigma Design';
 
 const autoLayout = (props) => ({ ...DEFAULT_LAYOUT, ...props });
 
@@ -164,13 +167,13 @@ export function welcomeDocument(collections) {
       'Sigma Tokens files hold design tokens (colors, spacing, type, shadows, motion) and have no canvas. They’re published for Sigma Design files to use.',
     ] },
     { h: 'How they connect', p: [
-      'This file uses the sample tokens (“Sample design tokens”). Every color, size, text style and shadow here comes from a token, so switching a mode or a brand restyles everything at once.',
+      'This file uses the Sigma Tokens file next to it in the Welcome to Sigma folder on the files home. Every color, size, text style and shadow here comes from one of its tokens, so switching a mode or a brand restyles everything at once.',
       'When a Sigma Tokens file publishes a new version, the Sigma Design files that use it are offered the update.',
     ] },
     { h: 'Find your way', bullets: [
       'Layers and Assets are on the left. The right panel shows what you’ve selected, or this file’s tokens and libraries when nothing is.',
       'The Σ menu has your files, export, version history, tokens, libraries and the keyboard shortcuts (press ?).',
-      'Back to files (Σ menu) goes to the files home. Deleted files wait in its Archive until you delete them forever.',
+      'Back to files (Σ menu) goes to the files home, where this file and its tokens are in the Welcome to Sigma folder. Deleted files wait in the Archive until you delete them forever.',
     ] },
     { h: 'Pages in this file', bullets: [
       '2 Canvas basics: tools, selecting, organizing',
@@ -185,20 +188,20 @@ export function welcomeDocument(collections) {
   ]);
   start.parts.push(tryIt('Pick a page in the Pages list on the left. Each one has a guide like this and examples to try on the right.'));
   const tokensBox = stack('Sigma Tokens', 'vertical', { gap: P('space/2'), padding: P('space/6'), fill: S('surface/default'), radius: P('radius/lg'), stroke: S('border/strong'), width: 300 }, [
-    text('Kind', 'Sigma Tokens', S('text/link'), T('label/default'), { textCase: 'upper' }),
-    text('Name', 'Sample design tokens', S('text/primary'), T('heading/h3')),
+    text('Kind', 'Sigma Tokens file', S('text/link'), T('label/default'), { textCase: 'upper' }),
+    text('Name', 'Sigma Tokens', S('text/primary'), T('heading/h3')),
     para('Primitives → Semantic → Components, in Light and Dark, with a Brand B extension.', { typo: T('body/small'), color: S('text/secondary') }),
   ]);
   const designBox = stack('Sigma Design', 'vertical', { gap: P('space/2'), padding: P('space/6'), fill: S('surface/default'), radius: P('radius/lg'), stroke: S('border/strong'), width: 300 }, [
-    text('Kind', 'Sigma Design', S('text/link'), T('label/default'), { textCase: 'upper' }),
-    text('Name', WELCOME_NAME, S('text/primary'), T('heading/h3')),
+    text('Kind', 'Sigma Design file', S('text/link'), T('label/default'), { textCase: 'upper' }),
+    text('Name', `${WELCOME_NAME} (this file)`, S('text/primary'), T('heading/h3')),
     para('Pages, components and layouts whose colors, sizes and text styles are those tokens.', { typo: T('body/small'), color: S('text/secondary') }),
   ]);
   const arrow = stack('Publish and use', 'vertical', { gap: P('space/1'), props: { layout: autoLayout({ mode: 'vertical', alignC: 'center' }) } }, [
     text('Label', 'publish →', S('text/secondary'), T('label/default')),
     text('Label', '← accept updates', S('text/secondary'), T('label/small')),
   ]);
-  const diagram = example('How the files connect', 600, 0, [row('Files', [tokensBox, arrow, designBox], P('space/6'))]);
+  const diagram = example('The Welcome to Sigma folder', 600, 0, [row('Files', [tokensBox, arrow, designBox], P('space/6'))]);
 
   // ---------- 2. Canvas basics ----------
   const basics = guide('Canvas basics · 2 of 9', 'Canvas basics', 'Draw, select and arrange layers on an infinite canvas. Most of it works the way it does in Figma.', [
@@ -443,7 +446,7 @@ export function welcomeDocument(collections) {
   ], P('space/3'), 'start')]);
 
   // ---------- 9. Sigma Tokens ----------
-  const tokGuide = guide('Sigma Tokens · 9 of 9', 'Sigma Tokens', 'A Sigma Tokens file is a design system’s values, with no canvas. Open the sample tokens from the files home (Sigma Tokens) to explore the one this file uses.', [
+  const tokGuide = guide('Sigma Tokens · 9 of 9', 'Sigma Tokens', 'A Sigma Tokens file is a design system’s values, with no canvas. Open Sigma Tokens in the Welcome to Sigma folder (on the files home) to explore the one this file uses.', [
     { h: 'Structure', bullets: [
       'Collections hold groups and tokens (Collection → Group → Tokens), with descriptions.',
       'Three levels work well: Primitives (raw values: color/blue/500), Semantic (what they mean: accent/default) and Components (where they’re used: button/primary/background).',
@@ -461,7 +464,7 @@ export function welcomeDocument(collections) {
       'Export tokens.json (W3C format) and CSS variables for code; import tokens.json from other tools.',
     ] },
   ]);
-  tokGuide.parts.push(tryIt('Select a swatch on the right: its fill is a primitive token. Back to files → Sigma Tokens → Sample design tokens shows them all.'));
+  tokGuide.parts.push(tryIt('Select a swatch on the right: its fill is a primitive token. Back to files → Welcome to Sigma → Sigma Tokens shows them all.'));
   const swatchRow = (hue, steps) => row(hue, [
     stack('Label', 'vertical', { width: 64, gap: P('space/1') }, [text('Hue', hue, S('text/secondary'), T('code'))]),
     ...steps.map((s) => createNode('rect', {

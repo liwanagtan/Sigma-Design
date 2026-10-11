@@ -2,7 +2,7 @@
 import {
   listFiles, createFile, renameFile, duplicateFile, deleteFile, downloadFile, importFiles, pickFilesToImport,
   listArchivedFiles, archiveFile, restoreFile, emptyArchive,
-  storageSummary, openFile, fileHref, fileKind, newTokenDocument, welcomeFile, sampleTokenFile,
+  storageSummary, openFile, fileHref, fileKind, newTokenDocument, welcomeFile, sampleTokenFile, isSampleFile, isOlderSample,
 } from './files.js';
 import { blankDocument } from './sample.js';
 import { showContextMenu } from './menu.js';
@@ -26,7 +26,7 @@ try {
   if (prefs.section === 'all') prefs.section = 'design'; // "All files" became "Design files"
 } catch {}
 
-const SECTIONS = { recents: 'Recents', design: 'Sigma Design', tokens: 'Sigma Tokens', archive: 'Archive' };
+const SECTIONS = { recents: 'Recents', design: 'Sigma Design', tokens: 'Sigma Tokens', welcome: 'Welcome to Sigma', archive: 'Archive' };
 
 // Open the files home on a section (e.g. the Archive, when an archived file's link is opened).
 export function showHomeSection(section) {
@@ -66,7 +66,7 @@ export function initHome(el) {
         <button class="nav-item" data-section="design">${NAV_DESIGN} Sigma Design</button>
         <button class="nav-item" data-section="tokens">${NAV_TOKENS} Sigma Tokens</button>
         <div class="nav-spacer"></div>
-        <button class="nav-item nav-welcome" data-welcome title="The guide to Sigma: features, how to use them, and examples">${NAV_WELCOME} Welcome to Sigma</button>
+        <button class="nav-item nav-welcome" data-section="welcome" title="The guide to Sigma and its sample tokens">${NAV_WELCOME} Welcome to Sigma</button>
         <button class="nav-item" data-section="archive" title="Deleted files, until you delete them forever">${NAV_ARCHIVE} Archive</button>
       </nav>
       <div class="home-storage" id="home-storage"></div>
@@ -92,7 +92,6 @@ export function initHome(el) {
     <div class="home-drop" id="home-drop" hidden><div>Drop <b>.sigma.json</b> or <b>tokens.json</b> files to import them</div></div>`;
 
   root.querySelector('.home-nav').addEventListener('click', (e) => {
-    if (e.target.closest('[data-welcome]')) return openWelcome();
     const b = e.target.closest('[data-section]');
     if (!b) return;
     prefs.section = b.dataset.section;
@@ -316,8 +315,10 @@ export async function renderHome() {
   const archive = section === 'archive';
   let files = await listFiles();
   const total = files.length;
+  const welcome = section === 'welcome';
   if (archive) files = await listArchivedFiles();
-  else if (section !== 'recents') files = files.filter((f) => fileKind(f) === section);
+  else if (welcome) files = files.filter(isSampleFile);
+  else if (section !== 'recents') files = files.filter((f) => fileKind(f) === section && !isSampleFile(f)); // the sample files have their own folder
   const inSection = files.length;
 
   root.querySelectorAll('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.section === section));
@@ -353,7 +354,12 @@ export async function renderHome() {
   const list = root.querySelector('#home-files');
   list.className = `home-files ${prefs.layout}`;
 
-  if (archive) {
+  if (welcome) {
+    list.innerHTML = '<div class="archive-intro"><p class="muted">Start with <b>Sigma Design</b>: a guide to everything in Sigma, with examples to try. <b>Sigma Tokens</b> holds the sample design tokens it uses.</p></div>' +
+      (files.length ? files.sort((a, b) => isOlderSample(a) - isOlderSample(b) || fileKind(a).localeCompare(fileKind(b))).map(card).join('')
+        : `<div class="home-empty"><div class="home-empty-title">Welcome to Sigma</div><p>The guide isn’t here (it may be in the Archive).</p>
+          <div class="home-empty-actions"><button class="btn primary" data-empty-action="welcome">Open Welcome to Sigma</button></div></div>`);
+  } else if (archive) {
     list.innerHTML = `<div class="archive-intro"><p class="muted">Deleted files wait here until you delete them forever. Restore one to open it again.</p>` +
       (files.length ? '<button class="btn" data-empty-archive>Empty Archive…</button>' : '') + '</div>' +
       (files.length ? files.map(archivedCard).join('') : `<div class="home-empty"><p>${q ? `No archived files match “${esc(query)}”.` : 'The Archive is empty.'}</p></div>`);
@@ -410,7 +416,7 @@ function card(f) {
     : `<div class="card-name" title="${esc(f.name)}">${esc(f.name)}</div>`;
   return `<a class="file-card${tokens ? ' tokens' : ''}" href="${fileHref(f.id)}" data-id="${f.id}" draggable="false">
     <div class="file-thumb" style="background:${tokens ? '#FFFFFF' : esc(f.background || '#F5F5F5')}">${thumb}</div>
-    <div class="file-info">${name}<div class="file-time">${tokens ? '<span class="kind-badge">Tokens</span>' : ''}Edited ${ago(f.updatedAt)}</div></div>
+    <div class="file-info">${name}<div class="file-time">${tokens ? '<span class="kind-badge">Tokens</span>' : ''}${isOlderSample(f) ? '<span class="kind-badge old" title="An earlier sample copy. Sigma Design and Sigma Tokens are the current ones; archive this when you’re done with it.">Older copy</span>' : ''}Edited ${ago(f.updatedAt)}</div></div>
     <div class="file-created">${new Date(f.createdAt).toLocaleDateString()}</div>
     <button class="icon-btn file-more" data-more title="More actions">${MORE_ICON}</button>
   </a>`;

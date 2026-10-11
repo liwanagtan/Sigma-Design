@@ -7,6 +7,35 @@ import {
 import { buildSVG, download, toast } from './io.js';
 import { libraryEntry } from './variables.js';
 import { welcomeDocument, WELCOME_VERSION } from './welcome.js';
+
+// The sample files (the Welcome to Sigma guide and its Sigma Tokens) live in the files home's Welcome to
+// Sigma folder rather than with your own files.
+export const isSampleFile = (meta) => !!(meta?.welcome || meta?.sample || meta?.sampleLegacy);
+// An earlier copy: a guide from before the current WELCOME_VERSION, an older sample token file, or a sample
+// from before samples were marked.
+export const isOlderSample = (meta) => !!meta && (!!meta.sampleLegacy ||
+  (!!meta.welcome && meta.welcome < WELCOME_VERSION) || (!!meta.sample && meta.name !== sampleTokenDocument().name));
+const LEGACY_SAMPLE_TOKENS_NAME = 'Sample design tokens';
+// Names earlier versions gave their sample files, before they were marked as samples.
+const LEGACY_SAMPLE_NAMES = { design: ['Welcome to Sigma', 'Sample design file'], tokens: ['Welcome to Sigma tokens', LEGACY_SAMPLE_TOKENS_NAME] };
+
+// Once: sample files from before samples were marked move to the Welcome to Sigma folder (by their exact
+// sample names). Nothing is renamed or changed otherwise.
+async function migrateLegacySamples() {
+  const KEY = 'sigma.samplesMarked';
+  try {
+    if (localStorage.getItem(KEY)) return;
+  } catch {
+    return;
+  }
+  for (const f of await db.getAll('files')) {
+    if (isSampleFile(f) || !LEGACY_SAMPLE_NAMES[fileKind(f)]?.includes(f.name)) continue;
+    await db.updateFile(f.id, (meta) => ({ meta: { ...meta, sampleLegacy: true } }));
+  }
+  try {
+    localStorage.setItem(KEY, '1');
+  } catch {}
+}
 import { sampleTokenDocument } from './sample-tokens.js';
 import { importTokens } from './tokens-io.js';
 
@@ -66,6 +95,7 @@ export async function initFiles(handlers = {}) {
   window.addEventListener('pagehide', stashPending);
   document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && stashPending());
   await migrateLegacyDocument();
+  await migrateLegacySamples();
 }
 
 function broadcast(type, id) {
@@ -321,7 +351,7 @@ export async function appendToTokenFile(id, collections, notes, { libraries = []
 export async function sampleTokenFile() {
   const sampleName = sampleTokenDocument().name;
   const candidates = (await listTokenFiles())
-    .filter((m) => m.sample || m.name === sampleName)
+    .filter((m) => m.sample || m.name === sampleName || m.name === LEGACY_SAMPLE_TOKENS_NAME)
     .sort((a, b) => b.updatedAt - a.updatedAt);
   for (const meta of candidates) {
     const published = (await loadPublished(meta.id))?.published;
@@ -346,6 +376,14 @@ export async function welcomeFile() {
     .sort((a, b) => b.updatedAt - a.updatedAt)[0];
   if (current) return current.id;
   const lib = await sampleTokenFile();
+  // An older sample token file gets its current name and joins the Welcome to Sigma folder.
+  const meta = (await listFiles()).find((m) => m.id === lib.id);
+  if (meta && (!meta.sample || meta.name === LEGACY_SAMPLE_TOKENS_NAME)) {
+    const name = sampleTokenDocument().name;
+    await db.updateFile(lib.id, (m, rec) => ({ meta: { ...m, sample: true, name: m.name === LEGACY_SAMPLE_TOKENS_NAME ? name : m.name }, doc: rec && { ...rec, doc: { ...rec.doc, name: m.name === LEGACY_SAMPLE_TOKENS_NAME ? name : rec.doc.name } } }));
+    if (meta.name === LEGACY_SAMPLE_TOKENS_NAME) lib.name = name;
+    broadcast('renamed', lib.id);
+  }
   const doc = welcomeDocument(lib.published.collections);
   doc.libraries = [libraryEntry(lib.id, lib.name, lib.published)];
   return createFile(doc, {}, { welcome: WELCOME_VERSION });

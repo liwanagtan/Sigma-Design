@@ -224,5 +224,5 @@ export function sampleTokenDocument() {
 
   const collections = [p, s, brand, t, c];
   for (const col of collections) normalizeGroups(col); // token names become full paths
-  return { name: 'Sample design tokens', collections };
+  return { name: 'Sigma Tokens', collections }; // shown in the files home's Welcome to Sigma folder
 }
