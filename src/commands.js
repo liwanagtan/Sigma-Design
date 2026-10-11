@@ -391,7 +391,7 @@ export function setProps(props, { live = false, nodes = selectedNodes() } = {}) 
         }
         if (k === 'radius' && !(isFrameLike(n) || ['rect', 'image'].includes(n.type))) continue;
         if (k === 'strokeAlign' && n.type === 'line') continue;
-        if (k.startsWith('font') || ['lineHeight', 'letterSpacing', 'textAlign', 'autoResize', 'text'].includes(k)) {
+        if (k.startsWith('font') || ['lineHeight', 'letterSpacing', 'textAlign', 'textCase', 'autoResize', 'text'].includes(k)) {
           if (n.type !== 'text') continue;
         }
         if (k === 'autoResize' && v !== 'width' && n.sizingH === 'hug') n.sizingH = 'fixed';

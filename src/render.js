@@ -3,7 +3,7 @@ import {
   ancestors,
 } from './store.js';
 import { css, mul, apply, unionBoxes, cornersOf } from './geom.js';
-import { textStyle } from './text.js';
+import { textStyle, caseText } from './text.js';
 import { isInsideInstance } from './components.js';
 
 export const ACCENT = '#0D99FF';
@@ -143,7 +143,7 @@ function fontMetrics(n) {
 }
 
 function svgText(n, paints, hidden) {
-  const lines = String(n.text ?? '').split('\n');
+  const lines = caseText(n.text, n.textCase).split('\n');
   const lineH = n.lineHeight ? (n.lineHeight / 100) * n.fontSize : (n.h || n.fontSize * 1.2) / lines.length;
   const { asc, desc } = fontMetrics(n);
   const baseline = (lineH - (asc + desc)) / 2 + asc; // where an HTML line box puts the baseline

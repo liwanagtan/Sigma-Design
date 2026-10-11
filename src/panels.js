@@ -30,7 +30,7 @@ import {
 } from './variables.js';
 import { openVariablesEditor } from './variables-ui.js';
 import { showContextMenu } from './menu.js';
-import { stopEditing } from './text.js';
+import { stopEditing, TEXT_CASES } from './text.js';
 import { toWorld, nodeWorldSVG } from './render.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -828,6 +828,9 @@ function buildProps() {
     t += `<div class="grid2">${numField('lineHeight', '', nodes, { icon: '<span class="mini">LH</span>' })}${numField('letterSpacing', '', nodes, { icon: '<span class="mini">|A|</span>' })}</div>`;
     t += `<div class="grid2"><div class="seg">${[['left', 'textLeft'], ['center', 'textCenter'], ['right', 'textRight']].map(([k, i]) => `<button class="icon-btn${ta === k ? ' on' : ''}" data-text-align="${k}" title="Align ${k}">${icons[i]}</button>`).join('')}</div>` +
       `<div class="seg">${[['width', 'autoWidth', 'Auto width'], ['height', 'autoHeight', 'Auto height'], ['fixed', 'fixedSize', 'Fixed size']].map(([k, i, tip]) => `<button class="icon-btn${ar === k ? ' on' : ''}" data-auto-resize="${k}" title="${tip}">${icons[i]}</button>`).join('')}</div></div>`;
+    const tc = common(nodes, (n) => n.textCase || 'none');
+    t += `<div class="text-case-row"><span class="muted">Case</span><div class="seg">${[['none', '—'], ['upper', 'AG'], ['lower', 'ag'], ['title', 'Ag']].map(([k, l]) =>
+      `<button class="icon-btn text-case${tc === k ? ' on' : ''}" data-text-case="${k}" title="${TEXT_CASES[k]}">${l}</button>`).join('')}</div></div>`;
     t += `<div class="bind-inline wide"><span class="muted">Text style</span>${varControl(nodes, 'typography')}</div>`;
     t += `<div class="bind-inline wide"><span class="muted">Text content</span>${varControl(nodes, 'text')}</div>`;
     html += section('Text', t);
@@ -1138,6 +1141,7 @@ function initProps() {
     if (b.dataset.align) return align(b.dataset.align);
     if (b.dataset.distribute) return distribute(b.dataset.distribute);
     if (b.dataset.textAlign) return setProps({ textAlign: b.dataset.textAlign });
+    if (b.dataset.textCase) return setProps({ textCase: b.dataset.textCase });
     if (b.dataset.autoResize) return setProps({ autoResize: b.dataset.autoResize });
     if (b.dataset.varMenu) return variableMenu(b, b.dataset.varMenu);
     if (b.dataset.paintAct === 'toggle') return updatePaint(b.dataset.paint, 'visible', (p) => void (p.visible = p.visible === false));

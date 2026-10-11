@@ -331,6 +331,8 @@ fieldset.readonly .field-label { cursor: default; }
 .bind-inline { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
 .bind-inline .var-btn { visibility: visible; }
 .bind-inline.wide { margin-right: 24px; }
+.text-case-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-right: 24px; }
+.icon-btn.text-case { width: 30px; font-size: 11px; font-weight: 500; letter-spacing: 0; }
 
 .vars-modal { width: min(1100px, calc(100vw - 32px)); height: min(720px, 86vh); max-height: none; }
 .vars-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 200px 1fr; }

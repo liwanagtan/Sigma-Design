@@ -1,6 +1,18 @@
 import { state, getNode, emit, commit, removeNodes, worldMatrix, view, select, editNode } from './store.js';
 import { mul, css } from './geom.js';
 
+// Text case, like Figma's: the text is stored as typed and shown in its case.
+export const TEXT_CASES = { none: 'As typed', upper: 'Uppercase', lower: 'Lowercase', title: 'Title Case' };
+const CSS_CASE = { upper: 'uppercase', lower: 'lowercase', title: 'capitalize' };
+
+export function caseText(text, textCase) {
+  const s = String(text ?? '');
+  if (textCase === 'upper') return s.toUpperCase();
+  if (textCase === 'lower') return s.toLowerCase();
+  if (textCase === 'title') return s.replace(/(^|[\s\-–—/(["“‘])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+  return s;
+}
+
 export function textStyle(n) {
   const lh = n.lineHeight ? `${n.lineHeight}%` : 'normal';
   const ws = n.autoResize === 'width' ? 'pre' : 'pre-wrap';
@@ -11,6 +23,7 @@ export function textStyle(n) {
     `line-height:${n.lineHeight ? (n.lineHeight / 100) * n.fontSize + 'px' : lh}`,
     `letter-spacing:${n.letterSpacing || 0}px`,
     `text-align:${n.textAlign}`,
+    `text-transform:${CSS_CASE[n.textCase] || 'none'}`,
     `white-space:${ws}`,
     'overflow-wrap:break-word',
     'margin:0', 'padding:0',

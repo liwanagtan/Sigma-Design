@@ -141,6 +141,7 @@ Then open http://localhost:5173.
 - **Pages:** add, rename and delete pages
 - **Fills and strokes:** a layer can have any number of each. They stack bottom to top, and each has its own color, opacity and show/hide toggle. Strokes share one weight and one position: **Inside**, **Center** or **Outside**.
 - **Properties:** position, size, rotation, corner radius, opacity, typography, align and distribute. Number fields accept math like `100/2`, and you can drag a field's label to scrub its value.
+- **Text case:** the Text section's **Case** buttons show text as typed, UPPERCASE, lowercase or Title Case. The text keeps what you typed; only how it shows (and exports) changes, and instances can override it. Use it to keep one capitalization rule per component (title case for buttons and table headings, sentence case for longer strings).
 - **Editing:** undo/redo, copy/paste (also between tabs), duplicate (⌘D or ⌥-drag), arrow-key nudging, z-order (⌘[ / ⌘])
 - **Export:** PNG, JPG or SVG at 0.5x–4x, for the selection or the whole page
 - **Saving:**

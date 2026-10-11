@@ -28,10 +28,10 @@ const ROOT_FOLLOW = ['w', 'h', 'sizingH', 'sizingV'];
 // structure) comes from the main component.
 const CHILD_OVERRIDABLE = new Set([
   'fills', 'strokes', 'strokeWidth', 'strokeAlign', 'cap', 'opacity', 'visible', 'radius', 'name',
-  'text', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign',
+  'text', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'textCase',
   'componentId', 'propValues', 'variantProps', 'bindings', 'modes',
 ]);
-const TEXT_PROPS = ['text', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing'];
+const TEXT_PROPS = ['text', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textCase'];
 
 const clone = (v) => (v === undefined || v === null || typeof v !== 'object' ? v : structuredClone(v));
 const escKey = (name) => String(name).replace(/%/g, '%25').replace(/\//g, '%2F').replace(/#/g, '%23');
