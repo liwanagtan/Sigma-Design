@@ -78,7 +78,7 @@ export function initHome(el) {
       <div id="home-notice"></div>
       <div id="home-files"></div>
     </main>
-    <div class="home-drop" id="home-drop" hidden><div>Drop <b>.sigma.json</b> files to import them</div></div>`;
+    <div class="home-drop" id="home-drop" hidden><div>Drop <b>.sigma.json</b> or <b>tokens.json</b> files to import them</div></div>`;
 
   root.querySelector('.home-nav').addEventListener('click', (e) => {
     const b = e.target.closest('[data-section]');
@@ -155,7 +155,7 @@ export function initHome(el) {
     depth = 0;
     drop.hidden = true;
     const files = [...e.dataTransfer.files].filter((f) => /\.json$/i.test(f.name) || f.type === 'application/json');
-    if (!files.length) return toast('Only .sigma.json files can be imported here.');
+    if (!files.length) return toast('Only .sigma.json and tokens.json files can be imported here.');
     afterImport(await importFiles(files));
   });
 

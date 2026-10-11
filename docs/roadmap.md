@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Phases 1–13 done.** Next up is Phase 14 (export and import).
+Status: **All phases (1–14) done.** What's left is listed under "Later (needs a backend)" in Part C and under "Follow-ups" at the end.
 
 ## Scope
 
@@ -379,7 +379,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 11: Token file editor
 - [x] Phase 12: Color opacity and typography tokens
 - [x] Phase 13: Linking design files to token files
-- [ ] Phase 14: Export and import
+- [x] Phase 14: Export and import
 
 ## Follow-ups
 

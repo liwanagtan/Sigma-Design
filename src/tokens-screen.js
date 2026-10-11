@@ -3,7 +3,8 @@ import { state, commit, subscribe, undo, redo } from './store.js';
 import { diffCollections } from './variables.js';
 import { mountTokenEditor, unmountTokenEditor } from './variables-ui.js';
 import { goHome } from './files.js';
-import { saveFile } from './io.js';
+import { saveFile, download } from './io.js';
+import { exportDTCG, exportCSS, importTokens, mergeCollections } from './tokens-io.js';
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
 
@@ -29,6 +30,10 @@ export function initTokensScreen(el) {
     const r = e.currentTarget.getBoundingClientRect();
     showContextMenu(r.left, r.bottom + 4, [
       { label: 'Back to files', action: goHome },
+      '-',
+      { label: 'Export tokens.json (W3C format)', action: exportJSONFile },
+      { label: 'Export CSS variables', action: exportCSSFile },
+      { label: 'Import tokens.json…', action: importIntoThisFile },
       '-',
       { label: 'Download a copy (.sigma.json)', action: saveFile },
       '-',
@@ -56,6 +61,41 @@ export function initTokensScreen(el) {
     e.preventDefault();
     e.shiftKey ? redo() : undo();
   });
+}
+
+// ---------- export / import ----------
+const fileBase = () => (state.doc.name || 'tokens').replace(/[\\/:*?"<>|]+/g, '-');
+
+function exportJSONFile() {
+  const json = exportDTCG(state.doc.variables.collections);
+  download(new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' }), `${fileBase()}.tokens.json`);
+}
+
+function exportCSSFile() {
+  const css = exportCSS(state.doc.variables.collections, { title: state.doc.name });
+  download(new Blob([css], { type: 'text/css' }), `${fileBase()}.css`);
+}
+
+// Merge a tokens.json into this token file: tokens match by collection, name and type; modes by name.
+function importIntoThisFile() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    try {
+      const { collections, skipped } = importTokens(JSON.parse(await file.text()));
+      const n = mergeCollections(state.doc.variables.collections, collections);
+      commit();
+      window.dispatchEvent(new CustomEvent('sigma:toast', {
+        detail: `Imported ${n} token${n === 1 ? '' : 's'}${skipped ? ` (${skipped} of unsupported types skipped)` : ''}`,
+      }));
+    } catch (err) {
+      window.dispatchEvent(new CustomEvent('sigma:toast', { detail: `Couldn't import ${file.name}: ${err.message}` }));
+    }
+  };
+  input.click();
 }
 
 export function showTokensScreen() {

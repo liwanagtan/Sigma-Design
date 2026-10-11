@@ -6,6 +6,7 @@ import {
 } from './store.js';
 import { buildSVG, download, toast } from './io.js';
 import { snapshotForLibrary } from './variables.js';
+import { importTokens } from './tokens-io.js';
 
 const TAB_ID = uid();
 const channel = 'BroadcastChannel' in window ? new BroadcastChannel('sigma-files') : null;
@@ -179,14 +180,23 @@ export async function downloadFile(id) {
   download(new Blob([JSON.stringify(file.doc)], { type: 'application/json' }), `${name}.sigma.json`);
 }
 
-// Import .sigma.json files as new files. Returns the new ids.
+// Import files as new files: Sigma design or token files (.sigma.json), or design tokens in the W3C
+// format (tokens.json), which become a token file. Returns the new ids.
 export async function importFiles(fileList) {
   const ids = [];
   for (const f of fileList) {
     try {
-      const doc = JSON.parse(await f.text());
-      if (!doc?.pages?.length) throw new Error('not a Sigma file');
-      doc.name = f.name.replace(/(\.sigma)?\.json$/i, '') || doc.name || 'Untitled'; // the name you see in Finder wins
+      const json = JSON.parse(await f.text());
+      const name = f.name.replace(/(\.sigma|\.tokens)?\.json$/i, ''); // the name you see in Finder wins
+      let doc = json;
+      if (fileKind(json) !== 'tokens' && !json?.pages?.length) {
+        const { collections, skipped } = importTokens(json);
+        if (!collections.some((c) => c.variables.length)) throw new Error('no Sigma file or design tokens found');
+        doc = newTokenDocument(name || 'Imported tokens');
+        doc.variables.collections = collections;
+        if (skipped) toast(`${skipped} token${skipped === 1 ? '' : 's'} of unsupported types (like shadows) were skipped.`);
+      }
+      doc.name = name || doc.name || 'Untitled';
       ids.push(await createFile(doc));
     } catch (err) {
       toast(`Couldn't import ${f.name}: ${err.message}`);

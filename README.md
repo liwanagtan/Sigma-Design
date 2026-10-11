@@ -72,6 +72,15 @@ Then open http://localhost:5173.
   - when a newer version is published, the design file shows "Token updates available"; **Review** lists added, changed and removed tokens, and you accept when ready
   - **Move to token file…** in the local tokens window sends a file's local tokens to a new or existing token file and links it
   - files from before token libraries move their variables into a linked token file the first time they're opened
+- **Export and import:**
+  - in a token file's Σ menu, **Export tokens.json** writes the W3C Design Tokens format (DTCG):
+    - groups come from `/` in names, and aliases are written `{group.token}`
+    - colors use the DTCG color object with alpha, sizes are `{ value, unit: "px" }`, and typography is the composite type
+    - each collection × mode is a token set, such as `Color/Dark`, the multi-set layout Tokens Studio and Style Dictionary setups use
+    - re-importing a Sigma export rebuilds it exactly, including modes and extended collections
+  - **Export CSS variables** writes custom properties: default modes go on `:root`, and each other mode or brand gets a selector such as `[data-color="dark"]` that swaps values on any element
+  - **Import tokens.json…** merges tokens into the open token file, matching by name; dropping a `tokens.json` on the home page creates a new token file
+  - token types Sigma doesn't support yet, like shadows, are skipped with a note
   - organise color, number, string and boolean variables into collections; use `/` in names to group them
   - each collection has modes (columns), and a cell can alias another variable
   - the ◈ button on a fill, stroke, number field, visibility or text content binds a variable; a bound field shows a purple chip
@@ -116,6 +125,8 @@ Press `?` in the app to see every keyboard shortcut.
 | `src/variables.js` | Variables, aliases, modes and binding (normalize step `resolveVariables`) |
 | `src/variables-ui.js` | The design token editor (a modal in design files, full-screen in token files) |
 | `src/tokens-screen.js` | The token file screen |
+| `src/libraries.js` | Linking token files to design files: publish snapshots, updates, migration |
+| `src/tokens-io.js` | Token export (DTCG `tokens.json`, CSS) and import |
 | `tests/` | In-browser test runner (`tests/index.html`) and tests |
 | `src/text.js` | Text measurement and the in-place text editor |
 | `src/panels.js` | Toolbar, layers, pages and properties panels |
