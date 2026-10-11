@@ -6,13 +6,14 @@ import {
 import {
   mul, inv, apply, translate, rotate, rotateAbout, angleOf, unionBoxes, intersects, contains, distToSegment,
 } from './geom.js';
-import { selectionGeometry, frameLabels, toWorld } from './render.js';
+import { selectionGeometry, frameLabels, toWorld, addVariantButton } from './render.js';
 import { hitPath, pickFromPath, frameAt } from './hit.js';
 import { startEditing, stopEditing, measureText } from './text.js';
 import {
   setTool, zoomAt, zoomIn, zoomOut, zoomTo100, zoomToFit, zoomToSelection, deleteSelection, duplicateSelection,
   wrapSelection, ungroupSelection, reorder, nudge, selectAll, selectParent, selectChildren, toggleVisible,
   toggleLocked, scaleKids, sortByZ, flip, addAutoLayout, removeAutoLayout, createComponent, detachSelection, goToMainComponent, resetSelectionOverrides, placeInstance, combineAsVariants,
+  addVariant, makeComponentSet,
 } from './commands.js';
 import { copySelection, cutSelection, paste, importImages, pickImages, exportNodes } from './io.js';
 import { isAutoLayout, flowInsertBefore } from './layout.js';
@@ -267,6 +268,11 @@ function onPointerDown(e) {
   if (e.button !== 0) return;
 
   if (['rect', 'ellipse', 'frame', 'line', 'text'].includes(state.tool)) return beginDraw(wp, sp, e);
+
+  if (addVariantButton && Math.hypot(sp.x - addVariantButton.x, sp.y - addVariantButton.y) <= addVariantButton.r + 2) {
+    const set = getNode(addVariantButton.setId);
+    if (set) return addVariant(set);
+  }
 
   const h = handleAt(sp);
   if (h) return beginTransform(h, wp, sp, e);
@@ -879,10 +885,19 @@ function onContextMenu(e) {
     { label: 'Group selection', shortcut: '⌘G', action: () => wrapSelection('group') },
     { label: 'Frame selection', shortcut: '⌥⌘G', action: () => wrapSelection('frame') },
     { label: 'Create component', shortcut: '⌥⌘K', action: createComponent },
-    ...(nodes.length && nodes.every((n) => n.type === 'component') ? [{ label: 'Combine as variants', action: combineAsVariants }] : []),
+    ...(nodes.length > 1 && nodes.every((n) => n.type === 'component' && getParent(n.id)?.type !== 'componentSet') ? [{ label: 'Combine as variants', action: combineAsVariants }] : []),
+    // Main component / set: add a variant (a main component becomes a set), like Figma's Main component menu.
+    ...(nodes.length === 1 && (nodes[0].type === 'component' || nodes[0].type === 'componentSet') ? [{
+      label: 'Add variant',
+      action: () => {
+        const n = nodes[0];
+        const set = n.type === 'componentSet' ? n : getParent(n.id)?.type === 'componentSet' ? getParent(n.id) : makeComponentSet(n);
+        if (set) addVariant(set);
+      },
+    }] : []),
     ...(nodes.some((n) => n.type === 'instance' || isInsideInstance(n)) ? [
       { label: 'Go to main component', action: goToMainComponent },
-      { label: 'Reset overrides', action: resetSelectionOverrides },
+      { label: 'Reset all changes', action: resetSelectionOverrides },
       { label: 'Detach instance', shortcut: '⌥⌘B', action: detachSelection },
     ] : []),
     nodes.length === 1 && isAutoLayout(nodes[0])

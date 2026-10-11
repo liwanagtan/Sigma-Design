@@ -535,11 +535,23 @@ export function fitComponentSet(set) {
 export function combineAsVariants() {
   const nodes = sortByZ(selectedNodes());
   if (nodes.length < 1 || !nodes.every((n) => n.type === 'component')) return hint('Select components to combine as variants.');
+  return combine(nodes);
+}
+
+// "+ → Variant" on a main component: it becomes a component set holding it as "Property 1=Default".
+export function makeComponentSet(comp) {
+  if (comp?.type !== 'component' || getParent(comp.id)?.type === 'componentSet') return null;
+  select([comp.id]);
+  return combine([comp], { names: ['Property 1=Default'] });
+}
+
+function combine(nodes, { names = null } = {}) {
   if (nodes.some((n) => getParent(n.id)?.type === 'componentSet')) return hint('Some of these are already variants in a set.');
   const parent = getParent(nodes[0].id);
   if (nodes.some((n) => getParent(n.id) !== parent)) return hint('Variants must share the same parent.');
   const setName = nodes[0].name.includes('=') ? nextName('componentSet') : nodes[0].name;
   const used = new Set();
+  if (names) nodes.forEach((n, i) => void (n.name = names[i] || n.name));
   for (const n of nodes) {
     let props = parseVariantName(n.name);
     if (!Object.keys(props).length) props = { 'Property 1': n.name };
@@ -560,6 +572,7 @@ export function combineAsVariants() {
   fitComponentSet(set);
   select([set.id]);
   commit();
+  return set;
 }
 
 // Add a variant by duplicating the last one with a new value for the first property.
@@ -570,8 +583,8 @@ export function addVariant(set) {
   const props = parseVariantName(last.name);
   const key = Object.keys(props)[0] || 'Property 1';
   const taken = new Set(variantDefs(set)[key] || []);
-  let value = `Variant ${variants.length + 1}`;
-  for (let i = variants.length + 2; taken.has(value); i++) value = `Variant ${i}`;
+  let value = `Variant${variants.length + 1}`; // Figma's naming: Variant2, Variant3…
+  for (let i = variants.length + 2; taken.has(value); i++) value = `Variant${i}`;
   const c = cloneNode(last);
   c.name = formatVariantName({ ...props, [key]: value });
   c.x = last.x + last.w + SET_PADDING;

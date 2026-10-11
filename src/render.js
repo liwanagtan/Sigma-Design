@@ -239,6 +239,7 @@ function labelWidth(text) {
 
 // Top-level frame name labels (hit-testable).
 export let frameLabels = [];
+export let addVariantButton = null; // { x, y, r, setId } in screen space, when shown
 
 function poly(pts, attrs) {
   return `<polygon points="${pts.map((p) => `${p.x},${p.y}`).join(' ')}" ${attrs}/>`;
@@ -281,6 +282,19 @@ export function renderOverlay(svg) {
   });
   for (const set of sets) {
     out += poly(worldCorners(set).map(toScreen), `fill="none" stroke="${COMPONENT_ACCENT}" stroke-width="1" stroke-dasharray="4 3"`);
+  }
+  // A "+" below the selected component set (or the set of a selected variant) adds a variant, like Figma.
+  addVariantButton = null;
+  const one = state.selection.length === 1 ? getNode(state.selection[0]) : null;
+  const activeSet = one?.type === 'componentSet' ? one : one?.type === 'component' && getParent(one.id)?.type === 'componentSet' ? getParent(one.id) : null;
+  if (activeSet && !state.editingTextId) {
+    const pts = worldCorners(activeSet).map(toScreen);
+    const bottom = Math.max(...pts.map((p) => p.y));
+    const cx = (Math.min(...pts.map((p) => p.x)) + Math.max(...pts.map((p) => p.x))) / 2;
+    const cy = bottom + 44; // below the size badge
+    addVariantButton = { x: cx, y: cy, r: 11, setId: activeSet.id };
+    out += `<g class="add-variant"><circle cx="${cx}" cy="${cy}" r="11" fill="${COMPONENT_ACCENT}"/>` +
+      `<path d="M${cx - 4.5} ${cy}h9M${cx} ${cy - 4.5}v9" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></g>`;
   }
 
   // Hover outline

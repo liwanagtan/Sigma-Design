@@ -43,21 +43,27 @@ Then open http://localhost:5173.
   - ⇧A infers direction, gap and padding from how the layers are already arranged
   - drag children to reorder them (siblings reflow live), or use the arrow keys
   - children can opt out with **Absolute position**
-- **Components and instances:**
+- **Components and instances** (they work like Figma's):
   - ⌥⌘K turns a frame, or any selection, into a component
-  - make instances by duplicating (⌘D), ⌥-dragging or pasting a component, or from the **Assets** tab, where you can click a component or drag it onto the canvas
-  - changes to the main component flow to every instance, live
-  - an instance can override appearance and text, such as fills, strokes, text and visibility; size and position come from the main component
-  - the Instance section in the panel has Go to main component, Reset overrides and Detach (⌥⌘B)
+  - make instances by duplicating (⌘D), ⌥-dragging or pasting a component, or from the **Assets** tab (a component set inserts its default variant: the top-left one)
+  - changes to the main component flow to every instance, live; an instance can change appearance and text, and size and position come from the main component
   - a component can never end up containing an instance of itself
+- **Component properties:** select a main component or component set; its **Properties** section lists variant properties first, then the others, each with its type and value
+  - **+** creates a property: **Variant**, **Boolean**, **Instance swap** or **Text**. A window asks for its **Name** and **Value** (True/False for a boolean, the default text, or the default component plus **Preferred values** for an instance swap)
+  - click a property (or its settings icon) to edit it in the same window; double-click its name to rename it; drag it to reorder; − or right-click → **Delete property**
+  - **apply a property to a layer** in the main component: the apply variable/property button next to **Visibility** (boolean) or **Text content** (text) lists the component's properties and **Create … property…**; a nested instance has **Apply instance swap property** in its header. A bound layer shows a purple pill; click it to switch, edit or detach
+  - a property's default is what the main component shows: changing the default updates the bound layers, and editing a bound layer in the main component updates the default
+  - **Nested instances:** "Show properties of nested instances…" lists nested instances that have properties; the chosen ones show their controls on instances of the outer component
+- **Variants:**
+  - **+ → Variant** on a main component turns it into a component set (`Property 1=Default`); on a set it adds a variant property. Right-click → **Add variant** works too, and selecting a set or one of its variants shows a **+** below the set on the canvas to add one (`Variant2`, `Variant3`…)
+  - select components and right-click → **Combine as variants** to make a set from existing components
+  - editing a variant property shows its **Values**: rename one and every variant using it follows; drag to reorder
+  - select a variant to set its own values (pick one, or type a new value); variants with the same values are flagged as a conflict
+- **Instances:** the panel shows the component name (click it to swap with a searchable picker, preferred components first) and ⋯ with **Go to main component**, **Reset all changes** and **Detach instance** (⌥⌘B); ↺ appears when the instance has changes
+  - a dropdown for each variant property, or an **on/off toggle** when its values are true/false (or yes/no, on/off)
+  - an **on/off toggle** for each boolean property, a text field for each text property, and a component picker for each instance swap property
+  - exposed nested instances follow, each with its own controls; changing properties or switching variants keeps your overrides
   - if a layer in the main component is renamed or removed, its instances show "N overrides no longer apply", with a Clear button
-  - **exposed nested properties:** select a nested instance inside a main component and tick "Show its properties on … instances"; instances of the outer component then show that nested instance's controls in their own panel
-  - **component properties** are defined on the main component: Boolean (show or hide a layer), Text and Instance swap
-  - to link a layer, select it inside the main component and use the Component properties section
-  - each instance gets a control per property, plus a Swap picker for the component itself
-  - **variants:** select components and right-click → **Combine as variants** to make a component set
-  - variant names become properties (`Size=Large, State=Hover`); the set's panel renames properties and adds properties or variants
-  - instances of a variant get a dropdown per variant property, and overrides carry over when switching
 - **Design tokens** (Sigma's name for Figma's variables):
   - **New token file** creates a token file, which opens straight into a full-screen token editor
   - **New token file ▾ → Sample token file** (or **Open the sample token file** under Design tokens) creates a complete example: Primitives (a palette with transparent colors, spacing, radii, type scales, text and a boolean), Semantic colors in Light and Dark, Brand B (an extension that only changes the accent), Typography styles built from the type primitives, and Components tokens that point at semantic tokens (button → accent → blue). It's published, so design files can link it right away
@@ -152,6 +158,7 @@ Press `?` in the app to see every keyboard shortcut.
 | `src/tokens-screen.js` | The token file screen |
 | `src/libraries.js` | Token and component libraries: publishing, linking, updates, migration |
 | `src/sample-tokens.js` | The sample token file (a complete small design system) |
+| `src/component-ui.js` | Figma-style component, component set, variant and instance panels; the property window; the component picker |
 | `src/history.js` | Version history panel: viewing a version read-only, restore, duplicate, named versions |
 | `src/tokens-io.js` | Token export (DTCG `tokens.json`, CSS) and import |
 | `tests/` | In-browser test runner (`tests/index.html`) and tests |

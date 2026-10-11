@@ -592,3 +592,85 @@ button.group-caret.open { transform: rotate(90deg); }
 .lib-footer .spacer { flex: 1; }
 .using-badge { color: #0a7f3f; font-weight: 500; white-space: nowrap; padding: 0 8px; }
 .lib-body .warn { margin-right: 0; }
+
+/* ---------- components (Figma-style) ---------- */
+.comp-panel { display: flex; flex-direction: column; gap: 6px; }
+.comp-head { display: flex; align-items: center; gap: 6px; min-height: 28px; }
+.comp-icon { display: inline-flex; color: #9747FF; flex: none; }
+.comp-name { flex: 1; min-width: 0; font-weight: 600; color: #7B2EE6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.comp-head .icon-btn { flex: none; width: 24px; height: 24px; }
+.comp-desc { color: var(--text); opacity: 0.8; white-space: pre-wrap; line-height: 1.4; }
+.comp-desc-edit { width: 100%; }
+.comp-meta, .comp-sub { color: var(--muted); }
+.comp-sub { margin-top: 2px; }
+.comp-up { margin-left: auto; }
+.inst-swap { flex: 1; min-width: 0; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 6px; margin-left: -6px; border-radius: 5px; font-weight: 600; color: #7B2EE6; text-align: left; }
+.inst-swap:hover { background: var(--hover); }
+.inst-swap svg { flex: none; color: var(--muted); }
+.inst-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); align-items: center; gap: 8px; min-height: 28px; }
+.inst-label { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.inst-label svg { flex: none; }
+.inst-row .select, .inst-row .prop-input { width: 100%; }
+.inst-row .switch { justify-self: end; }
+.inst-nested-head { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border); font-weight: 600; }
+.swap-btn { display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; }
+.swap-btn .swap-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.comp-icon.inst { color: #9747FF; }
+
+/* toggle switch */
+.switch { position: relative; display: inline-block; width: 28px; height: 16px; flex: none; cursor: default; }
+.switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: default; z-index: 1; }
+.switch span { position: absolute; inset: 0; border-radius: 8px; background: #d9d9d9; transition: background 0.12s; }
+.switch span::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: transform 0.12s; }
+.switch input:checked + span { background: #0D99FF; }
+.switch input:checked + span::after { transform: translateX(12px); }
+.switch input:focus-visible + span { box-shadow: 0 0 0 2px var(--accent-soft); }
+
+/* properties list */
+.prop-row { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 2px 0 0; border-radius: 5px; position: relative; }
+.prop-row:hover { background: var(--hover); }
+.prop-row .prop-grip { width: 10px; display: inline-flex; justify-content: center; color: var(--muted); visibility: hidden; cursor: grab; flex: none; }
+.prop-row:hover .prop-grip { visibility: visible; }
+.prop-icon { display: inline-flex; color: var(--muted); flex: none; }
+.prop-row-name { flex: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prop-row-value { flex: 1; min-width: 0; text-align: right; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prop-row .icon-btn { width: 22px; height: 22px; flex: none; display: none; }
+.prop-row:hover .icon-btn { display: inline-flex; }
+.prop-row:hover .prop-row-value { display: none; }
+.prop-row.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+.prop-row.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
+.prop-row.exposed { padding-left: 12px; }
+.prop-rename { flex: 1; height: 24px; }
+.prop-sub { margin-top: 8px; color: var(--muted); font-weight: 500; }
+.prop-expose { align-self: flex-start; margin-top: 2px; }
+.prop-empty { line-height: 1.4; }
+
+/* property pill (a layer bound to a component property) */
+.prop-pill { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; height: 22px; padding: 0 7px; border-radius: 11px; background: #F1E8FF; color: #7B2EE6; font-weight: 500; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; flex: none; }
+.prop-pill:hover { background: #E4D4FF; }
+.prop-pill svg { flex: none; }
+.comp-head .prop-pill { max-width: 40%; }
+
+/* the Create / Edit component property window */
+.prop-window { position: fixed; z-index: 70; width: 264px; background: #fff; border-radius: 10px; box-shadow: 0 10px 36px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.06); display: flex; flex-direction: column; }
+.w-head { display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 6px 0 12px; border-bottom: 1px solid var(--border); font-weight: 600; white-space: nowrap; }
+.w-head .w-type { font-weight: 400; margin-left: auto; }
+.w-body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 6px; max-height: 60vh; overflow: auto; }
+.w-label { color: var(--muted); margin-top: 4px; }
+.w-body .prop-input { width: 100%; }
+.w-seg { display: flex; }
+.w-seg button { flex: 1; height: 28px; }
+.w-seg button.on { background: #fff; box-shadow: 0 0 0 1px var(--border); font-weight: 500; }
+.w-foot { padding: 10px 12px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
+.w-pref { display: flex; align-items: center; gap: 6px; height: 26px; }
+.w-pref span:nth-child(2) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.w-values { display: flex; flex-direction: column; gap: 4px; }
+.w-value { display: flex; align-items: center; gap: 6px; }
+.w-value .prop-grip { cursor: grab; color: var(--muted); display: inline-flex; }
+.w-note { line-height: 1.4; margin-top: 4px; }
+.comp-picker .comp-icon { vertical-align: -2px; }
+.bind-inline .prop-pill { flex: 0 1 auto; min-width: 0; }
+.bind-inline .prop-pill span { overflow: hidden; text-overflow: ellipsis; }
+.bind-inline:not(.wide):has(.prop-pill) > .muted { display: none; }
+.switch:has(input[data-mixed]) span { background: repeating-linear-gradient(135deg, #d9d9d9 0 4px, #c7c7c7 4px 8px); }
+.comp-head > .muted { flex: none; }

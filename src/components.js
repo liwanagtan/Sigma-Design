@@ -351,6 +351,15 @@ addEditHook({
     } else if (node.type === 'instance') {
       record(node, '', (k) => ROOT_PROPS.includes(k));
     }
+    if (!owner && node.propRefs) {
+      // A bound layer in a main component: its value is the property's default (like Figma), so the
+      // other layers bound to the property follow, and instances that keep the default update.
+      const comp = containingComponent(node);
+      for (const k of roots) {
+        const pid = node.propRefs[k];
+        if (pid && comp && propsOf(comp)[pid]) updateComponentProp(comp, pid, { default: clone(node[k]) });
+      }
+    }
   },
 });
 
@@ -366,16 +375,24 @@ export function clearOrphanedOverrides(inst) {
   for (const k of orphanedOverrides(inst)) delete inst.overrides[k];
 }
 
+// Changes made on an instance: overridden layers, plus (for the whole instance) property values that
+// differ from their defaults, which Figma also counts as changes.
 export function overrideCount(inst, path = null) {
   const ov = inst?.overrides || {};
-  return Object.keys(ov).filter((k) => (path === null || k === path || k.startsWith(path + '/')) && Object.keys(ov[k]).length).length;
+  const layers = Object.keys(ov).filter((k) => (path === null || k === path || k.startsWith(path + '/')) && Object.keys(ov[k]).length).length;
+  if (path !== null) return layers;
+  const defs = propsOf(mainComponentOf(inst));
+  const props = Object.entries(inst?.propValues || {}).filter(([pid, v]) => pid in defs && JSON.stringify(v) !== JSON.stringify(defs[pid].default)).length;
+  return layers + props;
 }
 
 // Remove overrides of an instance (all of them, or those at/under `path`).
 export function resetOverrides(inst, path = null) {
-  if (!inst?.overrides) return;
+  if (!inst) return;
+  inst.overrides ||= {};
   if (path === null) {
     inst.overrides = {};
+    delete inst.propValues; // properties go back to their defaults (the variant stays)
     delete inst.synced; // size follows the main component again
     return;
   }
@@ -480,13 +497,75 @@ export function mainComponentOf(inst) {
 
 // ---------- component properties ----------
 export const PROP_TYPES = { boolean: 'Boolean', text: 'Text', instance: 'Instance swap' };
+// Like Figma, a component's properties are listed variant properties first, then the others in order.
+//   def = { name, type, default, preferred?: [componentId] (instance swap) }
 // Which layer property each property type binds to.
 export const PROP_TARGET = { boolean: 'visible', text: 'text', instance: 'componentId' };
 
 // Properties are defined on the component (or on its component set, for variants).
-function propsHost(comp) {
+export function propsHost(comp) {
+  if (comp?.type === 'componentSet') return comp;
   const set = getParent(comp.id);
   return set?.type === 'componentSet' ? set : comp;
+}
+
+// Change a property definition (name, default, preferred). Names stay unique.
+export function updateComponentProp(comp, pid, changes) {
+  const host = propsHost(comp);
+  const def = host.props?.[pid];
+  if (!def) return;
+  if ('name' in changes) {
+    const name = String(changes.name || '').trim();
+    if (name && !Object.entries(host.props).some(([id, d]) => id !== pid && d.name === name)) def.name = name;
+  }
+  if ('default' in changes) {
+    def.default = changes.default;
+    // The main component shows the default: every layer bound to the property takes it.
+    for (const { layer, target } of layersUsingProp(comp, pid)) {
+      if (JSON.stringify(layer[target]) === JSON.stringify(def.default)) continue;
+      layer[target] = clone(def.default);
+      if (target === 'text' && layer.type === 'text') measureText(layer);
+    }
+  }
+  if ('preferred' in changes) {
+    if (changes.preferred?.length) def.preferred = [...new Set(changes.preferred)];
+    else delete def.preferred;
+  }
+}
+
+// Put property `pid` before `beforePid` (or last).
+export function reorderComponentProp(comp, pid, beforePid = null) {
+  const host = propsHost(comp);
+  if (!host.props?.[pid] || pid === beforePid) return;
+  const entries = Object.entries(host.props).filter(([id]) => id !== pid);
+  const at = beforePid ? entries.findIndex(([id]) => id === beforePid) : -1;
+  entries.splice(at >= 0 ? at : entries.length, 0, [pid, host.props[pid]]);
+  host.props = Object.fromEntries(entries);
+}
+
+// Layers in a main component (or every variant of a set) bound to property `pid`, with what they bind.
+export function layersUsingProp(comp, pid) {
+  const host = propsHost(comp);
+  const out = [];
+  walk(host.children || [], (n) => {
+    for (const [target, id] of Object.entries(n.propRefs || {})) if (id === pid) out.push({ layer: n, target });
+    if (n.type === 'instance') return false;
+  });
+  return out;
+}
+
+// Nested instances in a main component (or set) that could show their properties on its instances.
+export function nestedInstances(comp) {
+  const host = propsHost(comp);
+  const out = [];
+  walk(host.children || [], (n) => {
+    if (n.type !== 'instance') return;
+    const main = mainComponentOf(n);
+    const set = main && getParent(main.id);
+    if (main && (Object.keys(propsOf(main)).length || set?.type === 'componentSet')) out.push(n);
+    return false;
+  });
+  return out;
 }
 
 export function addComponentProp(comp, type, { name, value } = {}) {
@@ -540,6 +619,12 @@ export function bindLayerProp(layer, target, pid) {
   (layer.propRefs ||= {})[target] = pid;
   const comp = containingComponent(layer);
   if (!comp) return;
+  // The layer takes the property's value (the main component shows the default).
+  const def = propsOf(comp)[pid];
+  if (def && def.default !== undefined && JSON.stringify(layer[target]) !== JSON.stringify(def.default)) {
+    layer[target] = clone(def.default);
+    if (target === 'text' && layer.type === 'text') measureText(layer);
+  }
   const path = pathFrom(comp, layer);
   for (const inst of instancesOf(comp.id)) {
     const entry = inst.overrides?.[path];
@@ -572,7 +657,8 @@ export const formatVariantName = (props) => Object.entries(props).map(([k, v]) =
 export const isVariant = (n) => n?.type === 'component' && getParent(n.id)?.type === 'componentSet';
 export const variantsOf = (set) => set.children.filter((c) => c.type === 'component');
 
-// { Prop: [values in order of appearance] } for a component set.
+// { Prop: [values] } for a component set: properties in the order the variants name them, values in
+// the set's chosen order (set.valueOrder), then in order of appearance.
 export function variantDefs(set) {
   const defs = {};
   for (const v of variantsOf(set)) {
@@ -581,7 +667,75 @@ export function variantDefs(set) {
       if (!defs[k].includes(val)) defs[k].push(val);
     }
   }
+  for (const [k, order] of Object.entries(set.valueOrder || {})) {
+    if (!defs[k]) continue;
+    const rank = (x) => (order.includes(x) ? order.indexOf(x) : order.length + defs[k].indexOf(x));
+    defs[k].sort((a, b) => rank(a) - rank(b));
+  }
   return defs;
+}
+
+// Variant values that read as on/off ("true"/"false", "yes"/"no", "on"/"off"): instances show a toggle.
+const BOOL_PAIRS = [['true', 'false'], ['yes', 'no'], ['on', 'off']];
+export function toggleValues(values) {
+  if (!values || values.length !== 2) return null;
+  const lower = values.map((v) => v.toLowerCase());
+  for (const [on, off] of BOOL_PAIRS) {
+    if (lower.includes(on) && lower.includes(off)) return { on: values[lower.indexOf(on)], off: values[lower.indexOf(off)] };
+  }
+  return null;
+}
+
+// The default variant: the one in the top-left corner of the set (like Figma).
+export function defaultVariant(set) {
+  const vs = variantsOf(set);
+  return [...vs].sort((a, b) => a.y - b.y || a.x - b.x)[0] || null;
+}
+
+// Groups of variants that share the exact same property values (a conflict, like in Figma).
+export function variantConflicts(set) {
+  const keys = Object.keys(variantDefs(set));
+  const groups = new Map();
+  for (const v of variantsOf(set)) {
+    const p = parseVariantName(v.name);
+    const key = keys.map((k) => `${k}=${p[k] ?? ''}`).join('|');
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(v);
+  }
+  return [...groups.values()].filter((g) => g.length > 1);
+}
+
+// Rename a value of a variant property in every variant that uses it.
+export function renameVariantValue(set, prop, from, to) {
+  to = String(to || '').trim();
+  if (!to || to === from || to.includes('=') || to.includes(',')) return false;
+  renameAll(set, (p) => (p[prop] === from ? { ...p, [prop]: to } : null));
+  if (set.valueOrder?.[prop]) set.valueOrder[prop] = set.valueOrder[prop].map((x) => (x === from ? to : x));
+  return true;
+}
+
+export function reorderVariantValues(set, prop, values) {
+  (set.valueOrder ||= {})[prop] = [...values];
+}
+
+// Move variant property `prop` before `beforeProp` (or last): rewrites every variant's name.
+export function reorderVariantProperty(set, prop, beforeProp = null) {
+  const keys = Object.keys(variantDefs(set)).filter((k) => k !== prop);
+  const at = beforeProp ? keys.indexOf(beforeProp) : -1;
+  keys.splice(at >= 0 ? at : keys.length, 0, prop);
+  renameAll(set, (p) => Object.fromEntries(keys.filter((k) => k in p).map((k) => [k, p[k]])));
+}
+
+// Remove a variant property from every variant (a set keeps at least one).
+export function removeVariantProperty(set, prop) {
+  if (Object.keys(variantDefs(set)).length < 2) return false;
+  renameAll(set, (p) => {
+    const next = { ...p };
+    delete next[prop];
+    return next;
+  });
+  if (set.valueOrder) delete set.valueOrder[prop];
+  return true;
 }
 
 // The variant matching `props` exactly, or else the one matching the most of them.

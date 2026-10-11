@@ -1,5 +1,5 @@
 import {
-  state, page, view, emit, commit, select, selectedNodes, getNode, getParent, siblingsOf, ancestors, isAncestor,
+  state, page, view, emit, commit, select, selectedNodes, getNode, getParent, ancestors, isAncestor,
   uid, detach, insertNode, worldMatrix, setWorldMatrix, createNode, undo, redo, makePaint, isFrameLike, editNode, worldBounds,
 } from './store.js';
 import { translate } from './geom.js';
@@ -7,18 +7,17 @@ import { icons, layerIcon } from './icons.js';
 import {
   setTool, setProps, align, distribute, zoomIn, zoomOut, zoomTo100, zoomToFit, zoomToSelection, zoomAt,
   viewportSize, sortByZ, toggleVisible, toggleLocked, addAutoLayout, removeAutoLayout,
-  placeInstance, duplicateSelection, detachSelection, goToMainComponent, resetSelectionOverrides, addVariant,
+  placeInstance, resetSelectionOverrides,
 } from './commands.js';
 import { isAutoLayout, getSizing } from './layout.js';
 import {
-  isInsideInstance, owningInstance, canPlaceInside, listComponents, instancesOf, mainComponentOf, overrideCount,
-  containingComponent, propsOf, PROP_TYPES, PROP_TARGET, addComponentProp, removeComponentProp, bindLayerProp,
-  setInstanceProp, isVariant, variantDefs, parseVariantName, switchVariant, renameVariantProperty, setVariantValue,
-  orphanedOverrides, clearOrphanedOverrides,
-  addVariantProperty, displayName,
+  isInsideInstance, owningInstance, canPlaceInside, listComponents, overrideCount, defaultVariant,
 } from './components.js';
 import { exportNodes, saveFile, pickImages } from './io.js';
 import { createFile, openFile, goHome, pickFilesToImport, createSampleFiles } from './files.js';
+import {
+  componentPanel, onComponentClick, onComponentChange, bindPropertyDrag, propBinding, propMenuItems,
+} from './component-ui.js';
 import {
   libraries, componentLibraries, openLibrariesDialog, openPublishComponentsDialog, componentPublishStatus, openDesignTokensDialog,
 } from './libraries.js';
@@ -556,6 +555,8 @@ const varChip = (path, v) =>
   `<button class="var-chip" data-var-menu="${path}" title="${esc(v.name)} — click to change or detach">${VAR_ICON}<span>${esc(v.name.split('/').pop())}</span></button>`;
 const varButton = (path) => `<button class="icon-btn var-btn" data-var-menu="${path}" title="Apply design token">${VAR_ICON}</button>`;
 const varControl = (nodes, path) => {
+  const pill = propBinding(nodes, path); // a component property wins over a token
+  if (pill) return pill;
   const b = boundVar(nodes, path);
   return b && b !== MIXED ? varChip(path, b) : varButton(path);
 };
@@ -581,11 +582,13 @@ function variableMenu(btn, path) {
   const type = typeForPath(path);
   if (!type || !nodes.length) return;
   const current = boundVar(nodes, path);
-  const items = [];
+  const r0 = btn.getBoundingClientRect();
+  const items = [...propMenuItems(nodes, path, r0)];
+  if (items.length) items.push('-', { label: 'Design tokens', disabled: true });
   for (const col of collections()) {
     const vars = (col.variables || []).filter((v) => v.type === type);
     if (!vars.length) continue;
-    if (items.length) items.push('-');
+    if (items.length && items.at(-1).label !== 'Design tokens') items.push('-');
     // Group by where the tokens come from: a linked token file, or this file's local tokens.
     items.push({ label: `${libraryOf(col)?.name || 'Local'} / ${col.name}`, disabled: true });
     for (const v of vars) {
@@ -595,7 +598,7 @@ function variableMenu(btn, path) {
       });
     }
   }
-  if (!items.length) items.push({ label: `No ${VAR_TYPES[type].toLowerCase()} tokens yet`, disabled: true });
+  if (!collections().some((c) => (c.variables || []).some((v) => v.type === type))) items.push({ label: `No ${VAR_TYPES[type].toLowerCase()} tokens yet`, disabled: true });
   items.push('-', { label: 'Create token from this value', action: () => variableFromValue(nodes, path, type) });
   if (current) items.push({ label: 'Detach token', action: () => applyVariable(nodes, path, null) });
   items.push({ label: 'Open local design tokens…', action: () => openVariablesEditor() });
@@ -752,7 +755,7 @@ function buildProps() {
   const has = (pred) => nodes.every(pred);
   // Layers inside an instance take their geometry from the main component.
   const lockedGeometry = nodes.some(isInsideInstance);
-  let html = componentSection(nodes);
+  let html = componentPanel(nodes) || instanceLayerPanel(nodes);
 
   // Alignment
   const alignBtns = [['left', 'alignLeft'], ['hcenter', 'alignHCenter'], ['right', 'alignRight'], ['top', 'alignTop'], ['vcenter', 'alignVCenter'], ['bottom', 'alignBottom']];
@@ -892,195 +895,15 @@ function autoLayoutSection(nodes) {
 }
 
 // ---------- components ----------
-function componentSection(nodes) {
+// The component, set, variant and instance panels live in component-ui.js. Layers inside an instance
+// get a note about where they come from, and a reset.
+function instanceLayerPanel(nodes) {
+  if (!nodes.length || !nodes.every(isInsideInstance)) return '';
   const single = nodes.length === 1 ? nodes[0] : null;
-  if (single?.type === 'componentSet') return variantsSection(single) + propertiesSection(single);
-  if (single?.type === 'component') {
-    const count = instancesOf(single.id).length;
-    return (isVariant(single) ? variantValuesSection(single) : '') + section(isVariant(single) ? 'Variant' : 'Main component',
-      `<textarea class="desc" data-desc rows="2" placeholder="Add a description…" spellcheck="false">${esc(single.description || '')}</textarea>` +
-      `<div class="muted">${count} instance${count === 1 ? '' : 's'} in this file</div>`,
-      `<button class="icon-btn" data-action="add-instance" title="Create an instance next to it">${icons.plus}</button>`) +
-      propertiesSection(single);
-  }
-  if (single?.type === 'instance' && !isInsideInstance(single)) {
-    const main = mainComponentOf(single);
-    const n = overrideCount(single);
-    const body = (main
-      ? `<button class="link-row" data-action="go-main" title="Go to main component"><span class="licon purple">${layerIcon(main)}</span><span class="link-name">${esc(displayName(main))}</span><span class="muted">Go to main ›</span></button>`
-      : '<div class="warn">The main component is missing. Detach the instance to keep editing it freely.</div>') +
-      instanceControls(single, main) +
-      `<div class="btn-row"><button class="btn" data-action="reset-overrides" ${n ? '' : 'disabled'}>Reset ${n ? `${n} ` : ''}override${n === 1 ? '' : 's'}</button>` +
-      '<button class="btn" data-action="detach" title="⌥⌘B">Detach</button></div>' +
-      orphanNote(single);
-    const comp = containingComponent(single);
-    return section('Instance', body + exposedControls(single)) + (comp ? bindingSection(single, comp) : '');
-  }
-  if (nodes.length && nodes.every(isInsideInstance)) {
-    const owner = owningInstance(nodes[0]);
-    const n = single ? overrideCount(owner, single.pathKey) : 0;
-    return section('Instance layer',
-      `<div class="muted">Part of “${esc(owner.name)}”. Appearance and text can be overridden here; size and position come from the main component.</div>` +
-      (single?.type === 'instance' ? instanceControls(single, mainComponentOf(single)) : '') +
-      (single ? `<button class="btn wide" data-action="reset-overrides" ${n ? '' : 'disabled'}>Reset overrides</button>` : ''));
-  }
-  if (single && containingComponent(single)) return bindingSection(single, containingComponent(single));
-  return '';
-}
-
-// Overrides that target layers renamed or removed in the main component.
-function orphanNote(inst) {
-  const orphans = orphanedOverrides(inst);
-  if (!orphans.length) return '';
-  return `<div class="warn orphan-note" title="${esc(orphans.join('\n'))}">${orphans.length} override${orphans.length === 1 ? '' : 's'} no longer appl${orphans.length === 1 ? 'ies' : 'y'}: ` +
-    'the layers were renamed or removed in the main component. <button class="link-btn" data-action="clear-orphans">Clear</button></div>';
-}
-
-function componentOptions(selectedId, { exclude } = {}) {
-  return listComponents()
-    .filter(({ node }) => !exclude || !exclude(node))
-    .map(({ node }) => {
-      const label = isVariant(node) ? `${getParent(node.id).name} / ${node.name}` : node.name;
-      return `<option value="${node.id}" ${node.id === selectedId ? 'selected' : ''}>${esc(label)}</option>`;
-    }).join('');
-}
-
-// Property definitions on a main component (or its component set).
-function propertiesSection(comp) {
-  const defs = Object.entries(propsOf(comp));
-  const rows = defs.map(([pid, def]) => {
-    let value;
-    if (def.type === 'boolean') value = `<label class="prop-toggle"><input type="checkbox" data-prop-default="${pid}" ${def.default ? 'checked' : ''}> Default</label>`;
-    else if (def.type === 'text') value = `<input class="prop-input" data-prop-default="${pid}" value="${esc(def.default ?? '')}" spellcheck="false" placeholder="Default text">`;
-    else value = `<select class="select" data-prop-default="${pid}">${componentOptions(def.default, { exclude: (c) => c.id === comp.id })}</select>`;
-    return `<div class="prop-def"><div class="prop-head"><input class="prop-name" data-prop-name="${pid}" value="${esc(def.name)}" spellcheck="false">` +
-      `<span class="prop-type">${PROP_TYPES[def.type]}</span>` +
-      `<button class="icon-btn" data-remove-prop="${pid}" title="Remove property">${icons.minus}</button></div>${value}</div>`;
-  }).join('');
-  return section('Properties', rows || '<div class="muted">Add properties to let instances toggle layers, change text or swap nested instances.</div>',
-    `<button class="icon-btn" data-action="add-prop" title="Add a component property">${icons.plus}</button>`);
-}
-
-// Bind a layer inside a main component to the component's properties.
-function bindingSection(layer, comp) {
-  const defs = Object.entries(propsOf(comp));
-  const row = (target, type, label) => {
-    const current = layer.propRefs?.[target] || '';
-    const opts = defs.filter(([, d]) => d.type === type)
-      .map(([pid, d]) => `<option value="${pid}" ${pid === current ? 'selected' : ''}>${esc(d.name)}</option>`).join('');
-    return `<label class="bind-row"><span>${label}</span><select class="select" data-bind="${target}" data-bind-type="${type}">` +
-      `<option value="">Not linked</option>${opts}<option value="__new__">+ Create ${PROP_TYPES[type].toLowerCase()} property</option></select></label>`;
-  };
-  let body = row('visible', 'boolean', 'Show layer');
-  if (layer.type === 'text') body += row('text', 'text', 'Text');
-  if (layer.type === 'instance') {
-    body += row('componentId', 'instance', 'Instance');
-    body += `<label class="check-row" title="Instances of ${esc(displayName(comp))} show this instance's properties in their own panel">` +
-      `<input type="checkbox" data-expose ${layer.exposed ? 'checked' : ''}> Show its properties on ${esc(displayName(comp))} instances</label>`;
-  }
-  return section('Component properties', body);
-}
-
-// Nested instances whose properties the main component exposes (and, through them, deeper exposed ones).
-function exposedInstances(root) {
-  const out = [];
-  const visit = (nodes) => {
-    for (const n of nodes) {
-      if (n.type === 'instance') {
-        if (n.exposed) {
-          out.push(n);
-          visit(n.children || []);
-        }
-        continue;
-      }
-      if (n.children) visit(n.children);
-    }
-  };
-  visit(root.children || []);
-  return out;
-}
-
-function exposedControls(inst) {
-  return exposedInstances(inst).map((n) =>
-    `<div class="exposed-head"><span class="licon purple">${layerIcon(n)}</span>${esc(n.name)}</div>` + instanceControls(n, mainComponentOf(n))).join('');
-}
-
-// Variant property definitions of a component set: rename properties, add properties and variants.
-function variantsSection(set) {
-  const defs = Object.entries(variantDefs(set));
-  const rows = defs.map(([prop, values]) =>
-    `<div class="prop-def"><div class="prop-head"><input class="prop-name" data-vprop-rename="${esc(prop)}" value="${esc(prop)}" spellcheck="false">` +
-    `<span class="prop-type">Variant</span></div><div class="chips">${values.map((v) => `<span class="chip">${esc(v)}</span>`).join('')}</div></div>`).join('');
-  return section('Variants', (rows || '<div class="muted">No variant properties yet.</div>') +
-    '<button class="btn wide" data-action="add-variant">Add variant</button>',
-    `<button class="icon-btn" data-action="add-variant-prop" title="Add a variant property">${icons.plus}</button>`);
-}
-
-// The selected variant's own property values (editing one renames the variant).
-function variantValuesSection(variant) {
-  const props = parseVariantName(variant.name);
-  return section('Variant properties', Object.entries(props).map(([k, v]) =>
-    `<label class="bind-row"><span>${esc(k)}</span><input class="prop-input" data-variant-value="${esc(k)}" value="${esc(v)}" spellcheck="false"></label>`).join(''));
-}
-
-// Property values and component swap for an instance.
-// Controls carry data-target so they also work for nested instances shown in an outer instance's panel.
-function instanceControls(inst, main) {
-  if (!main) return '';
-  const tgt = `data-target="${inst.id}"`;
-  let variantRows = '';
-  if (isVariant(main)) {
-    const current = parseVariantName(main.name);
-    variantRows = Object.entries(variantDefs(getParent(main.id))).map(([prop, values]) =>
-      `<label class="bind-row"><span>${esc(prop)}</span><select class="select" ${tgt} data-variant-prop="${esc(prop)}">` +
-      values.map((v) => `<option ${v === current[prop] ? 'selected' : ''}>${esc(v)}</option>`).join('') + '</select></label>').join('');
-  }
-  const values = inst.propValues || {};
-  const rows = Object.entries(propsOf(main)).map(([pid, def]) => {
-    const v = values[pid] ?? def.default;
-    let control;
-    if (def.type === 'boolean') control = `<input type="checkbox" ${tgt} data-instance-prop="${pid}" ${v ? 'checked' : ''}>`;
-    else if (def.type === 'text') control = `<input class="prop-input" ${tgt} data-instance-prop="${pid}" value="${esc(v ?? '')}" spellcheck="false">`;
-    else control = `<select class="select" ${tgt} data-instance-prop="${pid}">${componentOptions(v, { exclude: (c) => !canPlaceInside({ type: 'instance', componentId: c.id }, getParent(inst.id)) })}</select>`;
-    return `<label class="bind-row"><span>${esc(def.name)}</span>${control}</label>`;
-  }).join('');
-  const swap = `<label class="bind-row"><span>Swap</span><select class="select" ${tgt} data-swap>${componentOptions(inst.componentId)}</select></label>`;
-  return variantRows + rows + swap;
-}
-
-function onComponentPropChange(t) {
-  const node = (t.dataset.target && getNode(t.dataset.target)) || selectedNodes()[0];
-  if (!node) return;
-  if (t.dataset.propName) {
-    const def = propsOf(node)[t.dataset.propName];
-    if (def && t.value.trim()) def.name = t.value.trim();
-    return commit();
-  }
-  if (t.dataset.propDefault) {
-    const def = propsOf(node)[t.dataset.propDefault];
-    if (def) def.default = t.type === 'checkbox' ? t.checked : t.value;
-    return commit();
-  }
-  if (t.dataset.bind) {
-    const comp = containingComponent(node);
-    const target = t.dataset.bind;
-    let pid = t.value || null;
-    if (pid === '__new__') {
-      const type = t.dataset.bindType;
-      const value = type === 'boolean' ? node.visible !== false : type === 'text' ? node.text : node.componentId;
-      pid = addComponentProp(comp, type, { name: type === 'boolean' ? `Show ${node.name}` : node.name, value });
-    }
-    bindLayerProp(node, target, pid);
-    return commit();
-  }
-  if (t.dataset.instanceProp) {
-    setInstanceProp(node, t.dataset.instanceProp, t.type === 'checkbox' ? t.checked : t.value);
-    return commit();
-  }
-  if (t.hasAttribute('data-swap')) {
-    editNode(node, ['componentId'], () => void (node.componentId = t.value));
-    return commit();
-  }
+  const owner = owningInstance(nodes[0]);
+  const n = single ? overrideCount(owner, single.pathKey) : 0;
+  return `<div class="section comp-panel"><div class="comp-sub">In instance “${esc(owner.name)}”: appearance and text can be changed here; size and position come from the main component.</div>` +
+    (n ? `<button class="btn wide" data-action="reset-overrides">Reset changes</button>` : '') + '</div>';
 }
 
 // ---------- assets ----------
@@ -1128,7 +951,7 @@ export function renderAssets() {
   for (const c of listComponents()) {
     const set = getParent(c.node.id);
     if (set?.type === 'componentSet') {
-      if (set.children.find((k) => k.type === 'component') === c.node) comps.push({ node: set, page: c.page, library: c.library, insert: c.node });
+      if (defaultVariant(set) === c.node) comps.push({ node: set, page: c.page, library: c.library, insert: c.node }); // inserts the default (top-left) variant
     } else comps.push({ ...c, insert: c.node });
   }
   const matches = comps.filter(({ node }) => !q || node.name.toLowerCase().includes(q));
@@ -1218,8 +1041,12 @@ function initProps() {
     setProps(f.set(v));
   };
 
+  bindPropertyDrag(panel);
+  window.addEventListener('sigma:refresh-panel', () => emit('selection'));
+
   panel.addEventListener('change', (e) => {
     const t = e.target;
+    if (onComponentChange(t)) return;
     if (t.dataset.key) return applyField(t.dataset.key, t.value);
     if (t.dataset.paintHex) {
       const hex = normHex(t.value);
@@ -1234,34 +1061,6 @@ function initProps() {
     if (t.dataset.bool) return setProps({ [t.dataset.bool]: t.checked });
     if (t.dataset.modeCol) return setMode(t.dataset.modeTarget, t.dataset.modeCol, t.value);
     if (t.dataset.constraint) return setProps({ [`constraints.${t.dataset.constraint}`]: t.value });
-    if (t.dataset.vpropRename !== undefined) {
-      renameVariantProperty(selectedNodes()[0], t.dataset.vpropRename, t.value);
-      return commit();
-    }
-    if (t.dataset.variantValue !== undefined) {
-      setVariantValue(selectedNodes()[0], t.dataset.variantValue, t.value);
-      return commit();
-    }
-    if (t.dataset.variantProp !== undefined) {
-      const target = (t.dataset.target && getNode(t.dataset.target)) || selectedNodes()[0];
-      if (!switchVariant(target, t.dataset.variantProp, t.value)) {
-        window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'No variant matches exactly, so the closest one was used.' }));
-      }
-      return commit();
-    }
-    if (t.hasAttribute('data-expose')) {
-      const n = selectedNodes()[0];
-      if (t.checked) n.exposed = true;
-      else delete n.exposed;
-      return commit();
-    }
-    if (t.dataset.propName || t.dataset.propDefault || t.dataset.bind || t.dataset.instanceProp || t.hasAttribute('data-swap')) {
-      return onComponentPropChange(t);
-    }
-    if (t.hasAttribute('data-desc')) {
-      for (const n of selectedNodes()) editNode(n, ['description'], () => void (n.description = t.value.trim()));
-      return commit();
-    }
     if (t.dataset.sizing) return setProps({ [t.dataset.sizing === 'w' ? 'sizingH' : 'sizingV']: t.value });
     if (t.dataset.select) {
       const v = t.dataset.select === 'fontWeight' ? +t.value : t.value;
@@ -1309,6 +1108,7 @@ function initProps() {
     if (e.target.tagName === 'INPUT' && e.target.type !== 'color') e.target.select();
   });
   panel.addEventListener('click', (e) => {
+    if (onComponentClick(e)) return;
     const b = e.target.closest('button');
     if (!b) return;
     const nodes = selectedNodes();
@@ -1345,21 +1145,7 @@ function initProps() {
       zoomToSelection();
       return;
     }
-    if (b.dataset.removeProp) {
-      removeComponentProp(nodes[0], b.dataset.removeProp);
-      return commit();
-    }
     switch (b.dataset.action) {
-      case 'add-prop': {
-        const comp = nodes[0];
-        const r = b.getBoundingClientRect();
-        const other = listComponents().find(({ node }) => node.id !== comp.id)?.node;
-        return showContextMenu(r.left - 140, r.bottom + 4, [
-          { label: 'Boolean', action: () => { addComponentProp(comp, 'boolean', { value: true }); commit(); } },
-          { label: 'Text', action: () => { addComponentProp(comp, 'text', { value: 'Text' }); commit(); } },
-          { label: 'Instance swap', disabled: !other, action: () => { addComponentProp(comp, 'instance', { value: other.id }); commit(); } },
-        ]);
-      }
       case 'open-variables':
         return openVariablesEditor();
       case 'open-libraries':
@@ -1368,22 +1154,8 @@ function initProps() {
         return openDesignTokensDialog();
       case 'publish-components':
         return openPublishComponentsDialog();
-      case 'add-instance':
-        return duplicateSelection();
-      case 'add-variant':
-        return addVariant(nodes[0]);
-      case 'add-variant-prop':
-        addVariantProperty(nodes[0]);
-        return commit();
-      case 'go-main':
-        return goToMainComponent();
       case 'reset-overrides':
         return resetSelectionOverrides();
-      case 'detach':
-        return detachSelection();
-      case 'clear-orphans':
-        for (const n of nodes) clearOrphanedOverrides(n);
-        return commit();
       case 'add-al':
         return addAutoLayout();
       case 'remove-al':
