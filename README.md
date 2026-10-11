@@ -62,6 +62,8 @@ Then open http://localhost:5173.
   - **New token file** creates a token file, which opens straight into a full-screen token editor
   - a design file can also keep **local design tokens**; open them from the Σ menu or the panel (with nothing selected)
   - the token editor has search and a type filter
+  - **groups:** each collection has a tree of groups in the sidebar (nested, collapsible, with counts). Click a group to show only its tokens; **+ New group**, and ⋯ or right-click to rename, nest, ungroup or delete. Drag a token by its type icon (or right-click → **Move to group…**) to move it, and drag groups into other groups. Groups are the `/` paths in token names, so they export to `tokens.json` as nested groups
+  - **references:** a value can point to another token. Type `{` in a value (or click the link icon) for a searchable list of tokens of the same type, with their values; you can also paste `{color/blue/500}` or `{color.blue.500}`. The cell shows the token it points to and the value it ends up as, and the inspector shows the whole chain (`button/bg → brand/primary → blue/500 → #0D99FF`). Loops are refused
   - click a token to open the inspector: its description, its values per mode, which tokens alias it (click to jump), and how many layers use it
   - color swatches sit on a checkerboard so transparency shows
   - **color tokens carry opacity** (a hex value plus an opacity %); a fill or stroke using the token gets its opacity from it
@@ -69,6 +71,9 @@ Then open http://localhost:5173.
   - a typography token is edited in the inspector, with a live sample
   - in design files, the Text section's **Text style** links a typography token to a text layer; changing any font property by hand detaches it
 - **Token libraries:**
+  - token files can link other token files, so tokens can point across files (a "Brand" file whose colors point at a "Core" file). Linked collections show read-only under **Linked libraries** in the token editor
+  - publishing a token file includes copies of the token files it points at, so a design file that links only "Brand" still resolves the "Core" values. Linking "Core" directly takes over from the included copy
+  - unlinking a token file turns references to it into plain values
   - **Publish…** in a token file creates a numbered version, with optional notes and a summary of what changed
   - in a design file, **Libraries…** (Σ menu, or the panel with nothing selected) links published token files; the file keeps a copy of the version it accepted
   - when a newer version is published, the design file shows "Token updates available"; **Review** lists added, changed and removed tokens, and you accept when ready

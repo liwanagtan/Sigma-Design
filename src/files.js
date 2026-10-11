@@ -246,23 +246,30 @@ const publishedFrom = (collections, prev, notes) => ({
   version: (prev?.version || 0) + 1, publishedAt: Date.now(), notes: notes || '', collections: structuredClone(collections),
 });
 
-// Create a token file holding `collections`, already published as v1.
-export async function createTokenFileWith(name, collections, notes = 'Initial version') {
+// Create a token file holding `collections`, already published as v1. `libraries` / `dependencies`: token
+// files those collections point at (linked in the new file, and published with it).
+export async function createTokenFileWith(name, collections, notes = 'Initial version', { libraries = [], dependencies = [] } = {}) {
   const doc = newTokenDocument(name);
   doc.variables.collections = structuredClone(collections);
   doc.published = publishedFrom(collections, null, notes);
+  if (libraries.length) doc.libraries = structuredClone(libraries);
+  if (dependencies.length) doc.published.dependencies = structuredClone(dependencies);
   const id = await createFile(doc);
   return { id, name, published: doc.published };
 }
 
 // Add collections to an existing (closed) token file and publish a new version.
-export async function appendToTokenFile(id, collections, notes) {
+export async function appendToTokenFile(id, collections, notes, { libraries = [], dependencies = [] } = {}) {
   const file = await loadFile(id);
   if (!file) throw new Error('That token file no longer exists.');
   const doc = file.doc;
   doc.variables ||= { collections: [] };
   doc.variables.collections.push(...structuredClone(collections));
+  const deps = new Map((doc.published?.dependencies || []).map((d) => [d.fileId, d]));
+  for (const d of dependencies) if (d.fileId !== id && (!deps.has(d.fileId) || d.version > deps.get(d.fileId).version)) deps.set(d.fileId, structuredClone(d));
+  for (const l of libraries) if (l.fileId !== id && !(doc.libraries ||= []).some((x) => x.fileId === l.fileId)) doc.libraries.push(structuredClone(l));
   doc.published = publishedFrom(doc.variables.collections, doc.published, notes);
+  if (deps.size) doc.published.dependencies = [...deps.values()];
   const meta = { ...file.meta, updatedAt: Date.now(), tokenVersion: doc.published.version };
   await db.putFile(meta, { id, doc, views: file.views });
   broadcast('saved', id);

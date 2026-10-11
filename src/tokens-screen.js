@@ -1,7 +1,8 @@
 // The screen for token files: no canvas, just the design token editor full-screen.
 import { state, commit, subscribe, undo, redo } from './store.js';
 import { openHistory, openSaveVersionDialog } from './history.js';
-import { diffCollections } from './variables.js';
+import { openLibrariesDialog, publishDependencies } from './libraries.js';
+import { diffCollections, libraryCollections, dependencyChanges } from './variables.js';
 import { mountTokenEditor, unmountTokenEditor } from './variables-ui.js';
 import { goHome } from './files.js';
 import { saveFile, download } from './io.js';
@@ -38,6 +39,8 @@ export function initTokensScreen(el) {
       '-',
       { label: 'Download a copy (.sigma.json)', action: saveFile },
       '-',
+      { label: 'Libraries…', action: () => openLibrariesDialog() },
+      '-',
       { label: 'Save to version history…', shortcut: '⌥⌘S', action: () => openSaveVersionDialog() },
       { label: 'Show version history', action: () => openHistory() },
       '-',
@@ -71,12 +74,12 @@ export function initTokensScreen(el) {
 const fileBase = () => (state.doc.name || 'tokens').replace(/[\\/:*?"<>|]+/g, '-');
 
 function exportJSONFile() {
-  const json = exportDTCG(state.doc.variables.collections);
+  const json = exportDTCG(state.doc.variables.collections, { external: libraryCollections() });
   download(new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' }), `${fileBase()}.tokens.json`);
 }
 
 function exportCSSFile() {
-  const css = exportCSS(state.doc.variables.collections, { title: state.doc.name });
+  const css = exportCSS(state.doc.variables.collections, { title: state.doc.name, external: libraryCollections() });
   download(new Blob([css], { type: 'text/css' }), `${fileBase()}.css`);
 }
 
@@ -89,7 +92,7 @@ function importIntoThisFile() {
     const file = input.files[0];
     if (!file) return;
     try {
-      const { collections, skipped } = importTokens(JSON.parse(await file.text()));
+      const { collections, skipped } = importTokens(JSON.parse(await file.text()), { external: libraryCollections() });
       const n = mergeCollections(state.doc.variables.collections, collections);
       commit();
       window.dispatchEvent(new CustomEvent('sigma:toast', {
@@ -126,7 +129,10 @@ function renderHeader() {
 }
 
 const current = () => state.doc?.variables?.collections || [];
-const hasUnpublishedChanges = () => JSON.stringify(current()) !== JSON.stringify(state.doc?.published?.collections || []);
+// Which versions of the token files this file points at would be published with it.
+const depVersions = (deps) => JSON.stringify((deps || []).map((d) => [d.fileId, d.version]).sort());
+const hasUnpublishedChanges = () => JSON.stringify(current()) !== JSON.stringify(state.doc?.published?.collections || []) ||
+  depVersions(publishDependencies()) !== depVersions(state.doc?.published?.dependencies);
 
 // ---------- publishing ----------
 // Publishing makes the current tokens a new numbered version. Design files that link this token file
@@ -134,6 +140,8 @@ const hasUnpublishedChanges = () => JSON.stringify(current()) !== JSON.stringify
 function openPublishDialog() {
   const pub = state.doc.published;
   const d = diffCollections(pub?.collections || [], current());
+  const deps = publishDependencies();
+  const depChanges = dependencyChanges(pub?.dependencies, deps);
   const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const list = (label, items) => (items.length ? `<div class="diff-group"><div class="diff-label">${label} (${items.length})</div>${items.slice(0, 10).map((n) => `<div>${esc(n)}</div>`).join('')}${items.length > 10 ? `<div class="muted">and ${items.length - 10} more</div>` : ''}</div>` : '');
   const wrap = document.createElement('div');
@@ -141,7 +149,8 @@ function openPublishDialog() {
   wrap.innerHTML = `<div class="modal lib-modal"><div class="modal-head">Publish ${esc(state.doc.name)}<button class="icon-btn" data-close>${icons.close}</button></div>
     <div class="lib-body">
       <p class="muted">This becomes version ${(pub?.version || 0) + 1}. Design files that use this token file will be offered the update.</p>
-      ${list('Added', d.added) + list('Changed', d.changed) + list('Removed', d.removed) || '<div class="muted">No changes since the last version.</div>'}
+      ${list('Added', d.added) + list('Changed', d.changed) + list('Removed', d.removed) + list('Token files it points at', depChanges) || '<div class="muted">No changes since the last version.</div>'}
+      ${deps.length ? `<p class="muted">Includes the tokens it points at from ${deps.map((x) => `${esc(x.name)} v${x.version}`).join(', ')}, so design files resolve them.</p>` : ''}
       <label class="inspector-label">Notes (optional)</label>
       <textarea class="desc publish-notes" rows="3" placeholder="What changed and why?"></textarea>
     </div>
@@ -150,10 +159,12 @@ function openPublishDialog() {
   wrap.addEventListener('click', (e) => {
     if (e.target === wrap || e.target.closest('[data-close]')) return close();
     if (!e.target.closest('[data-confirm]')) return;
+    const dependencies = publishDependencies();
     state.doc.published = {
       version: (pub?.version || 0) + 1, publishedAt: Date.now(),
       notes: wrap.querySelector('.publish-notes').value.trim(), collections: structuredClone(current()),
     };
+    if (dependencies.length) state.doc.published.dependencies = dependencies;
     commit();
     close();
     window.dispatchEvent(new CustomEvent('sigma:toast', { detail: `Published v${state.doc.published.version}` }));

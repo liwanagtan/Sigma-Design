@@ -153,6 +153,7 @@ async function showFile(id, { force = false, discard = false } = {}) {
     tokensEl.hidden = false;
     loadDocument(file.doc, file.views);
     showTokensScreen();
+    checkLibraryUpdates(); // token files it points at may have published new versions
     return;
   }
   state.screen = 'editor';

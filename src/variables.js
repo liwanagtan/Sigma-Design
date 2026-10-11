@@ -54,11 +54,38 @@ const MAX_ALIAS_DEPTH = 16;
 // A design file's tokens come from its own (local) collections and from snapshots of linked token files
 // (doc.libraries[].collections, each marked fromLibrary: fileId). Everything resolves together, but only
 // local collections are edited here.
+//
+// A token file can link other token files too, and its tokens can alias theirs ("Brand" → "Core"). Its
+// published version then carries copies of those libraries (published.dependencies), so a file that links
+// only "Brand" still resolves the "Core" tokens it points at. A library linked directly always wins over
+// a copy that came along as a dependency.
 export const localCollections = () => state.doc?.variables?.collections || [];
-export const libraryCollections = () => (state.doc?.libraries || []).flatMap((l) => l.collections || []);
+
+// Dependencies of linked libraries that aren't linked directly: the newest copy of each.
+export function dependencyLibraries() {
+  const libs = state.doc?.libraries || [];
+  const direct = new Set(libs.map((l) => l.fileId));
+  const deps = new Map();
+  for (const l of libs) {
+    for (const d of l.dependencies || []) {
+      if (direct.has(d.fileId)) continue;
+      const cur = deps.get(d.fileId);
+      if (!cur || d.version > cur.version) deps.set(d.fileId, { ...d, via: l.name });
+    }
+  }
+  return [...deps.values()];
+}
+
+export const libraryCollections = () => [
+  ...(state.doc?.libraries || []).flatMap((l) => l.collections || []),
+  ...dependencyLibraries().flatMap((d) => d.collections || []),
+];
 export const collections = () => [...localCollections(), ...libraryCollections()];
 export const isLibraryCollection = (c) => !!c?.fromLibrary;
-export const libraryOf = (c) => (c?.fromLibrary ? (state.doc?.libraries || []).find((l) => l.fileId === c.fromLibrary) || null : null);
+// The linked library (or dependency, with `via`) a collection comes from.
+export const libraryOf = (c) => (c?.fromLibrary
+  ? (state.doc?.libraries || []).find((l) => l.fileId === c.fromLibrary) || dependencyLibraries().find((d) => d.fileId === c.fromLibrary) || null
+  : null);
 
 // Copy published collections for a design file, marked with the token file they came from.
 export function snapshotForLibrary(cols, fileId) {
@@ -84,6 +111,13 @@ export function diffCollections(before, after) {
   }
   for (const [k, v] of a) if (!b.has(k)) removed.push(v.name);
   return { added, changed, removed };
+}
+
+// Token files a published version points at that are new or at another version: ["Core v1 → v2", …].
+export function dependencyChanges(before = [], after = []) {
+  const was = new Map(before.map((d) => [d.fileId, d.version]));
+  return after.filter((d) => was.get(d.fileId) !== d.version)
+    .map((d) => (was.has(d.fileId) ? `${d.name} v${was.get(d.fileId)} → v${d.version}` : `${d.name} v${d.version}`));
 }
 
 function variablesRoot() {
@@ -472,6 +506,164 @@ export function wouldCycle(varId, targetId) {
     frontier = next;
   }
   return false;
+}
+
+// ---------- references ----------
+// Every value a token holds in one mode, including typography fields: [value, write(newValue)].
+function eachValue(fn) {
+  for (const c of localCollections()) {
+    const visit = (holder, key) => {
+      const val = holder[key];
+      fn(val, (x) => void (holder[key] = x));
+      if (val && typeof val === 'object' && !isAlias(val)) {
+        for (const f of Object.keys(TYPO_FIELDS)) if (val[f] !== undefined) fn(val[f], (x) => void (val[f] = x));
+      }
+    };
+    for (const v of c.variables || []) for (const m of Object.keys(v.valuesByMode)) visit(v.valuesByMode, m);
+    for (const byMode of Object.values(c.overrides || {})) for (const m of Object.keys(byMode)) visit(byMode, m);
+  }
+}
+
+// Ids of tokens that this file's own tokens alias.
+export function referencedIds() {
+  const ids = new Set();
+  eachValue((val) => isAlias(val) && ids.add(val.alias));
+  return ids;
+}
+
+// Replace aliases to `ids` with the values they resolve to now (before a library is unlinked). Returns the count.
+export function detachAliasesTo(ids) {
+  reindexVariables();
+  let n = 0;
+  const literal = new Map();
+  eachValue((val, write) => {
+    if (!isAlias(val) || !ids.has(val.alias)) return;
+    if (!literal.has(val.alias)) literal.set(val.alias, previewValue(val.alias) ?? defaultValue(index.get(val.alias)?.variable.type || 'string'));
+    write(structuredClone(literal.get(val.alias)));
+    n++;
+  });
+  return n;
+}
+
+// The steps from a token's value in `col` / `modeId` to the value it finally resolves to:
+// { steps: [{ id, variable, collection } | { id, missing: true }], value }. Tokens in the same collection
+// family follow the same mode; others use their default mode.
+export function aliasChain(col, modeId, variable) {
+  reindexVariables();
+  const pick = (root) => (inFamily(col, root) ? { collection: col, modeId } : { collection: root, modeId: root.defaultModeId });
+  const steps = [];
+  let raw = rawValueIn(col, modeId, variable);
+  while (isAlias(raw) && steps.length <= MAX_ALIAS_DEPTH) {
+    const hit = index.get(raw.alias);
+    if (!hit) {
+      steps.push({ id: raw.alias, missing: true });
+      return { steps, value: undefined };
+    }
+    steps.push({ id: raw.alias, ...hit });
+    const at = pick(hit.collection);
+    raw = rawValueIn(at.collection, at.modeId, hit.variable);
+  }
+  if (raw && typeof raw === 'object' && !isAlias(raw)) raw = resolveValue(steps.at(-1)?.id || variable.id, pick);
+  return { steps, value: raw };
+}
+
+// A token from a typed reference like "{color/brand/primary}" or "{color.brand.primary}", of `type`.
+// This file's own tokens win over library tokens with the same name.
+export function findByReference(text, type = null) {
+  const m = /^\s*\{?\s*([^{}]+?)\s*\}?\s*$/.exec(String(text || ''));
+  if (!m) return null;
+  const ref = m[1].replace(/\s*[./]\s*/g, '/');
+  for (const c of collections()) {
+    const v = (c.variables || []).find((x) => x.name.replace(/\s*\/\s*/g, '/') === ref && (!type || x.type === type));
+    if (v) return { variable: v, collection: c };
+  }
+  return null;
+}
+
+// ---------- groups ----------
+// Groups are the "/" paths in token names: "color/brand/primary" sits in group "color/brand", inside
+// "color". A collection also remembers groups made before they hold any token (collection.groups).
+export const groupOf = (name) => {
+  const i = name.lastIndexOf('/');
+  return i > 0 ? name.slice(0, i) : '';
+};
+export const leafOf = (name) => name.slice(name.lastIndexOf('/') + 1);
+export const inGroup = (name, path) => !path || name.startsWith(`${path}/`);
+const cleanPath = (p) => String(p || '').split('/').map((s) => s.trim()).filter(Boolean).join('/');
+
+// The collection that owns the group list (an extension shows its root's groups).
+function groupOwner(col) {
+  let root = col;
+  for (let guard = 0; root?.extends && guard < 32; guard++) root = parentOf(root);
+  return root || col;
+}
+
+// Every group path in a collection, parents before children.
+export function groupPaths(col) {
+  reindexVariables();
+  const owner = groupOwner(col);
+  const paths = new Set();
+  const addAll = (p) => {
+    const parts = cleanPath(p).split('/').filter(Boolean);
+    for (let i = 1; i <= parts.length; i++) paths.add(parts.slice(0, i).join('/'));
+  };
+  for (const v of owner.variables || []) addAll(groupOf(v.name));
+  for (const g of owner.groups || []) addAll(g);
+  return [...paths].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+}
+
+// Nested groups: [{ path, name, count, children }]; count includes subgroups.
+export function groupTree(col) {
+  const owner = groupOwner(col);
+  const nodes = new Map();
+  const roots = [];
+  for (const path of groupPaths(col)) {
+    const node = { path, name: leafOf(path), count: 0, children: [] };
+    nodes.set(path, node);
+    const parent = groupOf(path);
+    (parent ? nodes.get(parent).children : roots).push(node);
+  }
+  for (const v of owner.variables || []) {
+    for (let g = groupOf(v.name); g; g = groupOf(g)) if (nodes.has(g)) nodes.get(g).count++;
+  }
+  return roots;
+}
+
+// Rename (or move) a group: every token and subgroup in it follows. Returns the new path.
+export function renameGroup(col, path, newPath) {
+  newPath = cleanPath(newPath);
+  if (!path || newPath === path || (newPath && `${newPath}/`.startsWith(`${path}/`))) return path; // not into itself
+  const move = (name) => (newPath ? newPath + name.slice(path.length) : name.slice(path.length + 1));
+  for (const v of col.variables) if (inGroup(v.name, path)) v.name = move(v.name);
+  const groups = (col.groups || []).map((g) => (g === path || inGroup(g, path) ? move(g) : g)).filter(Boolean);
+  col.groups = [...new Set(groups)];
+  return newPath;
+}
+
+export const moveGroup = (col, path, intoPath) => renameGroup(col, path, intoPath ? `${intoPath}/${leafOf(path)}` : leafOf(path));
+
+// A new, empty group inside `parent`, with a name no sibling uses. Returns its path.
+export function createGroup(col, parent = '', name = 'New group') {
+  const taken = new Set(groupPaths(col));
+  let path = cleanPath(parent ? `${parent}/${name}` : name);
+  for (let i = 2; taken.has(path); i++) path = cleanPath(parent ? `${parent}/${name} ${i}` : `${name} ${i}`);
+  (col.groups ||= []).push(path);
+  return path;
+}
+
+export function moveTokensToGroup(col, ids, groupPath) {
+  groupPath = cleanPath(groupPath);
+  for (const v of col.variables) if (ids.includes(v.id)) v.name = groupPath ? `${groupPath}/${leafOf(v.name)}` : leafOf(v.name);
+  if (groupPath && !groupPaths(col).includes(groupPath)) (col.groups ||= []).push(groupPath);
+}
+
+// Remove a group but keep what's in it, one level up.
+export const ungroup = (col, path) => renameGroup(col, path, groupOf(path));
+
+// Delete a group with all its tokens (layers and aliases keep their current values).
+export function deleteGroup(col, path) {
+  for (const v of col.variables.filter((x) => inGroup(x.name, path))) deleteVariable(v.id);
+  col.groups = (col.groups || []).filter((g) => g !== path && !inGroup(g, path));
 }
 
 export function setAlias(variable, modeId, targetId) {

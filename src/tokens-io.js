@@ -55,9 +55,14 @@ function colorOut(value) {
 
 const dimension = (n) => ({ value: Number(n) || 0, unit: 'px' });
 
-export function exportDTCG(cols) {
+// `external`: collections of linked token files, to name the tokens these ones point at. Those references
+// are written by name ("{color.blue.500}"), so tools that load both files resolve them.
+const externalNames = (external) => new Map((external || []).flatMap((c) => (c.variables || []).map((v) => [v.id, v.name])));
+
+export function exportDTCG(cols, { external = [] } = {}) {
   const { varById, rootOf, raw } = indexOf(cols);
-  const ref = (id) => (varById.has(id) ? `{${dotted(varById.get(id).name)}}` : null);
+  const ext = externalNames(external);
+  const ref = (id) => (varById.has(id) ? `{${dotted(varById.get(id).name)}}` : ext.has(id) ? `{${dotted(ext.get(id))}}` : null);
   const out = {};
   const order = [];
 
@@ -123,9 +128,10 @@ export function exportDTCG(cols) {
 const slug = (s) => String(s).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'x';
 const cssName = (name) => `--${segs(name).map(slug).join('-')}`;
 
-export function exportCSS(cols, { title = 'Design tokens' } = {}) {
+export function exportCSS(cols, { title = 'Design tokens', external = [] } = {}) {
   const { varById, rootOf, raw } = indexOf(cols);
-  const varRef = (id) => (varById.has(id) ? `var(${cssName(varById.get(id).name)})` : 'initial');
+  const ext = externalNames(external);
+  const varRef = (id) => (varById.has(id) ? `var(${cssName(varById.get(id).name)})` : ext.has(id) ? `var(${cssName(ext.get(id))})` : 'initial');
   const num = (v, n) => (isDimension(v.name) ? `${Number(n) || 0}px` : `${Number(n) || 0}`);
   const lines = (v, value) => {
     const name = cssName(v.name);
@@ -219,7 +225,8 @@ const refIn = (value) => (typeof value === 'string' && /^\{[^{}]+\}$/.test(value
 
 // Read tokens.json (DTCG, Tokens Studio multi-set, or a Sigma export) into Sigma collections with fresh ids.
 // Returns { collections, skipped } where skipped counts tokens of types Sigma doesn't support.
-export function importTokens(json) {
+// `external`: collections of linked token files; references not found in the import resolve to them.
+export function importTokens(json, { external = [] } = {}) {
   if (!json || typeof json !== 'object') throw new Error('Not a tokens file');
   const meta = json.$extensions?.[SIGMA];
   const setNames = Object.keys(json).filter((k) => !k.startsWith('$'));
@@ -309,7 +316,7 @@ export function importTokens(json) {
     const name = ref.split('.').join('/');
     const own = tokenByName(c, name);
     if (own) return own.id;
-    for (const other of cols) {
+    for (const other of [...cols, ...external]) {
       const v = (other.variables || []).find((x) => dotted(x.name) === ref || x.name === name);
       if (v) return v.id;
     }
