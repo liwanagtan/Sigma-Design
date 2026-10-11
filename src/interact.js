@@ -1,7 +1,7 @@
 import {
   state, page, view, emit, commit, select, selectedNodes, getNode, getParent, walk, createNode, insertNode,
   detach, cloneNode, worldMatrix, worldBounds, setWorldMatrix, isAncestor, siblingsOf, reparent,
-  saveViewsSoon, undo, redo, isFrameLike,
+  saveViewsSoon, undo, redo, isFrameLike, setShowGrids,
 } from './store.js';
 import {
   mul, inv, apply, translate, rotate, rotateAbout, angleOf, unionBoxes, intersects, contains, distToSegment,
@@ -19,6 +19,7 @@ import { copySelection, cutSelection, paste, pasteHere, importImages, pickImages
 import { isAutoLayout, flowInsertBefore } from './layout.js';
 import { isInsideInstance, isTransparentContainer, canPlaceInside, createInstance, containingComponent } from './components.js';
 import { slotMenu } from './component-ui.js';
+import { gridSnapTargets } from './grids.js';
 import { applyConstraints } from './constraints.js';
 import { showContextMenu, hideContextMenu } from './menu.js';
 
@@ -109,7 +110,9 @@ function snapTargets(exclude) {
     ys.push({ v: b.y, b }, { v: b.y + b.h / 2, b }, { v: b.y + b.h, b });
     if (n.type === 'group') return false;
   });
-  return { xs, ys };
+  // Layout grids: column and row edges, and square-grid lines.
+  const g = gridSnapTargets(exclude);
+  return { xs: xs.concat(g.xs), ys: ys.concat(g.ys) };
 }
 
 function excludeSet(nodes) {
@@ -933,6 +936,7 @@ function onContextMenu(e) {
 }
 
 // ---------- keyboard ----------
+const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 const TOOL_KEYS = { v: 'move', h: 'hand', f: 'frame', a: 'frame', r: 'rect', o: 'ellipse', l: 'line', t: 'text' };
 
 function onKeyDown(e) {
@@ -954,6 +958,11 @@ function onKeyDown(e) {
     return;
   }
 
+  // ⌃G (Mac) / ⇧Ctrl4 (elsewhere) shows or hides layout grids, like Figma.
+  if ((IS_MAC && e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && e.code === 'KeyG') || (!IS_MAC && e.ctrlKey && e.shiftKey && e.code === 'Digit4')) {
+    e.preventDefault();
+    return setShowGrids(!state.showGrids);
+  }
   if (mod && e.altKey && e.code === 'KeyK') {
     e.preventDefault();
     return createComponent();

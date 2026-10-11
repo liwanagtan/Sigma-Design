@@ -39,7 +39,7 @@ test('sample tokens: three levels, modes, the brand and text styles resolve as d
   eq(aliasChain(brand, brand.modes[0].id, accent).value, '#9747FF'); // Brand B, Light
   const h1 = previewValue(findByReference('{heading/h1}', 'typography').variable.id);
   eq(h1, { fontFamily: 'Inter', fontWeight: 700, fontSize: 32, lineHeight: 120, letterSpacing: -0.5 });
-  eq(groupTree(cols[0]).map((g) => g.name), ['color', 'space', 'radius', 'border-width', 'font', 'opacity', 'motion', 'content']);
+  eq(groupTree(cols[0]).map((g) => g.name), ['color', 'space', 'layout', 'radius', 'border-width', 'font', 'opacity', 'motion', 'content']);
 });
 
 test('sample tokens: round-trips through tokens.json', () => {

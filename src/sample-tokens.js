@@ -61,6 +61,11 @@ export function sampleTokenDocument() {
   const sp = {};
   for (const [k, px] of [[0, 0], [1, 4], [2, 8], [3, 12], [4, 16], [5, 20], [6, 24], [8, 32], [10, 40], [12, 48], [16, 64]]) sp[k] = token(p, space, String(k), 'number', px);
 
+  const layout = group(p, 'layout', null, 'The column grid pages are laid out on. Its gutter and margin come from the spacing scale.');
+  token(p, layout, 'columns', 'number', 12);
+  token(p, layout, 'gutter', 'number', ref(sp[6]));
+  token(p, layout, 'margin', 'number', ref(sp[8]));
+
   const radius = group(p, 'radius', null, 'Corner radii.');
   const rad = {};
   for (const [k, px] of [['none', 0], ['sm', 4], ['md', 8], ['lg', 12], ['xl', 16], ['full', 9999]]) rad[k] = token(p, radius, k, 'number', px);

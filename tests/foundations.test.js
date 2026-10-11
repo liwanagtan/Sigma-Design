@@ -1,7 +1,8 @@
 // Design system foundations: text case, layout grids, effects and shadow tokens, motion tokens, contrast.
 import { test, eq, ok } from './harness.js';
 import { useDoc } from './core.test.js';
-import { createNode, editNode, makePaint } from '../src/store.js';
+import { state, createNode, editNode, makePaint } from '../src/store.js';
+import { gridBands, gridLines, gridSnapTargets, newGrid, retypeGrid } from '../src/grids.js';
 import { caseText, measureText } from '../src/text.js';
 import { syncInstances, createInstance } from '../src/components.js';
 import { buildSVG } from '../src/io.js';
@@ -131,4 +132,40 @@ test('effects: an instance takes the main component’s effects and can override
   main.effects[0].y = 8;
   syncInstances();
   eq(inst.effects[0].y, 20);
+});
+
+test('layout grids: stretch, left, center and right columns, rows and square grids', () => {
+  const cols = (props) => ({ type: 'columns', count: 4, gutter: 20, margin: 10, align: 'stretch', size: 50, ...props });
+  // 400 wide: (400 - 2×10 - 3×20) / 4 = 80 per column.
+  eq(gridBands(cols(), 400), [{ start: 10, size: 80 }, { start: 110, size: 80 }, { start: 210, size: 80 }, { start: 310, size: 80 }]);
+  eq(gridBands(cols({ align: 'min' }), 400).map((b) => b.start), [10, 80, 150, 220]);
+  eq(gridBands(cols({ align: 'center' }), 400)[0].start, (400 - (4 * 50 + 3 * 20)) / 2);
+  eq(gridBands(cols({ align: 'max' }), 400).at(-1), { start: 400 - 10 - 50, size: 50 });
+  eq(gridBands(cols({ margin: 300 }), 400), []); // no room left
+  eq(gridLines({ type: 'grid', size: 100 }, 350), [100, 200, 300]);
+  eq(retypeGrid({ type: 'grid', size: 8, color: '#00FF00', opacity: 0.2 }, 'rows').color, '#00FF00');
+});
+
+test('layout grids: layers snap to column edges while grids show; gutters bind to tokens; instances follow', () => {
+  const frame = createNode('frame', { name: 'Page', x: 100, y: 50, w: 400, h: 300, layoutGrids: [{ type: 'columns', count: 4, gutter: 20, margin: 10, align: 'stretch', color: '#FF0000', opacity: 0.1 }] });
+  const doc = useDoc([frame]);
+  state.showGrids = true;
+  const xs = gridSnapTargets().xs.map((t) => t.v);
+  eq(xs.slice(0, 4), [110, 190, 210, 290]);
+  state.showGrids = false;
+  eq(gridSnapTargets().xs.length, 0);
+  state.showGrids = true;
+  const gutter = { id: 'g', name: 'layout/gutter', type: 'number', valuesByMode: { m: 32 } };
+  doc.variables = { collections: [{ id: 'c', name: 'Layout', modes: [{ id: 'm', name: 'Default' }], defaultModeId: 'm', variables: [gutter] }] };
+  frame.bindings = { 'layoutGrids.0.gutter': 'g' };
+  resolveVariables();
+  eq(frame.layoutGrids[0].gutter, 32);
+  const n = createNode('frame', { layoutGrids: [newGrid('columns'), newGrid('rows')], bindings: { 'layoutGrids.1.gutter': 'g' } });
+  n.layoutGrids.splice(0, 1);
+  shiftPaintBindings(n, 'layoutGrids', 0);
+  eq(n.bindings, { 'layoutGrids.0.gutter': 'g' });
+  const main = createNode('component', { name: 'Screen', layoutGrids: [newGrid('grid')] });
+  useDoc([main]);
+  const inst = createInstance(main, { x: 500 });
+  eq(inst.layoutGrids, main.layoutGrids);
 });

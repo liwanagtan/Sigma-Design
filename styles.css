@@ -118,6 +118,13 @@ body.scrubbing, body.scrubbing * { cursor: ew-resize !important; user-select: no
 .paint-row .icon-btn:hover { color: var(--text); }
 .mixed-paints { color: var(--muted); padding: 4px 0; }
 .effect-row { display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; }
+.grid-field { display: flex; align-items: center; gap: 4px; height: 28px; margin-right: 24px; }
+.grid-field > .muted { width: 56px; flex: none; }
+.grid-field .grid-num { flex: 1; min-width: 0; height: 26px; background: var(--input); border: 1px solid transparent; border-radius: 5px; padding: 0 8px; outline: none; }
+.grid-field .grid-num:focus { border-color: var(--accent, #0D99FF); }
+.grid-field .var-chip { flex: 1; min-width: 0; }
+.grid-field:hover .var-btn { visibility: visible; }
+.grid-row.is-hidden .grid-field { opacity: 0.4; }
 .effect-row .field-label { width: auto; padding: 0 6px 0 8px; cursor: default; }
 .effect-row + .effect-row { border-top: 1px solid var(--border); padding-top: 8px; }
 .effect-head { display: flex; align-items: center; gap: 2px; }

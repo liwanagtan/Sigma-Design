@@ -1,6 +1,6 @@
 import {
   state, page, view, emit, commit, select, selectedNodes, getNode, getParent, ancestors, isAncestor, isSlotArea,
-  uid, detach, insertNode, worldMatrix, setWorldMatrix, createNode, undo, redo, makePaint, isFrameLike, editNode, worldBounds,
+  uid, detach, insertNode, worldMatrix, setWorldMatrix, createNode, undo, redo, makePaint, isFrameLike, editNode, worldBounds, setShowGrids,
 } from './store.js';
 import { translate } from './geom.js';
 import { icons, layerIcon } from './icons.js';
@@ -32,6 +32,7 @@ import { openVariablesEditor } from './variables-ui.js';
 import { showContextMenu } from './menu.js';
 import { stopEditing, TEXT_CASES } from './text.js';
 import { toWorld, nodeWorldSVG } from './render.js';
+import { GRID_TYPES, newGrid, retypeGrid } from './grids.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -141,7 +142,7 @@ export function renderFileHeader() {
 function showShortcuts() {
   const rows = [
     ['Tools', [['Move', 'V'], ['Hand / pan', 'H or hold Space'], ['Frame', 'F'], ['Rectangle', 'R'], ['Ellipse', 'O'], ['Line', 'L'], ['Text', 'T'], ['Place image', '⇧⌘K']]],
-    ['Canvas', [['Zoom in / out', '⌘+ / ⌘−  or ⌘-scroll / pinch'], ['Zoom to 100%', '⇧0'], ['Zoom to fit', '⇧1'], ['Zoom to selection', '⇧2'], ['Pan', 'Scroll / Space-drag']]],
+    ['Canvas', [['Zoom in / out', '⌘+ / ⌘−  or ⌘-scroll / pinch'], ['Zoom to 100%', '⇧0'], ['Zoom to fit', '⇧1'], ['Zoom to selection', '⇧2'], ['Pan', 'Scroll / Space-drag'], ['Show / hide layout grids', '⌃G']]],
     ['Selection', [['Select all', '⌘A'], ['Deep select', '⌘-click'], ['Select inside', 'Double-click / Enter'], ['Select parent', '⇧Enter'], ['Measure distance', 'Hold ⌥']]],
     ['Edit', [['Undo / Redo', '⌘Z / ⇧⌘Z'], ['Copy / Paste / Cut', '⌘C / ⌘V / ⌘X'], ['Duplicate', '⌘D or ⌥-drag'], ['Delete', '⌫'], ['Group / Ungroup', '⌘G / ⇧⌘G'], ['Frame selection', '⌥⌘G'], ['Add / remove auto layout', '⇧A / ⌥⇧A'], ['Create component', '⌥⌘K'], ['Detach instance', '⌥⌘B'], ['Save to version history', '⌥⌘S'], ['Reorder in auto layout', 'Drag or arrow keys'], ['Nudge', 'Arrows (⇧ = 10px)'], ['Bring forward / Send backward', '⌘] / ⌘['], ['To front / To back', '⌥⌘] / ⌥⌘['], ['Hide / Lock', '⇧⌘H / ⇧⌘L'], ['Rename', '⌘R'], ['Flip', '⇧H / ⇧V']]],
     ['Transform', [['Keep proportions', 'Hold ⇧ while resizing'], ['Resize from center', 'Hold ⌥ while resizing'], ['Snap rotation to 15°', 'Hold ⇧ while rotating'], ['Disable snapping', 'Hold ⌘ while dragging']]],
@@ -721,6 +722,85 @@ function addPaint(kind) {
   commit();
 }
 
+// ---------- layout grids ----------
+const sameGrids = (nodes) => nodes.every((n) => JSON.stringify(n.layoutGrids || []) === JSON.stringify(nodes[0].layoutGrids || []));
+
+function gridSummary(g) {
+  if (g.type === 'grid') return `Grid (${g.size ?? 10}px)`;
+  const auto = (g.align || 'stretch') === 'stretch';
+  return `${g.count ?? 1} ${g.type}${auto ? ' (auto)' : ` (${g.size}px)`}`;
+}
+
+function gridRows(nodes) {
+  if (!sameGrids(nodes)) return '<div class="mixed-paints">Click + to replace mixed layout grids</div>';
+  return (nodes[0].layoutGrids || []).map((g, i) => {
+    const hidden = g.visible === false;
+    // One labeled line per number: its value, or the token it uses.
+    const f = (key, label) => {
+      const path = `layoutGrids.${i}.${key}`;
+      const bound = boundVar(nodes, path);
+      const control = bound && bound !== MIXED ? varChip(path, bound)
+        : `<input class="grid-num" data-grid-input="${i}:${key}" value="${esc(fmtNum(g[key] ?? 0))}" spellcheck="false">${varButton(path)}`;
+      return `<label class="grid-field bindable"><span class="muted">${label}</span>${control}</label>`;
+    };
+    const cols = g.type === 'columns';
+    const align = g.align || 'stretch';
+    let head = `<select class="select" data-grid-type="${i}" title="Grid type">${Object.entries(GRID_TYPES).map(([k, l]) => `<option value="${k}" ${k === g.type ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+    let body;
+    if (g.type === 'grid') {
+      body = f('size', 'Size');
+    } else {
+      const aligns = { stretch: 'Stretch', min: cols ? 'Left' : 'Top', center: 'Center', max: cols ? 'Right' : 'Bottom' };
+      head += `<select class="select" data-grid-align="${i}" title="Where the ${g.type} sit">` +
+        Object.entries(aligns).map(([k, l]) => `<option value="${k}" ${k === align ? 'selected' : ''}>${l}</option>`).join('') + '</select>';
+      body = f('count', 'Count') + (align === 'stretch' ? '' : f('size', cols ? 'Width' : 'Height')) + f('gutter', 'Gutter') +
+        (align === 'center' ? '' : f('margin', align === 'stretch' ? 'Margin' : 'Offset'));
+    }
+    body += `<div class="color-row"><label class="swatch" style="--c:${g.color || '#FF0000'}"><input type="color" data-grid-color="${i}" value="${(g.color || '#FF0000').toLowerCase()}"></label>` +
+      `<input class="hex" data-grid-input="${i}:hex" value="${esc((g.color || '#FF0000').replace('#', ''))}" spellcheck="false">` +
+      `<input class="op" data-grid-input="${i}:opacity" value="${Math.round((g.opacity ?? 0.1) * 100)}"><span class="op-suffix">%</span></div>`;
+    return `<div class="effect-row grid-row${hidden ? ' is-hidden' : ''}" title="${esc(gridSummary(g))}"><div class="effect-head">${head}` +
+      `<button class="icon-btn" data-grid-act="toggle" data-grid="${i}" title="${hidden ? 'Show' : 'Hide'} grid">${hidden ? icons.eyeOff : icons.eye}</button>` +
+      `<button class="icon-btn" data-grid-act="remove" data-grid="${i}" title="Remove grid">${icons.minus}</button></div>${body}</div>`;
+  }).join('') + (state.showGrids ? '' : '<div class="muted">Layout grids are hidden. Press ⌃G to show them.</div>');
+}
+
+// `field`: the grid property changed (a value typed over a token detaches it).
+function updateGrid(i, field, fn, { live = false } = {}) {
+  for (const n of selectedNodes()) {
+    if (!n.layoutGrids?.[i]) continue;
+    editNode(n, [`layoutGrids.${i}.${field}`], () => fn(n.layoutGrids[i]));
+  }
+  if (live) emit('doc');
+  else commit();
+}
+
+function addGrid() {
+  const nodes = selectedNodes().filter(isFrameLike);
+  const replace = !sameGrids(nodes);
+  for (const n of nodes) {
+    const list = replace ? [] : [...(n.layoutGrids || [])];
+    editNode(n, [replace ? 'layoutGrids' : `layoutGrids.${list.length}`], () => {
+      list.push(newGrid(list.length ? 'rows' : 'columns'));
+      n.layoutGrids = list;
+    });
+  }
+  if (!state.showGrids) setShowGrids(true);
+  commit();
+}
+
+function removeGrid(i) {
+  for (const n of selectedNodes()) {
+    if (!n.layoutGrids?.[i]) continue;
+    editNode(n, [`layoutGrids.${i}`], () => {
+      n.layoutGrids.splice(i, 1);
+      if (!n.layoutGrids.length) delete n.layoutGrids;
+    });
+    if (n.bindings) editNode(n, ['bindings'], () => shiftPaintBindings(n, 'layoutGrids', i));
+  }
+  commit();
+}
+
 // ---------- effects ----------
 const EFFECT_TYPES = { 'drop-shadow': 'Drop shadow', 'inner-shadow': 'Inner shadow', 'layer-blur': 'Layer blur' };
 const sameEffects = (nodes) => nodes.every((n) => JSON.stringify(n.effects || []) === JSON.stringify(nodes[0].effects || []));
@@ -891,6 +971,9 @@ function buildProps() {
   }
   html += section(title, lockedGeometry ? `<fieldset class="readonly" disabled title="Comes from the main component">${layout}</fieldset>` : layout);
   if (!lockedGeometry) html += autoLayoutSection(nodes);
+  if (!lockedGeometry && nodes.every(isFrameLike)) {
+    html += section('Layout grid', gridRows(nodes), `<button class="icon-btn" data-action="add-grid" title="Add layout grid">${icons.plus}</button>`);
+  }
 
   // Layer
   html += section('Layer', `<div class="grid2">${numField('opacity', '', nodes, { icon: '<span class="op-icon"></span>' })}` +
@@ -1125,7 +1208,7 @@ export function renderProps() {
     tmp.innerHTML = buildProps();
     for (const el of panel.querySelectorAll('input:not([type=color]):not([type=checkbox])')) {
       if (el === active) continue;
-      const attr = ['data-key', 'data-paint-hex', 'data-paint-op', 'data-page-hex', 'data-effect-input'].find((a) => el.hasAttribute(a));
+      const attr = ['data-key', 'data-paint-hex', 'data-paint-op', 'data-page-hex', 'data-effect-input', 'data-grid-input'].find((a) => el.hasAttribute(a));
       if (!attr) continue;
       const twin = tmp.querySelector(`[${attr}${el.getAttribute(attr) ? `="${el.getAttribute(attr)}"` : ''}]`);
       if (twin) el.value = twin.value;
@@ -1166,6 +1249,21 @@ function initProps() {
       return updatePaint(t.dataset.paintOp, 'opacity', (p) => void (p.opacity = Math.min(100, Math.max(0, v)) / 100));
     }
     if (t.dataset.paintColor) return updatePaint(t.dataset.paintColor, 'color', (p) => void (p.color = t.value.toUpperCase()));
+    if (t.dataset.gridType) return updateGrid(+t.dataset.gridType, 'type', (g) => Object.assign(g, retypeGrid(g, t.value)));
+    if (t.dataset.gridAlign) return updateGrid(+t.dataset.gridAlign, 'align', (g) => void (g.align = t.value));
+    if (t.dataset.gridColor) return updateGrid(+t.dataset.gridColor, 'color', (g) => void (g.color = t.value.toUpperCase()));
+    if (t.dataset.gridInput) {
+      const [i, key] = t.dataset.gridInput.split(':');
+      if (key === 'hex') {
+        const hex = normHex(t.value);
+        return hex ? updateGrid(+i, 'color', (g) => void (g.color = hex)) : emit('selection');
+      }
+      const v = evalNum(t.value);
+      if (v === null) return emit('selection');
+      if (key === 'opacity') return updateGrid(+i, 'opacity', (g) => void (g.opacity = Math.min(100, Math.max(0, v)) / 100));
+      const clean = key === 'count' ? Math.max(1, Math.round(v)) : key === 'size' ? Math.max(1, v) : key === 'gutter' ? Math.max(0, v) : v;
+      return updateGrid(+i, key, (g) => void (g[key] = clean));
+    }
     if (t.dataset.effectType) return updateEffect(+t.dataset.effectType, (fx) => void (fx.type = t.value), { field: 'type' });
     if (t.dataset.effectColor) return updateEffect(+t.dataset.effectColor, (fx) => void (fx.color = t.value.toUpperCase()));
     if (t.dataset.effectInput) {
@@ -1202,6 +1300,10 @@ function initProps() {
     const t = e.target;
     if (t.dataset.paintColor) {
       updatePaint(t.dataset.paintColor, 'color', (p) => void (p.color = t.value.toUpperCase()), { live: true });
+      t.parentElement.style.setProperty('--c', t.value);
+    }
+    if (t.dataset.gridColor) {
+      updateGrid(+t.dataset.gridColor, 'color', (g) => void (g.color = t.value.toUpperCase()), { live: true });
       t.parentElement.style.setProperty('--c', t.value);
     }
     if (t.dataset.effectColor) {
@@ -1245,6 +1347,8 @@ function initProps() {
     if (b.dataset.varMenu) return variableMenu(b, b.dataset.varMenu);
     if (b.dataset.paintAct === 'toggle') return updatePaint(b.dataset.paint, 'visible', (p) => void (p.visible = p.visible === false));
     if (b.dataset.paintAct === 'remove') return removePaint(b.dataset.paint);
+    if (b.dataset.gridAct === 'toggle') return updateGrid(+b.dataset.grid, 'visible', (g) => void (g.visible = g.visible === false));
+    if (b.dataset.gridAct === 'remove') return removeGrid(+b.dataset.grid);
     if (b.dataset.effectAct === 'toggle') return updateEffect(+b.dataset.effect, (fx) => void (fx.visible = fx.visible === false), { field: 'visible' });
     if (b.dataset.effectAct === 'remove') return removeEffect(+b.dataset.effect);
     if (b.dataset.alMode) return setProps({ 'layout.mode': b.dataset.alMode });
@@ -1299,6 +1403,8 @@ function initProps() {
         return addPaint('strokes');
       case 'add-effect':
         return addEffect();
+      case 'add-grid':
+        return addGrid();
       case 'export':
         return exportNodes(nodes, { format: exportFormat, scale: exportScale });
       case 'export-page':
@@ -1353,6 +1459,8 @@ function initProps() {
       { label: 'Zoom to 50%', action: () => zoomAt(0.5 / view().zoom, c()) },
       { label: 'Zoom to 100%', shortcut: '⇧0', action: zoomTo100 },
       { label: 'Zoom to 200%', action: () => zoomAt(2 / view().zoom, c()) },
+      '-',
+      { label: 'Layout grids', shortcut: '⌃G', checked: state.showGrids, action: () => setShowGrids(!state.showGrids) },
     ]);
   });
 }

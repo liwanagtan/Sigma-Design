@@ -95,6 +95,17 @@ export function sampleDocument(collections) {
     fills: [makePaint('#FFFFFF')], bindings: { 'fills.0.color': S('surface/sunken'), ...padding(P('space/6')) },
     children: [createNode('instance', { name: 'Card', componentId: card.id, w: card.w, h: card.h, overrides: {}, children: [] })],
   });
+  // A page-width frame on the layout grid: 12 columns, with gutter and margin from the spacing scale.
+  const layout = createNode('frame', {
+    name: 'Layout grid', x: 0, y: 720, w: 1088, h: 200, clip: true,
+    fills: [makePaint('#FFFFFF')], bindings: { 'fills.0.color': S('surface/default') },
+    layoutGrids: [{ type: 'columns', count: 12, align: 'stretch', size: 64, gutter: 24, margin: 32, color: '#FF0000', opacity: 0.1, visible: true }],
+    children: [
+      text('Title', 'Layout grid', S('text/primary'), T('heading/h3'), { x: 32, y: 32 }),
+      text('Body', '12 columns. The gutter and margin are layout tokens that point at the spacing scale.\nPress ⌃G to show or hide layout grids.', S('text/secondary'), T('body/small'), { x: 32, y: 68 }),
+    ],
+  });
+  for (const [k, path] of [['count', 'layout/columns'], ['gutter', 'layout/gutter'], ['margin', 'layout/margin']]) layout.bindings[`layoutGrids.0.${k}`] = P(path);
   const page = {
     id: uid(), name: 'Design system', background: '#F5F5F5',
     children: [
@@ -102,6 +113,7 @@ export function sampleDocument(collections) {
       showcase('Light', 0, undefined),
       showcase('Dark', 380, { [semantic.id]: mode(semantic, 'Dark') }),
       showcase('Brand B', 760, { [brand.id]: mode(brand, 'Light') }),
+      layout,
     ],
   };
   return { name: 'Sample design file', pages: [page], currentPageId: page.id };

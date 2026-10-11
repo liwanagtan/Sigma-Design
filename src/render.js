@@ -5,6 +5,7 @@ import {
 import { css, mul, apply, unionBoxes, cornersOf } from './geom.js';
 import { textStyle, caseText } from './text.js';
 import { isInsideInstance } from './components.js';
+import { gridsOverlay } from './grids.js';
 
 export const ACCENT = '#0D99FF';
 export const COMPONENT_ACCENT = '#9747FF';
@@ -306,7 +307,8 @@ function pill(x, y, text, bg) {
 }
 
 export function renderOverlay(svg) {
-  let out = '';
+  const v0 = view();
+  let out = gridsOverlay([v0.zoom, 0, 0, v0.zoom, v0.x, v0.y], mul, css);
   const sel = new Set(state.selection);
 
   // Frame labels

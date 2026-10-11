@@ -22,7 +22,24 @@ export const state = {
   layoutSkip: new Set(), // ids auto layout must not reposition (being dragged/drawn)
   readOnly: false, // viewing an older version: edits are put back and nothing is saved
   highlightIds: [], // layers outlined while a component property is hovered in the panel
+  showGrids: (() => { // layout grids on the canvas (⌃G); remembered in this browser
+    try {
+      return localStorage.getItem('sigma.showGrids') !== '0';
+    } catch {
+      return true;
+    }
+  })(),
 };
+
+export function setShowGrids(on) {
+  state.showGrids = on;
+  try {
+    localStorage.setItem('sigma.showGrids', on ? '1' : '0');
+  } catch {
+    // private mode: not remembered
+  }
+  emit('selection'); // the canvas and the panel's note
+}
 
 // Passes that derive props from the document, run in registration order before every render and
 // commit: sync instances → resolve variables → fit groups → auto layout → fit groups (see main.js).
