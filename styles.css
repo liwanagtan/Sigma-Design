@@ -467,6 +467,26 @@ fieldset.readonly .field-label { cursor: default; }
 .tokens-editor { flex: 1; min-height: 0; display: flex; }
 .vars-modal.inline { flex: 1; display: flex; flex-direction: column; width: auto; height: auto; max-height: none; border-radius: 0; box-shadow: none; }
 
+/* ---------- inspect ---------- */
+.right-head .tabs { display: flex; gap: 2px; }
+.right-head .tab { border: 0; background: none; padding: 4px 8px; border-radius: 5px; font: inherit; font-weight: 600; color: var(--muted); cursor: pointer; }
+.right-head .tab.active { color: var(--text); background: var(--input); }
+.inspect-code { margin: 0 12px 0 0; padding: 8px 10px; border-radius: 6px; background: var(--input); font: 11px/1.6 'JetBrains Mono', ui-monospace, monospace; white-space: pre-wrap; word-break: break-word; user-select: text; }
+.inspect-copy { margin-left: auto; }
+.inspect-empty { padding: 8px 0; line-height: 1.5; }
+.inspect-tokens { display: flex; flex-direction: column; gap: 8px; margin-right: 12px; }
+.inspect-token { padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; }
+.inspect-token-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 2px; }
+.inspect-token-head b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inspect-token-code { display: flex; gap: 8px; font-size: 11px; }
+.inspect-token-code .muted { width: 52px; flex: none; }
+.inspect-token-code code { font-family: 'JetBrains Mono', ui-monospace, monospace; overflow-wrap: anywhere; }
+.code-name-row { display: grid; grid-template-columns: 80px 1fr auto; align-items: center; gap: 6px; margin: 2px 12px 4px 0; }
+.code-name-row .muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inspect-type { font: 10px 'JetBrains Mono', ui-monospace, monospace; color: var(--muted); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.code-names { display: flex; flex-direction: column; margin-right: 12px; }
+.code-names .code-name-row { grid-template-columns: 60px 1fr; margin-right: 0; }
+
 /* ---------- projects ---------- */
 .project-status { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border: 0; border-radius: 12px; background: #e9f7ef; color: #14804a; font-size: 11px; font-weight: 600; white-space: nowrap; flex: none; cursor: pointer; }
 .project-status .dot { width: 6px; height: 6px; border-radius: 3px; background: currentColor; }

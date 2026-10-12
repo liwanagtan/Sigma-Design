@@ -17,6 +17,7 @@ import { moveLocalTokensMenu } from './libraries.js';
 import { FONTS, WEIGHTS } from './fonts.js';
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
+import { PLATFORMS, defaultTokenCode, setTokenCode } from './code-names.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -328,6 +329,9 @@ function inspector(col) {
     <textarea class="desc inspector-desc" data-token-desc="${v.id}" rows="3" placeholder="${ro ? 'No description' : v.deprecated ? 'What should be used instead?' : 'What is this token for?'}" spellcheck="false" ${ext || ro ? `disabled title="${ro ? 'Edit it in its token file' : 'Edit descriptions in the root collection'}"` : ''}>${esc(v.description || '')}</textarea>
     <label class="check-row deprecate-row" title="Hidden from token pickers so nothing new uses it. Layers and tokens that use it keep working."><input type="checkbox" data-token-deprecated="${v.id}" ${v.deprecated ? 'checked' : ''} ${ext || ro ? 'disabled' : ''}> Deprecated</label>
     ${v.deprecated ? '<div class="muted">Hidden from token pickers. Layers and tokens that use it keep working; say what to use instead in the description.</div>' : ''}
+    <label class="inspector-label">Code names</label>
+    <div class="code-names">${Object.entries(PLATFORMS).map(([p, label]) => `<label class="code-name-row"><span class="muted">${label}</span>` +
+      `<input class="prop-input" data-token-code="${v.id}" data-platform="${p}" value="${esc(v.codeSyntax?.[p] || '')}" placeholder="${esc(defaultTokenCode(v.name, p))}" spellcheck="false" ${ext || ro ? 'disabled' : ''}></label>`).join('')}</div>
     <label class="inspector-label">Values in ${esc(col.name)}</label>
     ${modeRows}
     ${contrast}
@@ -883,6 +887,10 @@ function bind() {
     if (t.dataset.tokenDeprecated) return change(() => {
       const v = findVariable(t.dataset.tokenDeprecated)?.variable;
       if (v) setTokenDeprecated(v, t.checked);
+    });
+    if (t.dataset.tokenCode) return change(() => {
+      const v = findVariable(t.dataset.tokenCode)?.variable;
+      if (v) setTokenCode(v, t.dataset.platform, t.value);
     });
     if (t.dataset.tokenDesc) return change(() => {
       const v = findVariable(t.dataset.tokenDesc)?.variable;

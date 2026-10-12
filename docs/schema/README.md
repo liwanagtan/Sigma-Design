@@ -243,6 +243,11 @@ listed in order. A layer inside the component uses one through `propRefs`:
 | `icon` | `iconId` | an icon id (`groups` limits the choice; all icons if left out) |
 | `slot` | `slot` (on a frame) | layers an instance adds (`min`, `max`, `preferred`, `description`) |
 
+**Code names** (optional) say what a component and its properties are called in code, for handoff and
+for agents mapping Sigma to the code library: `codeName` on a component (or its component set: `"Button"`),
+`codeName` on a property (`"label"`), and `codeNames` on a component set for its variant properties
+(`{ "Style": "variant" }`). Without them, names come from Sigma's (`Show icon` → `showIcon`).
+
 An **instance** stores only what it changes from its main component:
 
 ```json

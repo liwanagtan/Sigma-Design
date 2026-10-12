@@ -40,6 +40,7 @@ import { GRID_TYPES, newGrid, retypeGrid } from './grids.js';
 import { textContrast, contrastBadge } from './contrast.js';
 import { openAuditDialog } from './audit-ui.js';
 import { projectMenuItems } from './project-ui.js';
+import { inspectHTML } from './inspect.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -923,8 +924,12 @@ function section(title, body, action = '') {
   return `<div class="section"><div class="section-title"><span>${title}</span>${action}</div>${body}</div>`;
 }
 
+// The right panel's tab: Design (edit) or Inspect (code handoff).
+let rightTab = 'design';
+
 function buildProps() {
   const nodes = selectedNodes();
+  if (rightTab === 'inspect') return inspectHTML(nodes);
   if (!nodes.length) {
     let html = '';
     if (state.tool === 'frame') {
@@ -1342,6 +1347,42 @@ export function renderProps() {
 
 function initProps() {
   const panel = $('#props');
+
+  document.querySelector('.right-head .tabs').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-right-tab]');
+    if (!b) return;
+    rightTab = b.dataset.rightTab;
+    document.querySelectorAll('[data-right-tab]').forEach((x) => x.classList.toggle('active', x === b));
+    lastPropsSig = null;
+    renderProps();
+  });
+  // Inspect: copy a block; edit a component's code names.
+  panel.addEventListener('click', (e) => {
+    const copy = e.target.closest('[data-copy]');
+    if (!copy) return;
+    navigator.clipboard?.writeText(copy.dataset.copy).then(() => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'Copied' })));
+  });
+  panel.addEventListener('change', (e) => {
+    const t = e.target;
+    const value = t.value.trim();
+    if (t.dataset.codeComponent) {
+      const host = getNode(t.dataset.codeComponent);
+      if (host) editNode(host, ['codeName'], () => (value ? (host.codeName = value) : delete host.codeName));
+    } else if (t.dataset.codeProp) {
+      const host = getNode(t.dataset.host);
+      const def = host?.props?.[t.dataset.codeProp];
+      if (def) editNode(host, ['props'], () => (value ? (def.codeName = value) : delete def.codeName));
+    } else if (t.dataset.codeVariant) {
+      const host = getNode(t.dataset.host);
+      if (host) editNode(host, ['codeNames'], () => {
+        host.codeNames ||= {};
+        if (value) host.codeNames[t.dataset.codeVariant] = value;
+        else delete host.codeNames[t.dataset.codeVariant];
+        if (!Object.keys(host.codeNames).length) delete host.codeNames;
+      });
+    } else return;
+    commit();
+  });
 
   const applyField = (key, raw) => {
     const f = FIELDS[key];

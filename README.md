@@ -186,6 +186,11 @@ Then open http://localhost:5173.
 
 Press `?` in the app to see every keyboard shortcut.
 
+## Code handoff
+
+- **Inspect** (the tab next to Design in the right panel) shows, for the selected layer: its CSS (size, auto layout, padding, radius, fills, borders, shadows, type), with every value that comes from a token written as the token's variable (`var(--surface-default)`, the same names as **Export CSS variables**); the tokens it uses with their values in its modes and their code names on Web, iOS and Android; and for an instance, how it's written in code (`<Button variant="primary" label="Save" />`: variant properties always, other properties when they differ from the default). Each block has a copy button.
+- **Code names:** a token's name in code per platform is in the token inspector (**Code names**: Web, iOS, Android; empty means the default from its path, like `--color-blue-500`, `colorBlue500`, `color_blue_500`). The sync skill fills Web in on import. A selected main component or set shows its **Component** API in Inspect: its code name and each property's (variant properties with their values), editable; defaults come from the names (`Show icon` → `showIcon`). Export CSS uses tokens' CSS code names.
+
 ## Sigma in a project
 
 Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.md](docs/schema/README.md) for the format, and [docs/roadmap.md](docs/roadmap.md), Part E):
@@ -233,6 +238,8 @@ Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.
 | `src/icon-sync.js` | Icons between code and Sigma: SVG folders in and out, merging, diffs, writing in the project's style |
 | `tools/sigma.mjs` | The command line the sync skill uses (validate, check, tokens and icons import / diff / write) |
 | `skills/sigma-sync/` | The sync skill: instructions for agents, with references |
+| `src/code-names.js` | Code names for tokens (per platform), components and properties |
+| `src/inspect.js` | The Inspect panel: CSS with token variables, tokens used, instance usage, component API |
 | `tools/validate.js` | Command-line check for a project's Sigma files |
 | `src/component-ui.js` | Figma-style component, component set, variant and instance panels; the property window; the component picker |
 | `src/history.js` | Version history panel: viewing a version read-only, restore, duplicate, named versions |

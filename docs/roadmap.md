@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phases 20–23 are done; next is Phase 24. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phases 20–24 are done; next is Phase 25. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -384,7 +384,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 21: Project folder storage
 - [x] Phase 22: Tokens sync skill (first milestone)
 - [x] Phase 23: Icons sync
-- [ ] Phase 24: Code handoff (Part D, Phase 15)
+- [x] Phase 24: Code handoff (Part D, Phase 15)
 - [ ] Phase 25: Propose change
 - [ ] Phase 26: Team workflow (GitHub and Notion)
 - [ ] Phase 27: Comments
@@ -584,6 +584,8 @@ Sigma files use stable ids and a diff-friendly layout (sorted keys, one object p
 ### Phase 24: Code handoff (Part D, Phase 15)
 
 Unchanged from Phase 15 above: code names per platform for tokens, components and properties, and the **Inspect** panel. Code names are what let agents map Sigma components to code components in Phases 28–30, so this comes before them. The skill fills in code names during import.
+
+- **What shipped:** the **Inspect** tab (CSS with token variables, tokens used with values and per-platform code names, instance usage as JSX, the component API with editable code names, copy buttons); token code names in the token inspector (`codeSyntax` web, iOS, Android, with defaults from the path); `codeName` on components and properties and `codeNames` for variant properties (`src/code-names.js`, `src/inspect.js`). Export CSS uses a token's CSS code name. Code targets beyond CSS and JSX usage (SwiftUI, Compose) are still open; the iOS and Android names are there for them.
 
 ### Phase 25: Propose change
 

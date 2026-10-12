@@ -154,10 +154,12 @@ const cssName = (name) => `--${segs(name).map(slug).join('-')}`;
 export function exportCSS(cols, { title = 'Design tokens', external = [] } = {}) {
   const { varById, rootOf, raw } = indexOf(cols);
   const ext = externalNames(external);
-  const varRef = (id) => (varById.has(id) ? `var(${cssName(varById.get(id).name)})` : ext.has(id) ? `var(${cssName(ext.get(id))})` : 'initial');
+  // A token's own CSS name when it has one (codeSyntax.web, set by the sync skill), else one from its path.
+  const nameOf = (v) => (v.codeSyntax?.web?.startsWith('--') ? v.codeSyntax.web : cssName(v.name));
+  const varRef = (id) => (varById.has(id) ? `var(${nameOf(varById.get(id))})` : ext.has(id) ? `var(${cssName(ext.get(id))})` : 'initial');
   const num = (v, n) => (isDimension(v.name) ? `${Number(n) || 0}px` : `${Number(n) || 0}`);
   const lines = (v, value) => {
-    const name = cssName(v.name);
+    const name = nameOf(v);
     if (isAlias(value)) return [`${name}: ${varRef(value.alias)};`];
     switch (v.type) {
       case 'color': {
