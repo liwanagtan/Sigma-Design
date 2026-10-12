@@ -1,0 +1,79 @@
+{
+  "format": 1,
+  "kind": "icons",
+  "name": "Acme icons",
+  "icons": [
+    {
+      "id": "actions-plus",
+      "name": "plus",
+      "body": "<path d=\"M5 12h14\"/><path d=\"M12 5v14\"/>",
+      "cap": "round",
+      "group": "actions",
+      "join": "round",
+      "keywords": "",
+      "strokeWidth": 2,
+      "style": "outline",
+      "viewBox": "0 0 24 24"
+    },
+    {
+      "id": "actions-search",
+      "name": "search",
+      "body": "<path d=\"m21 21-4.34-4.34\"/><circle cx=\"11\" cy=\"11\" r=\"8\"/>",
+      "cap": "round",
+      "group": "actions",
+      "join": "round",
+      "keywords": "",
+      "strokeWidth": 2,
+      "style": "outline",
+      "viewBox": "0 0 24 24"
+    },
+    {
+      "id": "actions-trash",
+      "name": "trash",
+      "body": "<path d=\"M10 11v6\"/><path d=\"M14 11v6\"/><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\"/><path d=\"M3 6h18\"/><path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"/>",
+      "cap": "round",
+      "group": "actions",
+      "join": "round",
+      "keywords": "",
+      "strokeWidth": 2,
+      "style": "outline",
+      "viewBox": "0 0 24 24"
+    },
+    {
+      "id": "arrows-arrow-right",
+      "name": "arrow-right",
+      "body": "<path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/>",
+      "cap": "round",
+      "group": "arrows",
+      "join": "round",
+      "keywords": "",
+      "strokeWidth": 2,
+      "style": "outline",
+      "viewBox": "0 0 24 24"
+    },
+    {
+      "id": "arrows-chevron-down",
+      "name": "chevron-down",
+      "body": "<path d=\"m6 9 6 6 6-6\"/>",
+      "cap": "round",
+      "group": "arrows",
+      "join": "round",
+      "keywords": "",
+      "strokeWidth": 2,
+      "style": "outline",
+      "viewBox": "0 0 24 24"
+    },
+    {
+      "id": "status-check",
+      "name": "check",
+      "body": "<path d=\"M20 6 9 17l-5-5\"/>",
+      "cap": "round",
+      "group": "status",
+      "join": "round",
+      "keywords": "",
+      "strokeWidth": 2,
+      "style": "outline",
+      "viewBox": "0 0 24 24"
+    }
+  ]
+}

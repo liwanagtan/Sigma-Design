@@ -1,4 +1,4 @@
-// <acme-button variant="primary|danger" icon="arrow-right">Label</acme-button>
+// Button({ label, variant: 'primary' | 'danger', icon: 'arrows/arrow-right' }): icon is a path in src/assets/icons
 export function Button({ label, variant = 'primary', icon = null }) {
   const el = document.createElement('button');
   el.className = `button${variant === 'danger' ? ' button--danger' : ''}`;
