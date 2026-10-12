@@ -135,6 +135,12 @@ component in the manifest, the routes and breakpoints in `.sigma/captures/pages.
 for each, `pages build` (pages made of library instances, with what isn't from the library listed for
 review), then compare.
 
+## Design changes to components → code
+
+When library components changed in Sigma: `reference/design-to-code.md`. `components diff` shows the design
+diff and the plan; `components write` (also run by `changeset prepare`) writes the exact CSS and code edits;
+you do what it lists "For you", then recapture (`sigmaCaptureAll`) and compare until everything matches.
+
 ## Proposals → tickets and pull requests
 
 When a designer uses **Propose change** in Sigma, a changeset waits in `.sigma/changesets/`. To send it (only

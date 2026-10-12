@@ -8,7 +8,7 @@ import {
   variantDefs, variantConflicts, defaultVariant, overrideCount, resetOverrides, switchVariant, layersUsingProp, nestedInstances,
   mainComponentOf, setPropDefaultVar, pushOverridesToMain,
 } from '../src/components.js';
-import { makeComponentSet, combineAsVariants, addVariant } from '../src/commands.js';
+import { makeComponentSet, combineAsVariants, addVariant, duplicateSelection } from '../src/commands.js';
 
 function button(name = 'Button') {
   return createNode('component', {
@@ -56,6 +56,20 @@ test('component props: "+ Variant" turns a main component into a set, like Figma
   eq(state.selection, [set.id]);
   addVariant(set);
   eq(set.children.map((v) => v.name), ['Property 1=Default', 'Property 1=Variant2']);
+});
+
+test('component props: duplicating a variant adds a variant to its set (not an instance), like Figma', () => {
+  const main = button();
+  useDoc([main]);
+  const set = makeComponentSet(main);
+  addVariant(set);
+  const [first] = set.children;
+  select([first.id]);
+  duplicateSelection();
+  const copy = set.children.find((v) => v.id === state.selection[0]);
+  eq([copy.type, copy.name], ['component', 'Property 1=Default copy']);
+  eq(set.children.length, 3);
+  ok(copy.y >= Math.max(...set.children.filter((v) => v !== copy).map((v) => v.y + v.h)), 'below the other variants');
 });
 
 test('component props: variant values rename everywhere, reorder, and properties reorder or go', () => {

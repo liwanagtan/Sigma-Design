@@ -38,7 +38,9 @@ $S changeset show <id> <project>                 # read what it changes
 3. **Files:** `$S changeset prepare <id> <project> --to ../sigma-pr/<project path in the repo>`. It applies the
    changeset to the Sigma files (only its changes), writes the code for tokens and icons (CSS directly; for
    other stacks it lists what to change: do it like in SKILL.md step 3), copies the changeset and its
-   pictures into the branch, and checks the result. Components and pages: see `design-to-code.md`.
+   pictures into the branch, and checks the result. For changed library components it writes the CSS and
+   code it can write exactly and lists the rest "For you": do that, then capture and compare, following
+   `design-to-code.md`, before committing.
 4. **Checks:** run the project's own checks in the worktree (tests, lint, type check, build: whatever CI runs;
    look at `.github/workflows/`, `package.json` scripts). Fix what fails. Never skip hooks or checks.
 5. **Commit and push:** one commit (or the team's convention, e.g. Conventional Commits:

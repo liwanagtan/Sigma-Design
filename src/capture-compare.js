@@ -89,6 +89,10 @@ export async function compareLibrary({ captures = '.sigma/captures', tolerance =
           report[key] = [{ layer: key, what: 'missing', code: 'captured', sigma: 'not in the library' }];
           continue;
         }
+        if (!(await exists(`${captures}/${cap.file}`))) {
+          report[key] = [{ layer: key, what: 'capture', code: 'not captured yet', sigma: cap.file }];
+          continue;
+        }
         report[key] = compareBoxes(relBoxes(node), (await get(`${captures}/${cap.file}`)).tree, { tolerance });
       }
     }

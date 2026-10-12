@@ -454,14 +454,39 @@ function changeLines(c, root) {
       : ch.kind === 'comment' ? `comment by ${ch.after?.author || ch.before?.author} on _${(ch.after || ch.before)?.layer || 'the page'}_${ch.after?.resolved && !ch.before?.resolved ? ' (resolved)' : ''}`
         : `${ch.kind} **${ch.name}**`;
     let detail = '';
+    let sub = [];
+    if (ch.kind === 'component' && ch.before && ch.after && root) {
+      // What a reviewer needs: the design diff in CSS terms (Phase 30).
+      const d = componentDiff(ch.before, ch.after, { entry: manifestEntry(root, ch.file, ch.name), codeOf: tokenCodeOf(root, ch.file) });
+      if (!d.diff.length) detail = 'moved on the canvas only';
+      sub = d.diff.map((l) => `  - ${l.replace(/^[^:]*?: /, (m) => (m.startsWith(`${ch.name}: `) ? '' : m))}`);
+    }
     if (ch.kind === 'token') {
       const modes = new Set([...Object.keys(ch.before?.valuesByMode || {}), ...Object.keys(ch.after?.valuesByMode || {})]);
       detail = [...modes].filter((m) => show2(ch.before?.valuesByMode?.[m]) !== show2(ch.after?.valuesByMode?.[m]))
         .map((m) => `${modeNames.get(m) || m}: ${show2(ch.before?.valuesByMode?.[m])} → ${show2(ch.after?.valuesByMode?.[m])}`).join(', ');
       if (ch.after?.codeSyntax?.web) detail = `\`${ch.after.codeSyntax.web}\` ${detail}`;
     }
-    return `- ${ch.change} ${what}${detail ? ` — ${detail}` : ''}`;
+    return [`- ${ch.change} ${what}${detail ? ` — ${detail}` : ''}`, ...sub].join('\n');
   });
+}
+
+// The captures' manifest entry for a component of a library in sigma.config.json (or {}).
+function manifestEntry(root, libPath, name) {
+  const { config } = readProject(root);
+  const e = (config?.components || []).find((x) => x.sigma === libPath);
+  const path = e?.manifest || MANIFEST;
+  if (!exists(root, path)) return { name };
+  return JSON.parse(readText(root, path)).components.find((c) => c.name === name) || { name };
+}
+// Token id → CSS variable name, for the tokens a design file uses.
+function tokenCodeOf(root, path) {
+  const codes = new Map();
+  const file = readSigma(root, path);
+  for (const p of file?.uses?.tokens || []) {
+    for (const c of readSigma(root, p)?.collections || []) for (const v of c.variables || []) codes.set(v.id, v.codeSyntax?.web?.startsWith('--') ? v.codeSyntax.web : defaultTokenCode(v.name));
+  }
+  return (id) => codes.get(id) || null;
 }
 
 function changesetPRBody(id, dir) {
@@ -538,11 +563,18 @@ function changesetPrepare(id, dir) {
     iconsWrite(to);
     code.push(e.sigma);
   });
+  // Components (Phase 30): exact CSS and code edits; what's left is listed for the agent.
+  config.components.forEach((e, i) => {
+    if (!touched.has(e.sigma) || !c.changes.some((ch) => ch.file === e.sigma && ch.kind === 'component')) return;
+    Object.assign(flags, { entry: String(i), json: false, 'dry-run': false, base: 'HEAD' });
+    componentsWrite(to);
+    code.push(e.sigma);
+  });
   for (const k of Object.keys(flags)) delete flags[k];
   Object.assign(flags, keep);
   out(`Branch files ready in ${to}. Run the project's own checks (tests, lint, build) there before committing.`);
   if (c.changes.some((ch) => ch.kind === 'component' || ch.kind === 'page')) {
-    out('Components and pages changed: their code isn’t written by this tool (see skills/sigma-sync/reference/design-to-code.md).');
+    out('Components: finish what’s listed “For you”, then capture and compare before committing (skills/sigma-sync/reference/design-to-code.md).');
   }
 }
 
@@ -779,7 +811,8 @@ function componentPlans(root, config) {
       if (JSON.stringify(x) === JSON.stringify(y)) continue;
       const entry = manifest.components.find((c) => c.name === (y || x).name) || { name: (y || x).name };
       const source = entry.source && exists(root, entry.source) ? readText(root, entry.source) : null;
-      plans.push(componentDiff(x, y, { entry, codeOf: (tid) => codes.get(tid) || null, source }));
+      const plan = componentDiff(x, y, { entry, codeOf: (tid) => codes.get(tid) || null, source });
+      if (plan.diff.length || plan.css.length || plan.code.length || plan.agent.length) plans.push(plan); // not just moved on the canvas
     }
     return { entry: e, base, manifestPath, manifest, plans };
   });

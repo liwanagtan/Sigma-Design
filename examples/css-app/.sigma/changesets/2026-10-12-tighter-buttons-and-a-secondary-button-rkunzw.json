@@ -1,0 +1,1310 @@
+{
+  "id": "2026-10-12-tighter-buttons-and-a-secondary-button-rkunzw",
+  "author": "",
+  "base": "HEAD",
+  "changes": [
+    {
+      "kind": "component",
+      "id": "button",
+      "name": "Button",
+      "after": {
+        "id": "button",
+        "type": "componentSet",
+        "name": "Button",
+        "description": "src/components/button.js: Button({ label, variant, icon, disabled }); styles in .button",
+        "clip": false,
+        "codeName": "Button",
+        "codeNames": { "State": "state", "Variant": "variant" },
+        "h": 180,
+        "props": {
+          "button-label": {
+            "type": "text",
+            "name": "Label",
+            "codeName": "label",
+            "default": "Continue"
+          },
+          "button-show-icon": {
+            "type": "boolean",
+            "name": "Show icon",
+            "codeName": "icon",
+            "default": true
+          },
+          "button-icon": {
+            "type": "icon",
+            "name": "Icon",
+            "codeName": "icon",
+            "default": "arrows-arrow-right"
+          }
+        },
+        "w": 587.28,
+        "x": 40,
+        "y": 40,
+        "children": [
+          {
+            "id": "button-variant-primary-state-default",
+            "type": "component",
+            "name": "Variant=Primary, State=Default",
+            "bindings": {
+              "fills.0.color": "accent",
+              "layout.gap": "space-2",
+              "layout.pb": "space-2",
+              "layout.pt": "space-2",
+              "radius": "radius-md"
+            },
+            "clip": false,
+            "fills": [{}],
+            "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
+            "sizingH": "hug",
+            "sizingV": "hug",
+            "x": 20,
+            "y": 20,
+            "children": [
+              {
+                "id": "button-variant-primary-state-default-icon-0",
+                "type": "icon",
+                "name": "Icon",
+                "bindings": { "fills.0.color": "color-gray-0" },
+                "fills": [{}],
+                "h": 16,
+                "iconId": "arrows-arrow-right",
+                "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                "w": 16
+              },
+              {
+                "id": "button-variant-primary-state-default-label-1",
+                "type": "text",
+                "name": "Label",
+                "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                "fills": [{}],
+                "fontFamily": "Arial",
+                "fontSize": 13.33,
+                "propRefs": { "text": "button-label" },
+                "text": "Continue",
+                "textAlign": "center"
+              }
+            ]
+          },
+          {
+            "id": "yuowhkiu",
+            "type": "component",
+            "name": "Variant=Secondary, State=Default",
+            "bindings": {
+              "fills.0.color": "surface-sunken",
+              "layout.gap": "space-2",
+              "layout.pb": "space-2",
+              "layout.pt": "space-2",
+              "radius": "radius-md"
+            },
+            "clip": false,
+            "fills": [{}],
+            "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
+            "sizingH": "hug",
+            "sizingV": "hug",
+            "x": 20,
+            "y": 128,
+            "children": [
+              {
+                "id": "elf8brxf",
+                "type": "icon",
+                "name": "Icon",
+                "bindings": { "fills.0.color": "accent" },
+                "fills": [{}],
+                "h": 16,
+                "iconId": "arrows-arrow-right",
+                "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                "w": 16
+              },
+              {
+                "id": "uhvn7ert",
+                "type": "text",
+                "name": "Label",
+                "bindings": { "fills.0.color": "accent", "fontWeight": "font-weight-bold" },
+                "fills": [{}],
+                "fontFamily": "Arial",
+                "fontSize": 13.33,
+                "propRefs": { "text": "button-label" },
+                "text": "Continue",
+                "textAlign": "center"
+              }
+            ]
+          },
+          {
+            "id": "button-variant-primary-state-hover",
+            "type": "component",
+            "name": "Variant=Primary, State=Hover",
+            "bindings": {
+              "fills.0.color": "accent-hover",
+              "layout.gap": "space-2",
+              "layout.pb": "space-2",
+              "layout.pt": "space-2",
+              "radius": "radius-md"
+            },
+            "clip": false,
+            "fills": [{}],
+            "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
+            "sizingH": "hug",
+            "sizingV": "hug",
+            "x": 165.76,
+            "y": 20,
+            "children": [
+              {
+                "id": "button-variant-primary-state-hover-icon-0",
+                "type": "icon",
+                "name": "Icon",
+                "bindings": { "fills.0.color": "color-gray-0" },
+                "fills": [{}],
+                "h": 16,
+                "iconId": "arrows-arrow-right",
+                "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                "w": 16
+              },
+              {
+                "id": "button-variant-primary-state-hover-label-1",
+                "type": "text",
+                "name": "Label",
+                "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                "fills": [{}],
+                "fontFamily": "Arial",
+                "fontSize": 13.33,
+                "propRefs": { "text": "button-label" },
+                "text": "Continue",
+                "textAlign": "center"
+              }
+            ]
+          },
+          {
+            "id": "zyie06i8",
+            "type": "component",
+            "name": "Variant=Secondary, State=Hover",
+            "bindings": {
+              "fills.0.color": "surface",
+              "layout.gap": "space-2",
+              "layout.pb": "space-2",
+              "layout.pt": "space-2",
+              "radius": "radius-md"
+            },
+            "clip": false,
+            "fills": [{}],
+            "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
+            "sizingH": "hug",
+            "sizingV": "hug",
+            "x": 165.76,
+            "y": 128,
+            "children": [
+              {
+                "id": "4np35mri",
+                "type": "icon",
+                "name": "Icon",
+                "bindings": { "fills.0.color": "accent" },
+                "fills": [{}],
+                "h": 16,
+                "iconId": "arrows-arrow-right",
+                "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                "w": 16
+              },
+              {
+                "id": "yxr8n0ie",
+                "type": "text",
+                "name": "Label",
+                "bindings": { "fills.0.color": "accent", "fontWeight": "font-weight-bold" },
+                "fills": [{}],
+                "fontFamily": "Arial",
+                "fontSize": 13.33,
+                "propRefs": { "text": "button-label" },
+                "text": "Continue",
+                "textAlign": "center"
+              }
+            ]
+          },
+          {
+            "id": "button-variant-primary-state-focus",
+            "type": "component",
+            "name": "Variant=Primary, State=Focus",
+            "bindings": {
+              "fills.0.color": "accent",
+              "layout.gap": "space-2",
+              "layout.pb": "space-2",
+              "layout.pt": "space-2",
+              "radius": "radius-md",
+              "strokes.0.color": "accent"
+            },
+            "clip": false,
+            "fills": [{}],
+            "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
+            "sizingH": "hug",
+            "sizingV": "hug",
+            "strokeAlign": "outside",
+            "strokeWidth": 2,
+            "strokes": [{}],
+            "x": 311.52,
+            "y": 20,
+            "children": [
+              {
+                "id": "button-variant-primary-state-focus-icon-0",
+                "type": "icon",
+                "name": "Icon",
+                "bindings": { "fills.0.color": "color-gray-0" },
+                "fills": [{}],
+                "h": 16,
+                "iconId": "arrows-arrow-right",
+                "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                "w": 16
+              },
+              {
+                "id": "button-variant-primary-state-focus-label-1",
+                "type": "text",
+                "name": "Label",
+                "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                "fills": [{}],
+                "fontFamily": "Arial",
+                "fontSize": 13.33,
+                "propRefs": { "text": "button-label" },
+                "text": "Continue",
+                "textAlign": "center"
+              }
+            ]
+          },
+          {
+            "id": "button-variant-primary-state-disabled",
+            "type": "component",
+            "name": "Variant=Primary, State=Disabled",
+            "bindings": {
+              "fills.0.color": "accent",
+              "layout.gap": "space-2",
+              "layout.pb": "space-2",
+              "layout.pt": "space-2",
+              "radius": "radius-md"
+            },
+            "clip": false,
+            "fills": [{}],
+            "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
+            "opacity": 0.5,
+            "sizingH": "hug",
+            "sizingV": "hug",
+            "x": 457.28,
+            "y": 20,
+            "children": [
+              {
+                "id": "button-variant-primary-state-disabled-icon-0",
+                "type": "icon",
+                "name": "Icon",
+                "bindings": { "fills.0.color": "color-gray-0" },
+                "fills": [{}],
+                "h": 16,
+                "iconId": "arrows-arrow-right",
+                "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                "w": 16
+              },
+              {
+                "id": "button-variant-primary-state-disabled-label-1",
+                "type": "text",
+                "name": "Label",
+                "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                "fills": [{}],
+                "fontFamily": "Arial",
+                "fontSize": 13.33,
+                "propRefs": { "text": "button-label" },
+                "text": "Continue",
+                "textAlign": "center"
+              }
+            ]
+          },
+          {
+            "id": "button-variant-danger-state-default",
+            "type": "component",
+            "name": "Variant=Danger, State=Default",
+            "bindings": {
+              "fills.0.color": "danger",
+              "layout.gap": "space-2",
+              "layout.pb": "space-2",
+              "layout.pt": "space-2",
+              "radius": "radius-md"
+            },
+            "clip": false,
+            "fills": [{}],
+            "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
+            "sizingH": "hug",
+            "sizingV": "hug",
+            "x": 20,
+            "y": 76,
+            "children": [
+              {
+                "id": "button-variant-danger-state-default-icon-0",
+                "type": "icon",
+                "name": "Icon",
+                "bindings": { "fills.0.color": "color-gray-0" },
+                "fills": [{}],
+                "h": 16,
+                "iconId": "actions-trash",
+                "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                "w": 16
+              },
+              {
+                "id": "button-variant-danger-state-default-label-1",
+                "type": "text",
+                "name": "Label",
+                "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                "fills": [{}],
+                "fontFamily": "Arial",
+                "fontSize": 13.33,
+                "propRefs": { "text": "button-label" },
+                "text": "Delete",
+                "textAlign": "center"
+              }
+            ]
+          },
+          {
+            "id": "button-variant-danger-state-hover",
+            "type": "component",
+            "name": "Variant=Danger, State=Hover",
+            "bindings": {
+              "fills.0.color": "accent-hover",
+              "layout.gap": "space-2",
+              "layout.pb": "space-2",
+              "layout.pt": "space-2",
+              "radius": "radius-md"
+            },
+            "clip": false,
+            "fills": [{}],
+            "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
+            "sizingH": "hug",
+            "sizingV": "hug",
+            "x": 165.76,
+            "y": 76,
+            "children": [
+              {
+                "id": "button-variant-danger-state-hover-icon-0",
+                "type": "icon",
+                "name": "Icon",
+                "bindings": { "fills.0.color": "color-gray-0" },
+                "fills": [{}],
+                "h": 16,
+                "iconId": "actions-trash",
+                "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                "w": 16
+              },
+              {
+                "id": "button-variant-danger-state-hover-label-1",
+                "type": "text",
+                "name": "Label",
+                "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                "fills": [{}],
+                "fontFamily": "Arial",
+                "fontSize": 13.33,
+                "propRefs": { "text": "button-label" },
+                "text": "Delete",
+                "textAlign": "center"
+              }
+            ]
+          },
+          {
+            "id": "button-variant-danger-state-focus",
+            "type": "component",
+            "name": "Variant=Danger, State=Focus",
+            "bindings": {
+              "fills.0.color": "danger",
+              "layout.gap": "space-2",
+              "layout.pb": "space-2",
+              "layout.pt": "space-2",
+              "radius": "radius-md",
+              "strokes.0.color": "accent"
+            },
+            "clip": false,
+            "fills": [{}],
+            "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
+            "sizingH": "hug",
+            "sizingV": "hug",
+            "strokeAlign": "outside",
+            "strokeWidth": 2,
+            "strokes": [{}],
+            "x": 311.52,
+            "y": 76,
+            "children": [
+              {
+                "id": "button-variant-danger-state-focus-icon-0",
+                "type": "icon",
+                "name": "Icon",
+                "bindings": { "fills.0.color": "color-gray-0" },
+                "fills": [{}],
+                "h": 16,
+                "iconId": "actions-trash",
+                "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                "w": 16
+              },
+              {
+                "id": "button-variant-danger-state-focus-label-1",
+                "type": "text",
+                "name": "Label",
+                "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                "fills": [{}],
+                "fontFamily": "Arial",
+                "fontSize": 13.33,
+                "propRefs": { "text": "button-label" },
+                "text": "Delete",
+                "textAlign": "center"
+              }
+            ]
+          },
+          {
+            "id": "button-variant-danger-state-disabled",
+            "type": "component",
+            "name": "Variant=Danger, State=Disabled",
+            "bindings": {
+              "fills.0.color": "danger",
+              "layout.gap": "space-2",
+              "layout.pb": "space-2",
+              "layout.pt": "space-2",
+              "radius": "radius-md"
+            },
+            "clip": false,
+            "fills": [{}],
+            "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
+            "opacity": 0.5,
+            "sizingH": "hug",
+            "sizingV": "hug",
+            "x": 457.28,
+            "y": 76,
+            "children": [
+              {
+                "id": "button-variant-danger-state-disabled-icon-0",
+                "type": "icon",
+                "name": "Icon",
+                "bindings": { "fills.0.color": "color-gray-0" },
+                "fills": [{}],
+                "h": 16,
+                "iconId": "actions-trash",
+                "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                "w": 16
+              },
+              {
+                "id": "button-variant-danger-state-disabled-label-1",
+                "type": "text",
+                "name": "Label",
+                "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                "fills": [{}],
+                "fontFamily": "Arial",
+                "fontSize": 13.33,
+                "propRefs": { "text": "button-label" },
+                "text": "Delete",
+                "textAlign": "center"
+              }
+            ]
+          }
+        ]
+      },
+      "before": {
+        "id": "button",
+        "type": "componentSet",
+        "name": "Button",
+        "description": "src/components/button.js: Button({ label, variant, icon, disabled }); styles in .button",
+        "clip": false,
+        "codeName": "Button",
+        "codeNames": { "State": "state", "Variant": "variant" },
+        "h": 128,
+        "props": {
+          "button-label": {
+            "type": "text",
+            "name": "Label",
+            "codeName": "label",
+            "default": "Continue"
+          },
+          "button-show-icon": {
+            "type": "boolean",
+            "name": "Show icon",
+            "codeName": "icon",
+            "default": true
+          },
+          "button-icon": {
+            "type": "icon",
+            "name": "Icon",
+            "codeName": "icon",
+            "default": "arrows-arrow-right"
+          }
+        },
+        "w": 599.04,
+        "x": 40,
+        "y": 40,
+        "children": [
+          {
+            "id": "button-variant-primary-state-default",
+            "type": "component",
+            "name": "Variant=Primary, State=Default",
+            "bindings": {
+              "fills.0.color": "accent",
+              "layout.gap": "space-2",
+              "layout.pb": "space-2",
+              "layout.pl": "space-4",
+              "layout.pr": "space-4",
+              "layout.pt": "space-2",
+              "radius": "radius-md"
+            },
+            "clip": false,
+            "fills": [{}],
+            "layout": { "alignC": "center", "mode": "horizontal" },
+            "sizingH": "hug",
+            "sizingV": "hug",
+            "x": 20,
+            "y": 20,
+            "children": [
+              {
+                "id": "button-variant-primary-state-default-icon-0",
+                "type": "icon",
+                "name": "Icon",
+                "bindings": { "fills.0.color": "color-gray-0" },
+                "fills": [{}],
+                "h": 16,
+                "iconId": "arrows-arrow-right",
+                "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                "w": 16
+              },
+              {
+                "id": "button-variant-primary-state-default-label-1",
+                "type": "text",
+                "name": "Label",
+                "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                "fills": [{}],
+                "fontFamily": "Arial",
+                "fontSize": 13.33,
+                "propRefs": { "text": "button-label" },
+                "text": "Continue",
+                "textAlign": "center"
+              }
+            ]
+          },
+          {
+            "id": "button-variant-primary-state-hover",
+            "type": "component",
+            "name": "Variant=Primary, State=Hover",
+            "bindings": {
+              "fills.0.color": "accent-hover",
+              "layout.gap": "space-2",
+              "layout.pb": "space-2",
+              "layout.pl": "space-4",
+              "layout.pr": "space-4",
+              "layout.pt": "space-2",
+              "radius": "radius-md"
+            },
+            "clip": false,
+            "fills": [{}],
+            "layout": { "alignC": "center", "mode": "horizontal" },
+            "sizingH": "hug",
+            "sizingV": "hug",
+            "x": 165.76,
+            "y": 20,
+            "children": [
+              {
+                "id": "button-variant-primary-state-hover-icon-0",
+                "type": "icon",
+                "name": "Icon",
+                "bindings": { "fills.0.color": "color-gray-0" },
+                "fills": [{}],
+                "h": 16,
+                "iconId": "arrows-arrow-right",
+                "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                "w": 16
+              },
+              {
+                "id": "button-variant-primary-state-hover-label-1",
+                "type": "text",
+                "name": "Label",
+                "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                "fills": [{}],
+                "fontFamily": "Arial",
+                "fontSize": 13.33,
+                "propRefs": { "text": "button-label" },
+                "text": "Continue",
+                "textAlign": "center"
+              }
+            ]
+          },
+          {
+            "id": "button-variant-primary-state-focus",
+            "type": "component",
+            "name": "Variant=Primary, State=Focus",
+            "bindings": {
+              "fills.0.color": "accent",
+              "layout.gap": "space-2",
+              "layout.pb": "space-2",
+              "layout.pl": "space-4",
+              "layout.pr": "space-4",
+              "layout.pt": "space-2",
+              "radius": "radius-md",
+              "strokes.0.color": "accent"
+            },
+            "clip": false,
+            "fills": [{}],
+            "layout": { "alignC": "center", "mode": "horizontal" },
+            "sizingH": "hug",
+            "sizingV": "hug",
+            "strokeAlign": "outside",
+            "strokeWidth": 2,
+            "strokes": [{}],
+            "x": 311.52,
+            "y": 20,
+            "children": [
+              {
+                "id": "button-variant-primary-state-focus-icon-0",
+                "type": "icon",
+                "name": "Icon",
+                "bindings": { "fills.0.color": "color-gray-0" },
+                "fills": [{}],
+                "h": 16,
+                "iconId": "arrows-arrow-right",
+                "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                "w": 16
+              },
+              {
+                "id": "button-variant-primary-state-focus-label-1",
+                "type": "text",
+                "name": "Label",
+                "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                "fills": [{}],
+                "fontFamily": "Arial",
+                "fontSize": 13.33,
+                "propRefs": { "text": "button-label" },
+                "text": "Continue",
+                "textAlign": "center"
+              }
+            ]
+          },
+          {
+            "id": "button-variant-primary-state-disabled",
+            "type": "component",
+            "name": "Variant=Primary, State=Disabled",
+            "bindings": {
+              "fills.0.color": "accent",
+              "layout.gap": "space-2",
+              "layout.pb": "space-2",
+              "layout.pl": "space-4",
+              "layout.pr": "space-4",
+              "layout.pt": "space-2",
+              "radius": "radius-md"
+            },
+            "clip": false,
+            "fills": [{}],
+            "layout": { "alignC": "center", "mode": "horizontal" },
+            "opacity": 0.5,
+            "sizingH": "hug",
+            "sizingV": "hug",
+            "x": 457.28,
+            "y": 20,
+            "children": [
+              {
+                "id": "button-variant-primary-state-disabled-icon-0",
+                "type": "icon",
+                "name": "Icon",
+                "bindings": { "fills.0.color": "color-gray-0" },
+                "fills": [{}],
+                "h": 16,
+                "iconId": "arrows-arrow-right",
+                "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                "w": 16
+              },
+              {
+                "id": "button-variant-primary-state-disabled-label-1",
+                "type": "text",
+                "name": "Label",
+                "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                "fills": [{}],
+                "fontFamily": "Arial",
+                "fontSize": 13.33,
+                "propRefs": { "text": "button-label" },
+                "text": "Continue",
+                "textAlign": "center"
+              }
+            ]
+          },
+          {
+            "id": "button-variant-danger-state-default",
+            "type": "component",
+            "name": "Variant=Danger, State=Default",
+            "bindings": {
+              "fills.0.color": "danger",
+              "layout.gap": "space-2",
+              "layout.pb": "space-2",
+              "layout.pl": "space-4",
+              "layout.pr": "space-4",
+              "layout.pt": "space-2",
+              "radius": "radius-md"
+            },
+            "clip": false,
+            "fills": [{}],
+            "layout": { "alignC": "center", "mode": "horizontal" },
+            "sizingH": "hug",
+            "sizingV": "hug",
+            "x": 20,
+            "y": 76,
+            "children": [
+              {
+                "id": "button-variant-danger-state-default-icon-0",
+                "type": "icon",
+                "name": "Icon",
+                "bindings": { "fills.0.color": "color-gray-0" },
+                "fills": [{}],
+                "h": 16,
+                "iconId": "actions-trash",
+                "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                "w": 16
+              },
+              {
+                "id": "button-variant-danger-state-default-label-1",
+                "type": "text",
+                "name": "Label",
+                "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                "fills": [{}],
+                "fontFamily": "Arial",
+                "fontSize": 13.33,
+                "propRefs": { "text": "button-label" },
+                "text": "Delete",
+                "textAlign": "center"
+              }
+            ]
+          },
+          {
+            "id": "button-variant-danger-state-hover",
+            "type": "component",
+            "name": "Variant=Danger, State=Hover",
+            "bindings": {
+              "fills.0.color": "accent-hover",
+              "layout.gap": "space-2",
+              "layout.pb": "space-2",
+              "layout.pl": "space-4",
+              "layout.pr": "space-4",
+              "layout.pt": "space-2",
+              "radius": "radius-md"
+            },
+            "clip": false,
+            "fills": [{}],
+            "layout": { "alignC": "center", "mode": "horizontal" },
+            "sizingH": "hug",
+            "sizingV": "hug",
+            "x": 165.76,
+            "y": 76,
+            "children": [
+              {
+                "id": "button-variant-danger-state-hover-icon-0",
+                "type": "icon",
+                "name": "Icon",
+                "bindings": { "fills.0.color": "color-gray-0" },
+                "fills": [{}],
+                "h": 16,
+                "iconId": "actions-trash",
+                "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                "w": 16
+              },
+              {
+                "id": "button-variant-danger-state-hover-label-1",
+                "type": "text",
+                "name": "Label",
+                "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                "fills": [{}],
+                "fontFamily": "Arial",
+                "fontSize": 13.33,
+                "propRefs": { "text": "button-label" },
+                "text": "Delete",
+                "textAlign": "center"
+              }
+            ]
+          },
+          {
+            "id": "button-variant-danger-state-focus",
+            "type": "component",
+            "name": "Variant=Danger, State=Focus",
+            "bindings": {
+              "fills.0.color": "danger",
+              "layout.gap": "space-2",
+              "layout.pb": "space-2",
+              "layout.pl": "space-4",
+              "layout.pr": "space-4",
+              "layout.pt": "space-2",
+              "radius": "radius-md",
+              "strokes.0.color": "accent"
+            },
+            "clip": false,
+            "fills": [{}],
+            "layout": { "alignC": "center", "mode": "horizontal" },
+            "sizingH": "hug",
+            "sizingV": "hug",
+            "strokeAlign": "outside",
+            "strokeWidth": 2,
+            "strokes": [{}],
+            "x": 311.52,
+            "y": 76,
+            "children": [
+              {
+                "id": "button-variant-danger-state-focus-icon-0",
+                "type": "icon",
+                "name": "Icon",
+                "bindings": { "fills.0.color": "color-gray-0" },
+                "fills": [{}],
+                "h": 16,
+                "iconId": "actions-trash",
+                "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                "w": 16
+              },
+              {
+                "id": "button-variant-danger-state-focus-label-1",
+                "type": "text",
+                "name": "Label",
+                "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                "fills": [{}],
+                "fontFamily": "Arial",
+                "fontSize": 13.33,
+                "propRefs": { "text": "button-label" },
+                "text": "Delete",
+                "textAlign": "center"
+              }
+            ]
+          },
+          {
+            "id": "button-variant-danger-state-disabled",
+            "type": "component",
+            "name": "Variant=Danger, State=Disabled",
+            "bindings": {
+              "fills.0.color": "danger",
+              "layout.gap": "space-2",
+              "layout.pb": "space-2",
+              "layout.pl": "space-4",
+              "layout.pr": "space-4",
+              "layout.pt": "space-2",
+              "radius": "radius-md"
+            },
+            "clip": false,
+            "fills": [{}],
+            "layout": { "alignC": "center", "mode": "horizontal" },
+            "opacity": 0.5,
+            "sizingH": "hug",
+            "sizingV": "hug",
+            "x": 457.28,
+            "y": 76,
+            "children": [
+              {
+                "id": "button-variant-danger-state-disabled-icon-0",
+                "type": "icon",
+                "name": "Icon",
+                "bindings": { "fills.0.color": "color-gray-0" },
+                "fills": [{}],
+                "h": 16,
+                "iconId": "actions-trash",
+                "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                "w": 16
+              },
+              {
+                "id": "button-variant-danger-state-disabled-label-1",
+                "type": "text",
+                "name": "Label",
+                "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                "fills": [{}],
+                "fontFamily": "Arial",
+                "fontSize": 13.33,
+                "propRefs": { "text": "button-label" },
+                "text": "Delete",
+                "textAlign": "center"
+              }
+            ]
+          }
+        ]
+      },
+      "change": "changed",
+      "file": ".sigma/design/acme-library.sigma.json",
+      "key": ".sigma/design/acme-library.sigma.json#component:button",
+      "where": { "index": 0, "page": "components", "parent": null }
+    },
+    {
+      "kind": "component",
+      "id": "card",
+      "name": "Card",
+      "after": {
+        "id": "card",
+        "type": "component",
+        "name": "Card",
+        "description": "src/components/card.js: Card({ title, body, action })",
+        "bindings": {
+          "effects.0": "shadow-raised",
+          "fills.0.color": "surface",
+          "layout.pb": "space-4",
+          "layout.pl": "space-4",
+          "layout.pr": "space-4",
+          "layout.pt": "space-4",
+          "radius": "radius-md"
+        },
+        "clip": false,
+        "codeName": "Card",
+        "effects": [{ "type": "drop-shadow" }],
+        "fills": [{}],
+        "layout": { "gap": 20, "mode": "vertical" },
+        "props": {
+          "card-title": { "type": "text", "name": "Title", "codeName": "title", "default": "Acme" },
+          "card-body": {
+            "type": "text",
+            "name": "Body",
+            "codeName": "body",
+            "default": "A small app whose design tokens live in src/styles/tokens.css."
+          }
+        },
+        "sizingH": "fixed",
+        "sizingV": "hug",
+        "w": 360,
+        "x": 40,
+        "y": 280,
+        "children": [
+          {
+            "id": "card-root-title-body",
+            "type": "frame",
+            "name": "Title + Body",
+            "clip": false,
+            "layout": { "gap": 8, "mode": "vertical" },
+            "sizingH": "fill",
+            "sizingV": "hug",
+            "children": [
+              {
+                "id": "card-title-0",
+                "type": "text",
+                "name": "Title",
+                "autoResize": "height",
+                "fills": [{ "color": "#1E1E1E" }],
+                "fontSize": 20,
+                "fontWeight": 700,
+                "lineHeight": 150,
+                "propRefs": { "text": "card-title" },
+                "sizingH": "fill",
+                "text": "Acme"
+              },
+              {
+                "id": "card-body-1",
+                "type": "text",
+                "name": "Body",
+                "autoResize": "height",
+                "bindings": { "fills.0.color": "text-secondary" },
+                "fills": [{}],
+                "lineHeight": 150,
+                "propRefs": { "text": "card-body" },
+                "sizingH": "fill",
+                "text": "A small app whose design tokens live in src/styles/tokens.css."
+              }
+            ]
+          },
+          {
+            "id": "card-button-2",
+            "type": "instance",
+            "componentId": "button-variant-primary-state-default",
+            "propValues": { "button-show-icon": false }
+          }
+        ]
+      },
+      "before": {
+        "id": "card",
+        "type": "component",
+        "name": "Card",
+        "description": "src/components/card.js: Card({ title, body, action })",
+        "bindings": {
+          "effects.0": "shadow-raised",
+          "fills.0.color": "surface",
+          "layout.pb": "space-4",
+          "layout.pl": "space-4",
+          "layout.pr": "space-4",
+          "layout.pt": "space-4",
+          "radius": "radius-md"
+        },
+        "clip": false,
+        "codeName": "Card",
+        "effects": [{ "type": "drop-shadow" }],
+        "fills": [{}],
+        "layout": { "gap": 20, "mode": "vertical" },
+        "props": {
+          "card-title": { "type": "text", "name": "Title", "codeName": "title", "default": "Acme" },
+          "card-body": {
+            "type": "text",
+            "name": "Body",
+            "codeName": "body",
+            "default": "A small app whose design tokens live in src/styles/tokens.css."
+          }
+        },
+        "sizingH": "fixed",
+        "sizingV": "hug",
+        "w": 360,
+        "x": 40,
+        "y": 268,
+        "children": [
+          {
+            "id": "card-root-title-body",
+            "type": "frame",
+            "name": "Title + Body",
+            "clip": false,
+            "layout": { "gap": 8, "mode": "vertical" },
+            "sizingH": "fill",
+            "sizingV": "hug",
+            "children": [
+              {
+                "id": "card-title-0",
+                "type": "text",
+                "name": "Title",
+                "autoResize": "height",
+                "fills": [{ "color": "#1E1E1E" }],
+                "fontSize": 20,
+                "fontWeight": 700,
+                "lineHeight": 150,
+                "propRefs": { "text": "card-title" },
+                "sizingH": "fill",
+                "text": "Acme"
+              },
+              {
+                "id": "card-body-1",
+                "type": "text",
+                "name": "Body",
+                "autoResize": "height",
+                "bindings": { "fills.0.color": "text-secondary" },
+                "fills": [{}],
+                "lineHeight": 150,
+                "propRefs": { "text": "card-body" },
+                "sizingH": "fill",
+                "text": "A small app whose design tokens live in src/styles/tokens.css."
+              }
+            ]
+          },
+          {
+            "id": "card-button-2",
+            "type": "instance",
+            "componentId": "button-variant-primary-state-default",
+            "propValues": { "button-show-icon": false }
+          }
+        ]
+      },
+      "change": "changed",
+      "file": ".sigma/design/acme-library.sigma.json",
+      "key": ".sigma/design/acme-library.sigma.json#component:card",
+      "where": { "index": 1, "page": "components", "parent": null }
+    },
+    {
+      "kind": "component",
+      "id": "input",
+      "name": "Input",
+      "after": {
+        "id": "input",
+        "type": "componentSet",
+        "name": "Input",
+        "description": "<input class=\"input\">",
+        "clip": false,
+        "codeName": "Input",
+        "h": 148,
+        "props": {
+          "input-placeholder": {
+            "type": "text",
+            "name": "Placeholder",
+            "codeName": "placeholder",
+            "default": "Search projects"
+          }
+        },
+        "w": 298,
+        "x": 40,
+        "y": 518,
+        "children": [
+          {
+            "id": "input-state-default",
+            "type": "component",
+            "name": "State=Default",
+            "bindings": {
+              "fills.0.color": "surface",
+              "layout.gap": "space-2",
+              "radius": "radius-md",
+              "strokes.0.color": "color-gray-600"
+            },
+            "clip": false,
+            "fills": [{}],
+            "h": 42,
+            "layout": {
+              "alignC": "center",
+              "mode": "horizontal",
+              "pb": 9,
+              "pl": 9,
+              "pr": 9,
+              "pt": 9
+            },
+            "sizingH": "fixed",
+            "sizingV": "fixed",
+            "strokes": [{}],
+            "w": 258,
+            "x": 20,
+            "y": 20,
+            "children": [
+              {
+                "id": "input-state-default-placeholder-0",
+                "type": "text",
+                "name": "Placeholder",
+                "bindings": { "fontFamily": "font-family-base", "fontSize": "font-size-body" },
+                "fills": [{ "color": "#757575" }],
+                "lineHeight": 150,
+                "propRefs": { "text": "input-placeholder" },
+                "text": "Search projects"
+              }
+            ]
+          },
+          {
+            "id": "input-state-hover",
+            "type": "component",
+            "name": "State=Hover",
+            "bindings": {
+              "fills.0.color": "surface",
+              "layout.gap": "space-2",
+              "radius": "radius-md",
+              "strokes.0.color": "text-primary"
+            },
+            "clip": false,
+            "fills": [{}],
+            "h": 42,
+            "layout": {
+              "alignC": "center",
+              "mode": "horizontal",
+              "pb": 9,
+              "pl": 9,
+              "pr": 9,
+              "pt": 9
+            },
+            "sizingH": "fixed",
+            "sizingV": "fixed",
+            "strokes": [{}],
+            "w": 258,
+            "x": 20,
+            "y": 86,
+            "children": [
+              {
+                "id": "input-state-hover-placeholder-0",
+                "type": "text",
+                "name": "Placeholder",
+                "bindings": { "fontFamily": "font-family-base", "fontSize": "font-size-body" },
+                "fills": [{ "color": "#757575" }],
+                "lineHeight": 150,
+                "propRefs": { "text": "input-placeholder" },
+                "text": "Search projects"
+              }
+            ]
+          }
+        ]
+      },
+      "before": {
+        "id": "input",
+        "type": "componentSet",
+        "name": "Input",
+        "description": "<input class=\"input\">",
+        "clip": false,
+        "codeName": "Input",
+        "h": 148,
+        "props": {
+          "input-placeholder": {
+            "type": "text",
+            "name": "Placeholder",
+            "codeName": "placeholder",
+            "default": "Search projects"
+          }
+        },
+        "w": 298,
+        "x": 40,
+        "y": 507.5,
+        "children": [
+          {
+            "id": "input-state-default",
+            "type": "component",
+            "name": "State=Default",
+            "bindings": {
+              "fills.0.color": "surface",
+              "layout.gap": "space-2",
+              "radius": "radius-md",
+              "strokes.0.color": "color-gray-600"
+            },
+            "clip": false,
+            "fills": [{}],
+            "h": 42,
+            "layout": {
+              "alignC": "center",
+              "mode": "horizontal",
+              "pb": 9,
+              "pl": 9,
+              "pr": 9,
+              "pt": 9
+            },
+            "sizingH": "fixed",
+            "sizingV": "fixed",
+            "strokes": [{}],
+            "w": 258,
+            "x": 20,
+            "y": 20,
+            "children": [
+              {
+                "id": "input-state-default-placeholder-0",
+                "type": "text",
+                "name": "Placeholder",
+                "bindings": { "fontFamily": "font-family-base", "fontSize": "font-size-body" },
+                "fills": [{ "color": "#757575" }],
+                "lineHeight": 150,
+                "propRefs": { "text": "input-placeholder" },
+                "text": "Search projects"
+              }
+            ]
+          },
+          {
+            "id": "input-state-hover",
+            "type": "component",
+            "name": "State=Hover",
+            "bindings": {
+              "fills.0.color": "surface",
+              "layout.gap": "space-2",
+              "radius": "radius-md",
+              "strokes.0.color": "text-primary"
+            },
+            "clip": false,
+            "fills": [{}],
+            "h": 42,
+            "layout": {
+              "alignC": "center",
+              "mode": "horizontal",
+              "pb": 9,
+              "pl": 9,
+              "pr": 9,
+              "pt": 9
+            },
+            "sizingH": "fixed",
+            "sizingV": "fixed",
+            "strokes": [{}],
+            "w": 258,
+            "x": 20,
+            "y": 86,
+            "children": [
+              {
+                "id": "input-state-hover-placeholder-0",
+                "type": "text",
+                "name": "Placeholder",
+                "bindings": { "fontFamily": "font-family-base", "fontSize": "font-size-body" },
+                "fills": [{ "color": "#757575" }],
+                "lineHeight": 150,
+                "propRefs": { "text": "input-placeholder" },
+                "text": "Search projects"
+              }
+            ]
+          }
+        ]
+      },
+      "change": "changed",
+      "file": ".sigma/design/acme-library.sigma.json",
+      "key": ".sigma/design/acme-library.sigma.json#component:input",
+      "where": { "index": 2, "page": "components", "parent": null }
+    }
+  ],
+  "createdAt": "2026-10-12T22:47:30.492Z",
+  "note": "Buttons get 16px side padding (was --space-4). New Secondary variant for less important actions: a light background with an accent label. Card and Input only moved on the canvas.",
+  "renders": {
+    ".sigma/design/acme-library.sigma.json#component:button": {
+      "after": ".sigma/changesets/2026-10-12-tighter-buttons-and-a-secondary-button-rkunzw/1-component-after.svg",
+      "before": ".sigma/changesets/2026-10-12-tighter-buttons-and-a-secondary-button-rkunzw/1-component-before.svg"
+    },
+    ".sigma/design/acme-library.sigma.json#component:card": {
+      "after": ".sigma/changesets/2026-10-12-tighter-buttons-and-a-secondary-button-rkunzw/2-component-after.svg",
+      "before": ".sigma/changesets/2026-10-12-tighter-buttons-and-a-secondary-button-rkunzw/2-component-before.svg"
+    },
+    ".sigma/design/acme-library.sigma.json#component:input": {
+      "after": ".sigma/changesets/2026-10-12-tighter-buttons-and-a-secondary-button-rkunzw/3-component-after.svg",
+      "before": ".sigma/changesets/2026-10-12-tighter-buttons-and-a-secondary-button-rkunzw/3-component-before.svg"
+    }
+  },
+  "status": "proposed",
+  "title": "Tighter buttons and a Secondary button"
+}

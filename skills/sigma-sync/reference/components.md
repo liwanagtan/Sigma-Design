@@ -26,7 +26,8 @@ each variant and state:
 sigmaCapture(element, { state: 'default', name: 'Button' })   // 'hover' | 'focus' | 'pressed' | 'disabled'
 ```
 
-Save each result as JSON in `.sigma/captures/` (`button-primary-hover.json`). States are applied by the
+Or, once the manifest names each capture's `element` (step 3), all of them at once:
+`sigmaCaptureAll(manifest)` returns `{ file: capture }`. Save each result as JSON in `.sigma/captures/` (`button-primary-hover.json`). States are applied by the
 capture itself (`:hover`, `:focus-visible`, `:active` rules, or `disabled`), with transitions turned off,
 so you don't need to hover anything. Capture variants the code can render (props like `variant="danger"`)
 by rendering them; capture states with `state`.
@@ -44,7 +45,7 @@ commit it, and the next run follows it:
   "library": ".sigma/design/acme-library.sigma.json",
   "components": [
     {
-      "name": "Button", "codeName": "Button",
+      "name": "Button", "codeName": "Button", "source": "src/components/button.js",
       "description": "src/components/button.js: Button({ label, variant, icon })",
       "props": [
         { "name": "Label", "type": "text", "codeName": "label", "layer": "Label" },
@@ -53,8 +54,8 @@ commit it, and the next run follows it:
       ],
       "variantCodeNames": { "Variant": "variant", "State": "state" },
       "captures": [
-        { "variant": { "Variant": "Primary", "State": "Default" }, "file": "button-primary-default.json" },
-        { "variant": { "Variant": "Primary", "State": "Hover" }, "file": "button-primary-hover.json" }
+        { "variant": { "Variant": "Primary", "State": "Default" }, "file": "button-primary-default.json", "element": "#button-primary" },
+        { "variant": { "Variant": "Primary", "State": "Hover" }, "file": "button-primary-hover.json", "element": "#button-primary" }
       ]
     },
     {
@@ -74,6 +75,8 @@ commit it, and the next run follows it:
 - **Nested components** (`instances`): a layer that is another component in the code becomes an instance of
   it. List components before the ones that use them. `props` sets the instance's property values (by name).
 - One capture with no `variant` makes a plain component.
+- `source` is the file that defines the component, and each capture's `element` the selector of what to
+  capture on the components page: design-to-code changes use both.
 - **`match`** (for pages): how to recognize the component in any page. See `reference/pages.md`.
 
 ## 4. Build

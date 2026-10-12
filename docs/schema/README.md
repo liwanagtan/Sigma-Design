@@ -326,7 +326,9 @@ What the sync skill decided about the project, so later runs follow it (people c
                "sources": [{ "path": "src/styles/tokens.css", "format": "css-variables" }],
                "naming": "kebab", "modes": { "Light": ":root", "Dark": "[data-theme=\"dark\"]" } }],
   "icons": [{ "sigma": ".sigma/icons/app.sigma.json", "source": "src/assets/icons", "output": "svg" }],
-  "components": [{ "sigma": ".sigma/design/library.sigma.json", "source": "src/components" }],
+  "components": [{ "sigma": ".sigma/design/library.sigma.json", "source": "src/components",
+                  "manifest": ".sigma/captures/manifest.json", "styles": ["src/styles/app.css"] }],
+  "pages": [{ "sigma": ".sigma/design/pages.sigma.json" }],
   "workflow": { "git": "github", "tracker": "notion", "branch": "design/{ticket}-{slug}", "base": "main",
                 "prTemplate": ".github/pull_request_template.md", "labels": ["design"] }
 }
@@ -337,6 +339,9 @@ What the sync skill decided about the project, so later runs follow it (people c
 - `tokens[].naming`: how token names become code names: `kebab` (`color/blue/500` → `--color-blue-500`),
   `camel`, `snake`, `path` or `as-is`. `tokens[].map` lists exceptions: `{ "<token name>": "<code name>" }`.
 - `icons[].output`: `svg`, `react`, `vue`, `svelte`, `sprite` or `other`.
+- `components[].manifest`: the captures' manifest the library was built from (default
+  `.sigma/captures/manifest.json`; `skills/sigma-sync/reference/components.md`); `components[].styles`: the CSS
+  files its components' styles are in, where `components write` edits them (default: every `.css` file).
 
 ## Versions
 
