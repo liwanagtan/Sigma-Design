@@ -23,7 +23,7 @@
       "group": "actions",
       "join": "round",
       "keywords": "",
-      "strokeWidth": 2,
+      "strokeWidth": 1.5,
       "style": "outline",
       "viewBox": "0 0 24 24"
     },
@@ -52,11 +52,11 @@
       "viewBox": "0 0 24 24"
     },
     {
-      "id": "arrows-chevron-down",
-      "name": "chevron-down",
-      "body": "<path d=\"m6 9 6 6 6-6\"/>",
+      "id": "status-check",
+      "name": "check",
+      "body": "<path d=\"M20 6 9 17l-5-5\"/>",
       "cap": "round",
-      "group": "arrows",
+      "group": "status",
       "join": "round",
       "keywords": "",
       "strokeWidth": 2,
@@ -64,11 +64,23 @@
       "viewBox": "0 0 24 24"
     },
     {
-      "id": "status-check",
-      "name": "check",
-      "body": "<path d=\"M20 6 9 17l-5-5\"/>",
+      "id": "status-info",
+      "name": "info",
+      "body": "<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16v-4\"/><path d=\"M12 8h.01\"/>",
       "cap": "round",
       "group": "status",
+      "join": "round",
+      "keywords": "help",
+      "strokeWidth": 2,
+      "style": "outline",
+      "viewBox": "0 0 24 24"
+    },
+    {
+      "id": "arrows-arrow-left",
+      "name": "arrow-left",
+      "body": "<path d=\"m12 19-7-7 7-7\"/><path d=\"M19 12H5\"/>",
+      "cap": "round",
+      "group": "arrows",
       "join": "round",
       "keywords": "",
       "strokeWidth": 2,

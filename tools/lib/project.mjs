@@ -1,5 +1,5 @@
 // Reading a project's Sigma files from disk (Node), shared by tools/validate.js and tools/sigma.mjs.
-import { readFileSync, readdirSync, statSync, existsSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync, writeFileSync, mkdirSync, unlinkSync } from 'node:fs';
 import { join, relative, sep, dirname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
@@ -49,4 +49,22 @@ export function gitShow(root, rev, path) {
   } catch {
     return null;
   }
+}
+
+export const removeFile = (root, path) => unlinkSync(join(root, path));
+
+// Files under a folder with an extension, as paths relative to that folder (skips node_modules and dot folders).
+export function listFilesIn(dir, ext) {
+  const out = [];
+  if (!existsSync(dir)) return out;
+  const visit = (d, prefix) => {
+    for (const name of readdirSync(d).sort()) {
+      if (name.startsWith('.') || name === 'node_modules') continue;
+      const p = join(d, name);
+      if (statSync(p).isDirectory()) visit(p, `${prefix}${name}/`);
+      else if (name.toLowerCase().endsWith(ext)) out.push(`${prefix}${name}`);
+    }
+  };
+  visit(dir, '');
+  return out;
 }

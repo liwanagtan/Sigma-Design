@@ -7,12 +7,18 @@
 //   node tools/sigma.mjs tokens diff [project] [--base REV] [--entry N] [--json]
 //   node tools/sigma.mjs tokens write [project] [--base REV] [--entry N] [--dry-run]
 //   node tools/sigma.mjs tokens export [project] --format dtcg|css [--entry N]
+//   node tools/sigma.mjs icons import [project] [--from FOLDER] [--entry N] [--prune] [--dry-run]
+//   node tools/sigma.mjs icons diff [project] [--base REV] [--entry N]
+//   node tools/sigma.mjs icons write [project] [--base REV] [--entry N] [--dry-run]
 //
 // [project] is the folder with sigma.config.json (default: the current folder). Token commands work on
 // the config's "tokens" entries (all of them, or --entry N). --json prints machine-readable output.
 import { resolve, basename } from 'node:path';
 import { readFileSync } from 'node:fs';
-import { readProject, readText, exists, writeText, gitShow } from './lib/project.mjs';
+import { readProject, readText, exists, writeText, gitShow, removeFile, listFilesIn } from './lib/project.mjs';
+import { join } from 'node:path';
+import { iconsFromFiles, mergeIcons, iconChanges, iconFilePath, iconSVG, sameIcon, svgStyleOf } from '../src/icon-sync.js';
+import { parseSVGIcon } from '../src/icon-library.js';
 import { check as validate } from './validate.js';
 import { formatIssues } from '../src/validate.js';
 import { withDefaults } from '../src/project-config.js';
@@ -49,11 +55,11 @@ function project(dir) {
   return { root, config: withDefaults(config) };
 }
 
-const entriesOf = (config) => {
-  const list = config.tokens.map((e, i) => ({ ...e, index: i }));
+const entriesOf = (config, key = 'tokens') => {
+  const list = (config[key] || []).map((e, i) => ({ ...e, index: i }));
   if (flags.entry === undefined) return list;
   const e = list[Number(flags.entry)];
-  if (!e) fail(`there is no tokens entry ${flags.entry} in sigma.config.json`);
+  if (!e) fail(`there is no ${key} entry ${flags.entry} in sigma.config.json`);
   return [e];
 };
 const cssOpts = (e) => ({ modes: e.modes || { Default: ':root' }, naming: e.naming || 'kebab', prefix: e.prefix || '', map: e.map || {}, remBase: e.remBase || 16 });
@@ -200,6 +206,113 @@ function tokensExport(dir) {
   }
 }
 
+// ---------- icons ----------
+// The icons the code has now: SVG files in the entry's folder (or in --from, a folder of SVGs the agent
+// extracted from icon components).
+function importedIcons(root, e) {
+  const dir = flags.from ? resolve(flags.from) : join(root, e.source);
+  const files = listFilesIn(dir, '.svg').map((p) => ({ path: p, text: readFileSync(join(dir, p), 'utf8') }));
+  return iconsFromFiles(files);
+}
+const svgOutput = (e) => (e.output || 'svg') === 'svg' && !flags.from;
+
+function iconsImport(dir) {
+  const { root, config } = project(dir);
+  const results = [];
+  for (const e of entriesOf(config, 'icons')) {
+    const { icons, skipped } = importedIcons(root, e);
+    const existing = readSigma(root, e.sigma);
+    const { icons: merged, report } = mergeIcons(existing?.icons || [], icons, { prune: !!flags.prune });
+    const file = existing ? { ...existing, icons: merged } : { format: 1, kind: 'icons', name: e.name || basename(e.sigma, '.sigma.json'), icons: merged };
+    const text = formatProjectJSON(file);
+    const changed = !existing || formatProjectJSON(existing) !== text;
+    if (changed && !flags['dry-run']) writeText(root, e.sigma, text);
+    results.push({ sigma: e.sigma, written: changed && !flags['dry-run'], ...report, skipped });
+  }
+  if (json) return out(results);
+  for (const r of results) {
+    out(`${r.sigma}: ${r.added.length} added, ${r.changed.length} changed, ${r.unchanged.length} unchanged${r.onlyInSigma.length ? `, ${r.onlyInSigma.length} only in Sigma (kept; --prune removes them)` : ''}${r.written ? ' — written' : flags['dry-run'] ? ' (dry run)' : ' — no changes'}`);
+    for (const n of r.added) out(`  + ${n}`);
+    for (const n of r.changed) out(`  ~ ${n}`);
+    for (const n of r.onlyInSigma) out(`  ? ${n} (only in Sigma)`);
+    for (const sk of r.skipped) out(`  skipped ${sk.path}: ${sk.why}`);
+  }
+}
+
+function iconChangesFor(root, e) {
+  const base = flags.base || 'HEAD';
+  const now = readSigma(root, e.sigma);
+  if (!now) fail(`${e.sigma} doesn’t exist yet: run icons import first`);
+  const then = gitShow(root, base, e.sigma);
+  return { base, now, changes: iconChanges(then ? JSON.parse(then).icons : [], now.icons) };
+}
+
+function iconsDiff(dir) {
+  const { root, config } = project(dir);
+  const all = entriesOf(config, 'icons').map((e) => ({ sigma: e.sigma, source: e.source, ...iconChangesFor(root, e) }));
+  if (json) return out(all.map(({ sigma, base, changes }) => ({ sigma, base, changes: changes.map(({ before, ...c }) => ({ ...c, file: iconFilePath(c.icon || before) })) })));
+  for (const { sigma, source, base, changes } of all) {
+    out(`${sigma} since ${base}: ${changes.length} change${changes.length === 1 ? '' : 's'}`);
+    for (const c of changes) out(`  ${{ added: '+', changed: '~', removed: '-' }[c.change]} ${c.group ? `${c.group}/` : ''}${c.name}  (${source}/${iconFilePath(c.icon || c.before)})`);
+  }
+}
+
+function iconsWrite(dir) {
+  const { root, config } = project(dir);
+  const results = [];
+  for (const e of entriesOf(config, 'icons')) {
+    const { now, changes, base } = iconChangesFor(root, e);
+    if (!svgOutput(e)) {
+      results.push({ sigma: e.sigma, manual: true, base, output: e.output, changes });
+      continue;
+    }
+    const written = [], removed = [], same = [];
+    // New files are written like the project's others; a changed file keeps its own style.
+    const sample = listFilesIn(join(root, e.source), '.svg')[0];
+    const projectStyle = sample ? svgStyleOf(readText(root, `${e.source}/${sample}`)) : null;
+    for (const icon of now.icons) {
+      const path = `${e.source}/${iconFilePath(icon)}`;
+      let style = projectStyle;
+      if (exists(root, path)) {
+        const text = readText(root, path);
+        let disk = null;
+        try {
+          disk = parseSVGIcon(text, { name: icon.name, group: icon.group });
+        } catch {}
+        if (disk && sameIcon(disk, icon)) {
+          same.push(path);
+          continue;
+        }
+        style = svgStyleOf(text);
+      }
+      if (!flags['dry-run']) writeText(root, path, iconSVG(icon, { style }));
+      written.push(path);
+    }
+    for (const c of changes.filter((x) => x.change === 'removed' || (x.change === 'changed' && iconFilePath(x.before) !== iconFilePath(x.icon)))) {
+      const path = `${e.source}/${iconFilePath(c.before)}`;
+      if (exists(root, path) && !now.icons.some((i) => `${e.source}/${iconFilePath(i)}` === path)) {
+        if (!flags['dry-run']) removeFile(root, path);
+        removed.push(path);
+      }
+    }
+    results.push({ sigma: e.sigma, written, removed, unchanged: same.length });
+  }
+  if (json) return out(results);
+  for (const r of results) {
+    if (r.manual) {
+      out(`${r.sigma}: icons are ${r.output} in this project, so write these ${r.changes.length} change${r.changes.length === 1 ? '' : 's'} (since ${r.base}) the way the project's other icons are written, then extract them again and check that icons import --from changes nothing:`);
+      for (const c of r.changes) {
+        out(`  ${c.change} ${c.group ? `${c.group}/` : ''}${c.name}`);
+        if (c.icon) out(iconSVG(c.icon).split('\n').map((l) => `      ${l}`).join('\n'));
+      }
+      continue;
+    }
+    out(`${r.sigma}: ${r.written.length} written, ${r.removed.length} removed, ${r.unchanged} unchanged${flags['dry-run'] ? ' (dry run)' : ''}`);
+    for (const p of r.written) out(`  + ${p}`);
+    for (const p of r.removed) out(`  - ${p}`);
+  }
+}
+
 // validate + every CSS-sourced token file matches its code (an import would change nothing).
 function checkAll(dir) {
   const { root, config } = project(dir);
@@ -212,11 +325,17 @@ function checkAll(dir) {
     const { report } = mergeTokenCollections(existing.collections, collections);
     if (report.added.length || report.changed.length) drift.push({ sigma: e.sigma, added: report.added, changed: report.changed });
   }
+  for (const e of config.icons) {
+    if ((e.output || 'svg') !== 'svg' || !exists(root, e.sigma)) continue;
+    const { icons } = importedIcons(root, e);
+    const { report } = mergeIcons(readSigma(root, e.sigma).icons, icons);
+    if (report.added.length || report.changed.length) drift.push({ sigma: e.sigma, added: report.added, changed: report.changed });
+  }
   if (json) out({ errors: v.errors, issues: v.issues, drift });
   else {
     if (v.issues.length) out(formatIssues(v.issues));
-    for (const d of drift) out(`drift  ${d.sigma}: the code has ${d.added.length} token${d.added.length === 1 ? '' : 's'} Sigma doesn’t and ${d.changed.length} with other values (${[...d.added, ...d.changed].slice(0, 6).join(', ')}${d.added.length + d.changed.length > 6 ? '…' : ''}). Run tokens import, or tokens write if Sigma is right.`);
-    out(`${Object.keys(v.files).length} files: ${v.errors} errors, ${v.issues.length - v.errors} warnings, ${drift.length ? `${drift.length} token file${drift.length === 1 ? '' : 's'} out of step with the code` : 'tokens match the code'}`);
+    for (const d of drift) out(`drift  ${d.sigma}: the code has ${d.added.length} that Sigma doesn’t and ${d.changed.length} that differ (${[...d.added, ...d.changed].slice(0, 6).join(', ')}${d.added.length + d.changed.length > 6 ? '…' : ''}). Run import, or write if Sigma is right.`);
+    out(`${Object.keys(v.files).length} files: ${v.errors} errors, ${v.issues.length - v.errors} warnings, ${drift.length ? `${drift.length} file${drift.length === 1 ? '' : 's'} out of step with the code` : 'tokens and icons match the code'}`);
   }
   process.exit(v.errors || drift.length ? 1 : 0);
 }
@@ -235,6 +354,9 @@ else if (cmd === 'tokens' && sub === 'import') tokensImport(dir);
 else if (cmd === 'tokens' && sub === 'diff') tokensDiff(dir);
 else if (cmd === 'tokens' && sub === 'write') tokensWrite(dir);
 else if (cmd === 'tokens' && sub === 'export') tokensExport(dir);
+else if (cmd === 'icons' && sub === 'import') iconsImport(dir);
+else if (cmd === 'icons' && sub === 'diff') iconsDiff(dir);
+else if (cmd === 'icons' && sub === 'write') iconsWrite(dir);
 else {
   out(`Usage:
   node tools/sigma.mjs validate [project]
@@ -243,6 +365,9 @@ else {
   node tools/sigma.mjs tokens diff [project] [--base REV] [--entry N]
   node tools/sigma.mjs tokens write [project] [--base REV] [--entry N] [--dry-run]
   node tools/sigma.mjs tokens export [project] --format dtcg|css [--entry N]
+  node tools/sigma.mjs icons import [project] [--from FOLDER] [--entry N] [--prune] [--dry-run]
+  node tools/sigma.mjs icons diff [project] [--base REV] [--entry N]
+  node tools/sigma.mjs icons write [project] [--base REV] [--entry N] [--dry-run]
 Add --json for machine-readable output. See skills/sigma-sync/SKILL.md.`);
   process.exit(cmd ? 2 : 0);
 }

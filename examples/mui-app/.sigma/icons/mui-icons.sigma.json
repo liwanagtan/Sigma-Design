@@ -26,6 +26,18 @@
       "strokeWidth": 2,
       "style": "outline",
       "viewBox": "0 0 24 24"
+    },
+    {
+      "id": "plus",
+      "name": "plus",
+      "body": "<path d=\"M5 12h14\"/><path d=\"M12 5v14\"/>",
+      "cap": "round",
+      "group": "",
+      "join": "round",
+      "keywords": "add, new",
+      "strokeWidth": 2,
+      "style": "outline",
+      "viewBox": "0 0 24 24"
     }
   ]
 }

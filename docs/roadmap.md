@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phases 20–22 are done; next is Phase 23. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phases 20–23 are done; next is Phase 24. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -383,7 +383,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 20: File schema
 - [x] Phase 21: Project folder storage
 - [x] Phase 22: Tokens sync skill (first milestone)
-- [ ] Phase 23: Icons sync
+- [x] Phase 23: Icons sync
 - [ ] Phase 24: Code handoff (Part D, Phase 15)
 - [ ] Phase 25: Propose change
 - [ ] Phase 26: Team workflow (GitHub and Notion)
@@ -579,6 +579,7 @@ Sigma files use stable ids and a diff-friendly layout (sorted keys, one object p
 - **Import** the project's icon folder (or icon package) into a Sigma Icons file with groups and names kept.
 - **Write back** new and changed icons in the project's format (SVG files, or icon components when that's what the project uses).
 - **Done when:** an icon added in Sigma appears in the project in the right format, and one added in the project appears in Sigma on the next sync.
+- **What shipped:** `tools/sigma.mjs icons import | diff | write` on `src/icon-sync.js`, and `skills/sigma-sync/reference/icons.md`. SVG folders are read and written by the tool (folders → groups; a changed file is rewritten in its own style, so a stroke-width change is a one-line diff; new files follow the project's style; deleted icons are deleted). Icon components go through SVGs the agent extracts, and the agent writes components from `icons write`. `check` covers icons too. Proven on `examples/css-app` (SVG files, both directions) and `examples/mui-app` (React icon components: an icon added in Sigma became `Plus.jsx` in the project's style).
 
 ### Phase 24: Code handoff (Part D, Phase 15)
 
