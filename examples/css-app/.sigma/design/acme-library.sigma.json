@@ -1,0 +1,125 @@
+{
+  "format": 1,
+  "kind": "design",
+  "name": "Acme library",
+  "uses": {
+    "tokens": [".sigma/tokens/acme.sigma.json"],
+    "icons": [".sigma/icons/acme-icons.sigma.json"]
+  },
+  "pages": [
+    {
+      "id": "components",
+      "name": "Components",
+      "background": "#F5F5F5",
+      "children": [
+        {
+          "id": "button",
+          "type": "component",
+          "name": "Button",
+          "description": "The .button class in src/styles/app.css",
+          "bindings": {
+            "fills.0.color": "accent",
+            "layout.gap": "space-2",
+            "layout.pb": "space-2",
+            "layout.pl": "space-4",
+            "layout.pr": "space-4",
+            "layout.pt": "space-2",
+            "radius": "radius-md"
+          },
+          "clip": false,
+          "codeName": "Button",
+          "fills": [{}],
+          "layout": { "alignC": "center", "mode": "horizontal" },
+          "props": {
+            "label": { "type": "text", "name": "Label", "default": "Continue" },
+            "icon": { "type": "icon", "name": "Icon", "default": "arrows-arrow-right" }
+          },
+          "sizingH": "hug",
+          "sizingV": "hug",
+          "x": 40,
+          "y": 40,
+          "children": [
+            {
+              "id": "button-label",
+              "type": "text",
+              "name": "Label",
+              "bindings": {
+                "fills.0.color": "color-gray-0",
+                "fontFamily": "font-family-base",
+                "fontSize": "font-size-body"
+              },
+              "fills": [{}],
+              "fontWeight": 600,
+              "propRefs": { "text": "label" },
+              "text": "Continue"
+            },
+            {
+              "id": "button-icon",
+              "type": "icon",
+              "name": "Icon",
+              "bindings": { "fills.0.color": "color-gray-0" },
+              "fills": [{}],
+              "h": 16,
+              "iconId": "arrows-arrow-right",
+              "propRefs": { "iconId": "icon" },
+              "w": 16
+            }
+          ]
+        },
+        {
+          "id": "card",
+          "type": "component",
+          "name": "Card",
+          "description": "The .card class",
+          "bindings": {
+            "effects.0": "shadow-raised",
+            "fills.0.color": "surface",
+            "layout.gap": "space-2",
+            "layout.pb": "space-4",
+            "layout.pl": "space-4",
+            "layout.pr": "space-4",
+            "layout.pt": "space-4",
+            "radius": "radius-md"
+          },
+          "clip": false,
+          "codeName": "Card",
+          "effects": [{ "type": "drop-shadow" }],
+          "fills": [{}],
+          "layout": { "mode": "vertical" },
+          "sizingH": "fixed",
+          "sizingV": "hug",
+          "w": 320,
+          "x": 40,
+          "y": 140,
+          "children": [
+            {
+              "id": "card-title",
+              "type": "text",
+              "name": "Title",
+              "bindings": { "fills.0.color": "text-primary", "fontFamily": "font-family-base" },
+              "fills": [{}],
+              "fontSize": 24,
+              "fontWeight": 600,
+              "text": "Acme"
+            },
+            {
+              "id": "card-body",
+              "type": "text",
+              "name": "Body",
+              "autoResize": "height",
+              "bindings": {
+                "fills.0.color": "text-secondary",
+                "fontFamily": "font-family-base",
+                "fontSize": "font-size-body"
+              },
+              "fills": [{}],
+              "sizingH": "fill",
+              "text": "A small app whose design tokens live in src/styles/tokens.css."
+            },
+            { "id": "card-action", "type": "instance", "componentId": "button" }
+          ]
+        }
+      ]
+    }
+  ]
+}
