@@ -1,0 +1,2 @@
+.sigma/captures/*.json
+!.sigma/captures/manifest.json

@@ -19,6 +19,7 @@
 //   node tools/sigma.mjs changeset pr-body <id> [project] [--images-base URL]
 //   node tools/sigma.mjs changeset ticket <id> [project]
 //   node tools/sigma.mjs changeset sync [project]                 statuses from GitHub (gh pr view)
+//   node tools/sigma.mjs library build [project] --from DIR [--library PATH] [--dry-run]   components from captures
 //   node tools/sigma.mjs comment list [project] [--all]
 //   node tools/sigma.mjs comment add [project] --file PATH --layer ID|NAME --text TEXT [--author NAME] [--reply-to ID]
 //   node tools/sigma.mjs comment resolve <id> [project] [--author NAME]
@@ -34,6 +35,9 @@ import { join } from 'node:path';
 import { iconsFromFiles, mergeIcons, iconChanges, iconFilePath, iconSVG, sameIcon, svgStyleOf } from '../src/icon-sync.js';
 import { parseSVGIcon } from '../src/icon-library.js';
 import { applyChanges, summarize, STATUSES, CHANGESET_DIR } from '../src/changesets.js';
+import { buildComponent, tokenIndex } from '../src/capture-to-sigma.js';
+import { defaultTokenCode } from '../src/code-names.js';
+import { parseVariantName } from '../src/components.js';
 import { validateProject } from '../src/validate.js';
 import { check as validate } from './validate.js';
 import { formatIssues } from '../src/validate.js';
@@ -52,7 +56,7 @@ for (let i = 0; i < argv.length; i++) {
   if (a.startsWith('--')) {
     const [k, v] = a.slice(2).split('=');
     if (v !== undefined) flags[k] = v;
-    else if (argv[i + 1] && !argv[i + 1].startsWith('--') && ['from', 'entry', 'base', 'format', 'to', 'pr', 'pr-number', 'ticket', 'tracker', 'branch', 'images-base', 'file', 'layer', 'text', 'author', 'reply-to'].includes(k)) flags[k] = argv[++i];
+    else if (argv[i + 1] && !argv[i + 1].startsWith('--') && ['from', 'entry', 'base', 'format', 'to', 'pr', 'pr-number', 'ticket', 'tracker', 'branch', 'images-base', 'file', 'layer', 'text', 'author', 'reply-to', 'library'].includes(k)) flags[k] = argv[++i];
     else flags[k] = true;
   } else pos.push(a);
 }
@@ -562,6 +566,87 @@ function changesetSync(dir) {
   for (const u of updated) out(`${u.title}: ${STATUSES[u.from] || u.from} → ${STATUSES[u.to]}${u.to === 'merged' && u.ticket ? `  (move the ticket to Done: ${u.ticket})` : ''}`);
 }
 
+// ---------- component library onboarding (Phase 28) ----------
+// Build (or rebuild) the library's components from captures: DIR has manifest.json and the capture files it
+// lists (see skills/sigma-sync/reference/components.md). Components are matched by name: a rebuilt one
+// keeps its place; new ones go below the others on the first page.
+function libraryBuild(dir) {
+  const root = resolve(dir || '.');
+  if (!flags.from) fail('say where the captures are: --from <folder with manifest.json>');
+  const from = resolve(flags.from);
+  const manifest = JSON.parse(readFileSync(join(from, 'manifest.json'), 'utf8'));
+  const libPath = flags.library || manifest.library;
+  if (!libPath) fail('say which library file to build: --library .sigma/design/<name>.sigma.json (or "library" in manifest.json)');
+  const files = Object.fromEntries(Object.entries(readProject(root).files).map(([p, t]) => [p, JSON.parse(t)]));
+  const lib = files[libPath] || { format: 1, kind: 'design', name: manifest.name || 'Library', uses: manifest.uses || {}, pages: [{ id: 'components', name: 'Components', background: '#F5F5F5', children: [] }] };
+  if (manifest.uses) lib.uses = { ...(lib.uses || {}), ...manifest.uses };
+  // Tokens and icons this library can use.
+  const tokenCols = (lib.uses?.tokens || []).flatMap((p) => files[p]?.collections || []);
+  const tokens = tokenIndex(tokenCols, defaultTokenCode);
+  const icons = (lib.uses?.icons || []).flatMap((p) => files[p]?.icons || []);
+  const iconFor = (svg) => {
+    try {
+      const parsed = parseSVGIcon(svg);
+      return icons.find((i) => i.body === parsed.body && i.viewBox === parsed.viewBox)?.id || null;
+    } catch {
+      return null;
+    }
+  };
+  const built = new Map(); // component name → { node }
+  const componentIdFor = (name, variant) => {
+    const b = built.get(name);
+    if (!b) return null;
+    if (b.node.type === 'component') return b.node.id;
+    const want = Object.entries(variant || {});
+    return (b.node.children.find((c) => want.every(([k, v]) => parseVariantName(c.name)[k] === v)) || b.node.children[0]).id;
+  };
+  const ids = new Set();
+  const notes = [];
+  for (const spec of manifest.components) {
+    const captures = spec.captures.map((c) => ({ variant: c.variant, capture: JSON.parse(readFileSync(join(from, c.file), 'utf8')) }));
+    const { node, notes: n } = buildComponent({ ...spec, captures }, { tokens, iconFor, componentIdFor, ids });
+    built.set(spec.name, { node });
+    notes.push(...n);
+  }
+  // Into the library: replace by name (same place), or add below.
+  const page = lib.pages[0] || (lib.pages[0] = { id: 'components', name: 'Components', children: [] });
+  const report = { added: [], replaced: [] };
+  const added = [];
+  for (const [name, { node }] of built) {
+    const at = page.children.findIndex((c) => (c.type === 'component' || c.type === 'componentSet') && c.name === name);
+    if (at < 0) {
+      added.push([name, node]);
+      continue;
+    }
+    const old = page.children[at];
+    Object.assign(node, { x: old.x, y: old.y });
+    page.children[at] = node;
+    report.replaced.push(name);
+    // Grown taller: move what's below it down by as much, so nothing overlaps.
+    const grew = (node.h || 0) - (old.h || 0);
+    if (grew > 0) for (const c of page.children) if (c !== node && (c.y || 0) >= (old.y || 0) + (old.h || 0)) c.y = (c.y || 0) + grew;
+  }
+  let y = Math.max(40, ...page.children.map((c) => (c.y || 0) + (c.h || 120) + 60));
+  for (const [name, node] of added) {
+    Object.assign(node, { x: 40, y });
+    y += (node.h || 120) + 60;
+    page.children.push(node);
+    report.added.push(name);
+  }
+  const text = formatProjectJSON(lib);
+  const check = validateProject({ ...Object.fromEntries(Object.entries(files).map(([p, f]) => [p, f])), [libPath]: JSON.parse(text) }).filter((i) => i.file === libPath && i.level === 'error');
+  if (!flags['dry-run']) writeText(root, libPath, text);
+  if (json) return out({ library: libPath, ...report, notes, errors: check });
+  out(`${libPath}: ${report.added.length} added, ${report.replaced.length} rebuilt${flags['dry-run'] ? ' (dry run)' : ' — written'}`);
+  for (const n of report.added) out(`  + ${n}`);
+  for (const n of report.replaced) out(`  ~ ${n}`);
+  for (const n of [...new Set(notes)]) out(`  note: ${n}`);
+  if (check.length) {
+    out(formatIssues(check));
+    process.exit(1);
+  }
+}
+
 // ---------- comments (Phase 27) ----------
 const rid = () => Math.random().toString(36).slice(2, 10);
 // A layer by id, by name path ("Card / Title") or by name: { node, page, path }.
@@ -689,6 +774,7 @@ else if (cmd === 'changeset' && sub === 'prepare') changesetPrepare(dir, pos[3])
 else if (cmd === 'changeset' && sub === 'pr-body') changesetPRBody(dir, pos[3]);
 else if (cmd === 'changeset' && sub === 'ticket') changesetTicket(dir, pos[3]);
 else if (cmd === 'changeset' && sub === 'sync') changesetSync(dir);
+else if (cmd === 'library' && sub === 'build') libraryBuild(dir);
 else if (cmd === 'comment' && sub === 'list') commentList(dir);
 else if (cmd === 'comment' && sub === 'add') commentAdd(dir);
 else if (cmd === 'comment' && sub === 'resolve') commentResolve(dir, pos[3]);
@@ -712,6 +798,7 @@ else {
   node tools/sigma.mjs changeset pr-body <id> [project] [--images-base URL]
   node tools/sigma.mjs changeset ticket <id> [project]
   node tools/sigma.mjs changeset sync [project]
+  node tools/sigma.mjs library build [project] --from DIR [--library PATH] [--dry-run]
   node tools/sigma.mjs comment list [project] [--all]
   node tools/sigma.mjs comment add [project] --file PATH --layer ID|NAME --text TEXT [--author NAME] [--reply-to ID]
   node tools/sigma.mjs comment resolve <id> [project] [--author NAME]

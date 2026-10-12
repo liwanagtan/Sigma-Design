@@ -1,0 +1,142 @@
+{
+  "library": ".sigma/design/acme-library.sigma.json",
+  "components": [
+    {
+      "name": "Button",
+      "codeName": "Button",
+      "description": "src/components/button.js: Button({ label, variant, icon }); styles in .button",
+      "props": [
+        {
+          "name": "Label",
+          "type": "text",
+          "codeName": "label",
+          "layer": "Label"
+        },
+        {
+          "name": "Show icon",
+          "type": "boolean",
+          "codeName": "icon",
+          "layer": "Icon"
+        },
+        {
+          "name": "Icon",
+          "type": "icon",
+          "codeName": "icon",
+          "layer": "Icon"
+        }
+      ],
+      "variantCodeNames": {
+        "Variant": "variant",
+        "State": "state"
+      },
+      "captures": [
+        {
+          "variant": {
+            "Variant": "Primary",
+            "State": "Default"
+          },
+          "file": "button-primary-default.json"
+        },
+        {
+          "variant": {
+            "Variant": "Primary",
+            "State": "Hover"
+          },
+          "file": "button-primary-hover.json"
+        },
+        {
+          "variant": {
+            "Variant": "Primary",
+            "State": "Focus"
+          },
+          "file": "button-primary-focus.json"
+        },
+        {
+          "variant": {
+            "Variant": "Primary",
+            "State": "Disabled"
+          },
+          "file": "button-primary-disabled.json"
+        },
+        {
+          "variant": {
+            "Variant": "Danger",
+            "State": "Default"
+          },
+          "file": "button-danger-default.json"
+        },
+        {
+          "variant": {
+            "Variant": "Danger",
+            "State": "Hover"
+          },
+          "file": "button-danger-hover.json"
+        },
+        {
+          "variant": {
+            "Variant": "Danger",
+            "State": "Focus"
+          },
+          "file": "button-danger-focus.json"
+        },
+        {
+          "variant": {
+            "Variant": "Danger",
+            "State": "Disabled"
+          },
+          "file": "button-danger-disabled.json"
+        }
+      ]
+    },
+    {
+      "name": "Input",
+      "codeName": "Input",
+      "description": "<input class=\"input\">",
+      "props": [
+        {
+          "name": "Placeholder",
+          "type": "text",
+          "codeName": "placeholder",
+          "layer": "Placeholder"
+        }
+      ],
+      "captures": [
+        {
+          "variant": {
+            "State": "Default"
+          },
+          "file": "input-default.json"
+        },
+        {
+          "variant": {
+            "State": "Hover"
+          },
+          "file": "input-hover.json"
+        }
+      ]
+    },
+    {
+      "name": "Card",
+      "codeName": "Card",
+      "description": "<section class=\"card\">",
+      "instances": [
+        {
+          "layer": "Button",
+          "component": "Button",
+          "variant": {
+            "Variant": "Primary",
+            "State": "Default"
+          },
+          "props": {
+            "Show icon": false
+          }
+        }
+      ],
+      "captures": [
+        {
+          "file": "card.json"
+        }
+      ]
+    }
+  ]
+}

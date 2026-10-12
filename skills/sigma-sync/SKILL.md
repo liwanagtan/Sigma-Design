@@ -1,6 +1,6 @@
 ---
 name: sigma-sync
-description: Keep a codebase's design tokens (and icons) in sync with Sigma files in its .sigma/ folder. Use when asked to set a project up with Sigma, import its tokens or icons into Sigma, write Sigma changes back to the code, or check that Sigma and the code agree.
+description: Keep a codebase's design tokens, icons and components in sync with Sigma files in its .sigma/ folder. Use when asked to set a project up with Sigma, import its tokens, icons or components into Sigma, write Sigma changes back to the code, or check that Sigma and the code agree.
 ---
 
 # Sigma sync
@@ -120,6 +120,13 @@ was skipped and why, and the result of `check`. If Sigma is running with the pro
 ## Icons
 
 See `reference/icons.md`.
+
+## Components
+
+To bring the project's components into a Sigma library file (after tokens and icons): `reference/components.md`.
+In short: render each component by itself, capture every variant and state with
+`<sigma>/tools/capture/capture.js`, describe them in `.sigma/captures/manifest.json`, `library build`, then
+open `tools/capture/compare.html` and fix differences until every component matches its code.
 
 ## Proposals → tickets and pull requests
 

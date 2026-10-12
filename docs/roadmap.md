@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phases 20–25 are done, Phase 26 is built (its real GitHub/Notion run is waiting), Phase 27 is done; next is Phase 28. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phases 20–25 are done, Phase 26 is built (its real GitHub/Notion run is waiting), Phases 27 and 28 are done; next is Phase 29. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -388,7 +388,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 25: Propose change
 - [ ] Phase 26: Team workflow (GitHub and Notion)
 - [x] Phase 27: Comments
-- [ ] Phase 28: Component library onboarding
+- [x] Phase 28: Component library onboarding
 - [ ] Phase 29: Page onboarding
 - [ ] Phase 30: Design to code for components
 
@@ -614,6 +614,7 @@ Unchanged from Phase 15 above: code names per platform for tokens, components an
 - **Check:** render the Sigma component and compare it with the real render; fix differences before handing off.
 - **Interactive states** (hover, focus, pressed, disabled) become a standard variant property, so states map the same way in every project.
 - **Done when:** a small real library (buttons, inputs, cards) arrives in Sigma as components that look like their code versions and use the project's tokens.
+- **What shipped:** `tools/capture/capture.js` (runs in the page rendering the component: boxes, computed and authored CSS with its `var()` references, text, SVG; states applied from the CSS's `:hover`/`:focus-visible`/`:active` rules or `disabled`, transitions off); `.sigma/captures/manifest.json` (variants with a standard `State` property, text/boolean/icon/instance properties, nested components, code names); `tools/sigma.mjs library build` (flex → auto layout, stacked blocks → columns, nesting unevenly spaced ones, hug/fill inferred, borders counted into padding, `var(--x)` bound to tokens by code name, matching SVGs → icon layers, notes for everything approximated; rebuilds in place); `tools/capture/compare.html` (lays the library out in Sigma and compares every layer with its capture). Verified on `examples/css-app`: Button (Primary/Danger × Default/Hover/Focus/Disabled), Input (Default/Hover) and Card (with a Button instance) built from captures, and all 11 matched the code after fixing what the compare found (transitions, text boxes, borders, hug sizing, card margins). The skill's steps are in `skills/sigma-sync/reference/components.md`.
 
 ### Phase 29: Page onboarding
 

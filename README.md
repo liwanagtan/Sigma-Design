@@ -211,6 +211,7 @@ Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.
 - **Check files** with `node tools/validate.js <project folder>` (Node 18+, no dependencies): it reports each problem with where it is and what to do, and exits with 1 when there are errors.
 - **Sync tokens with the code** (`skills/sigma-sync/SKILL.md`, a skill any agent can follow, with `node tools/sigma.mjs`): the agent works out the stack and records its decisions in `sigma.config.json`. CSS variables are read and written by the tool itself: `tokens import` (code → Sigma, merging so ids, descriptions and order stay and importing twice changes nothing), `tokens diff` (what changed since a git revision), `tokens write` (Sigma → CSS as minimal edits that keep each value's unit and color format), `check` (valid, and no drift). Other stacks (theme objects, Tailwind config…) go through a DTCG tokens.json the agent writes (`tokens import --from`), and the agent applies write-backs from `tokens diff`. Proven on `examples/css-app` (CSS variables) and `examples/mui-app` (an MUI theme).
 - **Sync icons** the same way (`skills/sigma-sync/reference/icons.md`): an icon folder becomes a Sigma Icons file (folders are groups, file names are icon names). `icons import`, `icons diff` and `icons write` handle SVG files themselves; writing only rewrites files whose shapes changed, in each file's own style, and deletes icons deleted in Sigma. Icon components (React, Vue…) go through SVGs the agent extracts (`icons import --from`), and the agent writes components from `icons write`.
+- **Bring components in** (`skills/sigma-sync/reference/components.md`): `tools/capture/capture.js` captures a rendered component in each variant and state (hover, focus, pressed, disabled applied from the CSS); a manifest says what each capture is (variants, properties, nested components, code names); `node tools/sigma.mjs library build` turns captures into a library file with auto layout, token bindings and icon layers; `tools/capture/compare.html` lays the library out in Sigma and compares every layer with the real render. Proven on `examples/css-app` (Button, Input and Card: 11 of 11 match).
 - `examples/sample-project/` holds Sigma's sample files in this format (`node tools/build-sample-project.mjs` rebuilds them).
 
 ## Code layout
@@ -243,7 +244,10 @@ Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.
 | `src/project-config.js` | `sigma.config.json`: what the sync skill decided about a project |
 | `src/token-sync.js` | Tokens between code and Sigma: CSS variables in and out, merging, diffs |
 | `src/icon-sync.js` | Icons between code and Sigma: SVG folders in and out, merging, diffs, writing in the project's style |
-| `tools/sigma.mjs` | The command line the sync skill uses (validate, check, tokens and icons import / diff / write) |
+| `tools/sigma.mjs` | The command line the sync skill uses (validate, check, tokens and icons import / diff / write, changesets, library build, comments) |
+| `src/capture-to-sigma.js` | Captured components → Sigma components (auto layout, token bindings, icons, variants) and comparing them with the capture |
+| `src/capture-compare.js` | Lays a built library out and compares it with its captures (`tools/capture/compare.html`) |
+| `tools/capture/` | `capture.js` (runs in the page that renders a component) and the compare page |
 | `skills/sigma-sync/` | The sync skill: instructions for agents, with references |
 | `src/code-names.js` | Code names for tokens (per platform), components and properties |
 | `src/inspect.js` | The Inspect panel: CSS with token variables, tokens used, instance usage, component API |
