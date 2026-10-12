@@ -20,7 +20,7 @@
           "clip": false,
           "codeName": "Button",
           "codeNames": { "State": "state", "Variant": "variant" },
-          "h": 128,
+          "h": 180,
           "props": {
             "button-label": {
               "type": "text",
@@ -41,7 +41,7 @@
               "default": "arrows-arrow-right"
             }
           },
-          "w": 599.04,
+          "w": 587.28,
           "x": 40,
           "y": 40,
           "children": [
@@ -53,14 +53,12 @@
                 "fills.0.color": "accent",
                 "layout.gap": "space-2",
                 "layout.pb": "space-2",
-                "layout.pl": "space-4",
-                "layout.pr": "space-4",
                 "layout.pt": "space-2",
                 "radius": "radius-md"
               },
               "clip": false,
               "fills": [{}],
-              "layout": { "alignC": "center", "mode": "horizontal" },
+              "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
               "sizingH": "hug",
               "sizingV": "hug",
               "x": 20,
@@ -92,6 +90,50 @@
               ]
             },
             {
+              "id": "yuowhkiu",
+              "type": "component",
+              "name": "Variant=Secondary, State=Default",
+              "bindings": {
+                "fills.0.color": "surface-sunken",
+                "layout.gap": "space-2",
+                "layout.pb": "space-2",
+                "layout.pt": "space-2",
+                "radius": "radius-md"
+              },
+              "clip": false,
+              "fills": [{}],
+              "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
+              "sizingH": "hug",
+              "sizingV": "hug",
+              "x": 20,
+              "y": 128,
+              "children": [
+                {
+                  "id": "elf8brxf",
+                  "type": "icon",
+                  "name": "Icon",
+                  "bindings": { "fills.0.color": "accent" },
+                  "fills": [{}],
+                  "h": 16,
+                  "iconId": "arrows-arrow-right",
+                  "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                  "w": 16
+                },
+                {
+                  "id": "uhvn7ert",
+                  "type": "text",
+                  "name": "Label",
+                  "bindings": { "fills.0.color": "accent", "fontWeight": "font-weight-bold" },
+                  "fills": [{}],
+                  "fontFamily": "Arial",
+                  "fontSize": 13.33,
+                  "propRefs": { "text": "button-label" },
+                  "text": "Continue",
+                  "textAlign": "center"
+                }
+              ]
+            },
+            {
               "id": "button-variant-primary-state-hover",
               "type": "component",
               "name": "Variant=Primary, State=Hover",
@@ -99,14 +141,12 @@
                 "fills.0.color": "accent-hover",
                 "layout.gap": "space-2",
                 "layout.pb": "space-2",
-                "layout.pl": "space-4",
-                "layout.pr": "space-4",
                 "layout.pt": "space-2",
                 "radius": "radius-md"
               },
               "clip": false,
               "fills": [{}],
-              "layout": { "alignC": "center", "mode": "horizontal" },
+              "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
               "sizingH": "hug",
               "sizingV": "hug",
               "x": 165.76,
@@ -138,6 +178,50 @@
               ]
             },
             {
+              "id": "zyie06i8",
+              "type": "component",
+              "name": "Variant=Secondary, State=Hover",
+              "bindings": {
+                "fills.0.color": "surface",
+                "layout.gap": "space-2",
+                "layout.pb": "space-2",
+                "layout.pt": "space-2",
+                "radius": "radius-md"
+              },
+              "clip": false,
+              "fills": [{}],
+              "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
+              "sizingH": "hug",
+              "sizingV": "hug",
+              "x": 165.76,
+              "y": 128,
+              "children": [
+                {
+                  "id": "4np35mri",
+                  "type": "icon",
+                  "name": "Icon",
+                  "bindings": { "fills.0.color": "accent" },
+                  "fills": [{}],
+                  "h": 16,
+                  "iconId": "arrows-arrow-right",
+                  "propRefs": { "iconId": "button-icon", "visible": "button-show-icon" },
+                  "w": 16
+                },
+                {
+                  "id": "yxr8n0ie",
+                  "type": "text",
+                  "name": "Label",
+                  "bindings": { "fills.0.color": "accent", "fontWeight": "font-weight-bold" },
+                  "fills": [{}],
+                  "fontFamily": "Arial",
+                  "fontSize": 13.33,
+                  "propRefs": { "text": "button-label" },
+                  "text": "Continue",
+                  "textAlign": "center"
+                }
+              ]
+            },
+            {
               "id": "button-variant-primary-state-focus",
               "type": "component",
               "name": "Variant=Primary, State=Focus",
@@ -145,15 +229,13 @@
                 "fills.0.color": "accent",
                 "layout.gap": "space-2",
                 "layout.pb": "space-2",
-                "layout.pl": "space-4",
-                "layout.pr": "space-4",
                 "layout.pt": "space-2",
                 "radius": "radius-md",
                 "strokes.0.color": "accent"
               },
               "clip": false,
               "fills": [{}],
-              "layout": { "alignC": "center", "mode": "horizontal" },
+              "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
               "sizingH": "hug",
               "sizingV": "hug",
               "strokeAlign": "outside",
@@ -195,14 +277,12 @@
                 "fills.0.color": "accent",
                 "layout.gap": "space-2",
                 "layout.pb": "space-2",
-                "layout.pl": "space-4",
-                "layout.pr": "space-4",
                 "layout.pt": "space-2",
                 "radius": "radius-md"
               },
               "clip": false,
               "fills": [{}],
-              "layout": { "alignC": "center", "mode": "horizontal" },
+              "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
               "opacity": 0.5,
               "sizingH": "hug",
               "sizingV": "hug",
@@ -242,14 +322,12 @@
                 "fills.0.color": "danger",
                 "layout.gap": "space-2",
                 "layout.pb": "space-2",
-                "layout.pl": "space-4",
-                "layout.pr": "space-4",
                 "layout.pt": "space-2",
                 "radius": "radius-md"
               },
               "clip": false,
               "fills": [{}],
-              "layout": { "alignC": "center", "mode": "horizontal" },
+              "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
               "sizingH": "hug",
               "sizingV": "hug",
               "x": 20,
@@ -288,14 +366,12 @@
                 "fills.0.color": "danger-hover",
                 "layout.gap": "space-2",
                 "layout.pb": "space-2",
-                "layout.pl": "space-4",
-                "layout.pr": "space-4",
                 "layout.pt": "space-2",
                 "radius": "radius-md"
               },
               "clip": false,
               "fills": [{}],
-              "layout": { "alignC": "center", "mode": "horizontal" },
+              "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
               "sizingH": "hug",
               "sizingV": "hug",
               "x": 165.76,
@@ -334,15 +410,13 @@
                 "fills.0.color": "danger",
                 "layout.gap": "space-2",
                 "layout.pb": "space-2",
-                "layout.pl": "space-4",
-                "layout.pr": "space-4",
                 "layout.pt": "space-2",
                 "radius": "radius-md",
                 "strokes.0.color": "accent"
               },
               "clip": false,
               "fills": [{}],
-              "layout": { "alignC": "center", "mode": "horizontal" },
+              "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
               "sizingH": "hug",
               "sizingV": "hug",
               "strokeAlign": "outside",
@@ -384,14 +458,12 @@
                 "fills.0.color": "danger",
                 "layout.gap": "space-2",
                 "layout.pb": "space-2",
-                "layout.pl": "space-4",
-                "layout.pr": "space-4",
                 "layout.pt": "space-2",
                 "radius": "radius-md"
               },
               "clip": false,
               "fills": [{}],
-              "layout": { "alignC": "center", "mode": "horizontal" },
+              "layout": { "alignC": "center", "mode": "horizontal", "pl": 16, "pr": 16 },
               "opacity": 0.5,
               "sizingH": "hug",
               "sizingV": "hug",
@@ -462,7 +534,7 @@
           "sizingV": "hug",
           "w": 360,
           "x": 40,
-          "y": 268,
+          "y": 280,
           "children": [
             {
               "id": "card-root-title-body",
@@ -526,7 +598,7 @@
           },
           "w": 298,
           "x": 40,
-          "y": 685,
+          "y": 518,
           "children": [
             {
               "id": "input-state-default",

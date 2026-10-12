@@ -93,12 +93,29 @@
           },
           "file": "button-danger-disabled.json",
           "element": "#button-danger"
+        },
+        {
+          "variant": {
+            "Variant": "Secondary",
+            "State": "Default"
+          },
+          "file": "button-secondary-default.json",
+          "element": "#button-secondary"
+        },
+        {
+          "variant": {
+            "Variant": "Secondary",
+            "State": "Hover"
+          },
+          "file": "button-secondary-hover.json",
+          "element": "#button-secondary"
         }
       ],
       "match": {
         "selector": ".button",
         "variants": {
           "Variant": {
+            "Secondary": ".button--secondary",
             "Danger": ".button--danger",
             "Primary": "*"
           },
