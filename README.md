@@ -118,6 +118,8 @@ Then open http://localhost:5173.
 - **Component libraries:**
   - **Publish components…** (Σ menu, or the panel with nothing selected) publishes a Sigma Design file's components as a numbered version, with notes and a list of what changed
   - another Sigma Design file links it from **Component libraries…**; its components appear in Assets under the library's name, ready to insert or drag
+  - publishing records the Sigma Tokens file the components use and the names of their tokens. A file that links the library and has no Sigma Tokens file starts using that one. A file with a different Sigma Tokens file (another brand with the same token names) gets the library's components matched to its own tokens by name, so they follow its values and modes. Tokens with no match are counted in **Component libraries…**, and those layers keep their colors
+  - the publish dialog warns when components use the file's local tokens, which other files won't have
   - a library update shows a banner in files that use it; after **Review** and accept, instances update and keep their overrides
   - **Go to main component** on a library instance offers to open the library file
   - unlinking keeps instances as they look, marked "main component missing"
