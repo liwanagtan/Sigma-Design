@@ -80,6 +80,8 @@ function shape(node, { root = false } = {}) {
   const { id, children, name, propRefs, ...rest } = node;
   if (root) {
     for (const k of ROOT_COVERED) delete rest[k];
+    delete rest.x; // where it sits on the canvas isn't part of the code
+    delete rest.y;
     if (node.layout) rest.layout = { mode: node.layout.mode, alignP: node.layout.alignP, alignC: node.layout.alignC, spacing: node.layout.spacing };
   } else if (node.type === 'text' || node.type === 'icon') {
     delete rest.fills;
@@ -100,7 +102,7 @@ const changedKeys = (a, b) => [...new Set([...Object.keys(a), ...Object.keys(b)]
 function layers(root) {
   const out = new Map();
   const visit = (n, trail) => (n.children || []).forEach((c) => {
-    const path = [...trail, c.name].join(' / ');
+    const path = [...trail, c.name ?? c.type].join(' / ');
     out.set(path, c);
     if (c.type !== 'instance') visit(c, [...trail, c.name]);
   });

@@ -46,7 +46,7 @@ import { validateProject } from '../src/validate.js';
 import { check as validate } from './validate.js';
 import { formatIssues } from '../src/validate.js';
 import { withDefaults } from '../src/project-config.js';
-import { formatProjectJSON } from '../src/project-format.js';
+import { formatProjectJSON, fromProjectFile, toProjectFile } from '../src/project-format.js';
 import { importTokens, exportDTCG, exportCSS } from '../src/tokens-io.js';
 import {
   parseCSSVariables, cssToCollections, mergeTokenCollections, tokenChanges, applyToCSS, codeNameFor,
@@ -637,7 +637,7 @@ function libraryBuild(dir) {
     page.children.push(node);
     report.added.push(name);
   }
-  const text = formatProjectJSON(lib);
+  const text = formatProjectJSON(asSigmaSaves(lib, libPath, files));
   const check = validateProject({ ...Object.fromEntries(Object.entries(files).map(([p, f]) => [p, f])), [libPath]: JSON.parse(text) }).filter((i) => i.file === libPath && i.level === 'error');
   if (!flags['dry-run']) writeText(root, libPath, text);
   if (json) return out({ library: libPath, ...report, notes, errors: check });
@@ -649,6 +649,14 @@ function libraryBuild(dir) {
     out(formatIssues(check));
     process.exit(1);
   }
+}
+
+// A design file as Sigma itself saves it (defaults and values layout derives left out), so that opening it in
+// Sigma and saving changes nothing, and diffs show only what a designer changed.
+function asSigmaSaves(file, path, files) {
+  const resolve = (p) => (files[p] ? { fileId: p, file: files[p] } : null);
+  const { doc } = fromProjectFile(structuredClone(file), { path, resolve });
+  return toProjectFile(doc, { pathOf: (id) => (files[id] ? id : null) }).file;
 }
 
 // ---------- pages (Phase 29) ----------
@@ -718,7 +726,7 @@ function pagesBuild(dir) {
       notes.push(...built.notes);
     }
   }
-  const text = formatProjectJSON(out0);
+  const text = formatProjectJSON(asSigmaSaves(out0, spec.file, files));
   const check = validateProject({ ...files, [spec.file]: JSON.parse(text) }).filter((i) => i.file === spec.file && i.level === 'error');
   if (!flags['dry-run']) writeText(root, spec.file, text);
   if (json) return out({ file: spec.file, frames: report, notes: [...new Set(notes)], errors: check });

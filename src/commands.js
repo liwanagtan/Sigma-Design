@@ -116,6 +116,21 @@ export function duplicateSelection() {
   for (const n of sortByZ(structural(selectedNodes(), 'duplicated'))) {
     const parent = getParent(n.id);
     const at = siblingsOf(n).indexOf(n) + 1;
+    if (n.type === 'component' && parent?.type === 'componentSet') {
+      // A variant duplicates as a new variant of its set, like Figma (named as "+ Variant" names one).
+      const props = parseVariantName(n.name);
+      const key = Object.keys(props)[0] || 'Property 1';
+      const taken = new Set(variantDefs(parent)[key] || []);
+      let value = `${props[key] || 'Variant'} copy`;
+      for (let i = 2; taken.has(value); i++) value = `${props[key] || 'Variant'} copy ${i}`;
+      const c = cloneNode(n);
+      c.name = formatVariantName({ ...props, [key]: value });
+      c.y = Math.max(...variantsOf(parent).map((v) => v.y + v.h)) + SET_PADDING; // below the others
+      insertNode(c, parent, at);
+      fitComponentSet(parent);
+      ids.push(c.id);
+      continue;
+    }
     if (n.type === 'component') {
       // Duplicating a main component creates an instance of it, like Figma.
       const tl = apply(worldMatrix(n), { x: 0, y: 0 });

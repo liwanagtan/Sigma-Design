@@ -16,7 +16,7 @@
           "id": "button",
           "type": "componentSet",
           "name": "Button",
-          "description": "src/components/button.js: Button({ label, variant, icon }); styles in .button",
+          "description": "src/components/button.js: Button({ label, variant, icon, disabled }); styles in .button",
           "clip": false,
           "codeName": "Button",
           "codeNames": { "State": "state", "Variant": "variant" },
@@ -60,22 +60,9 @@
               },
               "clip": false,
               "fills": [{}],
-              "h": 32,
-              "layout": {
-                "alignC": "center",
-                "alignP": "start",
-                "gap": 8,
-                "mode": "horizontal",
-                "pb": 8,
-                "pl": 20,
-                "pr": 20,
-                "pt": 8,
-                "spacing": "packed"
-              },
-              "radius": 8,
+              "layout": { "alignC": "center", "mode": "horizontal" },
               "sizingH": "hug",
               "sizingV": "hug",
-              "w": 121.76,
               "x": 20,
               "y": 20,
               "children": [
@@ -94,19 +81,13 @@
                   "id": "button-variant-primary-state-default-label-1",
                   "type": "text",
                   "name": "Label",
-                  "autoResize": "width",
                   "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
                   "fills": [{}],
                   "fontFamily": "Arial",
                   "fontSize": 13.33,
-                  "fontWeight": 600,
-                  "h": 15.5,
-                  "letterSpacing": 0,
-                  "lineHeight": null,
                   "propRefs": { "text": "button-label" },
                   "text": "Continue",
-                  "textAlign": "center",
-                  "w": 57.76
+                  "textAlign": "center"
                 }
               ]
             },
@@ -125,22 +106,9 @@
               },
               "clip": false,
               "fills": [{}],
-              "h": 32,
-              "layout": {
-                "alignC": "center",
-                "alignP": "start",
-                "gap": 8,
-                "mode": "horizontal",
-                "pb": 8,
-                "pl": 20,
-                "pr": 20,
-                "pt": 8,
-                "spacing": "packed"
-              },
-              "radius": 8,
+              "layout": { "alignC": "center", "mode": "horizontal" },
               "sizingH": "hug",
               "sizingV": "hug",
-              "w": 121.76,
               "x": 165.76,
               "y": 20,
               "children": [
@@ -159,19 +127,13 @@
                   "id": "button-variant-primary-state-hover-label-1",
                   "type": "text",
                   "name": "Label",
-                  "autoResize": "width",
                   "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
                   "fills": [{}],
                   "fontFamily": "Arial",
                   "fontSize": 13.33,
-                  "fontWeight": 600,
-                  "h": 15.5,
-                  "letterSpacing": 0,
-                  "lineHeight": null,
                   "propRefs": { "text": "button-label" },
                   "text": "Continue",
-                  "textAlign": "center",
-                  "w": 57.76
+                  "textAlign": "center"
                 }
               ]
             },
@@ -191,25 +153,12 @@
               },
               "clip": false,
               "fills": [{}],
-              "h": 32,
-              "layout": {
-                "alignC": "center",
-                "alignP": "start",
-                "gap": 8,
-                "mode": "horizontal",
-                "pb": 8,
-                "pl": 20,
-                "pr": 20,
-                "pt": 8,
-                "spacing": "packed"
-              },
-              "radius": 8,
+              "layout": { "alignC": "center", "mode": "horizontal" },
               "sizingH": "hug",
               "sizingV": "hug",
               "strokeAlign": "outside",
               "strokeWidth": 2,
               "strokes": [{}],
-              "w": 121.76,
               "x": 311.52,
               "y": 20,
               "children": [
@@ -228,19 +177,13 @@
                   "id": "button-variant-primary-state-focus-label-1",
                   "type": "text",
                   "name": "Label",
-                  "autoResize": "width",
                   "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
                   "fills": [{}],
                   "fontFamily": "Arial",
                   "fontSize": 13.33,
-                  "fontWeight": 600,
-                  "h": 15.5,
-                  "letterSpacing": 0,
-                  "lineHeight": null,
                   "propRefs": { "text": "button-label" },
                   "text": "Continue",
-                  "textAlign": "center",
-                  "w": 57.76
+                  "textAlign": "center"
                 }
               ]
             },
@@ -259,23 +202,10 @@
               },
               "clip": false,
               "fills": [{}],
-              "h": 32,
-              "layout": {
-                "alignC": "center",
-                "alignP": "start",
-                "gap": 8,
-                "mode": "horizontal",
-                "pb": 8,
-                "pl": 20,
-                "pr": 20,
-                "pt": 8,
-                "spacing": "packed"
-              },
+              "layout": { "alignC": "center", "mode": "horizontal" },
               "opacity": 0.5,
-              "radius": 8,
               "sizingH": "hug",
               "sizingV": "hug",
-              "w": 121.76,
               "x": 457.28,
               "y": 20,
               "children": [
@@ -294,19 +224,13 @@
                   "id": "button-variant-primary-state-disabled-label-1",
                   "type": "text",
                   "name": "Label",
-                  "autoResize": "width",
                   "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
                   "fills": [{}],
                   "fontFamily": "Arial",
                   "fontSize": 13.33,
-                  "fontWeight": 600,
-                  "h": 15.5,
-                  "letterSpacing": 0,
-                  "lineHeight": null,
                   "propRefs": { "text": "button-label" },
                   "text": "Continue",
-                  "textAlign": "center",
-                  "w": 57.76
+                  "textAlign": "center"
                 }
               ]
             },
@@ -325,22 +249,9 @@
               },
               "clip": false,
               "fills": [{}],
-              "h": 32,
-              "layout": {
-                "alignC": "center",
-                "alignP": "start",
-                "gap": 8,
-                "mode": "horizontal",
-                "pb": 8,
-                "pl": 20,
-                "pr": 20,
-                "pt": 8,
-                "spacing": "packed"
-              },
-              "radius": 8,
+              "layout": { "alignC": "center", "mode": "horizontal" },
               "sizingH": "hug",
               "sizingV": "hug",
-              "w": 104.02,
               "x": 20,
               "y": 76,
               "children": [
@@ -359,19 +270,13 @@
                   "id": "button-variant-danger-state-default-label-1",
                   "type": "text",
                   "name": "Label",
-                  "autoResize": "width",
                   "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
                   "fills": [{}],
                   "fontFamily": "Arial",
                   "fontSize": 13.33,
-                  "fontWeight": 600,
-                  "h": 15.5,
-                  "letterSpacing": 0,
-                  "lineHeight": null,
                   "propRefs": { "text": "button-label" },
                   "text": "Delete",
-                  "textAlign": "center",
-                  "w": 40.02
+                  "textAlign": "center"
                 }
               ]
             },
@@ -390,22 +295,9 @@
               },
               "clip": false,
               "fills": [{}],
-              "h": 32,
-              "layout": {
-                "alignC": "center",
-                "alignP": "start",
-                "gap": 8,
-                "mode": "horizontal",
-                "pb": 8,
-                "pl": 20,
-                "pr": 20,
-                "pt": 8,
-                "spacing": "packed"
-              },
-              "radius": 8,
+              "layout": { "alignC": "center", "mode": "horizontal" },
               "sizingH": "hug",
               "sizingV": "hug",
-              "w": 104.02,
               "x": 165.76,
               "y": 76,
               "children": [
@@ -424,19 +316,13 @@
                   "id": "button-variant-danger-state-hover-label-1",
                   "type": "text",
                   "name": "Label",
-                  "autoResize": "width",
                   "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
                   "fills": [{}],
                   "fontFamily": "Arial",
                   "fontSize": 13.33,
-                  "fontWeight": 600,
-                  "h": 15.5,
-                  "letterSpacing": 0,
-                  "lineHeight": null,
                   "propRefs": { "text": "button-label" },
                   "text": "Delete",
-                  "textAlign": "center",
-                  "w": 40.02
+                  "textAlign": "center"
                 }
               ]
             },
@@ -456,25 +342,12 @@
               },
               "clip": false,
               "fills": [{}],
-              "h": 32,
-              "layout": {
-                "alignC": "center",
-                "alignP": "start",
-                "gap": 8,
-                "mode": "horizontal",
-                "pb": 8,
-                "pl": 20,
-                "pr": 20,
-                "pt": 8,
-                "spacing": "packed"
-              },
-              "radius": 8,
+              "layout": { "alignC": "center", "mode": "horizontal" },
               "sizingH": "hug",
               "sizingV": "hug",
               "strokeAlign": "outside",
               "strokeWidth": 2,
               "strokes": [{}],
-              "w": 104.02,
               "x": 311.52,
               "y": 76,
               "children": [
@@ -493,19 +366,13 @@
                   "id": "button-variant-danger-state-focus-label-1",
                   "type": "text",
                   "name": "Label",
-                  "autoResize": "width",
                   "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
                   "fills": [{}],
                   "fontFamily": "Arial",
                   "fontSize": 13.33,
-                  "fontWeight": 600,
-                  "h": 15.5,
-                  "letterSpacing": 0,
-                  "lineHeight": null,
                   "propRefs": { "text": "button-label" },
                   "text": "Delete",
-                  "textAlign": "center",
-                  "w": 40.02
+                  "textAlign": "center"
                 }
               ]
             },
@@ -524,23 +391,10 @@
               },
               "clip": false,
               "fills": [{}],
-              "h": 32,
-              "layout": {
-                "alignC": "center",
-                "alignP": "start",
-                "gap": 8,
-                "mode": "horizontal",
-                "pb": 8,
-                "pl": 20,
-                "pr": 20,
-                "pt": 8,
-                "spacing": "packed"
-              },
+              "layout": { "alignC": "center", "mode": "horizontal" },
               "opacity": 0.5,
-              "radius": 8,
               "sizingH": "hug",
               "sizingV": "hug",
-              "w": 104.02,
               "x": 457.28,
               "y": 76,
               "children": [
@@ -559,19 +413,13 @@
                   "id": "button-variant-danger-state-disabled-label-1",
                   "type": "text",
                   "name": "Label",
-                  "autoResize": "width",
                   "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
                   "fills": [{}],
                   "fontFamily": "Arial",
                   "fontSize": 13.33,
-                  "fontWeight": 600,
-                  "h": 15.5,
-                  "letterSpacing": 0,
-                  "lineHeight": null,
                   "propRefs": { "text": "button-label" },
                   "text": "Delete",
-                  "textAlign": "center",
-                  "w": 40.02
+                  "textAlign": "center"
                 }
               ]
             }
@@ -581,7 +429,7 @@
           "id": "card",
           "type": "component",
           "name": "Card",
-          "description": "<section class=\"card\">",
+          "description": "src/components/card.js: Card({ title, body, action })",
           "bindings": {
             "effects.0": "shadow-raised",
             "fills.0.color": "surface",
@@ -593,30 +441,9 @@
           },
           "clip": false,
           "codeName": "Card",
-          "effects": [
-            {
-              "type": "drop-shadow",
-              "blur": 8,
-              "color": "#000000",
-              "opacity": 0.1,
-              "spread": 0,
-              "x": 0,
-              "y": 2
-            }
-          ],
+          "effects": [{ "type": "drop-shadow" }],
           "fills": [{}],
-          "h": 177.5,
-          "layout": {
-            "alignC": "start",
-            "alignP": "start",
-            "gap": 20,
-            "mode": "vertical",
-            "pb": 20,
-            "pl": 20,
-            "pr": 20,
-            "pt": 20,
-            "spacing": "packed"
-          },
+          "layout": { "gap": 20, "mode": "vertical" },
           "props": {
             "card-title": {
               "type": "text",
@@ -631,7 +458,6 @@
               "default": "A small app whose design tokens live in src/styles/tokens.css."
             }
           },
-          "radius": 8,
           "sizingH": "fixed",
           "sizingV": "hug",
           "w": 360,
@@ -643,21 +469,9 @@
               "type": "frame",
               "name": "Title + Body",
               "clip": false,
-              "h": 86,
-              "layout": {
-                "alignC": "start",
-                "alignP": "start",
-                "gap": 8,
-                "mode": "vertical",
-                "pb": 0,
-                "pl": 0,
-                "pr": 0,
-                "pt": 0,
-                "spacing": "packed"
-              },
+              "layout": { "gap": 8, "mode": "vertical" },
               "sizingH": "fill",
               "sizingV": "hug",
-              "w": 320,
               "children": [
                 {
                   "id": "card-title-0",
@@ -665,16 +479,12 @@
                   "name": "Title",
                   "autoResize": "height",
                   "fills": [{ "color": "#1E1E1E" }],
-                  "fontFamily": "Inter",
                   "fontSize": 20,
                   "fontWeight": 700,
-                  "h": 30,
-                  "letterSpacing": 0,
                   "lineHeight": 150,
                   "propRefs": { "text": "card-title" },
                   "sizingH": "fill",
-                  "text": "Acme",
-                  "w": 320
+                  "text": "Acme"
                 },
                 {
                   "id": "card-body-1",
@@ -683,23 +493,16 @@
                   "autoResize": "height",
                   "bindings": { "fills.0.color": "text-secondary" },
                   "fills": [{}],
-                  "fontFamily": "Inter",
-                  "fontSize": 16,
-                  "fontWeight": 400,
-                  "h": 48,
-                  "letterSpacing": 0,
                   "lineHeight": 150,
                   "propRefs": { "text": "card-body" },
                   "sizingH": "fill",
-                  "text": "A small app whose design tokens live in src/styles/tokens.css.",
-                  "w": 320
+                  "text": "A small app whose design tokens live in src/styles/tokens.css."
                 }
               ]
             },
             {
               "id": "card-button-2",
               "type": "instance",
-              "name": "Button",
               "componentId": "button-variant-primary-state-default",
               "propValues": { "button-show-icon": false }
             }
@@ -740,20 +543,14 @@
               "h": 42,
               "layout": {
                 "alignC": "center",
-                "alignP": "start",
-                "gap": 8,
                 "mode": "horizontal",
                 "pb": 9,
                 "pl": 9,
                 "pr": 9,
-                "pt": 9,
-                "spacing": "packed"
+                "pt": 9
               },
-              "radius": 8,
               "sizingH": "fixed",
               "sizingV": "fixed",
-              "strokeAlign": "inside",
-              "strokeWidth": 1,
               "strokes": [{}],
               "w": 258,
               "x": 20,
@@ -763,18 +560,11 @@
                   "id": "input-state-default-placeholder-0",
                   "type": "text",
                   "name": "Placeholder",
-                  "autoResize": "width",
                   "bindings": { "fontFamily": "font-family-base", "fontSize": "font-size-body" },
                   "fills": [{ "color": "#757575" }],
-                  "fontFamily": "Inter",
-                  "fontSize": 16,
-                  "fontWeight": 400,
-                  "h": 26,
-                  "letterSpacing": 0,
                   "lineHeight": 150,
                   "propRefs": { "text": "input-placeholder" },
-                  "text": "Search projects",
-                  "w": 242
+                  "text": "Search projects"
                 }
               ]
             },
@@ -793,20 +583,14 @@
               "h": 42,
               "layout": {
                 "alignC": "center",
-                "alignP": "start",
-                "gap": 8,
                 "mode": "horizontal",
                 "pb": 9,
                 "pl": 9,
                 "pr": 9,
-                "pt": 9,
-                "spacing": "packed"
+                "pt": 9
               },
-              "radius": 8,
               "sizingH": "fixed",
               "sizingV": "fixed",
-              "strokeAlign": "inside",
-              "strokeWidth": 1,
               "strokes": [{}],
               "w": 258,
               "x": 20,
@@ -816,18 +600,11 @@
                   "id": "input-state-hover-placeholder-0",
                   "type": "text",
                   "name": "Placeholder",
-                  "autoResize": "width",
                   "bindings": { "fontFamily": "font-family-base", "fontSize": "font-size-body" },
                   "fills": [{ "color": "#757575" }],
-                  "fontFamily": "Inter",
-                  "fontSize": 16,
-                  "fontWeight": 400,
-                  "h": 26,
-                  "letterSpacing": 0,
                   "lineHeight": 150,
                   "propRefs": { "text": "input-placeholder" },
-                  "text": "Search projects",
-                  "w": 242
+                  "text": "Search projects"
                 }
               ]
             }

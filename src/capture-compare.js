@@ -41,11 +41,12 @@ async function withLaidOut(path, files, fn) {
     state.doc = doc;
     state.selection = [];
     reindex();
-    for (const pg of doc.pages) walk(pg.children, (n) => void (n.type === 'text' && measureText(n)));
     for (let i = 0; i < 2; i++) {
       normalizeTokenGroups();
       syncInstances();
       resolveVariables();
+      // Measured once fonts come from their tokens (a saved file leaves bound values out).
+      for (const pg of doc.pages) walk(pg.children, (n) => void (n.type === 'text' && measureText(n)));
       fixGroups();
       applyLayouts();
       fixGroups();

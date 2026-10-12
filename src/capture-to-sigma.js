@@ -514,15 +514,17 @@ const findIn = (node, selector) => {
   return found;
 };
 
-// Instances in a component (not inside other instances) with their override paths.
-function nestedInstances(comp) {
+// Instances in a component (not inside other instances) with their override paths. A saved instance has no
+// name of its own: it's named after its component (its set, for a variant), `nameOf(componentId)`.
+function nestedInstances(comp, nameOf = () => null) {
   const out = [];
   const visit = (children, path) => {
     const counts = new Map();
     for (const c of children || []) {
-      const n = (counts.get(c.name) || 0) + 1;
-      counts.set(c.name, n);
-      const key = `${path ? `${path}/` : ''}${escKey(c.name)}${n > 1 ? `#${n}` : ''}`;
+      const name = c.name ?? (c.type === 'instance' ? nameOf(c.componentId) : null) ?? c.type;
+      const n = (counts.get(name) || 0) + 1;
+      counts.set(name, n);
+      const key = `${path ? `${path}/` : ''}${escKey(name)}${n > 1 ? `#${n}` : ''}`;
       if (c.type === 'instance') out.push({ path: key, node: c });
       else visit(c.children, key);
     }
@@ -589,7 +591,7 @@ export function buildPage(capture, ctx) {
     const node = { id, type: 'instance', name: e.name, componentId: comp.id, x: el.box.x, y: el.box.y, w: el.box.w, h: el.box.h };
     if (Object.keys(values).length) node.propValues = values;
     // Components inside it (a card's button): their variants and values, as overrides.
-    const nested = nestedInstances(comp);
+    const nested = nestedInstances(comp, (cid) => entryOf(cid)?.name);
     const used = new Map();
     for (const n of nested) {
       const ne = entryOf(n.node.componentId);
@@ -643,7 +645,8 @@ export function buildPage(capture, ctx) {
         else delete n[sizing];
         const sizingNow = n[sizing] || mainSizing;
         const resized = sizingNow === 'fixed' && (mainSizing !== 'fixed' || Math.abs((n[size] || 0) - (main[size] || 0)) > 1);
-        if (resized) synced[size] = main[size] ?? null;
+        // A main that hugs has no saved size: Sigma reads it as a new layer's (100) until it's laid out.
+        if (resized) synced[size] = main[size] ?? 100;
         else delete n[size];
       }
       if (Object.keys(synced).length) n.synced = synced;
