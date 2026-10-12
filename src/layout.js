@@ -51,9 +51,18 @@ export function setSizing(n, axis, value) {
 
 const pad = (L, axis) => (axis === 'w' ? L.pl + L.pr : L.pt + L.pb);
 
+// Min and max sizes (minW, maxW, minH, maxH) limit hug and fill sizes on each axis.
+const LIMITS = { w: ['minW', 'maxW'], h: ['minH', 'maxH'] };
+export function clampSize(n, axis, v) {
+  const [lo, hi] = LIMITS[axis].map((k) => (Number.isFinite(Number(n[k])) && n[k] !== null && n[k] !== '' ? Number(n[k]) : null));
+  if (hi !== null) v = Math.min(v, hi);
+  if (lo !== null) v = Math.max(v, lo);
+  return v;
+}
+
 // Size a node contributes on an axis, resolving nested "hug" frames.
 function childSize(k, axis) {
-  if (getSizing(k, axis) === 'hug' && isAutoLayout(k)) return hugSize(k)[axis];
+  if (getSizing(k, axis) === 'hug' && isAutoLayout(k)) return clampSize(k, axis, hugSize(k)[axis]);
   return k[axis];
 }
 
@@ -102,8 +111,8 @@ function layoutChildren(f) {
     const w0 = k.w;
     for (const axis of ['w', 'h']) {
       const s = getSizing(k, axis);
-      if (s === 'hug' && isAutoLayout(k)) k[axis] = round(hugSize(k)[axis]);
-      if (s === 'fill' && axis === C && !(k.type === 'line' && axis === 'h')) k[axis] = round(Math.max(1, innerC));
+      if (s === 'hug' && isAutoLayout(k)) k[axis] = round(clampSize(k, axis, hugSize(k)[axis]));
+      if (s === 'fill' && axis === C && !(k.type === 'line' && axis === 'h')) k[axis] = round(Math.max(1, clampSize(k, axis, innerC)));
     }
     if (k.type === 'text' && k.w !== w0) measureText(k);
   }
@@ -111,10 +120,26 @@ function layoutChildren(f) {
   const fills = kids.filter((k) => getSizing(k, P) === 'fill' && !(k.type === 'line' && P === 'h'));
   if (fills.length) {
     const fixed = kids.filter((k) => !fills.includes(k)).reduce((s, k) => s + k[P], 0);
-    const each = Math.max(1, (innerP - fixed - gap * Math.max(0, kids.length - 1)) / fills.length);
+    let free = innerP - fixed - gap * Math.max(0, kids.length - 1);
+    // Share the space; a layer that hits its min or max keeps that, and the rest is shared again.
+    let open = [...fills];
+    const size = new Map();
+    for (let guard = 0; open.length && guard < fills.length + 1; guard++) {
+      const each = Math.max(1, free / open.length);
+      const clamped = open.filter((k) => clampSize(k, P, each) !== each);
+      if (!clamped.length) {
+        for (const k of open) size.set(k, each);
+        break;
+      }
+      for (const k of clamped) {
+        size.set(k, clampSize(k, P, each));
+        free -= size.get(k);
+      }
+      open = open.filter((k) => !clamped.includes(k));
+    }
     for (const k of fills) {
       const w0 = k.w;
-      k[P] = round(each);
+      k[P] = round(Math.max(1, size.get(k) ?? 1));
       if (k.type === 'text' && k.w !== w0) measureText(k);
     }
   }
@@ -148,8 +173,8 @@ function layoutPlain(nodes) {
   for (const n of nodes) {
     normalize(n, false);
     if (isAutoLayout(n)) {
-      if (getSizing(n, 'w') === 'hug') n.w = round(hugSize(n).w);
-      if (getSizing(n, 'h') === 'hug') n.h = round(hugSize(n).h);
+      if (getSizing(n, 'w') === 'hug') n.w = round(clampSize(n, 'w', hugSize(n).w));
+      if (getSizing(n, 'h') === 'hug') n.h = round(clampSize(n, 'h', hugSize(n).h));
       layoutChildren(n);
     } else if (n.children) {
       layoutPlain(n.children);

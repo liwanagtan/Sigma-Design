@@ -3,7 +3,7 @@ import {
   ancestors,
 } from './store.js';
 import { css, mul, apply, unionBoxes, cornersOf } from './geom.js';
-import { textStyle, caseText } from './text.js';
+import { textStyle, caseText, wrapsAtMax } from './text.js';
 import { isInsideInstance } from './components.js';
 import { gridsOverlay } from './grids.js';
 
@@ -189,14 +189,14 @@ export function nodeSVG(n, opts = {}) {
     case 'text': {
       // Text fills stack like shape fills: one text layer per visible fill.
       const hidden = !opts.export && state.editingTextId === n.id;
-      if (n.autoResize === 'width') {
+      if (n.autoResize === 'width' && !wrapsAtMax(n)) {
         // Text that never wraps is drawn as native SVG text: much cheaper for the browser than HTML.
         inner = svgText(n, visiblePaints(n.fills), hidden);
         break;
       }
       inner = visiblePaints(n.fills).map((p) =>
         `<foreignObject width="${Math.max(n.w, 1)}" height="${Math.max(n.h, 1)}" style="overflow:visible"${hidden ? ' visibility="hidden"' : ''}>` +
-        `<div xmlns="http://www.w3.org/1999/xhtml" style="${esc(textStyle(n))};color:${hexToRgba(p.color, p.opacity)};width:${n.autoResize === 'width' ? 'max-content' : n.w + 'px'}">${esc(n.text)}</div></foreignObject>`).join('');
+        `<div xmlns="http://www.w3.org/1999/xhtml" style="${esc(textStyle(n))};color:${hexToRgba(p.color, p.opacity)};width:${n.autoResize === 'width' && !wrapsAtMax(n) ? 'max-content' : n.w + 'px'}">${esc(n.text)}</div></foreignObject>`).join('');
       break;
     }
   }

@@ -12,6 +12,7 @@ import { contrastRatio, contrastLevel, formatRatio, isLargeText, backgroundBehin
 import { sampleTokenDocument } from '../src/sample-tokens.js';
 import { nodeSVG, effectOverhang, cornerRadii, strokeSides } from '../src/render.js';
 import { setProps } from '../src/commands.js';
+import { applyLayouts, DEFAULT_LAYOUT } from '../src/layout.js';
 import { exportDTCG, exportCSS, importTokens } from '../src/tokens-io.js';
 
 test('text case: upper, lower and title case change how text shows, not the text itself', () => {
@@ -344,4 +345,37 @@ test('corners and stroke sides: separate radii draw a path, can use tokens; stro
   ok(svg.includes('<path d="M0 39.5H200"'), 'only the bottom line, inside the edge');
   ok(!svg.includes('<rect x="0.5"'), 'no full outline');
   eq(strokeSides(input), { top: false, right: false, bottom: true, left: false });
+});
+
+test('min / max sizes: limit hug and fill, share what a clamped fill leaves, and wrap auto-width text at its max', () => {
+  const kid = (props) => createNode('rect', { w: 10, h: 20, sizingH: 'fill', ...props });
+  const a = kid({ name: 'A', maxW: 50 }), b = kid({ name: 'B' }), c = kid({ name: 'C', minW: 200 });
+  const row = createNode('frame', { name: 'Row', w: 400, h: 40, layout: { ...DEFAULT_LAYOUT, mode: 'horizontal', gap: 0 }, sizingH: 'fixed', children: [a, b, c] });
+  useDoc([row]);
+  applyLayouts();
+  eq([a.w, b.w, c.w], [50, 150, 200]); // 400 shared: A stops at 50, C needs at least 200, B takes the rest
+  // Hug: a frame that hugs its content but never gets narrower than 120 or wider than 160.
+  const chip = createNode('frame', { name: 'Chip', layout: { ...DEFAULT_LAYOUT, mode: 'horizontal', pl: 8, pr: 8 }, sizingH: 'hug', sizingV: 'hug', minW: 120, maxW: 160, children: [createNode('rect', { w: 20, h: 20 })] });
+  useDoc([chip]);
+  applyLayouts();
+  eq(chip.w, 120);
+  chip.children[0].w = 400;
+  applyLayouts();
+  eq(chip.w, 160);
+  // Instances follow their main component's min / max.
+  const main = createNode('component', { name: 'Btn', layout: { ...DEFAULT_LAYOUT, mode: 'horizontal' }, sizingH: 'hug', sizingV: 'hug', minW: 140, children: [createNode('rect', { name: 'Box', w: 20, h: 20 })] });
+  useDoc([main]);
+  const btn = createInstance(main, { x: 300 });
+  syncInstances();
+  applyLayouts();
+  eq([main.w, btn.w], [140, 140]);
+  // Auto-width text wraps once it reaches its max width.
+  const label = createNode('text', { text: 'A label that is long enough to need more than one line', autoResize: 'width', maxW: 120 });
+  useDoc([label]);
+  measureText(label);
+  eq(label.w, 120);
+  ok(label.h > 30, 'it wrapped onto more lines');
+  label.maxW = undefined;
+  measureText(label);
+  ok(label.w > 120 && label.h < 30, 'without a max it stays on one line');
 });

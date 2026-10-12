@@ -15,7 +15,7 @@ export function caseText(text, textCase) {
 
 export function textStyle(n) {
   const lh = n.lineHeight ? `${n.lineHeight}%` : 'normal';
-  const ws = n.autoResize === 'width' ? 'pre' : 'pre-wrap';
+  const ws = n.autoResize === 'width' && !wrapsAtMax(n) ? 'pre' : 'pre-wrap';
   return [
     `font-family:'${n.fontFamily}',system-ui,sans-serif`,
     `font-size:${n.fontSize}px`,
@@ -40,14 +40,31 @@ export function measureText(n) {
     measurer.style.cssText = 'position:absolute;left:-99999px;top:0;visibility:hidden;';
     document.body.appendChild(measurer);
   }
-  measurer.setAttribute('style', `position:absolute;left:-99999px;top:0;visibility:hidden;${textStyle(n)};` +
-    (n.autoResize === 'width' ? 'width:auto;display:inline-block' : `width:${n.w}px;display:block`));
-  // A trailing newline needs a character after it to take up height.
-  measurer.textContent = (n.text || '​').replace(/\n$/, '\n​');
-  const r = measurer.getBoundingClientRect();
-  if (n.autoResize === 'width') n.w = Math.max(1, Math.ceil(r.width));
+  const measure = (style) => {
+    measurer.setAttribute('style', `position:absolute;left:-99999px;top:0;visibility:hidden;${style}`);
+    // A trailing newline needs a character after it to take up height.
+    measurer.textContent = (n.text || '​').replace(/\n$/, '\n​');
+    return measurer.getBoundingClientRect();
+  };
+  if (n.autoResize === 'width') {
+    // Auto width grows with the text, up to a max width (then it wraps), and at least to a min width.
+    const max = Number(n.maxW) > 0 ? Number(n.maxW) : null;
+    let r = measure(`${textStyle({ ...n, maxW: null })};width:auto;display:inline-block`);
+    let w = Math.ceil(r.width);
+    if (max !== null && w > max) {
+      r = measure(`${textStyle({ ...n, autoResize: 'height' })};width:${max}px;display:block`);
+      w = max;
+    }
+    n.w = Math.max(1, Number(n.minW) > 0 ? Math.max(w, Number(n.minW)) : w);
+    n.h = Math.max(1, Math.ceil(r.height));
+    return;
+  }
+  const r = measure(`${textStyle(n)};width:${n.w}px;display:block`);
   n.h = Math.max(1, Math.ceil(r.height));
 }
+
+// Auto-width text that has reached its max width wraps there.
+export const wrapsAtMax = (n) => n.autoResize === 'width' && Number(n.maxW) > 0 && n.w >= Number(n.maxW);
 
 // ---------- in-place editor ----------
 let editor = null;
@@ -67,7 +84,7 @@ export function positionEditor() {
   const top = [...(n.fills || [])].reverse().find((p) => p.visible !== false);
   editor.setAttribute('style', `${textStyle(n)};color:${top?.color || '#000'};opacity:${top ? top.opacity : 1};` +
     `position:absolute;left:0;top:0;transform-origin:0 0;transform:${css(M)};outline:none;caret-color:#0D99FF;` +
-    (n.autoResize === 'width' ? 'width:auto;min-width:1px;' : `width:${n.w}px;`) +
+    (n.autoResize === 'width' && !wrapsAtMax(n) ? 'width:auto;min-width:1px;' : `width:${n.w}px;`) +
     (n.autoResize === 'fixed' ? `height:${n.h}px;` : ''));
 }
 

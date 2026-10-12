@@ -438,6 +438,11 @@ const FIELDS = {
     get: (n) => (Array.isArray(n.radii) && n.radii.some((r) => r !== n.radii[0]) ? 'Mixed' : n.radii ? n.radii[0] : n.radius),
     set: (v) => ({ radius: Math.max(0, v) }),
   },
+  // Min / max sizes: empty means no limit.
+  ...Object.fromEntries(['minW', 'maxW', 'minH', 'maxH'].map((k) => [k, {
+    get: (n) => (n[k] === undefined || n[k] === null ? '' : n[k]), set: (v) => ({ [k]: Math.max(0, v) }),
+    auto: /^\s*$/, autoValue: { [k]: undefined },
+  }])),
   ...Object.fromEntries(['TL', 'TR', 'BR', 'BL'].map((c, i) => [`radius${c}`, {
     get: (n) => (Array.isArray(n.radii) ? n.radii[i] : n.radius || 0),
     set: (v) => ({ [`radii.${i}`]: Math.max(0, v) }),
@@ -497,6 +502,7 @@ function normHex(str) {
 const FIELD_BIND = {
   w: 'w', h: 'h', radius: 'radius', opacity: 'opacity', strokeWidth: 'strokeWidth', fontSize: 'fontSize',
   radiusTL: 'radii.0', radiusTR: 'radii.1', radiusBR: 'radii.2', radiusBL: 'radii.3',
+  minW: 'minW', maxW: 'maxW', minH: 'minH', maxH: 'maxH',
   lineHeight: 'lineHeight', letterSpacing: 'letterSpacing', gap: 'layout.gap',
 };
 
@@ -973,6 +979,15 @@ function buildProps() {
         (canFill ? `<option value="fill" ${cur === 'fill' ? 'selected' : ''}>Fill</option>` : '') + '</select>';
     };
     layout += `<div class="grid2">${sizingSelect('w')}${showH ? sizingSelect('h') : '<span></span>'}</div>`;
+    // Min / max: limits for hug and fill sizes (and auto-width text, which wraps at its max width).
+    const limited = nodes.some((n) => ['minW', 'maxW', 'minH', 'maxH'].some((k) => n[k] !== undefined && n[k] !== null));
+    if (limited || showLimits) {
+      layout += `<div class="constraint-label muted">Min / max</div>` +
+        `<div class="grid2">${numField('minW', 'W', nodes, { icon: '<span class="mini">W≥</span>' })}${numField('maxW', '', nodes, { icon: '<span class="mini">W≤</span>' })}</div>` +
+        (showH ? `<div class="grid2">${numField('minH', '', nodes, { icon: '<span class="mini">H≥</span>' })}${numField('maxH', '', nodes, { icon: '<span class="mini">H≤</span>' })}</div>` : '');
+    } else {
+      layout += '<button class="link-btn add-limits" data-action="show-limits">+ Min / max size</button>';
+    }
   }
   const hasRadius = has((n) => isFrameLike(n) || ['rect', 'image'].includes(n.type));
   const corners = hasRadius && nodes.every((n) => Array.isArray(n.radii));
@@ -1247,12 +1262,14 @@ function exportControls() {
 }
 
 let lastPropsSig = '';
+let showLimits = false; // the Min / max fields, before any is set
 
 export function renderProps() {
   const panel = $('#props');
   const active = document.activeElement;
   const sig = `${page().id}|${state.selection.join()}|${state.tool}`;
   const sameTarget = sig === lastPropsSig;
+  if (!sameTarget) showLimits = false;
   lastPropsSig = sig;
   // Keep a field in use (text being typed, a color picker open); dropdowns, checkboxes and buttons can be rebuilt.
   const typing = active?.tagName === 'TEXTAREA' || (active?.tagName === 'INPUT' && active.type !== 'checkbox');
@@ -1460,6 +1477,10 @@ function initProps() {
         return addAutoLayout();
       case 'remove-al':
         return removeAutoLayout();
+      case 'show-limits':
+        showLimits = true;
+        renderProps();
+        return document.querySelector('[data-key="minW"]')?.focus();
       case 'independent-corners': {
         // Toggle between one radius and four: going back keeps the top-left corner's value for all.
         const split = !nodes.every((n) => Array.isArray(n.radii));

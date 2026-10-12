@@ -21,7 +21,7 @@ export const isComponent = (n) => n?.type === 'component';
 
 // Instance root properties copied from the main component unless overridden on the instance.
 // `bindings` makes variables on the main component's own box re-resolve in each instance's mode.
-const ROOT_PROPS = ['fills', 'strokes', 'strokeWidth', 'strokeAlign', 'strokeSides', 'radius', 'radii', 'clip', 'layout', 'layoutGrids', 'opacity', 'effects', 'name', 'modes', 'bindings'];
+const ROOT_PROPS = ['fills', 'strokes', 'strokeWidth', 'strokeAlign', 'strokeSides', 'radius', 'radii', 'clip', 'layout', 'layoutGrids', 'opacity', 'effects', 'minW', 'maxW', 'minH', 'maxH', 'name', 'modes', 'bindings'];
 // Root size/sizing follows the main component until the instance itself is resized.
 const ROOT_FOLLOW = ['w', 'h', 'sizingH', 'sizingV'];
 // Properties of layers inside an instance that can be overridden. Everything else (position, size,
@@ -161,7 +161,7 @@ const measureCache = new Map();
 // Text layers whose text or font was overridden need re-measuring; cache by content.
 function remeasure(n) {
   if (n.autoResize === 'fixed') return;
-  const key = JSON.stringify([n.text, n.fontFamily, n.fontSize, n.fontWeight, n.lineHeight, n.letterSpacing, n.autoResize, n.autoResize === 'height' ? n.w : 0]);
+  const key = JSON.stringify([n.text, n.fontFamily, n.fontSize, n.fontWeight, n.lineHeight, n.letterSpacing, n.textCase, n.minW, n.maxW, n.autoResize, n.autoResize === 'height' ? n.w : 0]);
   let size = measureCache.get(key);
   if (!size) {
     measureText(n);
