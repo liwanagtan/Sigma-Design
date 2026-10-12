@@ -4,6 +4,7 @@
 //
 //   sigmaCapture(element, { state: 'default' | 'hover' | 'focus' | 'pressed' | 'disabled', name, match })
 //   await sigmaCapturePage('/settings', { width: 375, match })      a whole page at a width (Phase 29)
+//   sigmaCaptureAll(manifest)        every capture the manifest lists, by each entry's `element` selector
 //
 // It returns a tree Sigma can turn into a component (tools/sigma.mjs library build) or a page (pages build):
 // each element's box (relative to the root), its computed style, the CSS it was written with (so
@@ -209,4 +210,24 @@ export async function sigmaCapturePage(url, { width = 1280, height = 800, match 
   }
 }
 
-if (typeof window !== 'undefined') Object.assign(window, { sigmaCapture, sigmaCapturePage });
+// Every capture the captures' manifest lists, on the page rendering the components: { [file]: capture }.
+// Each capture entry names its `element` (a selector); its State value says which state to apply.
+const STATES = { Default: 'default', Hover: 'hover', Focus: 'focus-visible', Pressed: 'pressed', Active: 'pressed', Disabled: 'disabled' };
+export function sigmaCaptureAll(manifest, { root = document } = {}) {
+  const out = {};
+  const missing = [];
+  for (const c of manifest.components || []) {
+    for (const cap of c.captures || []) {
+      const el = cap.element && root.querySelector(cap.element);
+      if (!el) {
+        missing.push(`${c.name} ${JSON.stringify(cap.variant || {})}: ${cap.element ? `nothing matches ${cap.element}` : 'no "element" in the manifest'}`);
+        continue;
+      }
+      out[cap.file] = sigmaCapture(el, { state: STATES[cap.variant?.State] || 'default', name: c.name, match: manifest });
+    }
+  }
+  if (missing.length) out.$missing = missing;
+  return out;
+}
+
+if (typeof window !== 'undefined') Object.assign(window, { sigmaCapture, sigmaCapturePage, sigmaCaptureAll });

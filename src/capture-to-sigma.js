@@ -455,6 +455,15 @@ export function compareBoxes(sigma, captureTree, { tolerance = 1.5 } = {}) {
       const d = Math.abs((s.box[k] || 0) - (c.box[k] || 0));
       if (d > tolerance) out.push({ layer: path.join(' / '), what: label, code: c.box[k], sigma: Math.round(s.box[k] * 10) / 10 });
     }
+    // Colors: a text's color, a box's background (when the Sigma side says what it paints).
+    const six = (v) => (v ? String(v).slice(0, 7).toUpperCase() : null);
+    if (c.style && 'color' in s && !c.placeholder) {
+      const want = six(hex(c.style.color));
+      if (want !== six(s.color)) out.push({ layer: path.join(' / '), what: 'color', code: want, sigma: six(s.color) });
+    } else if (c.style && 'background' in s && c.tag !== '#text') {
+      const want = six(hex(c.style['background-color']));
+      if (want !== six(s.background)) out.push({ layer: path.join(' / '), what: 'background', code: want ?? 'none', sigma: six(s.background) ?? 'none' });
+    }
     const ck = (c.children || []).filter((x) => x.tag !== '#text' || (c.children || []).length > 1);
     // A group Sigma made to keep uneven spacing has no counterpart: compare what's in it instead. Layers
     // pair by name, else by position.

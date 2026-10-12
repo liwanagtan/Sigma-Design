@@ -17,12 +17,17 @@ const get = async (path) => {
 };
 
 // A laid-out layer as { name, box (relative to the component), children }.
+// Its paint, to compare colors: a text's color, else a box's background (null when it has none).
 function boxes(node, origin) {
   const b = worldBounds(node);
-  return {
+  const fill = (node.fills || []).find((f) => f.visible !== false && (f.opacity ?? 1) > 0 && f.color);
+  const out = {
     name: node.name, box: { x: b.x - origin.x, y: b.y - origin.y, w: b.w, h: b.h },
     children: (node.children || []).filter((c) => c.visible !== false).map((c) => boxes(c, origin)),
   };
+  if (node.type === 'text') out.color = fill?.color || null;
+  else if (node.type !== 'icon' && node.type !== 'group') out.background = fill?.color || null;
+  return out;
 }
 
 // The project's files, and a document from one of them laid out as the editor would (text measured, the

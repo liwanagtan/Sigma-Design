@@ -4,7 +4,7 @@
     {
       "name": "Button",
       "codeName": "Button",
-      "description": "src/components/button.js: Button({ label, variant, icon }); styles in .button",
+      "description": "src/components/button.js: Button({ label, variant, icon, disabled }); styles in .button",
       "props": [
         {
           "name": "Label",
@@ -35,56 +35,64 @@
             "Variant": "Primary",
             "State": "Default"
           },
-          "file": "button-primary-default.json"
+          "file": "button-primary-default.json",
+          "element": "#button-primary"
         },
         {
           "variant": {
             "Variant": "Primary",
             "State": "Hover"
           },
-          "file": "button-primary-hover.json"
+          "file": "button-primary-hover.json",
+          "element": "#button-primary"
         },
         {
           "variant": {
             "Variant": "Primary",
             "State": "Focus"
           },
-          "file": "button-primary-focus.json"
+          "file": "button-primary-focus.json",
+          "element": "#button-primary"
         },
         {
           "variant": {
             "Variant": "Primary",
             "State": "Disabled"
           },
-          "file": "button-primary-disabled.json"
+          "file": "button-primary-disabled.json",
+          "element": "#button-primary"
         },
         {
           "variant": {
             "Variant": "Danger",
             "State": "Default"
           },
-          "file": "button-danger-default.json"
+          "file": "button-danger-default.json",
+          "element": "#button-danger"
         },
         {
           "variant": {
             "Variant": "Danger",
             "State": "Hover"
           },
-          "file": "button-danger-hover.json"
+          "file": "button-danger-hover.json",
+          "element": "#button-danger"
         },
         {
           "variant": {
             "Variant": "Danger",
             "State": "Focus"
           },
-          "file": "button-danger-focus.json"
+          "file": "button-danger-focus.json",
+          "element": "#button-danger"
         },
         {
           "variant": {
             "Variant": "Danger",
             "State": "Disabled"
           },
-          "file": "button-danger-disabled.json"
+          "file": "button-danger-disabled.json",
+          "element": "#button-danger"
         }
       ],
       "match": {
@@ -104,7 +112,8 @@
           "Show icon": "has:img, svg",
           "Icon": "icon:img, svg"
         }
-      }
+      },
+      "source": "src/components/button.js"
     },
     {
       "name": "Input",
@@ -123,13 +132,15 @@
           "variant": {
             "State": "Default"
           },
-          "file": "input-default.json"
+          "file": "input-default.json",
+          "element": "#input"
         },
         {
           "variant": {
             "State": "Hover"
           },
-          "file": "input-hover.json"
+          "file": "input-hover.json",
+          "element": "#input"
         }
       ],
       "match": {
@@ -142,12 +153,13 @@
         "props": {
           "Placeholder": "text"
         }
-      }
+      },
+      "source": "src/components/input.js"
     },
     {
       "name": "Card",
       "codeName": "Card",
-      "description": "<section class=\"card\">",
+      "description": "src/components/card.js: Card({ title, body, action })",
       "instances": [
         {
           "layer": "Button",
@@ -163,7 +175,8 @@
       ],
       "captures": [
         {
-          "file": "card.json"
+          "file": "card.json",
+          "element": "#card"
         }
       ],
       "props": [
@@ -186,7 +199,8 @@
           "Title": "text:.card__title",
           "Body": "text:.card__body"
         }
-      }
+      },
+      "source": "src/components/card.js"
     }
   ]
 }

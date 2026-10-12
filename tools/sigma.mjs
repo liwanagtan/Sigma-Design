@@ -21,6 +21,7 @@
 //   node tools/sigma.mjs changeset sync [project]                 statuses from GitHub (gh pr view)
 //   node tools/sigma.mjs library build [project] --from DIR [--library PATH] [--dry-run]   components from captures
 //   node tools/sigma.mjs pages build [project] --from DIR [--dry-run]                       pages from captures, as library instances
+//   node tools/sigma.mjs components diff|write [project] [--base REV] [--dry-run]           library changes → code
 //   node tools/sigma.mjs comment list [project] [--all]
 //   node tools/sigma.mjs comment add [project] --file PATH --layer ID|NAME --text TEXT [--author NAME] [--reply-to ID]
 //   node tools/sigma.mjs comment resolve <id> [project] [--author NAME]
@@ -37,6 +38,8 @@ import { iconsFromFiles, mergeIcons, iconChanges, iconFilePath, iconSVG, sameIco
 import { parseSVGIcon } from '../src/icon-library.js';
 import { applyChanges, summarize, STATUSES, CHANGESET_DIR } from '../src/changesets.js';
 import { buildComponent, buildPage, tokenIndex } from '../src/capture-to-sigma.js';
+import { componentDiff, formatComponentDiff } from '../src/component-diff.js';
+import { parseRules, findRule, editRules } from '../src/css-rules.js';
 import { defaultTokenCode } from '../src/code-names.js';
 import { parseVariantName } from '../src/components.js';
 import { validateProject } from '../src/validate.js';
@@ -734,6 +737,131 @@ function pagesBuild(dir) {
   }
 }
 
+// ---------- design to code for components (Phase 30) ----------
+const MANIFEST = '.sigma/captures/manifest.json';
+const topComponents = (file) => {
+  const out = new Map();
+  for (const pg of file?.pages || []) {
+    const visit = (nodes) => nodes.forEach((n) => (n.type === 'component' || n.type === 'componentSet' ? out.set(n.id, n) : n.children && visit(n.children)));
+    visit(pg.children || []);
+  }
+  return out;
+};
+
+// For each library in sigma.config.json's components: what changed since --base, and the code plan.
+function componentPlans(root, config) {
+  const base = flags.base || 'HEAD';
+  return entriesOf(config, 'components').map((e) => {
+    const now = readSigma(root, e.sigma);
+    if (!now) fail(`${e.sigma} doesn’t exist yet: build the library first (library build)`);
+    const thenText = gitShow(root, base, e.sigma);
+    const then = thenText ? JSON.parse(thenText) : null;
+    const manifestPath = e.manifest || MANIFEST;
+    const manifest = exists(root, manifestPath) ? JSON.parse(readText(root, manifestPath)) : { components: [] };
+    const tokenFiles = [...new Set([...(now.uses?.tokens || []), ...(then?.uses?.tokens || [])])];
+    const codes = new Map();
+    for (const p of tokenFiles) {
+      const f = readSigma(root, p);
+      for (const c of f?.collections || []) for (const v of c.variables || []) codes.set(v.id, v.codeSyntax?.web?.startsWith('--') ? v.codeSyntax.web : defaultTokenCode(v.name));
+    }
+    const a = topComponents(then), b = topComponents(now);
+    const plans = [];
+    for (const id of new Set([...a.keys(), ...b.keys()])) {
+      const x = a.get(id) || null, y = b.get(id) || null;
+      if (JSON.stringify(x) === JSON.stringify(y)) continue;
+      const entry = manifest.components.find((c) => c.name === (y || x).name) || { name: (y || x).name };
+      const source = entry.source && exists(root, entry.source) ? readText(root, entry.source) : null;
+      plans.push(componentDiff(x, y, { entry, codeOf: (tid) => codes.get(tid) || null, source }));
+    }
+    return { entry: e, base, manifestPath, manifest, plans };
+  });
+}
+
+function componentsDiff(dir) {
+  const { root, config } = project(dir);
+  if (!config.components.length) fail('no components in sigma.config.json: add { "sigma": ".sigma/design/<library>.sigma.json", "source": "src/components" } (skills/sigma-sync/reference/design-to-code.md)');
+  const all = componentPlans(root, config);
+  if (json) return out(all.map(({ entry, base, plans }) => ({ sigma: entry.sigma, base, plans })));
+  for (const { entry, base, plans } of all) {
+    out(`${entry.sigma} since ${base}: ${plans.length} component${plans.length === 1 ? '' : 's'} changed`);
+    for (const p of plans) out(formatComponentDiff(p));
+  }
+}
+
+// CSS files the component styles can be in: the entry's styles, else every .css file in the project.
+const styleFiles = (root, e) => e.styles || listFilesIn(root, '.css').filter((p) => !p.startsWith('node_modules/'));
+
+function componentsWrite(dir) {
+  const { root, config } = project(dir);
+  if (!config.components.length) fail('no components in sigma.config.json (skills/sigma-sync/reference/design-to-code.md)');
+  const dry = !!flags['dry-run'];
+  const report = [];
+  for (const { entry: e, base, manifestPath, manifest, plans } of componentPlans(root, config)) {
+    const styles = styleFiles(root, e).map((p) => ({ path: p, text: readText(root, p) }));
+    const fileFor = (selector, fallback) => {
+      const has = (sel) => styles.find((f) => findRule(parseRules(f.text), sel));
+      return has(selector) || (fallback && has(fallback)) || styles[0];
+    };
+    let manifestChanged = false;
+    for (const plan of plans) {
+      const applied = [];
+      for (const edit of plan.css) {
+        const f = fileFor(edit.selector, plan.selector);
+        if (!f) {
+          plan.agent.push(`no CSS file to write ${edit.selector} { ${edit.prop}: ${edit.value} } in: set "styles" in sigma.config.json`);
+          continue;
+        }
+        const r = editRules(f.text, [edit]);
+        f.text = r.text;
+        f.changed ||= r.applied.length > 0;
+        applied.push(...r.applied.map((x) => ({ file: f.path, ...x })));
+      }
+      for (const c of plan.code) {
+        const text = exists(root, c.file) ? readText(root, c.file) : null;
+        if (!text || !text.includes(c.find)) {
+          plan.agent.push(`${c.why}: couldn’t find ${c.find} in ${c.file}; change it by hand`);
+          continue;
+        }
+        if (!dry) writeText(root, c.file, text.replace(c.find, c.replace));
+        applied.push({ file: c.file, before: c.find, after: c.replace });
+      }
+      // The manifest learns the new variants' selectors and captures, so pages and compare cover them.
+      const m = manifest.components.find((c) => c.name === plan.name);
+      if (m) {
+        for (const [p, vals] of Object.entries(plan.manifest.variants)) {
+          m.match ||= { selector: plan.selector };
+          m.match.variants ||= {};
+          m.match.variants[p] = { ...vals, ...(m.match.variants[p] || {}) };
+          manifestChanged = true;
+        }
+        for (const cap of plan.manifest.captures) {
+          if ((m.captures || []).some((x) => JSON.stringify(x.variant) === JSON.stringify(cap.variant))) continue;
+          (m.captures ||= []).push(cap);
+          manifestChanged = true;
+        }
+      }
+      report.push({ name: plan.name, applied, agent: plan.agent, diff: plan.diff });
+    }
+    if (!dry) {
+      for (const f of styles) if (f.changed) writeText(root, f.path, f.text);
+      if (manifestChanged) writeText(root, manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    }
+    if (json) continue;
+    out(`${e.sigma} since ${base}: ${report.length} component${report.length === 1 ? '' : 's'}${dry ? ' (dry run)' : ''}`);
+    for (const r of report) {
+      out(`  ${r.name}`);
+      for (const a of r.applied) {
+        if (a.selector) out(`    ${a.file}: ${a.selector} { ${a.prop}: ${a.before ?? '(new)'} → ${a.after ?? '(removed)'} }${a.added ? '  (new rule)' : ''}`);
+        else out(`    ${a.file}: ${a.before} → ${a.after}`);
+      }
+      if (manifestChanged) out(`    ${manifestPath}: new variants and captures added`);
+      if (r.agent.length) out('    For you:');
+      for (const t of r.agent) out(`      - ${t}`);
+    }
+  }
+  if (json) out(report);
+}
+
 // ---------- comments (Phase 27) ----------
 const rid = () => Math.random().toString(36).slice(2, 10);
 // A layer by id, by name path ("Card / Title") or by name: { node, page, path }.
@@ -863,6 +991,8 @@ else if (cmd === 'changeset' && sub === 'ticket') changesetTicket(dir, pos[3]);
 else if (cmd === 'changeset' && sub === 'sync') changesetSync(dir);
 else if (cmd === 'library' && sub === 'build') libraryBuild(dir);
 else if (cmd === 'pages' && sub === 'build') pagesBuild(dir);
+else if (cmd === 'components' && sub === 'diff') componentsDiff(dir);
+else if (cmd === 'components' && sub === 'write') componentsWrite(dir);
 else if (cmd === 'comment' && sub === 'list') commentList(dir);
 else if (cmd === 'comment' && sub === 'add') commentAdd(dir);
 else if (cmd === 'comment' && sub === 'resolve') commentResolve(dir, pos[3]);
@@ -888,6 +1018,8 @@ else {
   node tools/sigma.mjs changeset sync [project]
   node tools/sigma.mjs library build [project] --from DIR [--library PATH] [--dry-run]
   node tools/sigma.mjs pages build [project] --from DIR [--dry-run]
+  node tools/sigma.mjs components diff [project] [--base REV] [--entry N]
+  node tools/sigma.mjs components write [project] [--base REV] [--entry N] [--dry-run]
   node tools/sigma.mjs comment list [project] [--all]
   node tools/sigma.mjs comment add [project] --file PATH --layer ID|NAME --text TEXT [--author NAME] [--reply-to ID]
   node tools/sigma.mjs comment resolve <id> [project] [--author NAME]

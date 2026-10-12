@@ -39,5 +39,20 @@
       "source": "src/assets/icons",
       "output": "svg"
     }
+  ],
+  "components": [
+    {
+      "sigma": ".sigma/design/acme-library.sigma.json",
+      "source": "src/components",
+      "manifest": ".sigma/captures/manifest.json",
+      "styles": [
+        "src/styles/app.css"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "sigma": ".sigma/design/acme-pages.sigma.json"
+    }
   ]
 }

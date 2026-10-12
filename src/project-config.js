@@ -7,7 +7,8 @@
 //                sources: [{ path: 'src/styles/tokens.css', format: 'css-variables' }],
 //                naming: 'kebab', modes: { Light: ':root', Dark: '[data-theme="dark"]' }, map: { tokenName: codeName } }],
 //     icons: [{ sigma: '.sigma/icons/app.sigma.json', source: 'src/assets/icons', output: 'svg' }],
-//     components: [{ sigma: '.sigma/design/library.sigma.json', source: 'src/components' }],
+//     components: [{ sigma: '.sigma/design/library.sigma.json', source: 'src/components',
+//                    manifest: '.sigma/captures/manifest.json', styles: ['src/styles/app.css'] }],
 //     workflow: { git: 'github', tracker: 'notion', branch: 'design/{ticket}-{slug}', base: 'main',
 //                 prTemplate: '.github/pull_request_template.md', labels: ['design'], reviewers: [] } }
 
@@ -55,6 +56,8 @@ export function validateConfig(config, { files = [] } = {}) {
   list('components', (t, at) => {
     sigmaFile(`${at}.sigma`, t.sigma, 'design');
     if (typeof t.source !== 'string') error(`${at}.source`, 'should be the folder the components are in');
+    if (t.manifest !== undefined && typeof t.manifest !== 'string') error(`${at}.manifest`, 'should be the path of the captures’ manifest.json');
+    if (t.styles !== undefined && (!Array.isArray(t.styles) || t.styles.some((x) => typeof x !== 'string'))) error(`${at}.styles`, 'should list the CSS files the components’ styles are in');
   });
   list('pages', (t, at) => {
     sigmaFile(`${at}.sigma`, t.sigma, 'design');
