@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **All phases (1–14) done.** What's left is listed under "Later (needs a backend)" in Part C, under "Follow-ups", and in **Part D: Design and development**, which starts once Sigma's design and tokens are final.
+Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30), starting with Phase 20. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -268,7 +268,7 @@ doc.variables = {
 
 - **Constraints.** Without them, resizing an instance only reflows auto-layout children; fixed children stay pinned top-left. Option: add basic constraints (left / right / left-and-right / center / scale) as a Phase 3.5, since Figma users rely on them heavily.
 - **Override keys by name.** Renaming a layer inside a main component orphans existing overrides, which Figma also does. Acceptable, but the instance panel should show "N overrides no longer apply".
-- **Snapshot undo size.** Every commit snapshots the whole document, and materialized instances make it bigger. Phase 1 moves storage to IndexedDB, which removes the storage limit. The in-memory undo stack can still grow, so cap it by total size, not just by count. Fallback: store instances without children and rebuild them on load, since they're derivable.
+- ~~**Snapshot undo size.**~~ Done: undo keeps up to 200 steps and fewer for big files, capped at about 100 MB in total (`UNDO_CHARS` in `store.js`).
 - **Cycles.** These can come from nested instances or variable aliases. Both need hard guards in the pipeline, not just in the UI.
 
 # Part C: Design tokens
@@ -380,6 +380,17 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 12: Color opacity and typography tokens
 - [x] Phase 13: Linking design files to token files
 - [x] Phase 14: Export and import
+- [ ] Phase 20: File schema
+- [ ] Phase 21: Project folder storage
+- [ ] Phase 22: Tokens sync skill (first milestone)
+- [ ] Phase 23: Icons sync
+- [ ] Phase 24: Code handoff (Part D, Phase 15)
+- [ ] Phase 25: Propose change
+- [ ] Phase 26: Team workflow (GitHub and Notion)
+- [ ] Phase 27: Comments
+- [ ] Phase 28: Component library onboarding
+- [ ] Phase 29: Page onboarding
+- [ ] Phase 30: Design to code for components
 
 ## Follow-ups
 
@@ -400,6 +411,14 @@ Things noticed while building, not yet done:
   - **Component search** matches description keywords.
   - **Motion tokens:** Duration and Easing types, in DTCG and CSS. Nothing on the canvas uses them yet (no prototyping).
   - **Text case:** as typed, upper, lower and title case on text layers.
+- ~~**Corners, strokes, sizes and text.**~~ Done: a radius per corner, strokes on some sides only, min / max width and height for hug and fill sizes (auto-width text wraps at its max width), and text truncation after a number of lines.
+- ~~**Component libraries record their Sigma Tokens file.**~~ Done: a file linking the library starts using that Sigma Tokens file, or matches its tokens by name in its own (another brand).
+- ~~**Sigma Icons.**~~ Done:
+  - **Sigma Icons files:** a third file kind. SVGs are imported safely (plain shapes only, colors become the layer's color), grouped by style (outline, filled) and group, searched by name and keywords, and published as versions.
+  - **Icons in components:** design files link Sigma Icons files and keep copies of only the icons they use; icon layers (only in main components, for now) have a size, a color token and a stroke width; instances can't override them.
+  - **Icon property:** instances choose an icon, optionally from some groups only. Component libraries bring the Sigma Icons files they use.
+  - **Lucide:** **+ Sigma Icons ▾ → Lucide** adds the whole set (`tools/build-lucide.py` builds `icon-sets/lucide.json` from a pinned version).
+  - **Welcome to Sigma:** a sample Sigma Icons file and a tenth guide page, Sigma Icons.
 - **Drawing icons (later).** A pen tool, vector editing and boolean shapes (union, subtract, intersect, exclude), so icons can be drawn in Sigma. Not needed yet: icons come from free icon libraries for now. Pick this up once the rest of Sigma is set up.
 
 # Part D: Design and development (later)
@@ -462,3 +481,165 @@ From Figma's Schema talks ("Taking cues from code": test-driven design and visua
 - **Plugins and automation:** a way to script repetitive work and extend Sigma (*Future is automated*). Large; needs an API design first.
 - **Right-to-left layout:** auto layout that can flip for right-to-left languages. Language modes on text tokens already cover the strings.
 
+
+# Part E: Sigma in your codebase
+
+Sigma is **an open design tool for AI-native teams**: teams that already work with agents such as Claude Code or Codex. Sigma installs into any project, whatever its stack. The project's design tokens live in a Sigma Tokens file, its icons in a Sigma Icons file, and its components and pages in Sigma Design files built on those tokens. Agents keep design and code in sync, and design changes reach the codebase as tickets and pull requests that follow the team's own process.
+
+Figma hands designs to developers. Sigma hands them to agents and developers together.
+
+Part E reorders what's left: Part D's Phase 15 (code handoff) and Phase 16 (accessibility) are folded in below, and Part D's other phases follow once Part E's core works.
+
+## Decisions
+
+1. **Audience: AI-native teams.** Sigma is built for teams that use agents in their workflow. Supporting teams that don't use AI is not a goal.
+2. **Any codebase, any stack.** Nothing in Sigma is tied to one styling system or framework. Tailwind is one stack among many, not the engine.
+3. **Project → Sigma files.** Tokens → a Sigma Tokens file. Icons → a Sigma Icons file. Components → a Sigma Design library file that uses those tokens. Pages and features → Sigma Design files that use library instances, not loose shapes.
+4. **The repo is the source of truth.** Sigma files are stored in the project (`.sigma/`) and versioned by git. IndexedDB becomes a local cache. Sharing, review and history come from git, so teams don't need a Sigma backend to collaborate.
+5. **Pushing to code is intentional.** Saving stays local and never touches the repo. The designer chooses **Propose change**, picks which edits go in, adds a title and note, and only then does Sigma create the ticket and pull request. Edits can build up over several sessions first.
+6. **Sigma follows the team's process.** Branch names, PR templates, labels, reviewers, CODEOWNERS and CI all apply to Sigma's pull requests exactly as to a developer's. Sigma gets no bypass.
+7. **Skill-first.** An agent skill is the main way Sigma connects to a project: it reads the codebase, writes Sigma files and writes code back. A CLI or MCP server is optional and built only when teams ask for one (for example, deterministic sync in CI).
+8. **AI for translation, saved decisions for consistency.** Agents handle the fuzzy work (understanding a codebase, mapping it to Sigma, writing code patches). Every mapping decision is saved to `sigma.config.json`, so later runs follow it instead of deciding again.
+9. **Model-agnostic.** Skill instructions are plain Markdown that Claude Code, Codex or any other agent can follow. Sigma never depends on one AI tool.
+10. **Humans approve.** Agents propose; a person reviews and merges. Every agent change says what it did and why, in the PR and in Sigma's version history.
+11. **Neutral core.** Sigma's model stays stack-free (DTCG-shaped tokens, plain layer properties). Stack knowledge lives in the skill and in saved mappings, never in the editor.
+12. **Open core.** The editor, file format, skills and validator are open source. An optional hosted team service (a GitHub App, sign-in, tracker integrations) can come later for teams that want convenience over self-hosting.
+13. **Small teams first, designed for mature teams.** Pilot with two or three small teams. Keep everything config-driven so mature-team needs (permissions, audit, SSO, self-hosted git) can be added without a rewrite.
+14. **First integrations: GitHub and Notion.** Other git hosts (GitLab, Bitbucket, Azure DevOps) and trackers (Jira, Linear, GitHub Issues) come after.
+15. **The editor stays build-free.** Vanilla ES modules, no build step. Anything that can't run in a browser tab (a future CLI, server or GitHub App) lives in a separate package next to it.
+
+## Data model
+
+```text
+<project>/
+  sigma.config.json        # what the skill decided: stack, token sources, paths, naming, integrations
+  .sigma/
+    tokens/<name>.sigma.json    # Sigma Tokens files
+    icons/<name>.sigma.json     # Sigma Icons files
+    design/<name>.sigma.json    # Sigma Design files (library and pages)
+    changesets/<id>.json        # proposed changes waiting for a PR (local until proposed)
+```
+
+```js
+// sigma.config.json (written by the skill on first run, edited by people afterwards)
+{
+  schema: 1,
+  stack: { styling: ['css-variables'], framework: 'react' },      // what was detected
+  tokens: [{ sigma: '.sigma/tokens/core.sigma.json',
+             sources: [{ path: 'src/styles/tokens.css', format: 'css-variables' }],
+             naming: 'kebab', modes: { light: ':root', dark: '[data-theme="dark"]' } }],
+  icons:  [{ sigma: '.sigma/icons/app.sigma.json', source: 'src/assets/icons', output: 'svg' }],
+  components: [{ sigma: '.sigma/design/library.sigma.json', source: 'src/components' }],
+  workflow: { git: 'github', tracker: 'notion', branch: 'design/{ticket}-{slug}',
+              prTemplate: '.github/pull_request_template.md', labels: ['design'] }
+}
+
+// A changeset (Propose change)
+{ id, title, note, author, createdAt,
+  changes: [{ file: '.sigma/tokens/core.sigma.json', kind: 'token', ids: ['color-primary'] },
+            { file: '.sigma/design/library.sigma.json', kind: 'component', ids: ['button'] }],
+  status: 'draft' | 'proposed' | 'in-review' | 'changes-requested' | 'merged',
+  ticket?: { tracker: 'notion', url }, pr?: { host: 'github', url, number } }
+```
+
+Sigma files use stable ids and a diff-friendly layout (sorted keys, one object per line where practical), so pull requests show small, reviewable changes.
+
+## Phases
+
+### Phase 20: File schema
+
+- **Publish the format** of Sigma Tokens, Icons and Design files as a documented JSON schema (`docs/schema/`), generated from or checked against `DOC_VERSION` and the existing migrations.
+- **Diff-friendly saving:** stable key order and formatting when a file is written for a repo.
+- **Validator:** a dependency-free ES module (`tools/validate.js`) that runs in Node and in the browser. It reuses Sigma's own migrate and normalize code, and reports errors an agent can act on ("token `color-primary` aliases a missing token").
+- **Done when:** every sample file validates, a broken file gives clear errors, and the schema docs are enough for an agent to write a valid file without reading Sigma's source.
+
+### Phase 21: Project folder storage
+
+- **Open a project:** the files home can open a project's `.sigma/` folder (File System Access API where the browser supports it; import and download otherwise). Files show under the project's name.
+- **Save to the folder:** edits autosave to IndexedDB as today. Saving to the project folder writes the diff-friendly format.
+- **Reload from disk:** when an agent or a git pull changes a file, Sigma offers to reload it.
+- **Done when:** a Sigma file edited by an agent on disk reloads in an open editor, and Sigma's own save produces a minimal git diff.
+
+### Phase 22: Tokens sync skill (first milestone)
+
+- **The skill** (`skills/sigma-sync/SKILL.md`) with the schema as reference and the validator bundled.
+- **Import:** detect the stack, find every token source (CSS variables, Sass, Tailwind config or `@theme`, theme objects, DTCG, hardcoded values), sort them into primitives and semantics, detect modes and brands, turn repeated literals into aliases, and write a Sigma Tokens file. Record every decision in `sigma.config.json`.
+- **Write back:** apply token changes from a Sigma Tokens file to the project's own files as minimal edits that keep comments and formatting.
+- **Check:** after writing, run the validator, and re-import to confirm the round trip changes nothing.
+- **Prove the abstraction** on two very different stacks: plain CSS variables and a JavaScript theme object (MUI or styled-components).
+- **Done when:** on a real project, import → edit a token in Sigma → write back gives a correct, minimal diff, and running import again produces no changes.
+
+### Phase 23: Icons sync
+
+- **Import** the project's icon folder (or icon package) into a Sigma Icons file with groups and names kept.
+- **Write back** new and changed icons in the project's format (SVG files, or icon components when that's what the project uses).
+- **Done when:** an icon added in Sigma appears in the project in the right format, and one added in the project appears in Sigma on the next sync.
+
+### Phase 24: Code handoff (Part D, Phase 15)
+
+Unchanged from Phase 15 above: code names per platform for tokens, components and properties, and the **Inspect** panel. Code names are what let agents map Sigma components to code components in Phases 28–30, so this comes before them. The skill fills in code names during import.
+
+### Phase 25: Propose change
+
+- **Changesets in the editor:** a **Propose change** action lists edits since the last proposal, grouped by token, icon, component and page. The designer picks what to include and writes a title and note.
+- **Before and after:** each changed component and page is rendered before and after (from `buildSVG` and version history), for the ticket and PR.
+- **Done when:** a designer can split a session's edits into two changesets, and each is saved under `.sigma/changesets/` with its renders.
+
+### Phase 26: Team workflow (GitHub and Notion)
+
+- **Ticket:** the skill creates a Notion ticket from the changeset: title, note, renders, and what changed.
+- **Branch and PR:** the skill creates a branch named by `workflow.branch`, writes the code changes (tokens and icons from Phases 22–23; components from Phase 30) and the Sigma files, and opens a draft PR using the repo's template, linked to the ticket.
+- **Status in Sigma:** each changeset shows Proposed, In review, Changes requested or Merged. On merge the ticket moves to Done.
+- **Done when:** on a real repo, a proposed token change becomes a Notion ticket and a GitHub PR that passes the team's CI, and Sigma shows it as merged after merge.
+
+### Phase 27: Comments
+
+- **Comments on layers,** stored in the Sigma file, so PR review feedback can point at the exact layer it's about.
+- **Done when:** a comment added in Sigma shows in the PR's design diff, and resolving it is saved.
+
+### Phase 28: Component library onboarding
+
+- **The skill builds a library file** from the project's components: it renders each one in a headless browser (Storybook stories when the project has them), captures the layout as auto-layout frames, binds values to the Sigma tokens, and turns props into variants and component properties with code names.
+- **Check:** render the Sigma component and compare it with the real render; fix differences before handing off.
+- **Interactive states** (hover, focus, pressed, disabled) become a standard variant property, so states map the same way in every project.
+- **Done when:** a small real library (buttons, inputs, cards) arrives in Sigma as components that look like their code versions and use the project's tokens.
+
+### Phase 29: Page onboarding
+
+- **The skill builds page files** by visiting the app's routes, capturing each page, and rebuilding it from library instances (not loose shapes), one frame per page and breakpoint captured.
+- **Done when:** a few real pages arrive in Sigma made mostly of library instances, and the unmatched parts are listed for review.
+
+### Phase 30: Design to code for components
+
+- **Structured changes** (a token swap, a new variant, a changed property default) are written as exact code edits.
+- **Visual changes** (spacing, order, new layers) go to the agent with the component's design diff and its source; it writes a patch, renders the result and compares it with the Sigma design before proposing.
+- **Done when:** a padding change and a new variant made in Sigma become a correct PR on a real component.
+
+### Later
+
+- **Responsive breakpoints:** frames that change layout by width. This reaches into `layout.js` and `render.js`, so it waits until sync works end to end.
+- **Render parity:** routine comparison of Sigma's SVG render with the real CSS render, flagging drift.
+- **Accessibility checks** (Part D, Phase 16), fed into the PR as well.
+- **More integrations:** GitLab, Bitbucket, Azure DevOps; Jira, Linear, GitHub Issues.
+- **CLI and MCP server,** if teams want deterministic sync in CI or agents without a terminal. Built from the steps the skill repeats.
+- **Hosted team service:** a GitHub App so designers without git can propose changes, plus sign-in, permissions and audit logs for mature teams.
+- **Design-aware merging** of Sigma files changed on two branches.
+- **Monorepos and shared packages:** one design system package used by several apps on different versions.
+- **AI data policy:** let teams choose their model or provider, and document what is sent to it.
+
+## Open source
+
+- **What's open:** the editor, the file schema, the skills and the validator.
+- **License:** a permissive license (MIT or Apache 2.0) for the schema, skills and validator, to make adoption easy. For the editor and any server, consider AGPL if closed hosted forks are a concern; otherwise the same permissive license. Decide before the first public release.
+- **Before going public:** a CONTRIBUTING guide, the schema docs from Phase 20, and a check that the name Sigma and the positioning don't lean on Figma's trademarks.
+
+## Risks and open questions
+
+- **Agent consistency:** the saved mappings and the validator are the main guards. If runs still drift, move those steps into code (the CLI in "Later").
+- **Rendering drift:** Sigma draws SVG; apps render CSS. Phase 28's comparison step and render parity address it.
+- **Scope:** Phases 28–30 are each larger than any phase so far. Ship Phases 20–23 on a real project before starting them.
+- **Pilot teams:** find two or three before Phase 26, and shape the workflow around how they actually work.
+- **Derived data in files (Phase 20):** files store a lot that Sigma can rebuild: instances' children, the resolved values of token-bound properties, and copies of the libraries a file links (tokens, components, icons). Written to a repo as-is, one token change rewrites thousands of lines across many files. Diff-friendly saving should leave derived data out and rebuild it on load.
+- **Publish vs git (decide before Phase 21):** with the repo as the source of truth, a design file could point at `.sigma/tokens/core.sigma.json` by path and use whatever version is checked out, with git doing the versioning. That drops the library copies (most of the point above). Decide what Publish and Accept update mean inside a project.
+- **A validator that runs in Node (Phase 20):** normalizing measures text with a canvas, icon import uses `DOMParser`, and `files.js` needs IndexedDB and BroadcastChannel. The validator needs a DOM-free core (schema, migrations, token resolution); layout and text measurement stay browser-only or are skipped when validating.
+- **Project folder access (Phase 21):** the File System Access API only works in Chrome and Edge. Sigma already runs from `serve.py` inside a project, so the server could read and write `.sigma/` and tell the editor when an agent or a `git pull` changes a file. That works in every browser and keeps the editor build-free; the browser API becomes the fallback.
