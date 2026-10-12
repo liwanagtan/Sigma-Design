@@ -169,6 +169,14 @@
           "codeSyntax": { "web": "--space-8" },
           "groupId": "g1li5pdpcpl38p",
           "valuesByMode": { "primitives-default": 32 }
+        },
+        {
+          "id": "color-red-600",
+          "type": "color",
+          "name": "color/red/600",
+          "codeSyntax": { "web": "--color-red-600" },
+          "groupId": "g1npxdl0srofay",
+          "valuesByMode": { "primitives-default": "#DC2828" }
         }
       ]
     },
@@ -179,7 +187,8 @@
       "groups": [
         { "id": "gpgfw7yx3axdc", "name": "surface", "parentId": null },
         { "id": "g1cmiib81lj8kce", "name": "text", "parentId": null },
-        { "id": "gtw5e151xcnlhl", "name": "accent", "parentId": null }
+        { "id": "gtw5e151xcnlhl", "name": "accent", "parentId": null },
+        { "id": "g1c4h5341hwsfmo", "name": "danger", "parentId": null }
       ],
       "modes": [
         { "id": "semantic-light", "name": "Light" },
@@ -258,6 +267,17 @@
           "valuesByMode": {
             "semantic-dark": { "alias": "color-red-500" },
             "semantic-light": { "alias": "color-red-500" }
+          }
+        },
+        {
+          "id": "danger-hover",
+          "type": "color",
+          "name": "danger/hover",
+          "codeSyntax": { "web": "--danger-hover" },
+          "groupId": "g1c4h5341hwsfmo",
+          "valuesByMode": {
+            "semantic-dark": { "alias": "color-red-600" },
+            "semantic-light": { "alias": "color-red-600" }
           }
         }
       ]

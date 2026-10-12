@@ -9,6 +9,7 @@
   --color-gray-600: rgb(117 117 117);
   --color-gray-900: #1e1e1e;
   --color-red-500: hsl(0 84% 60%);
+  --color-red-600: hsl(0 72% 51%);
 
   /* Spacing and shape */
   --space-1: 0.25rem;
@@ -35,6 +36,7 @@
   --accent: var(--color-blue-500);
   --accent-hover: var(--color-blue-600);
   --danger: var(--color-red-500);
+  --danger-hover: var(--color-red-600);
 }
 
 [data-theme="dark"] {
