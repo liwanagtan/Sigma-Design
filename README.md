@@ -197,6 +197,7 @@ Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.
 - **Changes on disk:** Sigma checks the project every 2 seconds. When an agent or git changes the open file, it reloads (or asks, if it has changes not saved to the project); when a file it uses changes (new tokens or icons), it updates its copies and keeps your edits. Writes never overwrite a file that changed on disk since Sigma read it; Sigma asks instead.
 - **Safety:** the server listens on 127.0.0.1, answers only requests addressed to localhost, writes only `.sigma/` files and `sigma.config.json`, and only for requests from Sigma (they carry a header other websites can't send). Writes are logged.
 - **Check files** with `node tools/validate.js <project folder>` (Node 18+, no dependencies): it reports each problem with where it is and what to do, and exits with 1 when there are errors.
+- **Sync tokens with the code** (`skills/sigma-sync/SKILL.md`, a skill any agent can follow, with `node tools/sigma.mjs`): the agent works out the stack and records its decisions in `sigma.config.json`. CSS variables are read and written by the tool itself: `tokens import` (code → Sigma, merging so ids, descriptions and order stay and importing twice changes nothing), `tokens diff` (what changed since a git revision), `tokens write` (Sigma → CSS as minimal edits that keep each value's unit and color format), `check` (valid, and no drift). Other stacks (theme objects, Tailwind config…) go through a DTCG tokens.json the agent writes (`tokens import --from`), and the agent applies write-backs from `tokens diff`. Proven on `examples/css-app` (CSS variables) and `examples/mui-app` (an MUI theme).
 - `examples/sample-project/` holds Sigma's sample files in this format (`node tools/build-sample-project.mjs` rebuilds them).
 
 ## Code layout
@@ -227,6 +228,9 @@ Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.
 | `src/project.js` | Projects: reaching one (the server or a picked folder), bringing files in, saving to the project, watching for changes on disk |
 | `src/project-ui.js` | The project status chip and menu items |
 | `src/project-config.js` | `sigma.config.json`: what the sync skill decided about a project |
+| `src/token-sync.js` | Tokens between code and Sigma: CSS variables in and out, merging, diffs |
+| `tools/sigma.mjs` | The command line the sync skill uses (validate, check, tokens import / diff / write / export) |
+| `skills/sigma-sync/` | The sync skill: instructions for agents, with references |
 | `tools/validate.js` | Command-line check for a project's Sigma files |
 | `src/component-ui.js` | Figma-style component, component set, variant and instance panels; the property window; the component picker |
 | `src/history.js` | Version history panel: viewing a version read-only, restore, duplicate, named versions |

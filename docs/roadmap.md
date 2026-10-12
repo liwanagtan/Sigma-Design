@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phases 20 and 21 are done; next is Phase 22. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phases 20–22 are done; next is Phase 23. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -382,7 +382,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 14: Export and import
 - [x] Phase 20: File schema
 - [x] Phase 21: Project folder storage
-- [ ] Phase 22: Tokens sync skill (first milestone)
+- [x] Phase 22: Tokens sync skill (first milestone)
 - [ ] Phase 23: Icons sync
 - [ ] Phase 24: Code handoff (Part D, Phase 15)
 - [ ] Phase 25: Propose change
@@ -572,6 +572,7 @@ Sigma files use stable ids and a diff-friendly layout (sorted keys, one object p
 - **Check:** after writing, run the validator, and re-import to confirm the round trip changes nothing.
 - **Prove the abstraction** on two very different stacks: plain CSS variables and a JavaScript theme object (MUI or styled-components).
 - **Done when:** on a real project, import → edit a token in Sigma → write back gives a correct, minimal diff, and running import again produces no changes.
+- **What shipped:** `skills/sigma-sync/SKILL.md` (set up, import, write back, check, report) with `reference/tokens.md` (the DTCG format agents write for other stacks); `tools/sigma.mjs` (`validate`, `check`, `tokens import | diff | write | export`); `src/token-sync.js`. CSS variables are read and written by the tool (modes from selectors, `var()` as references, primitives vs semantic, units and color formats kept); other stacks go through DTCG the agent writes, and write-back is the agent's edit from `tokens diff`, checked by re-importing. Tokens record their code name (`codeSyntax.web`). Proven on two example projects rather than a real one: `examples/css-app` (4 Sigma edits → a 5-line CSS diff, re-import changes nothing) and `examples/mui-app` (3 edits → a 3-line `theme.js` diff, re-import changes nothing). Trying it on a real project is the next check.
 
 ### Phase 23: Icons sync
 

@@ -94,7 +94,10 @@ Every file starts with:
 - **References**: a value can be `{ "alias": "<token id>" }`, pointing at another token of the same type, in
   this file or in a file it `uses`. The validator reports missing targets, wrong types and loops.
 - Optional on a token: `description`, `deprecated: true` (kept working but not offered),
-  `contrastWith: ["<token id>"]` (color tokens used together, checked for contrast).
+  `contrastWith: ["<token id>"]` (color tokens used together, checked for contrast), and
+  `codeSyntax: { "web": "--color-blue-500" }`: the token's name in code (a CSS variable, or a theme path
+  like `palette.primary.main`), written by the sync skill and used to write changes back. `ios` and
+  `android` can hold the names on those platforms.
 
 | `type` | Value | Example |
 | --- | --- | --- |

@@ -4,59 +4,47 @@
 // With a folder, checks every .sigma/**/*.sigma.json in it (links between files included) and
 // sigma.config.json. Prints one line per problem, errors first, and exits with 1 when there are errors.
 // No dependencies: Node 18 or later. The same checks run in the browser (src/validate.js).
-import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
-import { join, relative, resolve, sep } from 'node:path';
+import { readFileSync, statSync, existsSync } from 'node:fs';
+import { relative, resolve } from 'node:path';
 import { validateProject, formatIssues } from '../src/validate.js';
 import { validateConfig } from '../src/project-config.js';
+import { readProject, toPosix } from './lib/project.mjs';
 
-const args = process.argv.slice(2);
-const asJSON = args.includes('--json');
-const targets = args.filter((a) => !a.startsWith('--'));
-if (!targets.length) targets.push('.');
-
-const files = {};
-const issues = [];
-const toPosix = (p) => p.split(sep).join('/');
-const walk = (dir, out = []) => {
-  for (const name of readdirSync(dir)) {
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) walk(p, out);
-    else if (name.endsWith('.sigma.json')) out.push(p);
-  }
-  return out;
-};
-
-for (const target of targets) {
-  const abs = resolve(target);
-  if (!existsSync(abs)) {
-    issues.push({ file: target, at: '', level: 'error', message: 'doesn’t exist' });
-    continue;
-  }
-  if (statSync(abs).isDirectory()) {
-    // A project: paths are relative to its root, as files write them in "uses".
-    const sigmaDir = join(abs, '.sigma');
-    const found = existsSync(sigmaDir) ? walk(sigmaDir) : walk(abs);
-    for (const f of found) files[toPosix(relative(abs, f))] = readFileSync(f, 'utf8');
-    const config = join(abs, 'sigma.config.json');
-    if (existsSync(config)) {
-      try {
-        issues.push(...validateConfig(JSON.parse(readFileSync(config, 'utf8')), { files: Object.keys(files) })
-          .map((i) => ({ ...i, file: 'sigma.config.json' })));
-      } catch (e) {
-        issues.push({ file: 'sigma.config.json', at: '', level: 'error', message: `isn’t valid JSON: ${e.message}` });
-      }
+// { errors, issues, files }: the checks for one or more targets (project folders or files).
+export function check(targets) {
+  const files = {};
+  const issues = [];
+  for (const target of targets) {
+    const abs = resolve(target);
+    if (!existsSync(abs)) {
+      issues.push({ file: target, at: '', level: 'error', message: 'doesn’t exist' });
+      continue;
     }
-    if (!found.length) issues.push({ file: target, at: '', level: 'warning', message: 'has no .sigma.json files' });
-  } else {
-    files[toPosix(relative(process.cwd(), abs))] = readFileSync(abs, 'utf8');
+    if (statSync(abs).isDirectory()) {
+      // A project: paths are relative to its root, as files write them in "uses".
+      const { files: found, config, configError } = readProject(abs);
+      Object.assign(files, found);
+      if (configError) issues.push({ file: 'sigma.config.json', at: '', level: 'error', message: `isn’t valid JSON: ${configError}` });
+      else if (config) issues.push(...validateConfig(config, { files: Object.keys(found) }).map((i) => ({ ...i, file: 'sigma.config.json' })));
+      if (!Object.keys(found).length) issues.push({ file: target, at: '', level: 'warning', message: 'has no .sigma/**/*.sigma.json files' });
+    } else {
+      files[toPosix(relative(process.cwd(), abs))] = readFileSync(abs, 'utf8');
+    }
   }
+  issues.push(...validateProject(files));
+  return { files, issues, errors: issues.filter((i) => i.level === 'error').length };
 }
 
-issues.push(...validateProject(files));
-const errors = issues.filter((i) => i.level === 'error').length;
-if (asJSON) console.log(JSON.stringify({ files: Object.keys(files).length, errors, warnings: issues.length - errors, issues }, null, 2));
-else {
-  if (issues.length) console.log(formatIssues(issues));
-  console.log(`${Object.keys(files).length} file${Object.keys(files).length === 1 ? '' : 's'} checked: ${errors} error${errors === 1 ? '' : 's'}, ${issues.length - errors} warning${issues.length - errors === 1 ? '' : 's'}`);
+if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('validate.js')) {
+  const args = process.argv.slice(2);
+  const asJSON = args.includes('--json');
+  const targets = args.filter((a) => !a.startsWith('--'));
+  const { files, issues, errors } = check(targets.length ? targets : ['.']);
+  const n = Object.keys(files).length;
+  if (asJSON) console.log(JSON.stringify({ files: n, errors, warnings: issues.length - errors, issues }, null, 2));
+  else {
+    if (issues.length) console.log(formatIssues(issues));
+    console.log(`${n} file${n === 1 ? '' : 's'} checked: ${errors} error${errors === 1 ? '' : 's'}, ${issues.length - errors} warning${issues.length - errors === 1 ? '' : 's'}`);
+  }
+  process.exit(errors ? 1 : 0);
 }
-process.exit(errors ? 1 : 0);

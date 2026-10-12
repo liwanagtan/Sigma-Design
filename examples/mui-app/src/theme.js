@@ -4,12 +4,12 @@ import { createTheme } from '@mui/material/styles';
 
 const shared = {
   spacing: 8,
-  shape: { borderRadius: 4 },
+  shape: { borderRadius: 8 },
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
     fontSize: 14,
     h1: { fontSize: '6rem', fontWeight: 300, lineHeight: 1.167 },
-    body1: { fontSize: '1rem', fontWeight: 400, lineHeight: 1.5 },
+    body1: { fontSize: '1rem', fontWeight: 400, lineHeight: 1.6 },
   },
 };
 
@@ -17,7 +17,7 @@ export const lightTheme = createTheme({
   ...shared,
   palette: {
     mode: 'light',
-    primary: { main: '#1976d2', dark: '#1565c0', contrastText: '#ffffff' },
+    primary: { main: '#2e5bff', dark: '#1565c0', contrastText: '#ffffff' },
     error: { main: '#d32f2f' },
     background: { default: '#fafafa', paper: '#ffffff' },
     text: { primary: 'rgba(0, 0, 0, 0.87)', secondary: 'rgba(0, 0, 0, 0.6)' },

@@ -31,7 +31,7 @@
           "name": "radius/default",
           "codeSyntax": { "web": "shape.borderRadius" },
           "groupId": "gk92pu3r3ksbb",
-          "valuesByMode": { "primitives-default": 4 }
+          "valuesByMode": { "primitives-default": 8 }
         },
         {
           "id": "font-family",
@@ -79,7 +79,7 @@
               "fontSize": 16,
               "fontWeight": 400,
               "letterSpacing": 0,
-              "lineHeight": 150
+              "lineHeight": 160
             }
           }
         }
@@ -106,7 +106,7 @@
           "name": "primary/main",
           "codeSyntax": { "web": "palette.primary.main" },
           "groupId": "gjbavkj4vdcvf",
-          "valuesByMode": { "semantic-dark": "#90CAF9", "semantic-light": "#1976D2" }
+          "valuesByMode": { "semantic-dark": "#90CAF9", "semantic-light": "#2E5BFF" }
         },
         {
           "id": "primary-dark",

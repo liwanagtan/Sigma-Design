@@ -30,7 +30,7 @@
           "name": "color/blue/500",
           "codeSyntax": { "web": "--color-blue-500" },
           "groupId": "g13ct3v91f8myyz",
-          "valuesByMode": { "primitives-default": "#0D99FF" }
+          "valuesByMode": { "primitives-default": "#3B5BFF" }
         },
         {
           "id": "color-blue-600",
@@ -102,7 +102,7 @@
           "name": "space/4",
           "codeSyntax": { "web": "--space-4" },
           "groupId": "g1li5pdpcpl38p",
-          "valuesByMode": { "primitives-default": 16 }
+          "valuesByMode": { "primitives-default": 20 }
         },
         {
           "id": "radius-md",
@@ -161,6 +161,14 @@
           "valuesByMode": {
             "primitives-default": { "blur": 8, "color": "#0000001A", "spread": 0, "x": 0, "y": 2 }
           }
+        },
+        {
+          "id": "space-8",
+          "type": "number",
+          "name": "space/8",
+          "codeSyntax": { "web": "--space-8" },
+          "groupId": "g1li5pdpcpl38p",
+          "valuesByMode": { "primitives-default": 32 }
         }
       ]
     },
@@ -227,7 +235,7 @@
           "name": "accent",
           "codeSyntax": { "web": "--accent" },
           "valuesByMode": {
-            "semantic-dark": "#4DB5FF",
+            "semantic-dark": "#8FA2FF",
             "semantic-light": { "alias": "color-blue-500" }
           }
         },
