@@ -202,7 +202,7 @@ export function worldBounds(n) {
 // ---------- node factory ----------
 const NAMES = {
   frame: 'Frame', rect: 'Rectangle', ellipse: 'Ellipse', line: 'Line', text: 'Text', group: 'Group', image: 'Image',
-  component: 'Component', componentSet: 'Component set', instance: 'Instance',
+  component: 'Component', componentSet: 'Component set', instance: 'Instance', icon: 'Icon',
 };
 const counters = {};
 
@@ -268,6 +268,8 @@ export function createNode(type, props = {}) {
   if (type === 'group') Object.assign(base, { fill: null, children: [] });
   if (type === 'line') Object.assign(base, { fill: null, stroke: '#000000', h: 0 });
   if (type === 'image') Object.assign(base, { fill: null, src: '' });
+  // An icon from a linked Sigma Icons file, in its fill color; iconStroke (outline icons) in the icon's units.
+  if (type === 'icon') Object.assign(base, { fill: '#1E1E1E', w: 24, h: 24, iconId: null, lockAspect: true });
   if (type === 'text') {
     Object.assign(base, {
       fill: '#000000', text: '', fontFamily: 'Inter', fontSize: 16, fontWeight: 400,

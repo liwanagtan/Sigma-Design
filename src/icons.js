@@ -1,3 +1,4 @@
+import { findIcon, iconMarkup } from './icon-library.js';
 const s = (body, size = 24) =>
   `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
 const s16 = (body) =>
@@ -63,6 +64,10 @@ export function layerIcon(n) {
     case 'image': return i16('<rect x="1" y="1.5" width="10" height="9" rx="1"/><path d="M11 8L8 5l-6 5.5"/>');
     case 'component': return i16('<path d="M6 1.2l1.9 1.9L6 5 4.1 3.1zM6 7l1.9 1.9L6 10.8 4.1 8.9zM3.1 4.1L5 6 3.1 7.9 1.2 6zM8.9 4.1L10.8 6 8.9 7.9 7 6z"/>');
     case 'instance': return i16('<path d="M6 1.5L10.5 6 6 10.5 1.5 6z"/>');
+    case 'icon': {
+      const icon = findIcon(n.iconId);
+      return icon ? iconMarkup(icon, { w: 12, h: 12 }) : i16('<rect x="1.5" y="1.5" width="9" height="9" rx="1" stroke-dasharray="1.5 1.5"/>');
+    }
     case 'componentSet': return i16('<path d="M6 1.5L10.5 6 6 10.5 1.5 6z" stroke-dasharray="1.6 1.2"/>');
     default: return '';
   }

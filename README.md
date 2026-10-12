@@ -116,6 +116,12 @@ Then open http://localhost:5173.
   - each icon is **Outline** (drawn with strokes, keeping its stroke width) or **Filled**, detected on import and changeable. More styles can come later
   - select icons (⌘-click adds, ⇧-click selects a range, ⌘A all) to edit their name, group, keywords (for search), style and stroke width, download or copy one as SVG, or delete them (⌫). Double-click a group to rename it
   - **Publish…** creates a numbered version with notes and a list of what changed
+- **Icons in components:**
+  - a Sigma Design file links Sigma Icons files from **Icon libraries…** (Σ menu, or the panel with nothing selected). Updates arrive like other libraries: a banner, **Review**, accept. Icons a new version removed stay where they're used (but aren't offered any more) until you swap them; a Sigma Icons file can't be unlinked while its icons are in use
+  - icons go inside main components (not loose on the canvas, for now): select a component or a layer in one, then **+** in the panel's Icon section, or **Insert icon…** on right-click. The picker has a search and the icons by group
+  - an icon layer has a size (W, H), a **Color** (its fill, which can use a color token) and, for outline icons, a stroke width (which can use a number token). **Swap icon…** changes the icon
+  - instances show the main component's icon, at its size, color and stroke: none of these can be overridden in an instance
+  - publishing components includes the icons they use, so files that link the component library show them without linking the Sigma Icons file
 - **Version history** (Σ menu → **Show version history**, in Sigma Design, Sigma Tokens and Sigma Icons files):
   - Sigma keeps an autosave version before each editing session and every 10 minutes while you work (the newest 50), plus one for every publish
   - **Save to version history…** (⌥⌘S) adds a named version with a description; named and published versions are kept until you delete them
@@ -196,6 +202,7 @@ Press `?` in the app to see every keyboard shortcut.
 | `src/tokens-screen.js` | The Sigma Tokens file screen |
 | `src/icon-library.js` | Icons: SVG import and cleaning, drawing, groups, search, version changes |
 | `src/icons-screen.js` | The Sigma Icons file screen |
+| `src/icon-ui.js` | The icon picker and icon layers in components |
 | `src/libraries.js` | Token and component libraries: publishing, linking, updates, migration |
 | `src/sample-tokens.js` | The sample token file (a complete small design system) |
 | `src/sample.js` | The blank Sigma Design file |

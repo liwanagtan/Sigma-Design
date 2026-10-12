@@ -383,6 +383,16 @@ let warned = 0;
 addEditHook({
   before(node, keys) {
     if (!isInsideInstance(node)) return;
+    if (node.type === 'icon') {
+      // An icon in an instance looks as its main component says; only its component properties (which
+      // icon, shown or not) change it.
+      if (keys.every((k) => node.propRefs?.[k.split('.')[0]])) return;
+      if (Date.now() - warned > 2000) {
+        warned = Date.now();
+        window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'An icon in an instance takes its size, color and stroke from the main component. Choose the icon with the component’s Icon property.' }));
+      }
+      return false;
+    }
     const blocked = keys.map((k) => k.split('.')[0]).filter((k) => !CHILD_OVERRIDABLE.has(k));
     if (blocked.length) {
       if (Date.now() - warned > 2000) {

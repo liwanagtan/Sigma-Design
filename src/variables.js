@@ -56,7 +56,7 @@ export function joinColor(hex, alpha = 1) {
 // Which property paths each variable type can bind to.
 const NUMBER_PATHS = new Set([
   'w', 'h', 'radius', 'opacity', 'strokeWidth', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing',
-  'layout.gap', 'layout.pt', 'layout.pr', 'layout.pb', 'layout.pl', 'minW', 'maxW', 'minH', 'maxH',
+  'layout.gap', 'layout.pt', 'layout.pr', 'layout.pb', 'layout.pl', 'minW', 'maxW', 'minH', 'maxH', 'iconStroke',
 ]);
 export function typeForPath(path) {
   if (/^(fills|strokes)\.\d+\.color$/.test(path)) return 'color';

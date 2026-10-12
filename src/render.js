@@ -6,6 +6,7 @@ import { css, mul, apply, unionBoxes, cornersOf } from './geom.js';
 import { textStyle, caseText, wrapsAtMax, truncateStyle } from './text.js';
 import { isInsideInstance } from './components.js';
 import { gridsOverlay } from './grids.js';
+import { findIcon, iconMarkup } from './icon-library.js';
 
 export const ACCENT = '#0D99FF';
 export const COMPONENT_ACCENT = '#9747FF';
@@ -184,6 +185,15 @@ export function nodeSVG(n, opts = {}) {
         `<clipPath id="${cid}">${shapeRect(n, '')}</clipPath>` +
         `<image href="${esc(n.src)}" width="${n.w}" height="${n.h}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${cid})"/>` +
         strokeLayers(n, 'rect');
+      break;
+    }
+    case 'icon': {
+      // The top visible fill is the icon's color. An icon that isn't available (its Sigma Icons file was
+      // unlinked) shows as a dashed box.
+      const icon = findIcon(n.iconId);
+      const p = visiblePaints(n.fills).at(-1);
+      inner = !icon ? `<rect width="${n.w}" height="${n.h}" fill="none" stroke="#B3B3B3" stroke-dasharray="2 2" vector-effect="non-scaling-stroke"/>`
+        : p ? iconMarkup(icon, { w: n.w, h: n.h, color: p.color, opacity: p.opacity ?? 1, strokeWidth: n.iconStroke ?? undefined }) : '';
       break;
     }
     case 'text': {

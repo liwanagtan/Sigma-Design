@@ -90,3 +90,82 @@ test('icons: icons in an imported file are cleaned again', () => {
   eq(icon.id, 'x');
   eq(sanitizeIcons(null), []);
 });
+
+// ---------- icons in Sigma Design files ----------
+import { useDoc } from './core.test.js';
+import { state, createNode, editNode, makePaint, getNode, select } from '../src/store.js';
+import { syncInstances, createInstance, publishableComponents, listComponents } from '../src/components.js';
+import { acceptUpdate, componentPublishStatus, unlinkIconLibrary } from '../src/libraries.js';
+import { findIcon, iconLibraryOf } from '../src/icon-library.js';
+import { insertIcon, iconTarget, availableIcons } from '../src/icon-ui.js';
+import { nodeSVG } from '../src/render.js';
+import { buildSVG } from '../src/io.js';
+
+const ARROW = parseSVGIcon(LUCIDE, { name: 'arrow-right', group: 'Arrows' });
+const STAR = parseSVGIcon(MATERIAL, { name: 'star' });
+const linkIcons = (icons = [ARROW, STAR], version = 1, lib = { fileId: 'icons-1' }) =>
+  acceptUpdate({ kind: 'icons', lib, meta: { name: 'Lucide' }, published: { version, icons: structuredClone(icons) } });
+
+test('icon layers: show a linked icon in their fill color and size', () => {
+  useDoc([]);
+  linkIcons();
+  eq(findIcon(ARROW.id).name, 'arrow-right');
+  eq(iconLibraryOf(ARROW.id).name, 'Lucide');
+  eq(availableIcons({ groups: ['Arrows'] }).map((x) => x.icon.name), ['arrow-right']);
+  eq(availableIcons().length, 2);
+  const n = createNode('icon', { iconId: ARROW.id, fills: [makePaint('#FF0000')], w: 32, h: 32 });
+  const svg = nodeSVG(n);
+  ok(svg.includes('width="32" height="32" viewBox="0 0 24 24"') && svg.includes('stroke="#FF0000" stroke-width="2"'), svg);
+  n.iconStroke = 1.5;
+  ok(nodeSVG(n).includes('stroke-width="1.5"'));
+  ok(nodeSVG(createNode('icon', { iconId: 'gone' })).includes('stroke-dasharray'), 'a missing icon shows a placeholder');
+  ok(buildSVG([n]).svg.includes('viewBox="0 0 24 24"'), 'exports');
+});
+
+test('icon layers: go inside main components; instances copy them and can’t override them', () => {
+  const btn = createNode('component', { name: 'Button', w: 120, h: 40, children: [createNode('rect', { name: 'Bg', w: 120, h: 40 })] });
+  const loose = createNode('frame', { name: 'Loose', x: 300, w: 100, h: 100 });
+  useDoc([btn, loose]);
+  linkIcons();
+  select([loose.id]);
+  eq(iconTarget(), null, 'not outside components');
+  select([btn.children[0].id]);
+  const icon = insertIcon(ARROW.id);
+  ok(icon && btn.children[1] === icon, 'goes next to the selected layer');
+  eq([icon.x, icon.y, icon.w, icon.name], [48, 8, 24, 'arrow-right']);
+  const inst = createInstance(getNode(btn.id), { x: 0, y: 100 });
+  const copy = inst.children[1];
+  eq([copy.type, copy.iconId], ['icon', ARROW.id]);
+  editNode(copy, ['fills'], (n) => void (n.fills = [makePaint('#00FF00')]));
+  syncInstances();
+  eq(inst.children[1].fills[0].color, '#1E1E1E', 'its color comes from the main component');
+  editNode(getNode(icon.id), ['iconId'], (n) => void (n.iconId = STAR.id));
+  syncInstances();
+  eq(inst.children[1].iconId, STAR.id, 'follows the main component');
+});
+
+test('icon libraries: updates keep icons in use, and components publish the icons they use', () => {
+  const comp = createNode('component', { name: 'Fav', w: 24, h: 24, children: [createNode('icon', { name: 'star', iconId: STAR.id })] });
+  useDoc([comp]);
+  linkIcons();
+  const changed = { ...ARROW, body: '<path d="M1 1h2"/>' };
+  linkIcons([changed], 2, state.doc.iconLibraries[0]);
+  const lib = state.doc.iconLibraries[0];
+  eq(lib.version, 2);
+  eq(findIcon(ARROW.id).body, '<path d="M1 1h2"/>');
+  ok(findIcon(STAR.id)?.removed, 'a removed icon in use stays, marked removed');
+  eq(availableIcons().map((x) => x.icon.name), ['arrow-right'], 'but isn’t offered');
+  unlinkIconLibrary(lib.fileId);
+  eq(state.doc.iconLibraries.length, 1, 'can’t unlink while its icons are in use');
+  // Publishing components carries their icons, so files using the component library can show them.
+  const published = { version: 1, components: structuredClone(publishableComponents()) };
+  state.doc.publishedComponents = { ...published, icons: { [STAR.id]: structuredClone(findIcon(STAR.id)) } };
+  ok(!componentPublishStatus().dirty, 'nothing to publish');
+  state.doc.iconLibraries[0].icons.find((x) => x.id === STAR.id).body = '<path d="M2 2h2"/>';
+  ok(componentPublishStatus().dirty, 'a newer icon is a change');
+  useDoc([]);
+  acceptUpdate({ kind: 'components', lib: { fileId: 'lib-c' }, meta: { name: 'Kit' }, published: { ...published, icons: { [STAR.id]: STAR } } });
+  const inst = createInstance(listComponents()[0].node);
+  ok(findIcon(STAR.id), 'icons come with library components');
+  ok(nodeSVG(inst).includes('fill="#1E1E1E" stroke="none"'), 'and show');
+});

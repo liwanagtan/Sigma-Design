@@ -19,6 +19,7 @@ import { copySelection, cutSelection, paste, pasteHere, importImages, pickImages
 import { isAutoLayout, flowInsertBefore } from './layout.js';
 import { isInsideInstance, isTransparentContainer, canPlaceInside, createInstance, containingComponent } from './components.js';
 import { slotMenu } from './component-ui.js';
+import { canInsertIcon, openInsertIcon } from './icon-ui.js';
 import { gridSnapTargets } from './grids.js';
 import { applyConstraints } from './constraints.js';
 import { showContextMenu, hideContextMenu } from './menu.js';
@@ -891,6 +892,7 @@ function onContextMenu(e) {
     { label: 'Create component', shortcut: '⌥⌘K', action: createComponent },
     ...(nodes.length > 1 && !nodes.some((n) => n.type === 'component' || n.type === 'componentSet' || n.type === 'instance')
       ? [{ label: 'Create multiple components', action: createMultipleComponents }] : []),
+    ...(canInsertIcon() ? [{ label: 'Insert icon…', action: () => openInsertIcon({ left: e.clientX, right: e.clientX, top: e.clientY, bottom: e.clientY }) }] : []),
     ...(nodes.length > 1 && nodes.every((n) => n.type === 'component' && getParent(n.id)?.type !== 'componentSet') ? [{ label: 'Combine as variants', action: combineAsVariants }] : []),
     // Main component / set: add a variant (a main component becomes a set), like Figma's Main component menu.
     ...(nodes.length === 1 && (nodes[0].type === 'component' || nodes[0].type === 'componentSet') ? [{

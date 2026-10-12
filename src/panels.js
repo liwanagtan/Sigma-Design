@@ -21,7 +21,10 @@ import {
 } from './component-ui.js';
 import {
   libraries, componentLibraries, openLibrariesDialog, openPublishComponentsDialog, componentPublishStatus, openDesignTokensDialog,
+  iconLibraries, openIconLibrariesDialog, ICONS_ICON,
 } from './libraries.js';
+import { openInsertIcon, openSwapIcon, canInsertIcon, iconLayerInfo } from './icon-ui.js';
+import { findIcon } from './icon-library.js';
 import { openHistory, openSaveVersionDialog } from './history.js';
 import { H_CONSTRAINTS, V_CONSTRAINTS } from './constraints.js';
 import { blankDocument } from './sample.js';
@@ -44,7 +47,7 @@ const MIXED = Symbol('mixed');
 import { FONTS, WEIGHTS } from './fonts.js';
 const TYPE_LABEL = {
   frame: 'Frame', group: 'Group', rect: 'Rectangle', ellipse: 'Ellipse', line: 'Line', text: 'Text', image: 'Image',
-  component: 'Component', componentSet: 'Component set', instance: 'Instance',
+  component: 'Component', componentSet: 'Component set', instance: 'Instance', icon: 'Icon',
 };
 const FRAME_PRESETS = [
   ['iPhone 16', 393, 852], ['iPhone 16 Pro Max', 440, 956], ['Android Compact', 412, 917], ['iPad mini', 744, 1133],
@@ -119,6 +122,7 @@ function initFileHeader() {
       { label: 'Audit design tokens…', action: () => openAuditDialog() },
       '-',
       { label: 'Component libraries…', action: () => openLibrariesDialog() },
+      { label: 'Icon libraries…', action: () => openIconLibrariesDialog() },
       { label: 'Publish components…', action: () => openPublishComponentsDialog() },
       '-',
       { label: 'Keyboard shortcuts', shortcut: '?', action: showShortcuts },
@@ -453,6 +457,11 @@ const FIELDS = {
   }])),
   opacity: pct('opacity'),
   strokeWidth: num('strokeWidth', 0),
+  // Outline icons: the stroke width in the icon's own units (empty: the icon's own).
+  iconStroke: {
+    get: (n) => n.iconStroke ?? findIcon(n.iconId)?.strokeWidth ?? 2, set: (v) => ({ iconStroke: Math.max(0, v) }),
+    auto: /^\s*$/, autoValue: { iconStroke: undefined },
+  },
   fontSize: num('fontSize', 1),
   lineHeight: { get: (n) => n.lineHeight ?? 'Auto', set: (v) => ({ lineHeight: v }), suffix: '%', auto: /^\s*(auto)?\s*$/i, autoValue: { lineHeight: null } },
   letterSpacing: num('letterSpacing'),
@@ -504,7 +513,7 @@ function normHex(str) {
 
 // Fields that can be bound to number variables, and the property path they bind.
 const FIELD_BIND = {
-  w: 'w', h: 'h', radius: 'radius', opacity: 'opacity', strokeWidth: 'strokeWidth', fontSize: 'fontSize',
+  w: 'w', h: 'h', radius: 'radius', opacity: 'opacity', strokeWidth: 'strokeWidth', fontSize: 'fontSize', iconStroke: 'iconStroke',
   radiusTL: 'radii.0', radiusTR: 'radii.1', radiusBR: 'radii.2', radiusBL: 'radii.3',
   minW: 'minW', maxW: 'maxW', minH: 'minH', maxH: 'maxH',
   lineHeight: 'lineHeight', letterSpacing: 'letterSpacing', gap: 'layout.gap',
@@ -673,9 +682,9 @@ function variableFromValue(nodes, path, type) {
 const PAINT_KINDS = { fills: 'fill', strokes: 'stroke' };
 const CORNERS_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M1.5 4.5V3a1.5 1.5 0 0 1 1.5-1.5h1.5M7.5 1.5H9A1.5 1.5 0 0 1 10.5 3v1.5M10.5 7.5V9A1.5 1.5 0 0 1 9 10.5H7.5M4.5 10.5H3A1.5 1.5 0 0 1 1.5 9V7.5"/></svg>';
 const SIDES = [['top', 'M1.5 1.5h9', 'Top'], ['right', 'M10.5 1.5v9', 'Right'], ['bottom', 'M1.5 10.5h9', 'Bottom'], ['left', 'M1.5 1.5v9', 'Left']];
-const canHavePaint = (n, kind) => (kind === 'fills' ? !['line', 'group'].includes(n.type) : !['group', 'text'].includes(n.type));
+const canHavePaint = (n, kind) => (kind === 'fills' ? !['line', 'group'].includes(n.type) : !['group', 'text', 'icon'].includes(n.type));
 const defaultPaintColor = (n, kind) =>
-  kind === 'strokes' ? '#000000' : n.type === 'text' ? '#000000' : isFrameLike(n) ? '#FFFFFF' : '#D9D9D9';
+  kind === 'strokes' ? '#000000' : n.type === 'text' ? '#000000' : n.type === 'icon' ? '#1E1E1E' : isFrameLike(n) ? '#FFFFFF' : '#D9D9D9';
 
 function samePaints(nodes, kind) {
   const first = JSON.stringify(nodes[0]?.[kind] || []);
@@ -937,6 +946,10 @@ function buildProps() {
     html += section('Component libraries',
       (comps.length ? comps.map((l) => libLine(COMPONENT_LIB_ICON, l)).join('') : '<div class="muted">Link Sigma Design files that publish components to use them from Assets.</div>') +
       '<button class="btn wide" data-action="open-libraries">Manage component libraries…</button>');
+    const iconLibs = iconLibraries();
+    html += section('Icon libraries',
+      (iconLibs.length ? iconLibs.map((l) => libLine(ICONS_ICON.replace(/16/g, '12'), l)).join('') : '<div class="muted">Link Sigma Icons files to use their icons in components.</div>') +
+      '<button class="btn wide" data-action="open-icon-libraries">Manage icon libraries…</button>');
     const pub = componentPublishStatus();
     if (pub.count) {
       html += section('Components',
@@ -1034,6 +1047,20 @@ function buildProps() {
   html += section('Layer', `<div class="grid2">${numField('opacity', '', nodes, { icon: '<span class="op-icon"></span>' })}` +
     `<div class="bind-inline"><span class="muted">Visibility</span>${varControl(nodes, 'visible')}</div></div>` + modeRows(nodes));
 
+  // Icon: which one (Swap…), and the stroke width of outline icons. In an instance the icon comes from
+  // the main component (or its Icon property).
+  if (types.size === 1 && types.has('icon')) {
+    const info = iconLayerInfo(nodes);
+    const inInstance = nodes.some(isInsideInstance);
+    html += section('Icon', info.html +
+      (inInstance ? '<div class="muted">Comes from the main component. An Icon property lets instances choose it.</div>'
+        : '<button class="btn wide" data-action="swap-icon">Swap icon…</button>') +
+      (info.outline ? (inInstance ? `<fieldset class="readonly" disabled>${numField('iconStroke', '', nodes, { icon: '<span class="mini" title="Stroke width">≡</span>' })}</fieldset>`
+        : `<div class="grid2">${numField('iconStroke', '', nodes, { icon: '<span class="mini" title="Stroke width (in the icon’s units)">≡</span>' })}<span></span></div>`) : ''));
+  } else if (canInsertIcon()) {
+    html += section('Icon', '', '<button class="icon-btn" data-action="insert-icon" title="Add an icon from a Sigma Icons file">' + icons.plus + '</button>');
+  }
+
   // Text
   if (types.size === 1 && types.has('text')) {
     const fam = common(nodes, (n) => n.fontFamily);
@@ -1060,7 +1087,11 @@ function buildProps() {
   // Fill
   const fillNodes = nodes.filter((n) => canHavePaint(n, 'fills'));
   if (fillNodes.length) {
-    html += section(types.has('image') && types.size === 1 ? 'Fill (behind image)' : 'Fill', paintRows('fills', fillNodes) + contrastRow(nodes), addPaintButton('fills'));
+    const iconsOnly = types.size === 1 && types.has('icon');
+    const fillBody = paintRows('fills', fillNodes) + contrastRow(nodes);
+    html += section(types.has('image') && types.size === 1 ? 'Fill (behind image)' : iconsOnly ? 'Color' : 'Fill',
+      iconsOnly && nodes.some(isInsideInstance) ? `<fieldset class="readonly" disabled title="Comes from the main component">${fillBody}</fieldset>` : fillBody,
+      iconsOnly ? '' : addPaintButton('fills'));
   }
 
   // Stroke
@@ -1138,7 +1169,9 @@ function instanceLayerPanel(nodes) {
   const single = nodes.length === 1 ? nodes[0] : null;
   const owner = owningInstance(nodes[0]);
   const n = single ? overrideCount(owner, single.pathKey) : 0;
-  return `<div class="section comp-panel"><div class="comp-sub">In instance “${esc(owner.name)}”: appearance and text can be changed here; size and position come from the main component.</div>` +
+  const note = nodes.every((x) => x.type === 'icon') ? 'the icon comes from the main component.'
+    : 'appearance and text can be changed here; size and position come from the main component.';
+  return `<div class="section comp-panel"><div class="comp-sub">In instance “${esc(owner.name)}”: ${note}</div>` +
     (n ? `<button class="btn wide" data-action="reset-overrides">Reset changes</button>` : '') + '</div>';
 }
 
@@ -1475,6 +1508,12 @@ function initProps() {
         return openAuditDialog();
       case 'open-libraries':
         return openLibrariesDialog();
+      case 'open-icon-libraries':
+        return openIconLibrariesDialog();
+      case 'insert-icon':
+        return openInsertIcon(b.getBoundingClientRect());
+      case 'swap-icon':
+        return openSwapIcon(b.getBoundingClientRect());
       case 'open-design-tokens':
         return openDesignTokensDialog();
       case 'publish-components':

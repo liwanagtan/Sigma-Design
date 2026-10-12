@@ -4,7 +4,7 @@
 //   body   the icon's shapes as SVG markup, cleaned on import: only plain shapes and their geometry are
 //          kept, and every color becomes currentColor, so the layer that shows an icon decides its color
 // A Sigma Icons file publishes versions ({ version, publishedAt, notes, icons }) that Sigma Design files link.
-import { uid } from './store.js';
+import { uid, state, walk } from './store.js';
 
 export const ICON_STYLES = { outline: 'Outline', filled: 'Filled' };
 
@@ -123,6 +123,39 @@ export function diffIcons(before = [], after = []) {
     changed: after.filter((i) => a.has(i.id) && sig(a.get(i.id)) !== sig(i)).map((i) => i.name),
     removed: before.filter((i) => !b.has(i.id)).map((i) => i.name),
   };
+}
+
+// ---------- icons in Sigma Design files ----------
+// A Sigma Design file links Sigma Icons files (doc.iconLibraries: [{ fileId, name, version, icons }], a
+// copy of the published version it accepted). Icon layers ({ type: 'icon', iconId, iconStroke }) show
+// one; components from a component library bring the icons they use (componentLibraries[].icons).
+const indexes = new WeakMap(); // icons list → Map(id → icon)
+const indexOf = (list) => {
+  if (!indexes.has(list)) indexes.set(list, new Map(list.map((i) => [i.id, i])));
+  return indexes.get(list);
+};
+
+export function findIcon(id, doc = state.doc) {
+  if (!id || !doc) return null;
+  for (const lib of doc.iconLibraries || []) {
+    const icon = indexOf(lib.icons || []).get(id);
+    if (icon) return icon;
+  }
+  for (const lib of doc.componentLibraries || []) if (lib.icons?.[id]) return lib.icons[id];
+  return null;
+}
+
+// The Sigma Icons file an icon comes from (in this file's links), or null.
+export const iconLibraryOf = (id, doc = state.doc) => (doc?.iconLibraries || []).find((l) => indexOf(l.icons || []).has(id)) || null;
+
+// Ids of the icons that layers (and component properties' defaults) in `nodes` use.
+export function usedIconIds(nodes) {
+  const ids = new Set();
+  walk(nodes, (n) => {
+    if (n.type === 'icon' && n.iconId) ids.add(n.iconId);
+    for (const def of Object.values(n.props || {})) if (def.type === 'icon' && def.default) ids.add(def.default);
+  });
+  return ids;
 }
 
 export const newIconsDocument = (name = 'Untitled icons') => ({ kind: 'icons', name, pages: [], currentPageId: null, icons: [] });

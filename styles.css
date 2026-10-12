@@ -496,6 +496,19 @@ fieldset.readonly .field-label { cursor: default; }
 .icons-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-right: 24px; }
 .icons-drop { inset: 8px; }
 
+.token-picker.icon-picker { width: 296px; }
+.icon-picker-list { max-height: 320px; }
+.icon-picker-tiles { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; padding: 0 6px 6px; }
+.icon-picker-tile { display: grid; place-items: center; height: 32px; border-radius: 5px; color: #1e1e1e; border: 1px solid transparent; background: none; }
+.icon-picker-tile:hover, .icon-picker-tile.active { background: var(--hover); }
+.icon-picker-tile.current { border-color: var(--accent); background: var(--accent-soft); }
+.icon-picker-name { padding: 6px 10px; border-top: 1px solid var(--border); font-size: 11px; min-height: 16px; }
+.icon-picker .btn.wide { margin: 0 8px 8px; width: calc(100% - 16px); }
+.icon-layer-row { display: flex; align-items: center; gap: 8px; margin: 2px 24px 8px 0; }
+.icon-layer-preview { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: 6px; background: var(--input); color: #1e1e1e; }
+.icon-layer-name { display: flex; flex-direction: column; min-width: 0; }
+.icon-layer-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* ---------- token editor workspace ---------- */
 .vars-work { flex: 1; min-height: 0; display: flex; }
 .vars-work .vars-table { flex: 1; min-width: 0; }
