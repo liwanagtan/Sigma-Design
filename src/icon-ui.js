@@ -3,17 +3,21 @@
 import { commit, getParent, ancestors, insertNode, createNode, select, selectedNodes, editNode } from './store.js';
 import { isInsideInstance } from './components.js';
 import { isAutoLayout } from './layout.js';
-import { iconMarkup, iconMatches, findIcon, iconLibraryOf, ICON_STYLES } from './icon-library.js';
-import { iconLibraries, openIconLibrariesDialog } from './libraries.js';
+import { iconMarkup, iconMatches, iconScore, findIcon, iconLibraryOf, ICON_STYLES, libraryIconCache } from './icon-library.js';
+import { iconLibraries, openIconLibrariesDialog, loadIconLibraries, keepIcons } from './libraries.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const toast = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
 
-// Every icon this file can use: [{ icon, lib }] (removed icons only when `withId` is one of them).
+// Every icon this file can use: [{ icon, lib }] (removed icons only when `withId` is one of them). The
+// whole sets come from the linked Sigma Icons files (loadIconLibraries); until they're read, just the
+// icons the file uses.
 export function availableIcons({ groups = null, withId = null } = {}) {
   const out = [];
   for (const lib of iconLibraries()) {
-    for (const icon of lib.icons || []) {
+    const set = libraryIconCache.get(lib.fileId)?.icons || [];
+    const ids = new Set(set.map((x) => x.id));
+    for (const icon of [...set, ...lib.icons.filter((x) => !ids.has(x.id))]) {
       if (icon.removed && icon.id !== withId) continue;
       if (groups?.length && !groups.includes(icon.group || '') && icon.id !== withId) continue;
       out.push({ icon, lib });
@@ -30,8 +34,18 @@ export function closeIconPicker() {
 }
 
 // A popover grid of icons with a search. `groups`: only these groups ('' is ungrouped); null for all.
-export function openIconPicker({ anchor, currentId = null, groups = null, onPick }) {
+// The chosen icon is copied into the file's links before `onPick` runs.
+export async function openIconPicker({ anchor, currentId = null, groups = null, onPick }) {
   closeIconPicker();
+  const opened = (picker = document.createElement('div'));
+  if (iconLibraries().length) {
+    picker.className = 'token-picker icon-picker';
+    picker.innerHTML = '<div class="muted token-picker-empty">Loading icons…</div>';
+    place(picker, anchor);
+    await loadIconLibraries();
+    if (picker !== opened) return; // closed (or another opened) meanwhile
+    picker.remove();
+  }
   picker = document.createElement('div');
   picker.className = 'token-picker icon-picker';
   document.body.appendChild(picker);
@@ -46,23 +60,26 @@ export function openIconPicker({ anchor, currentId = null, groups = null, onPick
   }
   const search = picker.querySelector('input');
   const list = picker.querySelector('.icon-picker-list');
-  // By library, then style, then group (ungrouped last), so the picker reads like the Sigma Icons file.
+  // By library, then style, then group (A–Z, ungrouped last), so the picker reads like the Sigma Icons file.
   const styleOrder = Object.keys(ICON_STYLES), libs = iconLibraries();
   const found = availableIcons({ groups, withId: currentId });
-  const firstOf = new Map(); // group → where it first appears
-  found.forEach((x, i) => !firstOf.has(x.icon.group || '') && firstOf.set(x.icon.group || '', i));
-  const rank = (x) => [libs.indexOf(x.lib), styleOrder.indexOf(x.icon.style), x.icon.group ? 0 : 1, firstOf.get(x.icon.group || '')];
-  const all = found.map((x, i) => ({ ...x, i, r: rank(x) })).sort((a, b) => a.r.reduce((d, v, k) => d || v - b.r[k], 0) || a.i - b.i);
+  const rank = (x) => [libs.indexOf(x.lib), styleOrder.indexOf(x.icon.style), x.icon.group ? 0 : 1];
+  const all = found.map((x, i) => ({ ...x, i, r: rank(x) })).sort((a, b) => a.r.reduce((d, v, k) => d || v - b.r[k], 0) ||
+    (a.icon.group || '').localeCompare(b.icon.group || '', undefined, { sensitivity: 'base' }) || a.i - b.i);
   const several = libs.length > 1;
   const styles = new Set(all.map((x) => x.icon.style)).size > 1;
   let shown = [];
   let active = 0;
   const render = () => {
     shown = all.filter(({ icon }) => iconMatches(icon, search.value));
+    // Searching: one list, best matches first (heart before heart-crack before file-heart).
+    const searching = !!search.value.trim();
+    if (searching) shown = shown.map((x, i) => ({ x, i, s: iconScore(x.icon, search.value) })).sort((a, b) => a.s - b.s || a.i - b.i).map(({ x }) => x);
     if (active >= shown.length) active = Math.max(0, shown.length - 1);
     const heads = new Map();
     for (const [i, x] of shown.entries()) {
-      const head = [several && x.lib.name, styles && ICON_STYLES[x.icon.style], x.icon.group || 'Ungrouped'].filter(Boolean).join(' · ');
+      const head = searching ? `${shown.length} result${shown.length === 1 ? '' : 's'}`
+        : [several && x.lib.name, styles && ICON_STYLES[x.icon.style], x.icon.group || 'Ungrouped'].filter(Boolean).join(' · ');
       if (!heads.has(head)) heads.set(head, []);
       heads.get(head).push(i);
     }
@@ -78,7 +95,9 @@ export function openIconPicker({ anchor, currentId = null, groups = null, onPick
   };
   const pick = (x) => {
     closeIconPicker();
-    if (x) onPick(x.icon.id);
+    if (!x) return;
+    keepIcons([x.icon.id]);
+    onPick(x.icon.id);
   };
   if (search) {
     search.addEventListener('input', () => { active = 0; render(); });
@@ -114,10 +133,15 @@ export function openIconPicker({ anchor, currentId = null, groups = null, onPick
     }
   };
   setTimeout(() => window.addEventListener('pointerdown', outside, true), 0);
-  const r = picker.getBoundingClientRect();
-  picker.style.left = `${Math.max(8, Math.min(anchor.left, window.innerWidth - r.width - 8))}px`;
-  picker.style.top = `${anchor.bottom + 4 + r.height <= window.innerHeight - 8 ? anchor.bottom + 4 : Math.max(8, anchor.top - r.height - 4)}px`;
+  place(picker, anchor);
   search?.focus();
+}
+
+function place(el, anchor) {
+  if (!el.isConnected) document.body.appendChild(el);
+  const r = el.getBoundingClientRect();
+  el.style.left = `${Math.max(8, Math.min(anchor.left, window.innerWidth - r.width - 8))}px`;
+  el.style.top = `${anchor.bottom + 4 + r.height <= window.innerHeight - 8 ? anchor.bottom + 4 : Math.max(8, anchor.top - r.height - 4)}px`;
 }
 
 // ---------- icon layers ----------
@@ -141,6 +165,7 @@ export function insertIcon(iconId) {
   const icon = findIcon(iconId);
   if (!target || !icon) return toast('Select a main component, or a layer in one, to add an icon to it.');
   const { parent, at } = target;
+  keepIcons([iconId]);
   const node = createNode('icon', { name: icon.name, iconId });
   if (!isAutoLayout(parent)) {
     node.x = Math.round((parent.w - node.w) / 2);

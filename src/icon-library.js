@@ -114,6 +114,18 @@ export function iconMatches(icon, query) {
   return words.every((w) => hay.includes(w));
 }
 
+// How well an icon matches a search (lower is better): the exact name, then names that start with it,
+// then names containing every word, then matches in the group or keywords.
+export function iconScore(icon, query) {
+  const q = String(query || '').trim().toLowerCase();
+  const name = icon.name.toLowerCase();
+  if (!q) return 0;
+  if (name === q || name === q.replace(/\s+/g, '-')) return 0;
+  if (name.startsWith(q) || name.startsWith(q.replace(/\s+/g, '-'))) return 1;
+  if (q.split(/[\s/,]+/).filter(Boolean).every((w) => name.includes(w))) return 2;
+  return 3;
+}
+
 // What changed between two published versions, by icon id: { added, changed, removed } (names).
 export function diffIcons(before = [], after = []) {
   const sig = (i) => JSON.stringify([i.name, i.group, i.keywords, i.viewBox, i.style, i.strokeWidth, i.body]);
@@ -125,15 +137,39 @@ export function diffIcons(before = [], after = []) {
   };
 }
 
+// ---------- free icon sets ----------
+// Icon sets Sigma can create a Sigma Icons file from (built by tools/build-lucide.py).
+export const ICON_SETS = [
+  { id: 'lucide', name: 'Lucide', file: 'icon-sets/lucide.json', note: 'Outline icons, ISC License' },
+];
+
+// A Sigma Icons file holding an icon set, already published (v1). Icon ids come from the set's icon
+// names (lucide-arrow-right), so they stay the same in a later version of the set.
+export function iconSetDocument(set, data) {
+  const doc = newIconsDocument(data.name);
+  doc.icons = sanitizeIcons(data.icons.map(([name, group, keywords, body]) => ({
+    id: `${set.id}-${name}`, name, group, keywords, body, viewBox: data.viewBox, style: data.style,
+    strokeWidth: data.strokeWidth, cap: data.cap, join: data.join,
+  })));
+  doc.source = { name: data.name, version: data.version, url: data.url, license: data.license, licenseText: data.licenseText };
+  doc.published = { version: 1, publishedAt: Date.now(), notes: `${data.name} ${data.version}`, icons: structuredClone(doc.icons) };
+  return doc;
+}
+
 // ---------- icons in Sigma Design files ----------
-// A Sigma Design file links Sigma Icons files (doc.iconLibraries: [{ fileId, name, version, icons }], a
-// copy of the published version it accepted). Icon layers ({ type: 'icon', iconId, iconStroke }) show
-// one; components from a component library bring the icons they use (componentLibraries[].icons).
+// A Sigma Design file links Sigma Icons files: doc.iconLibraries = [{ fileId, name, version, count, icons }],
+// where icons are copies of just the icons the file uses (from the version it accepted), so a big set
+// (Lucide has ~1,900) doesn't make every file that links it big. The whole set is read from the Sigma
+// Icons file when the picker opens (libraryIconCache). Icon layers ({ type: 'icon', iconId, iconStroke })
+// show one; components from a component library bring the icons they use (componentLibraries[].icons).
 const indexes = new WeakMap(); // icons list → Map(id → icon)
 const indexOf = (list) => {
   if (!indexes.has(list)) indexes.set(list, new Map(list.map((i) => [i.id, i])));
   return indexes.get(list);
 };
+
+// Published icons of linked Sigma Icons files, as last read: fileId → { version, icons }.
+export const libraryIconCache = new Map();
 
 export function findIcon(id, doc = state.doc) {
   if (!id || !doc) return null;
@@ -142,11 +178,16 @@ export function findIcon(id, doc = state.doc) {
     if (icon) return icon;
   }
   for (const lib of doc.componentLibraries || []) if (lib.icons?.[id]) return lib.icons[id];
+  for (const lib of doc.iconLibraries || []) {
+    const icon = indexOf(libraryIconCache.get(lib.fileId)?.icons || []).get(id);
+    if (icon) return icon;
+  }
   return null;
 }
 
 // The Sigma Icons file an icon comes from (in this file's links), or null.
-export const iconLibraryOf = (id, doc = state.doc) => (doc?.iconLibraries || []).find((l) => indexOf(l.icons || []).has(id)) || null;
+export const iconLibraryOf = (id, doc = state.doc) => (doc?.iconLibraries || []).find((l) =>
+  indexOf(l.icons || []).has(id) || indexOf(libraryIconCache.get(l.fileId)?.icons || []).has(id)) || null;
 
 // Ids of the icons that layers (and component properties' defaults) in `nodes` use.
 export function usedIconIds(nodes) {

@@ -226,3 +226,42 @@ test('icons: an outline and a filled icon can share a name; re-importing updates
   const r = importSVGTexts([{ text: heartLine.replace('stroke-width="2"', 'stroke-width="1.5"'), name: 'heart' }], { group: 'Social' });
   eq([r.added, r.updated, state.doc.icons.length, state.doc.icons[0].id, state.doc.icons[0].strokeWidth], [0, 1, 2, outlineId, 1.5]);
 });
+
+// ---------- icon sets, and keeping only the icons in use ----------
+import { iconSetDocument, ICON_SETS } from '../src/icon-library.js';
+import { keepIcons } from '../src/libraries.js';
+
+test('icon sets: become a published Sigma Icons file with stable ids and credit', () => {
+  const data = {
+    name: 'Lucide', version: '1.0.0', url: 'https://lucide.dev', license: 'ISC', licenseText: 'ISC License…', viewBox: '0 0 24 24',
+    style: 'outline', strokeWidth: 2, cap: 'round', join: 'round',
+    icons: [['arrow-right', 'Arrows', 'next', '<path d="M5 12h14"/>'], ['bad', '', '', '<script>alert(1)</script><path d="M0 0" onclick="x"/>']],
+  };
+  const doc = iconSetDocument(ICON_SETS[0], data);
+  eq(doc.icons.map((i) => [i.id, i.name, i.group, i.style, i.strokeWidth]), [['lucide-arrow-right', 'arrow-right', 'Arrows', 'outline', 2], ['lucide-bad', 'bad', '', 'outline', 2]]);
+  eq(doc.icons[1].body, '<path d="M0 0"/>', 'cleaned like any import');
+  eq([doc.published.version, doc.published.icons.length, doc.source.license], [1, 2, 'ISC']);
+});
+
+test('icon libraries: a design file keeps copies of only the icons it uses', () => {
+  const btn = createNode('component', { name: 'B', w: 40, h: 40, children: [createNode('icon', { iconId: STAR.id })] });
+  useDoc([btn]);
+  linkIcons();
+  const lib = state.doc.iconLibraries[0];
+  eq([lib.count, lib.icons.map((x) => x.name)], [2, ['star']]);
+  eq(availableIcons().length, 2, 'the picker offers the whole set');
+  select([btn.children[0].id]);
+  insertIcon(ARROW.id);
+  eq(lib.icons.map((x) => x.name), ['star', 'arrow-right'], 'an icon placed is copied');
+  keepIcons([ARROW.id, 'nope']);
+  eq(lib.icons.length, 2);
+});
+
+import { iconScore } from '../src/icon-library.js';
+
+test('icons: search ranks the exact name first, then names that start with it', () => {
+  const names = ['file-heart', 'heart-crack', 'activity', 'heart'];
+  const icons = names.map((name) => ({ name, keywords: name === 'activity' ? 'heart, pulse' : '' }));
+  eq(icons.map((i) => iconScore(i, 'heart')), [2, 1, 3, 0]);
+  eq(iconScore({ name: 'arrow-right' }, 'arrow right'), 0);
+});

@@ -32,6 +32,7 @@ import {
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
 import { openIconPicker, availableIcons } from './icon-ui.js';
+import { iconLibraries, loadIconLibraries } from './libraries.js';
 import { findIcon, iconMarkup, iconGroups } from './icon-library.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -494,6 +495,8 @@ export function openPropWindow({ comp, pid = null, type = null, variantProp = nu
   document.body.appendChild(el);
   win = { el, comp, pid, type, variantProp, creating, draft, bind };
   renderWin();
+  // An Icon property lists the groups of the whole icon sets: read them, then show them.
+  if (type === 'icon') loadIconLibraries().then(() => win?.el === el && renderWin());
   // To the left of the right panel, level with what opened it.
   const r = el.getBoundingClientRect();
   const panel = document.querySelector('#right')?.getBoundingClientRect();
@@ -1183,7 +1186,7 @@ function addPropMenu(btn, node) {
     { label: 'Boolean', action: () => openPropWindow({ comp, type: 'boolean', anchor: r }) },
     { label: 'Instance swap', disabled: listComponents().length < 2, action: () => openPropWindow({ comp, type: 'instance', anchor: r }) },
     { label: 'Text', action: () => openPropWindow({ comp, type: 'text', anchor: r }) },
-    { label: 'Icon', disabled: !availableIcons().length, action: () => openPropWindow({ comp, type: 'icon', anchor: r }) },
+    { label: 'Icon', disabled: !iconLibraries().length, action: () => openPropWindow({ comp, type: 'icon', anchor: r }) },
     { label: 'Slot', action: () => openPropWindow({ comp, type: 'slot', anchor: r }) },
   ]);
 }

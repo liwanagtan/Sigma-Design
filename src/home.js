@@ -5,6 +5,7 @@ import {
   storageSummary, openFile, fileHref, fileKind, newTokenDocument, newIconsDocument, welcomeFile, sampleTokenFile, isSampleFile,
 } from './files.js';
 import { blankDocument } from './sample.js';
+import { ICON_SETS, iconSetDocument } from './icon-library.js';
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
 import { toast } from './io.js';
@@ -83,7 +84,7 @@ export function initHome(el) {
             <button class="icon-btn" data-layout="list" title="List view">${LIST_ICON}</button>
           </div>
           <button class="btn" id="home-import">Import</button>
-          <button class="btn" id="home-new-icons" title="New Sigma Icons file">${icons.plus} Sigma Icons</button>
+          <span class="split-btn"><button class="btn" id="home-new-icons" title="New Sigma Icons file">${icons.plus} Sigma Icons</button><button class="btn split-more" id="home-new-icons-more" title="More Sigma Icons options">${icons.chevronDown}</button></span>
           <span class="split-btn"><button class="btn" id="home-new-tokens" title="New Sigma Tokens file">${icons.plus} Sigma Tokens</button><button class="btn split-more" id="home-new-tokens-more" title="More Sigma Tokens options">${icons.chevronDown}</button></span>
           <button class="btn primary" id="home-new" title="New Sigma Design file">${icons.plus} Sigma Design</button>
         </div>
@@ -119,6 +120,14 @@ export function initHome(el) {
   root.querySelector('#home-new').addEventListener('click', () => newBlankFile());
   root.querySelector('#home-new-tokens').addEventListener('click', () => newTokenFile());
   root.querySelector('#home-new-icons').addEventListener('click', () => newIconsFile());
+  root.querySelector('#home-new-icons-more').addEventListener('click', (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    showContextMenu(r.right - 240, r.bottom + 4, [
+      { label: 'Blank Sigma Icons file', action: newIconsFile },
+      '-',
+      ...ICON_SETS.map((set) => ({ label: `${set.name} (${set.note})`, action: () => newIconSetFile(set) })),
+    ]);
+  });
   root.querySelector('#home-new-tokens-more').addEventListener('click', (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     showContextMenu(r.right - 220, r.bottom + 4, [
@@ -149,6 +158,7 @@ export function initHome(el) {
       const act = action.dataset.emptyAction;
       if (act === 'sample-tokens') return openSampleTokenFile();
       if (act === 'icons') return newIconsFile();
+      if (act === 'icon-set') return newIconSetFile(ICON_SETS.find((s) => s.id === action.dataset.set));
       return act === 'welcome' ? openWelcome() : act === 'tokens' ? newTokenFile() : newBlankFile();
     }
     if (more) {
@@ -213,6 +223,26 @@ async function newTokenFile() {
 
 async function newIconsFile() {
   openFile(await createFile(newIconsDocument()));
+}
+
+// A Sigma Icons file with a free icon set (Lucide), published so Sigma Design files can link it.
+let creatingSet = false;
+async function newIconSetFile(set) {
+  if (!set || creatingSet) return;
+  creatingSet = true;
+  toast(`Adding ${set.name}…`);
+  try {
+    const res = await fetch(set.file);
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const data = await res.json();
+    const doc = iconSetDocument(set, data);
+    openFile(await createFile(doc));
+    toast(`${data.name} ${data.version}: ${doc.icons.length.toLocaleString()} icons, published and ready to link`);
+  } catch (err) {
+    toast(`Couldn’t add ${set.name}: ${err.message}`);
+  } finally {
+    creatingSet = false;
+  }
 }
 
 async function newBlankFile() {
@@ -337,6 +367,7 @@ export async function renderHome() {
   // The primary "New" button matches the section you're in.
   root.querySelector('#home-new').classList.toggle('primary', section !== 'tokens' && section !== 'icons');
   root.querySelector('#home-new-icons').classList.toggle('primary', section === 'icons');
+  root.querySelector('#home-new-icons-more').classList.toggle('primary', section === 'icons');
   root.querySelector('#home-new-tokens').classList.toggle('primary', section === 'tokens');
   root.querySelector('#home-new-tokens-more').classList.toggle('primary', section === 'tokens');
   const sortSel = root.querySelector('#home-sort');
@@ -386,7 +417,8 @@ export async function renderHome() {
   } else if (!inSection && section === 'icons') {
     list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No Sigma Icons files yet</div>
       <p>A Sigma Icons file holds icons imported from SVG (from a free icon set, for example). Components in Sigma Design files pick their icons from it. It has no canvas.</p>
-      <div class="home-empty-actions"><button class="btn primary" data-empty-action="icons">${icons.plus} New Sigma Icons file</button></div></div>`;
+      <div class="home-empty-actions"><button class="btn primary" data-empty-action="icons">${icons.plus} New Sigma Icons file</button>
+      ${ICON_SETS.map((s) => `<button class="btn" data-empty-action="icon-set" data-set="${s.id}">Add ${esc(s.name)} icons</button>`).join('')}</div></div>`;
   } else if (!inSection) {
     list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No Sigma Design files yet</div>
       <div class="home-empty-actions"><button class="btn primary" data-empty-action="blank">${icons.plus} New Sigma Design file</button>

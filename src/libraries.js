@@ -16,7 +16,7 @@ import {
   loadPublishedComponents, listIconFiles, loadPublishedIcons,
   isSampleFile,
 } from './files.js';
-import { diffIcons, findIcon, usedIconIds } from './icon-library.js';
+import { diffIcons, findIcon, usedIconIds, libraryIconCache } from './icon-library.js';
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
 
@@ -56,17 +56,55 @@ function setComponentLibrary(fileId, name, published) {
 // Icons in use here (by layers anywhere in the file, and component property defaults).
 const iconsInUse = () => usedIconIds((state.doc.pages || []).flatMap((pg) => pg.children));
 
-// A Sigma Icons file's published icons. Icons the new version removed but this file uses stay (marked
-// removed, so the picker leaves them out) until they're swapped.
+// Use a Sigma Icons file's published version. The file keeps copies of only the icons it uses, from that
+// version; icons the version removed but this file uses stay (marked removed, so the picker leaves them
+// out) until they're swapped.
 function setIconLibrary(fileId, name, published) {
+  libraryIconCache.set(fileId, { version: published.version, icons: published.icons });
   const libs = (state.doc.iconLibraries ||= []);
   const i = libs.findIndex((l) => l.fileId === fileId);
-  const next = new Set(published.icons.map((x) => x.id));
+  const next = new Map(published.icons.map((x) => [x.id, x]));
   const used = iconsInUse();
+  const icons = [...used].filter((id) => next.has(id)).map((id) => structuredClone(next.get(id)));
   const kept = i < 0 ? [] : libs[i].icons.filter((x) => !next.has(x.id) && used.has(x.id)).map((x) => ({ ...x, removed: true }));
-  const entry = { fileId, name, version: published.version, icons: [...structuredClone(published.icons), ...kept] };
+  const entry = { fileId, name, version: published.version, count: published.icons.length, icons: [...icons, ...kept] };
   if (i >= 0) libs[i] = entry;
   else libs.push(entry);
+}
+
+// Read the whole published icon set of every linked Sigma Icons file (for the picker).
+export async function loadIconLibraries() {
+  await Promise.all(iconLibraries().map(async (lib) => {
+    const res = await loadPublishedIcons(lib.fileId);
+    if (res?.published) libraryIconCache.set(lib.fileId, { version: res.published.version, icons: res.published.icons });
+  }));
+}
+
+// Copy icons this file starts using into its links (call while making the change, before commit).
+export function keepIcons(ids) {
+  for (const id of ids) {
+    if (!id || iconLibraries().some((l) => l.icons.some((x) => x.id === id))) continue;
+    const lib = iconLibraries().find((l) => libraryIconCache.get(l.fileId)?.icons.some((x) => x.id === id));
+    const icon = lib && libraryIconCache.get(lib.fileId).icons.find((x) => x.id === id);
+    if (icon) lib.icons.push(structuredClone(icon));
+  }
+}
+
+// Icons in use that the file has no copy of (pasted from another file, say): copy them from the linked
+// Sigma Icons files. Returns how many were added.
+export async function repairIcons() {
+  if (!state.doc || !iconLibraries().length) return 0;
+  const missing = [...iconsInUse()].filter((id) => !iconLibraries().some((l) => l.icons.some((x) => x.id === id)) &&
+    !componentLibraries().some((l) => l.icons?.[id]));
+  if (!missing.length) return 0;
+  const doc = state.doc;
+  await loadIconLibraries();
+  if (state.doc !== doc) return 0; // another file opened meanwhile
+  const before = iconLibraries().reduce((n, l) => n + l.icons.length, 0);
+  keepIcons(missing);
+  const added = iconLibraries().reduce((n, l) => n + l.icons.length, 0) - before;
+  if (added) commit();
+  return added;
 }
 
 export async function linkIconLibrary(fileId) {
@@ -75,7 +113,7 @@ export async function linkIconLibrary(fileId) {
   if (!res?.published) return toast('That Sigma Icons file has no published version yet. Publish it from the file first.');
   setIconLibrary(fileId, res.meta.name, res.published);
   commit();
-  toast(`Linked “${res.meta.name}” (v${res.published.version}, ${res.published.icons.length} icons)`);
+  toast(`Linked “${res.meta.name}” (v${res.published.version}, ${res.published.icons.length.toLocaleString()} icons)`);
 }
 
 export function unlinkIconLibrary(fileId) {
@@ -488,11 +526,15 @@ function reviewUpdates() {
   if (!pending.length) return;
   const rows = pending.map((u, i) => {
     const comps = u.kind === 'components', iconsKind = u.kind === 'icons';
+    // Icons: what changed in the icons this file uses (it only keeps those), and the new size of the set.
+    const usedHere = iconsKind && u.lib.icons.filter((x) => !x.removed);
     const d = comps ? diffComponents(u.lib.components, u.published.components)
-      : iconsKind ? diffIcons(u.lib.icons.filter((x) => !x.removed), u.published.icons) : diffCollections(u.lib.collections, u.published.collections);
+      : iconsKind ? diffIcons(usedHere, u.published.icons.filter((x) => usedHere.some((y) => y.id === x.id)))
+        : diffCollections(u.lib.collections, u.published.collections);
     const deps = comps || iconsKind ? [] : dependencyChanges(u.lib.dependencies, u.published.dependencies);
     return `<div class="update-card"><div class="update-head"><b>${esc(u.meta.name)}${comps ? ' · components' : iconsKind ? ' · icons' : ' · design tokens'}</b><span class="muted">v${u.lib.version} → v${u.published.version}</span></div>` +
       (u.published.notes ? `<div class="update-notes">“${esc(u.published.notes)}”</div>` : '') +
+      (iconsKind ? `<div class="muted">${u.published.icons.length.toLocaleString()} icons in v${u.published.version}${u.lib.count ? ` (${u.lib.count.toLocaleString()} in v${u.lib.version})` : ''}. Changes to the icons this file uses:</div>` : '') +
       (diffList('Added', d.added, 'added') + diffList('Changed', d.changed, 'changed') + diffList('Removed', d.removed, 'removed') +
         diffList('Sigma Tokens files it points at', deps, 'changed') || '<div class="muted">No changes.</div>') +
       (d.removed.length ? `<div class="muted">${comps ? 'Instances of removed components keep their current look.' : iconsKind ? 'Layers using removed icons keep them until you swap them.' : 'Layers using removed tokens keep their current values.'}</div>` : '') +
@@ -624,7 +666,7 @@ export async function openIconLibrariesDialog() {
     const lib = linked.get(f.id);
     const action = lib ? `<button class="btn" data-unlink-icons="${f.id}">Unlink</button>`
       : `<button class="btn primary" data-link-icons="${f.id}" ${f.tokenVersion ? '' : 'disabled title="Publish it first"'}>Link</button>`;
-    return libraryRow(ICONS_ICON, f.name, versionStatus(f.tokenVersion, lib) + (lib ? `<span class="muted">${count(lib)} icons</span>` : ''), openBtn(f.id) + action);
+    return libraryRow(ICONS_ICON, f.name, versionStatus(f.tokenVersion, lib) + (lib ? `<span class="muted">${(lib.count ?? count(lib)).toLocaleString()} icons · ${count(lib)} used here</span>` : ''), openBtn(f.id) + action);
   }).join('') + iconLibraries().filter((l) => !files.some((f) => f.id === l.fileId)).map((l) =>
     libraryRow(ICONS_ICON, l.name, `<span class="muted">File archived or deleted · using v${l.version}</span>`, `<button class="btn" data-unlink-icons="${l.fileId}">Unlink</button>`)).join('');
   const body = '<p class="muted lib-intro">Sigma Icons files hold icons imported from SVG. Link one to use its icons in this file’s components; changes arrive when it publishes a new version and you accept it.</p>' +

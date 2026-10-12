@@ -20,7 +20,7 @@ import {
 import { initHome, renderHome, setHomeNotice, showHomeSection } from './home.js';
 import { initTokensScreen, showTokensScreen, hideTokensScreen } from './tokens-screen.js';
 import { initIconsScreen, showIconsScreen, hideIconsScreen } from './icons-screen.js';
-import { checkLibraryUpdates, migrateLegacyTokens, usesLibrary } from './libraries.js';
+import { checkLibraryUpdates, migrateLegacyTokens, usesLibrary, repairIcons } from './libraries.js';
 import { hideContextMenu } from './menu.js';
 import { arrangeWelcome } from './welcome.js';
 import { clearViewing, resetHistory } from './history.js';
@@ -213,6 +213,7 @@ async function showFile(id, { force = false, discard = false } = {}) {
   emit('tool');
   await migrateLegacyTokens(wasVersion);
   checkLibraryUpdates();
+  repairIcons(); // icons in use the file has no copy of (pasted from another file)
 }
 
 let routing = Promise.resolve();

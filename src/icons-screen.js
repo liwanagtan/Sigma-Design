@@ -327,20 +327,24 @@ function onInspectorClick(e) {
   else if (b.hasAttribute('data-download')) downloadSVG(byId(ids[0]));
   else if (b.hasAttribute('data-copy')) copySVG(byId(ids[0]));
   else if (b.hasAttribute('data-import')) pickSVGs();
+  else if (b.hasAttribute('data-license') && state.doc.source) {
+    modal(`${esc(state.doc.source.name)} license`, `<pre class="license-text">${esc(state.doc.source.licenseText || state.doc.source.license)}</pre>`);
+  }
 }
 
 // ---------- rendering ----------
 const visible = () => list().filter((i) => (groupFilter === null || (i.group || '') === groupFilter) &&
   (styleFilter === 'all' || i.style === styleFilter) && iconMatches(i, query));
 
-// Icons by style, then by group (ungrouped last): [{ style, count, groups: [{ name, icons }] }].
+// Icons by style, then by group (A–Z, ungrouped last): [{ style, count, groups: [{ name, icons }] }].
 function sections(icons) {
   return Object.keys(ICON_STYLES).map((style) => {
     const of = icons.filter((i) => i.style === style);
-    const groups = iconGroups(of).sort((a, b) => (!a.name) - (!b.name)).map((g) => ({ name: g.name, icons: of.filter((i) => (i.group || '') === g.name) }));
+    const groups = iconGroups(of).sort(byGroupName).map((g) => ({ name: g.name, icons: of.filter((i) => (i.group || '') === g.name) }));
     return { style, count: of.length, groups };
   }).filter((s) => s.count);
 }
+const byGroupName = (a, b) => (!a.name) - (!b.name) || a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
 // The shown icons in the order the grid shows them.
 const displayOrder = () => sections(visible()).flatMap((s) => s.groups.flatMap((g) => g.icons));
 
@@ -426,7 +430,10 @@ function renderInspector() {
   const styleSeg = (cur) => `<div class="seg">${Object.entries(ICON_STYLES).map(([k, v]) => `<button class="icon-btn${cur === k ? ' on' : ''}" data-set-style="${k}">${v}</button>`).join('')}</div>`;
   if (!sel.length) {
     const outline = list().filter((i) => i.style === 'outline').length;
-    el.innerHTML = `<div class="inspector-title">Sigma Icons</div>
+    const src = state.doc.source; // a free icon set this file was made from
+    const credit = src ? `<div class="icons-source"><b>${esc(src.name)} ${esc(src.version)}</b> · ${esc(src.license)} License<br>` +
+      `<a href="${esc(src.url)}" target="_blank" rel="noopener">${esc(src.url.replace(/^https?:\/\//, ''))}</a> · <button class="link-btn" data-license>License</button></div>` : '';
+    el.innerHTML = `<div class="inspector-title">Sigma Icons</div>${credit}
       <p class="muted icons-help">${list().length ? `${plural(list().length, 'icon')} in ${plural(groups.length, 'group')}: ${outline} outline, ${list().length - outline} filled.` : 'No icons yet.'}</p>
       <p class="muted icons-help">Import SVGs, drop them anywhere here, or paste SVG code (⌘V). Icons go into the group you have open. Re-importing an icon with the same name, group and style updates it.</p>
       <p class="muted icons-help">Colors are removed on import: an icon takes the color of the layer that shows it. Outline icons keep their stroke width, which components can change.</p>

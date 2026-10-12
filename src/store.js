@@ -395,6 +395,7 @@ let lastSnapshot = null;
 let saveTimer = null;
 
 const snapshot = () => JSON.stringify(state.doc);
+const UNDO_CHARS = 50_000_000; // characters, 2 bytes each
 
 let readOnlyHintAt = 0;
 
@@ -422,7 +423,9 @@ export function commit() {
     return;
   }
   if (lastSnapshot) past.push({ doc: lastSnapshot, selection: [...state.selection] });
-  if (past.length > 200) past.shift();
+  // Up to 200 steps, and fewer for big files (a Sigma Icons file with a whole icon set) so undo stays
+  // within about 100 MB.
+  while (past.length > 200 || (past.length > 10 && past.reduce((n, e) => n + e.doc.length, 0) > UNDO_CHARS)) past.shift();
   future = [];
   lastSnapshot = snap;
   scheduleSave({ edited: true });

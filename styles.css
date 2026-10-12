@@ -491,6 +491,9 @@ fieldset.readonly .field-label { cursor: default; }
 .icons-inspector .seg { margin-right: 24px; }
 .icons-inspector .seg .icon-btn { font-size: 12px; }
 .icons-inspector .btn.wide { margin-top: 12px; }
+.icons-source { margin: 4px 24px 12px 0; padding: 8px 10px; border-radius: 6px; background: var(--input); line-height: 1.6; }
+.icons-source a { color: var(--accent); }
+.license-text { white-space: pre-wrap; font: 12px/1.5 'JetBrains Mono', monospace; margin: 0; }
 .icons-help { line-height: 1.5; margin: 0 24px 8px 0; }
 .icon-preview { display: grid; place-items: center; height: 160px; margin-right: 24px; border-radius: 8px; color: #1e1e1e;
   background: #fff linear-gradient(var(--border) 1px, transparent 1px) 0 0 / 100% 20px; border: 1px solid var(--border); }
