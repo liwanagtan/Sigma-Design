@@ -6,10 +6,11 @@ import {
 } from './store.js';
 import { buildSVG, download, toast } from './io.js';
 import { libraryEntry } from './variables.js';
-import { welcomeDocument, WELCOME_VERSION } from './welcome.js';
-import { newIconsDocument, sanitizeIcons, iconMarkup } from './icon-library.js';
+import { welcomeDocument, WELCOME_VERSION, WELCOME_ICONS } from './welcome.js';
+import { newIconsDocument, sanitizeIcons, iconMarkup, usedIconIds, ICON_SETS, loadIconSet } from './icon-library.js';
+import { sampleIconsDocument, SAMPLE_ICONS_NAME } from './sample-icons.js';
 
-// The sample files (the Welcome to Sigma guide and its Sigma Tokens) live in the files home's Welcome to
+// The sample files (the Welcome to Sigma guide, its Sigma Tokens and its Sigma Icons) live in the files home's Welcome to
 // Sigma folder rather than with your own files.
 export const isSampleFile = (meta) => !!(meta?.welcome || meta?.sample || meta?.sampleLegacy);
 const LEGACY_SAMPLE_TOKENS_NAME = 'Sample design tokens';
@@ -65,10 +66,12 @@ async function setUpWelcomeFolder() {
     if (!guide) await welcomeFile(); // makes the current pair and archives the rest
     else {
       const keep = new Set([guide.id]);
-      for (const l of (await loadFile(guide.id))?.doc.libraries || []) {
+      const doc = (await loadFile(guide.id))?.doc;
+      for (const l of doc?.libraries || []) {
         keep.add(l.fileId);
         await nameSampleTokens(l.fileId);
       }
+      for (const l of doc?.iconLibraries || []) keep.add(l.fileId);
       await archiveSamples(keep);
     }
   }
@@ -446,7 +449,28 @@ export async function sampleTokenFile() {
   return createTokenFileWith(name, collections, 'Sample tokens', { meta: { sample: true } });
 }
 
-// "Welcome to Sigma": the guide file a new user starts with, linking the sample tokens. Reopens the most
+// The sample Sigma Icons (made from the Lucide set the first time). Reuses one that still has every icon
+// the guide uses; null if the Lucide data can't be read (the guide is then made without icons).
+export async function sampleIconFile() {
+  for (const meta of (await listIconFiles()).filter((m) => m.sample).sort((a, b) => b.updatedAt - a.updatedAt)) {
+    const published = (await loadPublishedIcons(meta.id))?.published;
+    if (!published) continue;
+    const ids = new Set(published.icons.map((x) => x.id));
+    if (!WELCOME_ICONS.every((id) => ids.has(id))) continue; // icons the guide uses are missing
+    return { id: meta.id, name: meta.name, published };
+  }
+  let doc;
+  try {
+    doc = sampleIconsDocument(await loadIconSet(ICON_SETS.find((s) => s.id === 'lucide')));
+  } catch (err) {
+    console.warn('Could not make the sample Sigma Icons', err);
+    return null;
+  }
+  const id = await createFile(doc, {}, { sample: true });
+  return { id, name: SAMPLE_ICONS_NAME, published: doc.published };
+}
+
+// "Welcome to Sigma": the guide file a new user starts with, linking the sample tokens and icons. Reopens the most
 // recently edited copy of the current version (WELCOME_VERSION); otherwise makes a new one and moves the
 // older sample files to the Archive.
 export async function welcomeFile() {
@@ -454,11 +478,20 @@ export async function welcomeFile() {
   if (current) return current.id;
   const lib = await sampleTokenFile();
   lib.name = (await nameSampleTokens(lib.id)) || lib.name; // an older sample token file becomes Sigma Tokens
-  const doc = welcomeDocument(lib.published.collections);
+  const icons = await sampleIconFile();
+  const doc = welcomeDocument(lib.published.collections, { icons: icons?.published.icons || null });
   doc.libraries = [libraryEntry(lib.id, lib.name, lib.published)];
+  if (icons) {
+    // Like any Sigma Design file, the guide keeps copies of just the icons it uses.
+    const used = usedIconIds(doc.pages.flatMap((pg) => pg.children));
+    doc.iconLibraries = [{
+      fileId: icons.id, name: icons.name, version: icons.published.version, count: icons.published.icons.length,
+      icons: structuredClone(icons.published.icons.filter((x) => used.has(x.id))),
+    }];
+  }
   const id = await createFile(doc, {}, { welcome: WELCOME_VERSION });
   // The new guide replaces the old one: older sample files go to the Archive.
-  const moved = await archiveSamples(new Set([id, lib.id]));
+  const moved = await archiveSamples(new Set([id, lib.id, ...(icons ? [icons.id] : [])]));
   if (moved) toast(`Moved ${moved === 1 ? 'the previous sample file' : `${moved} older sample files`} to the Archive`);
   return id;
 }

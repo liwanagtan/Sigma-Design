@@ -211,7 +211,7 @@ export function iconLayerInfo(nodes) {
   const where = icon?.removed ? 'Removed from its Sigma Icons file' : lib ? `${lib.name}${icon.group ? ` / ${icon.group}` : ''}`
     : icon ? 'From a component library' : 'Its Sigma Icons file isn’t linked';
   return {
-    icon, outline: nodes.some((n) => findIcon(n.iconId)?.style === 'outline'),
+    icon, outline: nodes.some((n) => findIcon(n.iconId)?.style === 'outline' || findIcon(n.iconId)?.strokeWidth > 0), // has a stroke
     html: `<div class="icon-layer-row"><span class="icon-layer-preview">${icon ? iconMarkup(icon, { w: 20, h: 20 }) : ''}</span>` +
       `<span class="icon-layer-name"><span>${esc(name)}</span><span class="muted">${esc(ids.size > 1 ? '' : where)}</span></span></div>`,
   };

@@ -265,3 +265,45 @@ test('icons: search ranks the exact name first, then names that start with it', 
   eq(icons.map((i) => iconScore(i, 'heart')), [2, 1, 3, 0]);
   eq(iconScore({ name: 'arrow-right' }, 'arrow right'), 0);
 });
+
+// ---------- the sample Sigma Icons and the guide's icons page ----------
+import { sampleIconsDocument, sampleIconId } from '../src/sample-icons.js';
+import { welcomeDocument, WELCOME_ICONS } from '../src/welcome.js';
+import { sampleTokenDocument } from '../src/sample-tokens.js';
+import { snapshotForLibrary, resolveVariables } from '../src/variables.js';
+import { loadDocument, walk } from '../src/store.js';
+import { loadIconSet } from '../src/icon-library.js';
+
+test('sample icons: Lucide icons in groups, outline and filled, with every icon the guide uses', async () => {
+  const doc = sampleIconsDocument(await loadIconSet(ICON_SETS[0]));
+  const ids = new Set(doc.icons.map((i) => i.id));
+  ok(WELCOME_ICONS.every((id) => ids.has(id)), 'the guide’s icons are there');
+  ok(doc.icons.some((i) => i.style === 'filled') && doc.icons.some((i) => i.style === 'outline'), 'both styles');
+  const heart = doc.icons.find((i) => i.id === sampleIconId('heart', true));
+  eq([heart.name, heart.group, heart.style, heart.strokeWidth], ['heart', 'Social', 'filled', 2]);
+  ok(iconMarkup(heart, { color: '#FF0000' }).includes('fill="#FF0000" stroke="#FF0000" stroke-width="2"'), 'filled with its outline, so it keeps its size');
+  eq(doc.source.license, 'ISC');
+  eq(doc.published.icons.length, doc.icons.length);
+});
+
+test('Welcome to Sigma: the Sigma Icons page’s components and instances show sample icons', async () => {
+  const icons = sampleIconsDocument(await loadIconSet(ICON_SETS[0])).published.icons;
+  const tokens = sampleTokenDocument();
+  const doc = welcomeDocument(tokens.collections, { icons });
+  doc.libraries = [{ fileId: 'lib', name: tokens.name, version: 1, collections: snapshotForLibrary(tokens.collections, 'lib') }];
+  doc.iconLibraries = [{ fileId: 'icons', name: 'Sigma Icons', version: 1, count: icons.length, icons }];
+  loadDocument(doc);
+  syncInstances();
+  resolveVariables();
+  const pg = state.doc.pages.find((p) => p.name === '10 Sigma Icons');
+  ok(pg, 'page 10');
+  const layers = [];
+  walk(pg.children, (n) => void (n.type === 'icon' && layers.push(n)));
+  ok(layers.length > 15, 'icons in components and instances');
+  ok(layers.every((n) => findIcon(n.iconId)), 'every icon is a sample icon');
+  const buttons = pg.children.find((n) => n.name === 'Icon buttons');
+  const used = [];
+  walk(buttons.children, (n) => void (n.type === 'icon' && used.push(n.iconId)));
+  eq(used, ['search', 'pencil', 'copy', 'share-2', 'trash'].map((n) => sampleIconId(n)), 'each instance chose its icon');
+  ok(layers.every((n) => /^#[0-9A-F]{6}/i.test(n.fills[0].color)), 'colors come from tokens');
+});

@@ -432,7 +432,8 @@ function renderInspector() {
     const outline = list().filter((i) => i.style === 'outline').length;
     const src = state.doc.source; // a free icon set this file was made from
     const credit = src ? `<div class="icons-source"><b>${esc(src.name)} ${esc(src.version)}</b> · ${esc(src.license)} License<br>` +
-      `<a href="${esc(src.url)}" target="_blank" rel="noopener">${esc(src.url.replace(/^https?:\/\//, ''))}</a> · <button class="link-btn" data-license>License</button></div>` : '';
+      `<a href="${esc(src.url)}" target="_blank" rel="noopener">${esc(src.url.replace(/^https?:\/\//, ''))}</a> · <button class="link-btn" data-license>License</button>` +
+      `${src.note ? `<div class="muted">${esc(src.note)}</div>` : ''}</div>` : '';
     el.innerHTML = `<div class="inspector-title">Sigma Icons</div>${credit}
       <p class="muted icons-help">${list().length ? `${plural(list().length, 'icon')} in ${plural(groups.length, 'group')}: ${outline} outline, ${list().length - outline} filled.` : 'No icons yet.'}</p>
       <p class="muted icons-help">Import SVGs, drop them anywhere here, or paste SVG code (⌘V). Icons go into the group you have open. Re-importing an icon with the same name, group and style updates it.</p>
@@ -453,7 +454,7 @@ function renderInspector() {
       <label class="inspector-label">Keywords</label>
       <input class="desc icon-field" data-field="keywords" value="${esc(i.keywords || '')}" placeholder="Words to find it by, comma-separated" spellcheck="false">
       <label class="inspector-label">Style</label>${styleSeg(i.style)}
-      ${i.style === 'outline' ? `<label class="inspector-label">Stroke width</label><input class="desc icon-field" type="number" min="0" step="0.25" data-field="strokeWidth" value="${i.strokeWidth}">` : ''}
+      <label class="inspector-label">Stroke width${i.style === 'filled' ? ' <span class="muted">(0: fill only)</span>' : ''}</label><input class="desc icon-field" type="number" min="0" step="0.25" data-field="strokeWidth" value="${i.strokeWidth}">
       <p class="muted icons-help">Drawn on a ${+vw.toFixed(2)} × ${+vh.toFixed(2)} grid.</p>
       <div class="icons-actions"><button class="btn" data-download>Download SVG</button><button class="btn" data-copy>Copy SVG</button></div>
       <button class="btn wide danger" data-delete>Delete icon</button>`;
@@ -461,13 +462,13 @@ function renderInspector() {
   }
   const styles = new Set(sel.map((i) => i.style));
   const groupsOf = new Set(sel.map((i) => i.group || ''));
-  const sws = new Set(sel.filter((i) => i.style === 'outline').map((i) => i.strokeWidth));
+  const sws = new Set(sel.map((i) => i.strokeWidth));
   el.innerHTML = `<div class="inspector-title">${sel.length} icons</div>
     <div class="icons-multi">${sel.slice(0, 24).map((i) => iconMarkup(i, { w: 20, h: 20 })).join('')}</div>
     <label class="inspector-label">Group</label>
     <input class="desc icon-field" data-field="group" value="${groupsOf.size === 1 ? esc([...groupsOf][0]) : ''}" list="icon-groups" placeholder="${groupsOf.size === 1 ? 'Ungrouped' : 'Mixed'}" spellcheck="false">${datalist}
     <label class="inspector-label">Style</label>${styleSeg(styles.size === 1 ? [...styles][0] : null)}
-    ${styles.has('outline') ? `<label class="inspector-label">Stroke width</label><input class="desc icon-field" type="number" min="0" step="0.25" data-field="strokeWidth" value="${sws.size === 1 ? [...sws][0] : ''}" placeholder="Mixed">` : ''}
+    <label class="inspector-label">Stroke width</label><input class="desc icon-field" type="number" min="0" step="0.25" data-field="strokeWidth" value="${sws.size === 1 ? [...sws][0] : ''}" placeholder="Mixed">
     <button class="btn wide danger" data-delete>Delete ${sel.length} icons</button>`;
 }
 

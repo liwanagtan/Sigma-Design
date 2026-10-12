@@ -2,7 +2,7 @@ import { test, eq, ok } from './harness.js';
 import { state, createNode, commit, loadDocument, flushSave, setPersistence, editNode } from '../src/store.js';
 import {
   initFiles, createFile, deleteFile, loadFile, listFiles, renameFile, setCurrentFile, saveNamedVersion, listVersions, updateThumbnail,
-  welcomeFile, createTokenFileWith, sampleTokenFile, appendToTokenFile, archiveFile, restoreFile, listArchivedFiles, listTokenFiles,
+  welcomeFile, createTokenFileWith, sampleTokenFile, sampleIconFile, appendToTokenFile, archiveFile, restoreFile, listArchivedFiles, listTokenFiles,
 } from '../src/files.js';
 import { sampleTokenDocument } from '../src/sample-tokens.js';
 import { WELCOME_VERSION } from '../src/welcome.js';
@@ -74,6 +74,9 @@ test('storage: Welcome to Sigma is reused, and links the sample tokens, skipping
     eq(b, a); // the same Welcome file is reopened
     eq((await loadFile(a)).meta.welcome, WELCOME_VERSION);
     eq([(await sampleTokenFile()).id], await linked(a)); // Sample token file opens the same one
+    const icons = (await loadFile(a)).doc.iconLibraries?.[0];
+    ok(icons && (await loadFile(icons.fileId)).meta.sample, 'links the sample Sigma Icons');
+    eq((await sampleIconFile()).id, icons.fileId, 'which is reused');
     const newTokenFiles = (await listFiles()).filter((f) => !before.has(f.id) && f.kind === 'tokens');
     ok(newTokenFiles.length <= 1, 'at most one sample token file is created');
     // A newer sample token file without the Components collection can't back the sample, so it is skipped.

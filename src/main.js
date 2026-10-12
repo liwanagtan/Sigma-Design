@@ -177,7 +177,10 @@ async function showFile(id, { force = false, discard = false } = {}) {
     iconsEl.hidden = false;
     loadDocument(file.doc, file.views);
     showIconsScreen();
-    if (sample) sampleBanner();
+    if (sample) {
+      sampleBanner();
+      setTimeout(() => getCurrentFileId() === id && updateThumbnail(), 1500); // of the original, once
+    }
     return;
   }
   iconsEl.hidden = true;

@@ -5,12 +5,13 @@ import {
   storageSummary, openFile, fileHref, fileKind, newTokenDocument, newIconsDocument, welcomeFile, sampleTokenFile, isSampleFile,
 } from './files.js';
 import { blankDocument } from './sample.js';
-import { ICON_SETS, iconSetDocument } from './icon-library.js';
+import { ICON_SETS, iconSetDocument, loadIconSet } from './icon-library.js';
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
 import { toast } from './io.js';
 
 const PREFS_KEY = 'sigma.home.prefs';
+const KIND_ORDER = ['design', 'tokens', 'icons']; // the Welcome to Sigma folder: the guide, then its libraries
 const SORTS = { edited: 'Last edited', name: 'Name', created: 'Date created' };
 
 let root = null;
@@ -232,9 +233,7 @@ async function newIconSetFile(set) {
   creatingSet = true;
   toast(`Adding ${set.name}…`);
   try {
-    const res = await fetch(set.file);
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-    const data = await res.json();
+    const data = await loadIconSet(set);
     const doc = iconSetDocument(set, data);
     openFile(await createFile(doc));
     toast(`${data.name} ${data.version}: ${doc.icons.length.toLocaleString()} icons, published and ready to link`);
@@ -396,8 +395,8 @@ export async function renderHome() {
   list.className = `home-files ${prefs.layout}`;
 
   if (welcome) {
-    list.innerHTML = '<div class="archive-intro"><p class="muted">Start with <b>Sigma Design</b>: a guide to everything in Sigma, with examples to try. <b>Sigma Tokens</b> holds the sample design tokens it uses.</p></div>' +
-      (files.length ? files.sort((a, b) => fileKind(a).localeCompare(fileKind(b))).map(card).join('')
+    list.innerHTML = WELCOME_INTRO +
+      (files.length ? files.sort((a, b) => KIND_ORDER.indexOf(fileKind(a)) - KIND_ORDER.indexOf(fileKind(b))).map((f) => card(f, { describe: true })).join('')
         : `<div class="home-empty"><div class="home-empty-title">Welcome to Sigma</div><p>The guide isn’t here (it may be in the Archive).</p>
           <div class="home-empty-actions"><button class="btn primary" data-empty-action="welcome">Open Welcome to Sigma</button></div></div>`);
   } else if (archive) {
@@ -448,7 +447,19 @@ function archivedCard(f) {
   </div>`;
 }
 
-function card(f) {
+// The Welcome to Sigma folder: what it's for, and (on each card) what each sample file holds.
+const WELCOME_INTRO = `<div class="welcome-intro">
+  <p><b>Welcome to Sigma</b> is where to learn Sigma: a guide, and the small design system it's built with. Open <b>Sigma Design</b> first; it explains everything, page by page, with examples to try.</p>
+  <p class="muted">These are sample files: open them and try anything. Nothing in them is saved, so they're back to the original whenever you open them again. <b>Duplicate to keep changes</b> (in the banner) makes a copy of your own, which goes with your files.</p>
+</div>`;
+const SAMPLE_DESCRIPTIONS = {
+  design: 'The guide. Ten pages, each with a short explanation and examples: the canvas, layout, components, design tokens, style, quality checks, libraries and versions, Sigma Tokens and Sigma Icons.',
+  tokens: 'The design tokens the guide is built with: primitives, semantic colors in Light and Dark, a Brand B, text styles and component tokens.',
+  icons: 'The icons the guide’s components use: a selection of Lucide icons in groups, outline and filled.',
+};
+
+// `describe`: a sample file's card also says what the file holds (in the Welcome to Sigma folder).
+function card(f, { describe = false } = {}) {
   let thumb = '';
   if (f.thumbnail instanceof Blob) {
     const url = URL.createObjectURL(f.thumbnail);
@@ -465,7 +476,7 @@ function card(f) {
     <div class="file-thumb" style="background:${tokens ? '#FFFFFF' : esc(f.background || '#F5F5F5')}">${thumb}</div>
     <div class="file-info">${name}<div class="file-time">${kindBadge(kind)}${sample
       ? `<span class="kind-badge sample" title="A sample file: try anything; nothing is saved, and it resets when reopened">Sample</span>${tokens ? 'For the guide' : 'Guide to Sigma'}` // never edited, so no "Edited … ago"
-      : `Edited ${ago(f.updatedAt)}`}</div></div>
+      : `Edited ${ago(f.updatedAt)}`}</div>${describe && sample && SAMPLE_DESCRIPTIONS[kind] ? `<div class="card-desc">${SAMPLE_DESCRIPTIONS[kind]}</div>` : ''}</div>
     <div class="file-created">${sample ? '' : new Date(f.createdAt).toLocaleDateString()}</div>
     <button class="icon-btn file-more" data-more title="More actions">${MORE_ICON}</button>
   </a>`;

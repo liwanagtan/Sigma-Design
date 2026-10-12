@@ -1,13 +1,18 @@
 // "Welcome to Sigma": the file a new user starts with. Each page pairs a short guide with live examples,
 // and everything in it is built from the sample tokens (sample-tokens.js), which it links as its Sigma
-// Tokens file. It replaces the old sample design file.
+// Tokens file, and the sample icons (sample-icons.js), its Sigma Icons file. It replaces the old sample
+// design file.
 //
 // Bump WELCOME_VERSION whenever the content changes: "Open Welcome to Sigma" then makes a fresh copy
 // instead of reopening an older one.
 import { createNode, uid, makePaint } from './store.js';
 import { DEFAULT_LAYOUT } from './layout.js';
+import { sampleIconId } from './sample-icons.js';
 
-export const WELCOME_VERSION = 4;
+export const WELCOME_VERSION = 5;
+// The sample icons the guide uses (outline unless marked filled).
+const GUIDE_ICONS = ['plus', 'search', 'pencil', 'copy', 'share-2', 'trash', 'settings', 'user', 'log-out', 'star', 'heart', 'bookmark', 'bell'];
+export const WELCOME_ICONS = [...GUIDE_ICONS.map((n) => sampleIconId(n)), ...['star', 'heart', 'bookmark', 'bell'].map((n) => sampleIconId(n, true))];
 // The files home keeps the guide and its tokens in a "Welcome to Sigma" folder, as "Sigma Design" and
 // "Sigma Tokens".
 export const WELCOME_FOLDER = 'Welcome to Sigma';
@@ -17,7 +22,8 @@ const autoLayout = (props) => ({ ...DEFAULT_LAYOUT, ...props });
 
 // `collections` are the sample tokens' published collections. Throws if a token, collection or mode it
 // uses is missing (or a token has another type), so an edited copy of the sample tokens is never linked.
-export function welcomeDocument(collections) {
+// `icons`: the sample icons' published icons (null when they couldn't be made: page 10 then has no examples).
+export function welcomeDocument(collections, { icons = null } = {}) {
   // ---------- tokens ----------
   const col = (name) => {
     const c = collections.find((x) => x.name === name);
@@ -161,14 +167,15 @@ export function welcomeDocument(collections) {
   const cardInstance = (props = {}) => createNode('instance', { name: 'Card', componentId: card.id, w: card.w, h: card.h, overrides: {}, children: [], ...props });
 
   // ---------- 1. Start here ----------
-  const start = guide('Start here · 1 of 9', 'Welcome to Sigma', 'Sigma is a design tool for building a design system and designing with it, right in your browser. Your files are saved in this browser; nothing leaves it unless you download or export it.', [
-    { h: 'Two kinds of file', bullets: [
+  const start = guide('Start here · 1 of 10', 'Welcome to Sigma', 'Sigma is a design tool for building a design system and designing with it, right in your browser. Your files are saved in this browser; nothing leaves it unless you download or export it.', [
+    { h: 'Three kinds of file', bullets: [
       'Sigma Design files have a canvas: pages, frames, components and layouts. This file is one.',
       'Sigma Tokens files hold design tokens (colors, spacing, type, shadows, motion) and have no canvas. They’re published for Sigma Design files to use.',
+      'Sigma Icons files hold icons imported from SVG (from a free set like Lucide), for components to use. No canvas either.',
     ] },
     { h: 'How they connect', p: [
-      'This file uses the Sigma Tokens file next to it in the Welcome to Sigma folder on the files home. Every color, size, text style and shadow here comes from one of its tokens, so switching a mode or a brand restyles everything at once.',
-      'When a Sigma Tokens file publishes a new version, the Sigma Design files that use it are offered the update.',
+      'This file uses the Sigma Tokens and Sigma Icons files next to it in the Welcome to Sigma folder on the files home. Every color, size, text style and shadow here comes from one of its tokens, so switching a mode or a brand restyles everything at once.',
+      'When a Sigma Tokens or Sigma Icons file publishes a new version, the Sigma Design files that use it are offered the update.',
     ] },
     { h: 'Find your way', bullets: [
       'Layers and Assets are on the left. The right panel shows what you’ve selected, or this file’s tokens and libraries when nothing is.',
@@ -184,6 +191,7 @@ export function welcomeDocument(collections) {
       '7 Quality checks: contrast, token audit, deprecation',
       '8 Libraries and versions: publishing, updates, history',
       '9 Sigma Tokens: how token files work',
+      '10 Sigma Icons: icon sets, and icons in components',
     ] },
   ]);
   start.parts.push(tryIt('Pick a page in the Pages list on the left. Each one has a guide like this and examples to try on the right. This file is a playground: change anything, nothing is saved, and it’s back to the original the next time you open it. Duplicate to keep changes (in the banner) makes it your own.'));
@@ -197,14 +205,20 @@ export function welcomeDocument(collections) {
     text('Name', `${WELCOME_NAME} (this file)`, S('text/primary'), T('heading/h3')),
     para('Pages, components and layouts whose colors, sizes and text styles are those tokens.', { typo: T('body/small'), color: S('text/secondary') }),
   ]);
+  const iconsBox = stack('Sigma Icons', 'vertical', { gap: P('space/2'), padding: P('space/6'), fill: S('surface/default'), radius: P('radius/lg'), stroke: S('border/strong'), width: 300 }, [
+    text('Kind', 'Sigma Icons file', S('text/link'), T('label/default'), { textCase: 'upper' }),
+    text('Name', 'Sigma Icons', S('text/primary'), T('heading/h3')),
+    para('Icons from Lucide, outline and filled, in groups.', { typo: T('body/small'), color: S('text/secondary') }),
+  ]);
   const arrow = stack('Publish and use', 'vertical', { gap: P('space/1'), props: { layout: autoLayout({ mode: 'vertical', alignC: 'center' }) } }, [
     text('Label', 'publish →', S('text/secondary'), T('label/default')),
     text('Label', '← accept updates', S('text/secondary'), T('label/small')),
   ]);
-  const diagram = example('The Welcome to Sigma folder', 600, 0, [row('Files', [tokensBox, arrow, designBox], P('space/6'))]);
+  const libraryFiles = stack('Library files', 'vertical', { gap: P('space/4') }, [tokensBox, iconsBox]);
+  const diagram = example('The Welcome to Sigma folder', 600, 0, [row('Files', [libraryFiles, arrow, designBox], P('space/6'))]);
 
   // ---------- 2. Canvas basics ----------
-  const basics = guide('Canvas basics · 2 of 9', 'Canvas basics', 'Draw, select and arrange layers on an infinite canvas. Most of it works the way it does in Figma.', [
+  const basics = guide('Canvas basics · 2 of 10', 'Canvas basics', 'Draw, select and arrange layers on an infinite canvas. Most of it works the way it does in Figma.', [
     { h: 'Tools', keys: [['V', 'Move'], ['H', 'Hand (or hold Space and drag)'], ['F', 'Frame (presets appear in the panel)'], ['R', 'Rectangle'], ['O', 'Ellipse'], ['L', 'Line'], ['T', 'Text'], ['⇧⌘K', 'Place an image']] },
     { h: 'Select and move', bullets: [
       'Click selects; ⇧-click adds. Drag on the canvas for a marquee.',
@@ -232,7 +246,7 @@ export function welcomeDocument(collections) {
   });
 
   // ---------- 3. Layout ----------
-  const layoutGuide = guide('Layout · 3 of 9', 'Layout', 'Auto layout arranges layers in a row or a column, so designs adjust as content changes. Constraints and layout grids handle the rest.', [
+  const layoutGuide = guide('Layout · 3 of 10', 'Layout', 'Auto layout arranges layers in a row or a column, so designs adjust as content changes. Constraints and layout grids handle the rest.', [
     { h: 'Auto layout', keys: [['⇧A', 'Add auto layout to a frame or the selection'], ['⌥⇧A', 'Remove it']], bullets: [
       'Set the direction, gap, padding and alignment in the Auto layout section. Gap and padding can use spacing tokens.',
       'Drag a layer inside to reorder it, or use the arrow keys. Absolute position takes a layer out of the flow.',
@@ -279,14 +293,14 @@ export function welcomeDocument(collections) {
   for (const [k, path] of [['count', 'layout/columns'], ['gutter', 'layout/gutter'], ['margin', 'layout/margin']]) gridFrame.bindings[`layoutGrids.0.${k}`] = P(path);
 
   // ---------- 4. Components ----------
-  const compGuide = guide('Components · 4 of 9', 'Components', 'A component is a reusable piece of design. Its instances follow every change to the main component, and can still change their text and colors.', [
+  const compGuide = guide('Components · 4 of 10', 'Components', 'A component is a reusable piece of design. Its instances follow every change to the main component, and can still change their text and colors.', [
     { h: 'Create', keys: [['⌥⌘K', 'Create a component from a frame or the selection'], ['⌥-drag', 'Drag an instance out of a main component'], ['⌥⌘B', 'Detach an instance']], bullets: [
       'Insert instances from Assets (click or drag), or by duplicating one.',
       'Right-click several layers → Create multiple components makes one each.',
     ] },
     { h: 'Variants and properties', bullets: [
       'Combine components as variants into a set; names like “Style=Primary” become variant properties.',
-      'Properties (the + in the Properties section): boolean (show or hide a layer), text, instance swap and slots (an area instances can fill).',
+      'Properties (the + in the Properties section): boolean (show or hide a layer), text, instance swap, icon (see page 10) and slots (an area instances can fill).',
       'Select a main component to see its properties; select an instance to set them.',
     ] },
     { h: 'Instances', bullets: [
@@ -306,7 +320,7 @@ export function welcomeDocument(collections) {
   ], { note: 'Instances of the Button set and the Card, with their own labels.' });
 
   // ---------- 5. Tokens in designs ----------
-  const tokensGuide = guide('Tokens in designs · 5 of 9', 'Tokens in designs', 'A design token is a named value: a color, a size, a text style, a shadow. Layers that use tokens update when the token changes, and follow modes like Light and Dark.', [
+  const tokensGuide = guide('Tokens in designs · 5 of 10', 'Tokens in designs', 'A design token is a named value: a color, a size, a text style, a shadow. Layers that use tokens update when the token changes, and follow modes like Light and Dark.', [
     { h: 'Use a token', bullets: [
       'The token button (◈) next to a fill, stroke, number, visibility, text content or effect applies a token; it then shows as a purple chip.',
       'Text style in the Text section applies a typography token.',
@@ -336,7 +350,7 @@ export function welcomeDocument(collections) {
   ];
 
   // ---------- 6. Style ----------
-  const styleGuide = guide('Style · 6 of 9', 'Style', 'Fills, strokes, effects and text, each of which can come from a token.', [
+  const styleGuide = guide('Style · 6 of 10', 'Style', 'Fills, strokes, effects and text, each of which can come from a token.', [
     { h: 'Fills and strokes', bullets: [
       'A layer can have several fills and strokes, stacked, each with its own opacity; + adds one.',
       'Strokes sit inside, centered or outside the edge, with one weight for all of them.',
@@ -383,7 +397,7 @@ export function welcomeDocument(collections) {
   ], { note: 'One text, four cases.' });
 
   // ---------- 7. Quality checks ----------
-  const qualityGuide = guide('Quality checks · 7 of 9', 'Quality checks', 'Sigma helps keep a design accessible and on-system.', [
+  const qualityGuide = guide('Quality checks · 7 of 10', 'Quality checks', 'Sigma helps keep a design accessible and on-system.', [
     { h: 'Contrast', bullets: [
       'Select one text layer: the Fill section shows its contrast with what’s behind it and its WCAG level. AA needs 4.5:1 (3:1 for large text), AAA 7:1.',
       'In a Sigma Tokens file, a color token’s inspector checks it against the colors it’s used with, in every mode.',
@@ -413,7 +427,7 @@ export function welcomeDocument(collections) {
   ], { note: 'These use raw values on purpose. Run the audit.' });
 
   // ---------- 8. Libraries and versions ----------
-  const libGuide = guide('Libraries and versions · 8 of 9', 'Libraries and versions', 'Design systems change. Sigma publishes changes as numbered versions, lets the files that use them decide when to update, and keeps a history of every file.', [
+  const libGuide = guide('Libraries and versions · 8 of 10', 'Libraries and versions', 'Design systems change. Sigma publishes changes as numbered versions, lets the files that use them decide when to update, and keeps a history of every file.', [
     { h: 'Sigma Tokens as a library', bullets: [
       'Publish… in a Sigma Tokens file creates a version (v1, v2…) with notes and a list of what changed.',
       'Sigma Design files that use it get a banner when a new version is out; they review it and accept it.',
@@ -446,7 +460,7 @@ export function welcomeDocument(collections) {
   ], P('space/3'), 'start')]);
 
   // ---------- 9. Sigma Tokens ----------
-  const tokGuide = guide('Sigma Tokens · 9 of 9', 'Sigma Tokens', 'A Sigma Tokens file is a design system’s values, with no canvas. Open Sigma Tokens in the Welcome to Sigma folder (on the files home) to explore the one this file uses.', [
+  const tokGuide = guide('Sigma Tokens · 9 of 10', 'Sigma Tokens', 'A Sigma Tokens file is a design system’s values, with no canvas. Open Sigma Tokens in the Welcome to Sigma folder (on the files home) to explore the one this file uses.', [
     { h: 'Structure', bullets: [
       'Collections hold groups and tokens (Collection → Group → Tokens), with descriptions.',
       'Three levels work well: Primitives (raw values: color/blue/500), Semantic (what they mean: accent/default) and Components (where they’re used: button/primary/background).',
@@ -491,6 +505,92 @@ export function welcomeDocument(collections) {
   ]);
   const radii = example('Primitives: radius', 1040, 480, [row('Radii', ['none', 'sm', 'md', 'lg', 'xl', 'full'].map(radiusSample), P('space/4'))]);
 
+  // ---------- 10. Sigma Icons ----------
+  const iconsGuide = guide('Sigma Icons · 10 of 10', 'Sigma Icons', 'Icons are a library of their own: a Sigma Icons file holds them, and components pick from it. Open Sigma Icons in the Welcome to Sigma folder to explore the one this file uses.', [
+    { h: 'A Sigma Icons file', bullets: [
+      'Import SVGs from any free set (Lucide, Tabler, Heroicons, Phosphor, Material Symbols), drop them in, or paste SVG code. Colors are removed: an icon takes the color of the layer that shows it.',
+      'Icons are outline or filled, in groups, with keywords for search. Publish… makes them available to Sigma Design files.',
+      '+ Sigma Icons ▾ → Lucide (on the files home) adds the whole Lucide set: about 1,900 icons.',
+    ] },
+    { h: 'Icons in components', bullets: [
+      'Icon libraries… (Σ menu) links a Sigma Icons file. A file keeps copies of only the icons it uses.',
+      'Select a main component, or a layer in one, then + in the Icon section (or right-click → Insert icon…).',
+      'An icon’s color is its fill, which can use a color token; outline icons also have a stroke width. Swap icon… changes it.',
+    ] },
+    { h: 'The Icon property', bullets: [
+      'Apply icon property (next to Swap icon…) lets instances choose the icon, from all icons or only some groups.',
+      'Instances choose only the icon: its size, color and stroke stay the main component’s.',
+    ] },
+  ]);
+  iconsGuide.parts.push(tryIt('Select one of the icon buttons on the right and choose another icon in its Icon property: only the Actions icons are offered. Then select the main Icon button’s icon and change its color token: every instance follows.'));
+  const I = sampleIconId;
+  const iconLayer = (name, iconId, colorVar, size, props = {}) => createNode('icon', {
+    name, iconId, w: size, h: size, ...props, fills: [makePaint('#000000')], bindings: { 'fills.0.color': colorVar },
+  });
+  const iconPage = [guideFrame(iconsGuide)];
+  const iconColumns = [];
+  if (icons) {
+    const iconProp = uid();
+    const iconButton = createNode('component', {
+      name: 'Icon button', w: 40, h: 40, clip: false,
+      description: 'A square button with only an icon. Its Icon property offers the Actions icons.',
+      layout: autoLayout({ mode: 'horizontal', alignP: 'center', alignC: 'center' }), sizingH: 'hug', sizingV: 'hug',
+      fills: [makePaint('#000000')], bindings: { 'fills.0.color': C('button/primary/background'), radius: C('button/radius'), ...pad(P('space/2')) },
+      props: { [iconProp]: { name: 'Icon', type: 'icon', default: I('plus'), groups: ['Actions'] } },
+      children: [iconLayer('Icon', I('plus'), C('button/primary/text'), 20, { propRefs: { iconId: iconProp } })],
+    });
+    const menuIcon = uid(), menuLabel = uid();
+    const menuItem = createNode('component', {
+      name: 'Menu item', w: 220, h: 40, clip: false,
+      description: 'A row in a menu: an icon (any icon) and a label.',
+      layout: autoLayout({ mode: 'horizontal', alignC: 'center' }), sizingH: 'fixed', sizingV: 'hug',
+      fills: [makePaint('#000000')], bindings: { 'fills.0.color': S('surface/default'), radius: P('radius/sm'), 'layout.gap': P('space/3'), ...pad(P('space/2')) },
+      props: { [menuIcon]: { name: 'Icon', type: 'icon', default: I('settings') }, [menuLabel]: { name: 'Label', type: 'text', default: 'Settings' } },
+      children: [
+        iconLayer('Icon', I('settings'), S('text/secondary'), 16, { propRefs: { iconId: menuIcon } }),
+        text('Label', 'Settings', S('text/primary'), T('body/default'), { propRefs: { text: menuLabel } }),
+      ],
+    });
+    const rating = createNode('component', {
+      name: 'Rating', w: 140, h: 24, clip: false,
+      description: 'Filled and outline stars together: the two styles of the same icon.',
+      layout: autoLayout({ mode: 'horizontal', alignC: 'center' }), sizingH: 'hug', sizingV: 'hug', fills: [],
+      bindings: { 'layout.gap': P('space/1') },
+      children: [1, 2, 3, 4, 5].map((k) => k <= 3
+        ? iconLayer(`Star ${k}`, I('star', true), P('color/amber/500'), 20)
+        : iconLayer(`Star ${k}`, I('star'), S('text/secondary'), 20)),
+    });
+    const inst = (main, propValues) => createNode('instance', { name: main.name, componentId: main.id, w: main.w, h: main.h, overrides: {}, children: [], propValues });
+    const iconButtons = example('Icon buttons', 1040, 0, [
+      row('Buttons', ['search', 'pencil', 'copy', 'share-2', 'trash'].map((n) => inst(iconButton, { [iconProp]: I(n) })), P('space/2')),
+    ], { note: 'Instances of Icon button, each with its own icon.' });
+    const menu = example('Menu', 1040, 200, [
+      stack('Items', 'vertical', { gap: P('space/1') }, [
+        inst(menuItem, { [menuIcon]: I('user'), [menuLabel]: 'Profile' }),
+        inst(menuItem, { [menuIcon]: I('settings'), [menuLabel]: 'Settings' }),
+        inst(menuItem, { [menuIcon]: I('log-out'), [menuLabel]: 'Log out' }),
+      ]),
+    ], { note: 'The Menu item’s icon and label are properties.' });
+    // Outline and filled versions side by side, as a component (icons live in components).
+    const pairs = createNode('component', {
+      name: 'Icon styles', w: 200, h: 24, clip: false,
+      description: 'The same icons in the outline and the filled style.',
+      layout: autoLayout({ mode: 'horizontal', alignC: 'center' }), sizingH: 'hug', sizingV: 'hug', fills: [],
+      bindings: { 'layout.gap': P('space/3') },
+      children: ['heart', 'bookmark', 'bell'].flatMap((n) => [
+        iconLayer(`${n} outline`, I(n), S('text/primary'), 24),
+        iconLayer(`${n} filled`, I(n, true), S('accent/default'), 24),
+      ]),
+    });
+    const mains = example('Components', 600, 0, [iconButton, menuItem, rating, pairs], {
+      note: 'Main components with icons. Select one to see its Icon property.', width: 360,
+    });
+    iconPage.push(mains, iconButtons, menu);
+    iconColumns.push([iconButtons, menu]);
+  } else {
+    iconPage.push(example('Sigma Icons', 600, 0, [para('The sample Sigma Icons couldn’t be made, so this page has no examples. + Sigma Icons ▾ → Lucide on the files home adds the Lucide set.', { typo: T('body/small') })], { width: 360 }));
+  }
+
   // ---------- pages ----------
   const pages = [
     page('1 Start here', [guideFrame(start), diagram]),
@@ -502,6 +602,7 @@ export function welcomeDocument(collections) {
     page('7 Quality checks', [guideFrame(qualityGuide), contrast, oneOffs], [[contrast, oneOffs]]),
     page('8 Libraries and versions', [guideFrame(libGuide), flow]),
     page('9 Sigma Tokens', [guideFrame(tokGuide), palette, spacing, radii], [[palette, spacing], [palette, radii]]),
+    page('10 Sigma Icons', iconPage, iconColumns),
   ];
   return { name: WELCOME_NAME, pages, currentPageId: pages[0].id };
 }

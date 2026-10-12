@@ -48,14 +48,14 @@ test('sample tokens: round-trips through tokens.json', () => {
   eq(back.map((c) => [c.name, c.variables.length]), cols.map((c) => [c.name, c.variables.length]));
 });
 
-test('Welcome to Sigma: nine pages, every binding points at a linked sample token, and the examples resolve per mode', () => {
+test('Welcome to Sigma: ten pages, every binding points at a linked sample token, and the examples resolve per mode', () => {
   const tokens = sampleTokenDocument();
   const doc = welcomeDocument(tokens.collections);
   doc.libraries = [{ fileId: 'lib', name: tokens.name, version: 1, collections: snapshotForLibrary(tokens.collections, 'lib') }];
   loadDocument(doc);
   syncInstances();
   resolveVariables();
-  eq(state.doc.pages.length, 9);
+  eq(state.doc.pages.length, 10);
   eq(state.doc.pages[0].name, '1 Start here');
   eq(state.doc.variables?.collections?.length || 0, 0); // no local tokens: all of them come from the Sigma Tokens file
   let bound = 0, oneOff = 0;

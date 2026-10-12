@@ -1,6 +1,8 @@
 // Icon libraries: Sigma Icons files hold icons imported from SVG (a free icon set, for example). An icon is
 // data, not a component: { id, name, group, keywords, viewBox, style, strokeWidth, cap, join, body }.
-//   style  'outline' (drawn with strokes, like Lucide) or 'filled' (drawn with fills, like Material)
+//   style  'outline' (drawn with strokes, like Lucide) or 'filled' (drawn with fills, like Material). A
+//          filled icon with a strokeWidth also gets an outline that wide (filled versions of outline
+//          icons keep their size and their open lines that way)
 //   body   the icon's shapes as SVG markup, cleaned on import: only plain shapes and their geometry are
 //          kept, and every color becomes currentColor, so the layer that shows an icon decides its color
 // A Sigma Icons file publishes versions ({ version, publishedAt, notes, icons }) that Sigma Design files link.
@@ -70,16 +72,15 @@ export function parseSVGIcon(text, { name = 'icon', group = '' } = {}) {
   };
 }
 
-// An icon as SVG markup, w × h (at x, y when given), in `color` (with `opacity`); outline icons use
-// `strokeWidth` (in the icon's own units, so it scales with the icon like the original).
+// An icon as SVG markup, w × h (at x, y when given), in `color` (with `opacity`), with `strokeWidth` (in
+// the icon's own units, so it scales with the icon like the original; filled icons with 0 have none).
 export function iconMarkup(icon, { x, y, w = 24, h = 24, color = 'currentColor', opacity = 1, strokeWidth } = {}) {
   if (!icon) return '';
   const at = x === undefined ? '' : ` x="${x}" y="${y}"`;
-  const sw = Number(strokeWidth ?? icon.strokeWidth ?? 2) || 0;
+  const sw = Number(strokeWidth ?? icon.strokeWidth ?? (icon.style === 'outline' ? 2 : 0)) || 0;
   color = esc(color);
-  const paint = icon.style === 'outline'
-    ? `fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="${icon.cap || 'round'}" stroke-linejoin="${icon.join || 'round'}"`
-    : `fill="${color}" stroke="none"`;
+  const stroke = `stroke="${color}" stroke-width="${sw}" stroke-linecap="${icon.cap || 'round'}" stroke-linejoin="${icon.join || 'round'}"`;
+  const paint = icon.style === 'outline' ? `fill="none" ${stroke}` : sw > 0 ? `fill="${color}" ${stroke}` : `fill="${color}" stroke="none"`;
   return `<svg${at} width="${w}" height="${h}" viewBox="${esc(icon.viewBox)}" overflow="visible" preserveAspectRatio="xMidYMid meet">` +
     `<g ${paint}${opacity < 1 ? ` opacity="${opacity}"` : ''} color="${color}">${icon.body}</g></svg>`;
 }
@@ -140,8 +141,15 @@ export function diffIcons(before = [], after = []) {
 // ---------- free icon sets ----------
 // Icon sets Sigma can create a Sigma Icons file from (built by tools/build-lucide.py).
 export const ICON_SETS = [
-  { id: 'lucide', name: 'Lucide', file: 'icon-sets/lucide.json', note: 'Outline icons, ISC License' },
+  { id: 'lucide', name: 'Lucide', file: new URL('../icon-sets/lucide.json', import.meta.url).href, note: 'Outline icons, ISC License' },
 ];
+
+// An icon set's data (see tools/build-lucide.py).
+export async function loadIconSet(set) {
+  const res = await fetch(set.file);
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  return res.json();
+}
 
 // A Sigma Icons file holding an icon set, already published (v1). Icon ids come from the set's icon
 // names (lucide-arrow-right), so they stay the same in a later version of the set.
