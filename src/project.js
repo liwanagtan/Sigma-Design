@@ -1,8 +1,8 @@
 // Projects: Sigma files that live in a codebase's .sigma/ folder (docs/schema/README.md), so the repo is the
 // source of truth and git does the versioning.
 //
-// Sigma reaches a project through the local server (python3 serve.py --project PATH), which works in every
-// browser, or, in Chrome and Edge, through a folder picked in the browser. Each project file Sigma opens is
+// Sigma runs inside a project: it reaches it through the project server it was started with (python3 serve.py
+// --project PATH, until Sigma is installed as a package), never by opening a folder itself. Each project file Sigma opens is
 // kept in the browser like any other file (with meta.project = { name, path, mtime, hash }), so editing,
 // autosave, undo and version history work as usual. Saving to the project (⌘S) writes the project format;
 // when an agent or git changes a file on disk, Sigma reloads it (or asks, if it has changes not saved to
@@ -18,7 +18,7 @@ const POLL_MS = 2000;
 const toast = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
 const banner = (detail) => window.dispatchEvent(new CustomEvent('sigma:banner', { detail }));
 
-// The connected project: { name, via: 'server' | 'folder', files: [{ path, kind, name, mtime, size }], config }.
+// The connected project: { name, via: 'server', files: [{ path, kind, name, mtime, size }], config }.
 export const project = { connected: false, name: null, via: null, files: [], config: null };
 let adapter = null;
 const listeners = new Set();
@@ -76,88 +76,6 @@ const serverAdapter = {
   },
 };
 
-// A folder picked in the browser (File System Access API: Chrome and Edge).
-function folderAdapter(dir) {
-  const heads = new Map(); // path → [mtime, kind, name]
-  const fileHandle = async (path, create) => {
-    const parts = path.split('/');
-    let d = dir;
-    for (const p of parts.slice(0, -1)) d = await d.getDirectoryHandle(p, { create });
-    return d.getFileHandle(parts[parts.length - 1], { create });
-  };
-  const exists = async (path) => {
-    try {
-      return await fileHandle(path, false);
-    } catch {
-      return null;
-    }
-  };
-  return {
-    via: 'folder',
-    async list() {
-      const files = [];
-      const walk = async (d, prefix) => {
-        for await (const [name, h] of d.entries()) {
-          if (h.kind === 'directory') {
-            if (!name.startsWith('.')) await walk(h, `${prefix}${name}/`);
-          } else if (name.endsWith('.sigma.json')) {
-            const f = await h.getFile();
-            const path = `${prefix}${name}`;
-            let head = heads.get(path);
-            if (!head || head[0] !== f.lastModified) {
-              head = [f.lastModified, 'design', name.slice(0, -'.sigma.json'.length)];
-              try {
-                const j = JSON.parse(await f.text());
-                head = [f.lastModified, j.kind || 'design', j.name || head[2]];
-              } catch {
-                head[1] = 'invalid';
-              }
-              heads.set(path, head);
-            }
-            files.push({ path, kind: head[1], name: head[2], mtime: String(f.lastModified), size: f.size });
-          }
-        }
-      };
-      const sigma = await dir.getDirectoryHandle('.sigma').catch(() => null);
-      if (sigma) await walk(sigma, '.sigma/');
-      let config = null;
-      try {
-        config = JSON.parse(await (await (await dir.getFileHandle('sigma.config.json')).getFile()).text());
-      } catch {}
-      return { name: dir.name, files, config };
-    },
-    async read(path) {
-      const f = await (await fileHandle(path, false)).getFile();
-      return { text: await f.text(), mtime: String(f.lastModified) };
-    },
-    // No git in the browser: changes are compared with the files on disk.
-    async base(path) {
-      return (await exists(path)) ? (await (await fileHandle(path, false)).getFile()).text() : null;
-    },
-    async changesets() {
-      const out = [];
-      try {
-        const d = await (await dir.getDirectoryHandle('.sigma')).getDirectoryHandle('changesets');
-        for await (const [name, h] of d.entries()) if (h.kind === 'file' && name.endsWith('.json')) out.push(JSON.parse(await (await h.getFile()).text()));
-      } catch {}
-      return out;
-    },
-    async write(path, text, base) {
-      let h = await exists(path);
-      if (base === 'new' && h) throw new Conflict(`${path} already exists`, String((await h.getFile()).lastModified));
-      if (base && base !== 'new' && h) {
-        const current = String((await h.getFile()).lastModified);
-        if (current !== base) throw new Conflict(`${path} changed on disk since it was read`, current);
-      }
-      h ||= await fileHandle(path, true);
-      const w = await h.createWritable();
-      await w.write(text);
-      await w.close();
-      return { path, mtime: String((await h.getFile()).lastModified) };
-    },
-  };
-}
-
 function apply(info, via) {
   project.connected = true;
   project.via = via;
@@ -186,26 +104,10 @@ export async function connectProject() {
 // Check the project for changes on disk now.
 export const checkProjectNow = () => poll({ force: true });
 
-export const canPickFolder = () => typeof window.showDirectoryPicker === 'function';
-
 // Use any adapter ({ via, list(), read(path), write(path, text, base) }): an in-memory project in tests.
 export async function connectWith(custom) {
   adapter = custom;
   apply(await adapter.list(), custom.via || 'custom');
-}
-
-// Chrome and Edge: open a project folder picked in the browser.
-export async function pickProjectFolder() {
-  if (!canPickFolder()) return toast('This browser can’t open folders. Start Sigma with python3 serve.py --project PATH instead.');
-  let dir;
-  try {
-    dir = await window.showDirectoryPicker({ mode: 'readwrite' });
-  } catch {
-    return; // cancelled
-  }
-  adapter = folderAdapter(dir);
-  apply(await adapter.list(), 'folder');
-  toast(`Opened the project “${dir.name}”`);
 }
 
 // ---------- files in the browser ----------

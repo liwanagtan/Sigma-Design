@@ -10,7 +10,7 @@ import {
 import { blankDocument } from './sample.js';
 import { ICON_SETS, iconSetDocument, loadIconSet } from './icon-library.js';
 import {
-  project, onProjectChange, projectListing, openProjectFile, newProjectFile, pickProjectFolder, canPickFolder,
+  project, onProjectChange, projectListing, openProjectFile, newProjectFile,
 } from './project.js';
 import { openProposeDialog, changesetListing } from './propose.js';
 import { showContextMenu } from './menu.js';
@@ -132,9 +132,6 @@ export function initHome(el) {
   root.querySelector('#home-new').addEventListener('click', () => newBlankFile());
   root.querySelector('#home-new-tokens').addEventListener('click', () => newTokenFile());
   root.querySelector('#home-new-icons').addEventListener('click', () => newIconsFile());
-  root.querySelector('#home-project').addEventListener('click', (e) => {
-    if (e.target.closest('[data-pick-folder]')) return pickProjectFolder();
-  });
   onProjectChange(() => !root.hidden && renderHome());
   window.addEventListener('sigma:changesets', () => !root.hidden && renderHome());
   root.querySelector('#home-new-icons-more').addEventListener('click', (e) => {
@@ -252,13 +249,12 @@ const NAV_PROJECT = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"
 // In a project, Sigma works on its files: the sections list them, and new files go into it.
 const projectMode = () => !!project.name;
 
-// The top of the sidebar: the project Sigma is working in (or, standalone, a way to open one).
+// The top of the sidebar: the project Sigma runs in (nothing, standalone: Sigma doesn't open projects itself).
 function renderProjectNav() {
   const el = root.querySelector('#home-project');
+  el.hidden = !projectMode();
   if (projectMode()) {
-    el.innerHTML = `<div class="project-chip" title="${project.connected ? 'The Sigma files are in this project’s .sigma/ folder' : 'The project isn’t connected: start Sigma with the project again'}">${NAV_PROJECT}<span class="project-name">${esc(project.name)}</span><span class="project-state ${project.connected ? 'ok' : 'off'}">${project.connected ? 'Connected' : 'Offline'}</span></div>`;
-  } else {
-    el.innerHTML = canPickFolder() ? `<button class="nav-item" data-pick-folder title="Open a codebase’s Sigma files (its .sigma/ folder)">${NAV_PROJECT} Open project folder…</button>` : '';
+    el.innerHTML = `<div class="project-chip" title="${project.connected ? 'The Sigma files are in this project’s .sigma/ folder' : 'Sigma’s server for this project stopped: start it again in the project'}">${NAV_PROJECT}<span class="project-name">${esc(project.name)}</span><span class="project-state ${project.connected ? 'ok' : 'off'}">${project.connected ? 'Connected' : 'Offline'}</span></div>`;
   }
   root.querySelector('#nav-proposals').hidden = !projectMode();
   root.querySelector('#nav-archive').hidden = projectMode(); // git is the history of project files

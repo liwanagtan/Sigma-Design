@@ -566,7 +566,7 @@ Sigma files use stable ids and a diff-friendly layout (sorted keys, one object p
 - **Save to the folder:** edits autosave to IndexedDB as today. Saving to the project folder writes the diff-friendly format.
 - **Reload from disk:** when an agent or a git pull changes a file, Sigma offers to reload it.
 - **Done when:** a Sigma file edited by an agent on disk reloads in an open editor, and Sigma's own save produces a minimal git diff.
-- **What shipped:** `serve.py --project PATH` (a small project API: list, read, and write with a check that the file didn't change on disk since it was read; localhost only, writes need Sigma's header and are logged) is the main route, and **Open project folder…** (File System Access, Chrome and Edge) the fallback. Project files are kept in the browser like other files (`meta.project`), so autosave, undo and version history work as before; **⌘S** saves to the project. Sigma checks the project every 2 seconds: a changed open file reloads (or asks, if it has unsaved changes), and changed files it uses update in place, keeping its edits. Verified: opening the sample guide, editing one text and saving gives a one-line diff; a token changed on disk shows in the open design file within 2 seconds. The browser-folder route isn't covered by automated tests (it needs a person to pick the folder).
+- **What shipped:** `serve.py --project PATH` (a small project API: list, read, and write with a check that the file didn't change on disk since it was read; localhost only, writes need Sigma's header and are logged) is the main route, and **Open project folder…** (File System Access, Chrome and Edge) the fallback. Project files are kept in the browser like other files (`meta.project`), so autosave, undo and version history work as before; **⌘S** saves to the project. Sigma checks the project every 2 seconds: a changed open file reloads (or asks, if it has unsaved changes), and changed files it uses update in place, keeping its edits. Verified: opening the sample guide, editing one text and saving gives a one-line diff; a token changed on disk shows in the open design file within 2 seconds. The browser-folder route isn't covered by automated tests (it needs a person to pick the folder). (Phase 31 removed the browser-folder route: Sigma runs inside a project rather than opening one.)
 
 ### Phase 22: Tokens sync skill (first milestone)
 
@@ -712,7 +712,8 @@ the browser.
   ticket links; Import, drops and the Archive are hidden. Browser-only files get a notice with **Move into
   project…** (a dialog to pick them; token and icon files are moved first, and links between moved files
   point at their new paths; the browser copies go to the Archive) or **Not now** (remembered per project).
-  Standalone is unchanged except that **Open project folder…** sits at the top of the sidebar. Verified on
+  Standalone is unchanged, except that **Open project folder…** (Phase 21's in-browser folder picking, Chrome
+  and Edge) is gone: Sigma runs inside a project, it doesn't open one. Verified on
   `examples/css-app`: its four files under their kinds, PR #1's proposal under Proposals as Merged, and a
   browser token file and a design file linked to it moved in with the link kept.
 
