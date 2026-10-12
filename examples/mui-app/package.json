@@ -1,0 +1,6 @@
+{
+  "name": "acme-mui-example",
+  "private": true,
+  "description": "Example for the Sigma sync skill: design tokens in an MUI theme object. Not meant to be installed or run.",
+  "dependencies": { "@mui/material": "^6.0.0", "react": "^18.3.1" }
+}

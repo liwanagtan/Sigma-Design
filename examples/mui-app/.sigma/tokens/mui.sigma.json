@@ -1,0 +1,170 @@
+{
+  "format": 1,
+  "kind": "tokens",
+  "name": "Acme MUI tokens",
+  "collections": [
+    {
+      "id": "primitives",
+      "name": "Primitives",
+      "defaultModeId": "primitives-default",
+      "groups": [
+        { "id": "g1li5pdpcpl38p", "name": "space", "parentId": null },
+        { "id": "gk92pu3r3ksbb", "name": "radius", "parentId": null },
+        { "id": "g1sh4dzs1u7ne7e", "name": "font", "parentId": null },
+        { "id": "g419qp8k2d47y", "name": "size", "parentId": "g1sh4dzs1u7ne7e" },
+        { "id": "gj50yd01f8mx62", "name": "typography", "parentId": null }
+      ],
+      "modes": [{ "id": "primitives-default", "name": "Default" }],
+      "variables": [
+        {
+          "id": "space-unit",
+          "type": "number",
+          "name": "space/unit",
+          "description": "MUI spacing(1); spacing(n) is n × this",
+          "codeSyntax": { "web": "spacing" },
+          "groupId": "g1li5pdpcpl38p",
+          "valuesByMode": { "primitives-default": 8 }
+        },
+        {
+          "id": "radius-default",
+          "type": "number",
+          "name": "radius/default",
+          "codeSyntax": { "web": "shape.borderRadius" },
+          "groupId": "gk92pu3r3ksbb",
+          "valuesByMode": { "primitives-default": 4 }
+        },
+        {
+          "id": "font-family",
+          "type": "string",
+          "name": "font/family",
+          "codeSyntax": { "web": "typography.fontFamily" },
+          "groupId": "g1sh4dzs1u7ne7e",
+          "valuesByMode": {
+            "primitives-default": "\"Roboto\", \"Helvetica\", \"Arial\", sans-serif"
+          }
+        },
+        {
+          "id": "font-size-base",
+          "type": "number",
+          "name": "font/size/base",
+          "codeSyntax": { "web": "typography.fontSize" },
+          "groupId": "g419qp8k2d47y",
+          "valuesByMode": { "primitives-default": 14 }
+        },
+        {
+          "id": "typography-h1",
+          "type": "typography",
+          "name": "typography/h1",
+          "codeSyntax": { "web": "typography.h1" },
+          "groupId": "gj50yd01f8mx62",
+          "valuesByMode": {
+            "primitives-default": {
+              "fontFamily": { "alias": "font-family" },
+              "fontSize": 96,
+              "fontWeight": 300,
+              "letterSpacing": 0,
+              "lineHeight": 116.7
+            }
+          }
+        },
+        {
+          "id": "typography-body1",
+          "type": "typography",
+          "name": "typography/body1",
+          "codeSyntax": { "web": "typography.body1" },
+          "groupId": "gj50yd01f8mx62",
+          "valuesByMode": {
+            "primitives-default": {
+              "fontFamily": { "alias": "font-family" },
+              "fontSize": 16,
+              "fontWeight": 400,
+              "letterSpacing": 0,
+              "lineHeight": 150
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "semantic",
+      "name": "Semantic",
+      "defaultModeId": "semantic-light",
+      "groups": [
+        { "id": "gjbavkj4vdcvf", "name": "primary", "parentId": null },
+        { "id": "g1yrbd5n3fod2d", "name": "error", "parentId": null },
+        { "id": "g1o8sh7z6rzogt", "name": "background", "parentId": null },
+        { "id": "g1cmiib81lj8kce", "name": "text", "parentId": null }
+      ],
+      "modes": [
+        { "id": "semantic-light", "name": "Light" },
+        { "id": "semantic-dark", "name": "Dark" }
+      ],
+      "variables": [
+        {
+          "id": "primary-main",
+          "type": "color",
+          "name": "primary/main",
+          "codeSyntax": { "web": "palette.primary.main" },
+          "groupId": "gjbavkj4vdcvf",
+          "valuesByMode": { "semantic-dark": "#90CAF9", "semantic-light": "#1976D2" }
+        },
+        {
+          "id": "primary-dark",
+          "type": "color",
+          "name": "primary/dark",
+          "codeSyntax": { "web": "palette.primary.dark" },
+          "groupId": "gjbavkj4vdcvf",
+          "valuesByMode": { "semantic-dark": "#42A5F5", "semantic-light": "#1565C0" }
+        },
+        {
+          "id": "primary-contrast-text",
+          "type": "color",
+          "name": "primary/contrast-text",
+          "codeSyntax": { "web": "palette.primary.contrastText" },
+          "groupId": "gjbavkj4vdcvf",
+          "valuesByMode": { "semantic-dark": "#000000DE", "semantic-light": "#FFFFFF" }
+        },
+        {
+          "id": "error-main",
+          "type": "color",
+          "name": "error/main",
+          "codeSyntax": { "web": "palette.error.main" },
+          "groupId": "g1yrbd5n3fod2d",
+          "valuesByMode": { "semantic-dark": "#F44336", "semantic-light": "#D32F2F" }
+        },
+        {
+          "id": "background-default",
+          "type": "color",
+          "name": "background/default",
+          "codeSyntax": { "web": "palette.background.default" },
+          "groupId": "g1o8sh7z6rzogt",
+          "valuesByMode": { "semantic-dark": "#121212", "semantic-light": "#FAFAFA" }
+        },
+        {
+          "id": "background-paper",
+          "type": "color",
+          "name": "background/paper",
+          "codeSyntax": { "web": "palette.background.paper" },
+          "groupId": "g1o8sh7z6rzogt",
+          "valuesByMode": { "semantic-dark": "#1E1E1E", "semantic-light": "#FFFFFF" }
+        },
+        {
+          "id": "text-primary",
+          "type": "color",
+          "name": "text/primary",
+          "codeSyntax": { "web": "palette.text.primary" },
+          "groupId": "g1cmiib81lj8kce",
+          "valuesByMode": { "semantic-dark": "#FFFFFF", "semantic-light": "#000000DE" }
+        },
+        {
+          "id": "text-secondary",
+          "type": "color",
+          "name": "text/secondary",
+          "codeSyntax": { "web": "palette.text.secondary" },
+          "groupId": "g1cmiib81lj8kce",
+          "valuesByMode": { "semantic-dark": "#FFFFFFB3", "semantic-light": "#00000099" }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "stack": { "styling": ["js-theme"], "framework": "react" },
+  "tokens": [
+    {
+      "sigma": ".sigma/tokens/mui.sigma.json",
+      "name": "Acme MUI tokens",
+      "sources": [{ "path": "src/theme.js", "format": "js-theme" }],
+      "naming": "path",
+      "modes": { "Light": "lightTheme", "Dark": "darkTheme" }
+    }
+  ],
+  "notes": "Tokens are extracted from src/theme.js by the agent (skills/sigma-sync/reference/tokens.md): palette.* → Semantic (Light/Dark from lightTheme/darkTheme), shared spacing/shape/typography → Primitives. Code names are theme paths (palette.primary.main).",
+  "workflow": { "git": "github", "tracker": "none", "branch": "design/{slug}", "base": "main", "labels": ["design"] }
+}
