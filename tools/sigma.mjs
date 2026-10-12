@@ -10,6 +10,10 @@
 //   node tools/sigma.mjs icons import [project] [--from FOLDER] [--entry N] [--prune] [--dry-run]
 //   node tools/sigma.mjs icons diff [project] [--base REV] [--entry N]
 //   node tools/sigma.mjs icons write [project] [--base REV] [--entry N] [--dry-run]
+//   node tools/sigma.mjs changeset list [project]
+//   node tools/sigma.mjs changeset show <id> [project]
+//   node tools/sigma.mjs changeset apply <id> [project] --to DIR [--base REV]
+//   node tools/sigma.mjs changeset status <id> <status> [project] [--pr URL] [--pr-number N] [--ticket URL] [--branch NAME]
 //
 // [project] is the folder with sigma.config.json (default: the current folder). Token commands work on
 // the config's "tokens" entries (all of them, or --entry N). --json prints machine-readable output.
@@ -19,6 +23,8 @@ import { readProject, readText, exists, writeText, gitShow, removeFile, listFile
 import { join } from 'node:path';
 import { iconsFromFiles, mergeIcons, iconChanges, iconFilePath, iconSVG, sameIcon, svgStyleOf } from '../src/icon-sync.js';
 import { parseSVGIcon } from '../src/icon-library.js';
+import { applyChanges, summarize, STATUSES, CHANGESET_DIR } from '../src/changesets.js';
+import { validateProject } from '../src/validate.js';
 import { check as validate } from './validate.js';
 import { formatIssues } from '../src/validate.js';
 import { withDefaults } from '../src/project-config.js';
@@ -36,7 +42,7 @@ for (let i = 0; i < argv.length; i++) {
   if (a.startsWith('--')) {
     const [k, v] = a.slice(2).split('=');
     if (v !== undefined) flags[k] = v;
-    else if (argv[i + 1] && !argv[i + 1].startsWith('--') && ['from', 'entry', 'base', 'format'].includes(k)) flags[k] = argv[++i];
+    else if (argv[i + 1] && !argv[i + 1].startsWith('--') && ['from', 'entry', 'base', 'format', 'to', 'pr', 'pr-number', 'ticket', 'tracker', 'branch'].includes(k)) flags[k] = argv[++i];
     else flags[k] = true;
   } else pos.push(a);
 }
@@ -313,6 +319,91 @@ function iconsWrite(dir) {
   }
 }
 
+// ---------- changesets (Propose change) ----------
+function changesets(root) {
+  const dir = join(root, CHANGESET_DIR);
+  return listFilesIn(dir, '.json').filter((p) => !p.includes('/')).map((p) => ({ path: `${CHANGESET_DIR}/${p}`, ...JSON.parse(readFileSync(join(dir, p), 'utf8')) }));
+}
+function changeset(root, id) {
+  const all = changesets(root);
+  const exact = all.find((c) => c.id === id);
+  if (exact) return exact;
+  const some = all.filter((c) => c.id.includes(id)); // any unique part of the id ("darker-hover")
+  if (some.length > 1) fail(`${id} matches ${some.length} changesets: ${some.map((c) => c.id).join(', ')}`);
+  if (!some.length) fail(`no changeset ${id} in ${CHANGESET_DIR}/ (changeset list shows them)`);
+  return some[0];
+}
+
+function changesetList(dir) {
+  const root = resolve(dir || '.');
+  const list = changesets(root).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  if (json) return out(list.map(({ changes, renders, ...c }) => ({ ...c, summary: summarize(changes || []) })));
+  if (!list.length) return out('No proposed changes.');
+  for (const c of list) out(`${c.id}  [${STATUSES[c.status] || c.status}]  ${c.title} — ${summarize(c.changes || [])}${c.pr?.url ? `  ${c.pr.url}` : ''}`);
+}
+
+function changesetShow(id, dir) {
+  const root = resolve(dir || '.');
+  const c = changeset(root, id);
+  if (json) return out(c);
+  out(`${c.title}  [${STATUSES[c.status] || c.status}]  ${c.id}`);
+  if (c.note) out(c.note);
+  out(`Compared with ${c.base}; ${summarize(c.changes)}:`);
+  for (const ch of c.changes) {
+    out(`  ${ch.change} ${ch.kind} ${ch.kind === 'file' ? '(settings)' : ch.name}  in ${ch.file}`);
+    const r = c.renders?.[ch.key];
+    if (r) out(`      pictures: ${[r.before && `before ${r.before}`, r.after && `after ${r.after}`].filter(Boolean).join(', ')}`);
+  }
+}
+
+// The files of a pull request for this changeset: its changes applied onto the base (git), written in DIR
+// (a worktree or a branch checkout), and checked.
+function changesetApply(id, dir) {
+  const root = resolve(dir || '.');
+  if (!flags.to) fail('say where to write the files: --to <folder> (a git worktree of the base branch, say)');
+  const to = resolve(flags.to);
+  const c = changeset(root, id);
+  const rev = flags.base || (c.base === 'disk' ? null : c.base) || 'HEAD';
+  const base = {};
+  for (const path of new Set(c.changes.map((x) => x.file))) {
+    const text = rev ? gitShow(root, rev, path) : null;
+    base[path] = text ? JSON.parse(text) : null;
+  }
+  const result = applyChanges(base, c.changes);
+  // Check the result together with the other project files as they are in the target folder.
+  const files = { ...readProject(to).files };
+  for (const [p, f] of Object.entries(result)) {
+    if (f) files[p] = formatProjectJSON(f);
+    else delete files[p];
+  }
+  const issues = validateProject(files).filter((i) => i.level === 'error' && result[i.file] !== undefined);
+  for (const [p, f] of Object.entries(result)) {
+    if (f) writeText(to, p, formatProjectJSON(f));
+    else if (exists(to, p)) removeFile(to, p);
+  }
+  if (json) return out({ written: Object.keys(result), errors: issues });
+  out(`${c.title}: wrote ${Object.keys(result).length} file${Object.keys(result).length === 1 ? '' : 's'} in ${to}`);
+  for (const p of Object.keys(result)) out(`  ${result[p] ? '~' : '-'} ${p}`);
+  if (issues.length) {
+    out(formatIssues(issues));
+    process.exit(1);
+  }
+}
+
+function changesetStatus(id, status, dir) {
+  const root = resolve(dir || '.');
+  if (!STATUSES[status]) fail(`status should be one of ${Object.keys(STATUSES).join(', ')}`);
+  const c = changeset(root, id);
+  const { path, ...data } = c;
+  data.status = status;
+  if (flags.pr) data.pr = { ...(data.pr || {}), host: 'github', url: flags.pr, ...(flags['pr-number'] ? { number: Number(flags['pr-number']) } : {}) };
+  if (flags.ticket) data.ticket = { ...(data.ticket || {}), tracker: flags.tracker || 'notion', url: flags.ticket };
+  if (flags.branch) data.branch = flags.branch;
+  data.updatedAt = new Date().toISOString();
+  writeText(root, path, formatProjectJSON(data));
+  out(`${c.title}: ${STATUSES[status]}`);
+}
+
 // validate + every CSS-sourced token file matches its code (an import would change nothing).
 function checkAll(dir) {
   const { root, config } = project(dir);
@@ -357,6 +448,10 @@ else if (cmd === 'tokens' && sub === 'export') tokensExport(dir);
 else if (cmd === 'icons' && sub === 'import') iconsImport(dir);
 else if (cmd === 'icons' && sub === 'diff') iconsDiff(dir);
 else if (cmd === 'icons' && sub === 'write') iconsWrite(dir);
+else if (cmd === 'changeset' && sub === 'list') changesetList(dir);
+else if (cmd === 'changeset' && sub === 'show') changesetShow(dir, pos[3]);
+else if (cmd === 'changeset' && sub === 'apply') changesetApply(dir, pos[3]);
+else if (cmd === 'changeset' && sub === 'status') changesetStatus(dir, pos[3], pos[4]);
 else {
   out(`Usage:
   node tools/sigma.mjs validate [project]
@@ -368,6 +463,10 @@ else {
   node tools/sigma.mjs icons import [project] [--from FOLDER] [--entry N] [--prune] [--dry-run]
   node tools/sigma.mjs icons diff [project] [--base REV] [--entry N]
   node tools/sigma.mjs icons write [project] [--base REV] [--entry N] [--dry-run]
+  node tools/sigma.mjs changeset list [project]
+  node tools/sigma.mjs changeset show <id> [project]
+  node tools/sigma.mjs changeset apply <id> [project] --to DIR [--base REV]
+  node tools/sigma.mjs changeset status <id> <status> [project] [--pr URL] [--pr-number N] [--ticket URL] [--branch NAME]
 Add --json for machine-readable output. See skills/sigma-sync/SKILL.md.`);
   process.exit(cmd ? 2 : 0);
 }

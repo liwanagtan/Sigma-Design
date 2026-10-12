@@ -9,6 +9,7 @@ import { ICON_SETS, iconSetDocument, loadIconSet } from './icon-library.js';
 import {
   project, onProjectChange, projectListing, openProjectFile, newProjectFile, pickProjectFolder, canPickFolder,
 } from './project.js';
+import { openProposeDialog, changesetListing } from './propose.js';
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
 import { toast } from './io.js';
@@ -129,6 +130,7 @@ export function initHome(el) {
     if (e.target.closest('[data-pick-folder]')) return pickProjectFolder();
   });
   onProjectChange(() => !root.hidden && renderHome());
+  window.addEventListener('sigma:changesets', () => !root.hidden && renderHome());
   root.querySelector('#home-new-icons-more').addEventListener('click', (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     showContextMenu(r.right - 240, r.bottom + 4, [
@@ -151,6 +153,7 @@ export function initHome(el) {
 
   const list = root.querySelector('#home-files');
   list.addEventListener('click', (e) => {
+    if (e.target.closest('[data-propose-change]')) return openProposeDialog();
     const projectFile = e.target.closest('[data-project-path]');
     if (projectFile) {
       e.preventDefault();
@@ -245,8 +248,16 @@ function renderProjectNav() {
 
 async function renderProject(list, q) {
   const items = (await projectListing()).filter((f) => !q || f.name.toLowerCase().includes(q) || f.path.toLowerCase().includes(q));
+  const changesets = project.connected ? await changesetListing() : [];
   const intro = `<div class="welcome-intro"><p><b>${esc(project.name)}</b>: the Sigma files in this project’s <code>.sigma/</code> folder${project.via === 'folder' ? ' (opened in the browser)' : ''}. The repo is the source of truth, and git does the versioning.</p>
-    <p class="muted">Sigma saves your edits in this browser as you work; <b>⌘S</b> (or <b>Save to project</b> in a file’s menu) writes them to the project. When an agent or git changes a file on disk, Sigma reloads it. New files made here go in the project.</p></div>`;
+    <p class="muted">Sigma saves your edits in this browser as you work; <b>⌘S</b> (or <b>Save to project</b> in a file’s menu) writes them to the project. When an agent or git changes a file on disk, Sigma reloads it. New files made here go in the project. To send changes to the codebase, <b>Propose change</b>: the sync skill turns a proposal into a ticket and a pull request.</p>
+    ${project.connected ? '<button class="btn primary" data-propose-change>Propose change…</button>' : ''}</div>` +
+    (changesets.length ? `<div class="changesets"><div class="nav-label">Proposals</div>${changesets.map((c) => `<div class="changeset-row" title="${esc(c.note || '')}">
+      <span class="status-chip ${c.status === 'merged' ? 'ok' : c.status === 'changes-requested' ? 'warn' : ''}">${esc(c.statusLabel)}</span>
+      <span class="changeset-title">${esc(c.title)}</span><span class="muted">${esc(c.summary)}</span>
+      ${c.pr?.url ? `<a href="${esc(c.pr.url)}" target="_blank" rel="noopener">PR${c.pr.number ? ` #${esc(c.pr.number)}` : ''}</a>` : ''}
+      ${c.ticket?.url ? `<a href="${esc(c.ticket.url)}" target="_blank" rel="noopener">Ticket</a>` : ''}
+      <span class="muted changeset-date">${esc(String(c.createdAt || '').slice(0, 10))}</span></div>`).join('')}</div>` : '');
   if (!items.length) {
     list.innerHTML = intro + `<div class="home-empty"><div class="home-empty-title">${q ? `No project files match “${esc(query)}”` : 'No Sigma files in this project yet'}</div>
       <p>Create one with the buttons above, or let the sync skill import the project’s tokens and icons (skills/sigma-sync).</p></div>`;

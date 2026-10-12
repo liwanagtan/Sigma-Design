@@ -20,6 +20,17 @@
         "examples/sample-project"
       ],
       "port": 5175
+    },
+    {
+      "name": "sigma-css-app",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "serve.py",
+        "5176",
+        "--project",
+        "examples/css-app"
+      ],
+      "port": 5176
     }
   ]
 }

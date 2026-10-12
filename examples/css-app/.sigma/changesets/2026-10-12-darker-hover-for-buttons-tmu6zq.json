@@ -1,0 +1,44 @@
+{
+  "id": "2026-10-12-darker-hover-for-buttons-tmu6zq",
+  "author": "",
+  "base": "HEAD",
+  "changes": [
+    {
+      "kind": "token",
+      "id": "accent-hover",
+      "name": "accent/hover",
+      "after": {
+        "id": "accent-hover",
+        "type": "color",
+        "name": "accent/hover",
+        "$collection": "semantic",
+        "codeSyntax": { "web": "--accent-hover" },
+        "groupId": "gtw5e151xcnlhl",
+        "valuesByMode": {
+          "semantic-dark": { "alias": "color-blue-600" },
+          "semantic-light": "#2741D9"
+        }
+      },
+      "before": {
+        "id": "accent-hover",
+        "type": "color",
+        "name": "accent/hover",
+        "$collection": "semantic",
+        "codeSyntax": { "web": "--accent-hover" },
+        "groupId": "gtw5e151xcnlhl",
+        "valuesByMode": {
+          "semantic-dark": { "alias": "color-blue-600" },
+          "semantic-light": { "alias": "color-blue-600" }
+        }
+      },
+      "change": "changed",
+      "file": ".sigma/tokens/acme.sigma.json",
+      "key": ".sigma/tokens/acme.sigma.json#token:accent-hover"
+    }
+  ],
+  "createdAt": "2026-10-12T18:23:57.887Z",
+  "note": "The hover state was too close to the default.",
+  "renders": {},
+  "status": "proposed",
+  "title": "Darker hover for buttons"
+}

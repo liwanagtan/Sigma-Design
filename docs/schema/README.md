@@ -274,6 +274,31 @@ and sets), paints' `opacity: 1` and `visible: true`; for text `text: ""`, `fontF
 `autoResize: "width"`; for auto layout the values of an unset layout (`gap: 10`, padding 0, `spacing:
 "packed"`, alignments `start`). No `fills` or `strokes` means none.
 
+## Changesets (`.sigma/changesets/<id>.json`)
+
+What a designer proposes with **Propose change**: some of the edits made since the last commit, to become a
+ticket and a pull request (the sync skill does that; Sigma doesn't touch git).
+
+```json
+{ "id": "2026-10-12-darker-hover-for-buttons-tmu6zq", "title": "Darker hover for buttons", "note": "…",
+  "author": "", "createdAt": "2026-10-12T09:30:00.000Z", "status": "proposed", "base": "HEAD",
+  "changes": [
+    { "key": ".sigma/tokens/acme.sigma.json#token:accent-hover", "file": ".sigma/tokens/acme.sigma.json",
+      "kind": "token", "id": "accent-hover", "name": "accent/hover", "change": "changed",
+      "before": { …the token as in the base… }, "after": { …the token in Sigma… }, "where": { "index": 1 } }
+  ],
+  "renders": { "<change key>": { "before": ".sigma/changesets/<id>/1-component-before.svg", "after": "…" } },
+  "branch": "design/darker-hover", "ticket": { "tracker": "notion", "url": "…" }, "pr": { "host": "github", "url": "…", "number": 42 } }
+```
+
+- A change (`kind`) is one token, icon, component (or component set), a page's own content (its layers other
+  than components, which appear as `{ "$component": "<id>" }`), or a file's other settings (`file`: name,
+  links, collections and modes). `before` / `after` are in the project format; `null` when added / removed.
+- `status`: `draft`, `proposed` (saved by Sigma), `in-review` (pull request open), `changes-requested`,
+  `merged` or `closed`.
+- `node tools/sigma.mjs changeset apply <id> --to <folder>` writes the files of the pull request: the base
+  (git) with only this changeset's changes, so one session's edits can become separate pull requests.
+
 ## sigma.config.json
 
 What the sync skill decided about the project, so later runs follow it (people can edit it too):

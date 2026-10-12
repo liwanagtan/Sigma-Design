@@ -54,6 +54,17 @@ const serverAdapter = {
     if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.statusText);
     return { text: await r.text(), mtime: r.headers.get('X-Sigma-Mtime') };
   },
+  // A file as committed in git (null if it isn't there); undefined when the project has no git.
+  async base(path, rev = 'HEAD') {
+    const r = await fetch(`/api/project/base?path=${encodeURIComponent(path)}&rev=${encodeURIComponent(rev)}`, { cache: 'no-store' });
+    if (r.status === 404) return null;
+    if (!r.ok) return undefined;
+    return r.text();
+  },
+  async changesets() {
+    const r = await fetch('/api/project/changesets', { cache: 'no-store' });
+    return r.ok ? r.json() : [];
+  },
   async write(path, text, base) {
     const r = await fetch(`/api/project/file?path=${encodeURIComponent(path)}&base=${encodeURIComponent(base || '')}`, {
       method: 'PUT', headers: { 'X-Sigma': '1', 'Content-Type': 'application/json' }, body: text,
@@ -118,6 +129,18 @@ function folderAdapter(dir) {
     async read(path) {
       const f = await (await fileHandle(path, false)).getFile();
       return { text: await f.text(), mtime: String(f.lastModified) };
+    },
+    // No git in the browser: changes are compared with the files on disk.
+    async base(path) {
+      return (await exists(path)) ? (await (await fileHandle(path, false)).getFile()).text() : null;
+    },
+    async changesets() {
+      const out = [];
+      try {
+        const d = await (await dir.getDirectoryHandle('.sigma')).getDirectoryHandle('changesets');
+        for await (const [name, h] of d.entries()) if (h.kind === 'file' && name.endsWith('.json')) out.push(JSON.parse(await (await h.getFile()).text()));
+      } catch {}
+      return out;
     },
     async write(path, text, base) {
       let h = await exists(path);
@@ -469,6 +492,39 @@ export async function syncOpenProjectFile() {
 }
 
 const linkPaths = (doc) => [...(doc.libraries || []), ...(doc.iconLibraries || []), ...(doc.componentLibraries || [])].map((l) => l.path).filter(Boolean);
+
+// ---------- for proposing changes ----------
+// Every project file as it is in Sigma now (stored copies, with the open file's unsaved edits) and as it
+// is in the base (git HEAD; the disk, without git): { current, base, comparedWith }.
+export async function projectSnapshot() {
+  const metas = await cachedFiles();
+  const pathOf = await pathMap();
+  const current = {}, base = {};
+  let comparedWith = 'HEAD';
+  for (const f of project.files) {
+    if (f.kind === 'invalid') continue;
+    const meta = metas.find((m) => m.project.path === f.path);
+    let text;
+    if (meta) {
+      const doc = meta.id === getCurrentFileId() && state.doc ? state.doc : (await loadFile(meta.id))?.doc;
+      text = doc ? serializeForProject(doc, { pathOf, path: f.path }).text : null;
+    }
+    text ||= (await adapter.read(f.path)).text;
+    current[f.path] = JSON.parse(text);
+    const b = await adapter.base(f.path);
+    if (b === undefined) {
+      comparedWith = 'disk';
+      base[f.path] = JSON.parse((await adapter.read(f.path)).text);
+    } else base[f.path] = b ? JSON.parse(b) : null;
+  }
+  return { current, base, comparedWith };
+}
+export const listChangesets = () => (adapter ? adapter.changesets() : []);
+// Write any project file Sigma may write (a changeset, its renders).
+export async function writeProjectFile(path, text) {
+  const existing = await adapter.read(path).catch(() => null);
+  return adapter.write(path, text, existing ? existing.mtime : 'new');
+}
 
 // ---------- for the files home and the editor ----------
 // Project files with their stored copies (for thumbnails): [{ ...file, meta }].

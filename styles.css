@@ -488,6 +488,22 @@ fieldset.readonly .field-label { cursor: default; }
 .code-names .code-name-row { grid-template-columns: 60px 1fr; margin-right: 0; }
 
 /* ---------- projects ---------- */
+.propose-modal { width: min(640px, calc(100vw - 32px)); }
+.propose-file { border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px 8px; }
+.propose-file-head { display: flex; gap: 8px; align-items: baseline; margin-bottom: 4px; }
+.propose-file-head .muted { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.propose-item { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+.propose-item .kind-badge { margin: 0; flex: none; }
+.propose-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.propose-change { font-size: 11px; color: var(--muted); }
+.propose-change.added { color: #14804a; }
+.propose-change.removed { color: #c4320a; }
+.propose-title { height: 30px; min-height: 0; }
+.changesets { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; max-width: 900px; }
+.changeset-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; }
+.changeset-title { font-weight: 600; }
+.changeset-date { margin-left: auto; }
+.changeset-row a { color: var(--accent); }
 .project-status { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border: 0; border-radius: 12px; background: #e9f7ef; color: #14804a; font-size: 11px; font-weight: 600; white-space: nowrap; flex: none; cursor: pointer; }
 .project-status .dot { width: 6px; height: 6px; border-radius: 3px; background: currentColor; }
 .project-status.unsaved { background: #fff4e5; color: #b25c00; }

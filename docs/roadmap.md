@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phases 20–24 are done; next is Phase 25. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phases 20–25 are done; next is Phase 26. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -385,7 +385,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 22: Tokens sync skill (first milestone)
 - [x] Phase 23: Icons sync
 - [x] Phase 24: Code handoff (Part D, Phase 15)
-- [ ] Phase 25: Propose change
+- [x] Phase 25: Propose change
 - [ ] Phase 26: Team workflow (GitHub and Notion)
 - [ ] Phase 27: Comments
 - [ ] Phase 28: Component library onboarding
@@ -592,6 +592,7 @@ Unchanged from Phase 15 above: code names per platform for tokens, components an
 - **Changesets in the editor:** a **Propose change** action lists edits since the last proposal, grouped by token, icon, component and page. The designer picks what to include and writes a title and note.
 - **Before and after:** each changed component and page is rendered before and after (from `buildSVG` and version history), for the ticket and PR.
 - **Done when:** a designer can split a session's edits into two changesets, and each is saved under `.sigma/changesets/` with its renders.
+- **What shipped:** `src/changesets.js` (changes as items: tokens, icons, components, pages' own content, file settings; applying any subset onto the base, in place), the **Propose change** dialog (`src/propose.js`; compared with git HEAD through the server's new `GET /api/project/base`, or the disk in a browser-opened folder), renders of components, pages and icons before and after, the proposals list in the Project section, and `tools/sigma.mjs changeset list | show | apply | status`. Verified on `examples/css-app`: one session's three edits became two changesets, and applying each onto HEAD in its own worktree gave exactly its own diff (2 lines for the token; the button label and the new page for the other).
 
 ### Phase 26: Team workflow (GitHub and Notion)
 

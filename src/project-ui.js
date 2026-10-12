@@ -2,13 +2,18 @@
 // "Not saved to project · ⌘S"). In a project file, Publish is hidden: saving to the project is publishing.
 import { state, subscribe } from './store.js';
 import { project, onProjectChange, saveToProject, projectStatus } from './project.js';
+import { openProposeDialog } from './propose.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 export function projectMenuItems() {
   if (!project.connected) return [];
   const inIt = !!state.doc?.project?.path;
-  return [{ label: inIt ? 'Save to project' : `Add to project “${project.name}”`, shortcut: '⌘S', action: () => saveToProject() }, '-'];
+  return [
+    { label: inIt ? 'Save to project' : `Add to project “${project.name}”`, shortcut: '⌘S', action: () => saveToProject() },
+    { label: 'Propose change…', action: () => openProposeDialog() },
+    '-',
+  ];
 }
 
 let timer = null;

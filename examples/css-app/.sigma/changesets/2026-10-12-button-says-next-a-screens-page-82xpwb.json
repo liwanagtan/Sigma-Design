@@ -1,0 +1,155 @@
+{
+  "id": "2026-10-12-button-says-next-a-screens-page-82xpwb",
+  "author": "",
+  "base": "HEAD",
+  "changes": [
+    {
+      "kind": "component",
+      "id": "button",
+      "name": "Button",
+      "after": {
+        "id": "button",
+        "type": "component",
+        "name": "Button",
+        "description": "The .button class in src/styles/app.css",
+        "bindings": {
+          "fills.0.color": "accent",
+          "layout.gap": "space-2",
+          "layout.pb": "space-2",
+          "layout.pl": "space-4",
+          "layout.pr": "space-4",
+          "layout.pt": "space-2",
+          "radius": "radius-md"
+        },
+        "clip": false,
+        "codeName": "Button",
+        "fills": [{}],
+        "layout": { "alignC": "center", "mode": "horizontal" },
+        "props": {
+          "label": { "type": "text", "name": "Label", "default": "Next" },
+          "icon": { "type": "icon", "name": "Icon", "default": "arrows-arrow-right" }
+        },
+        "sizingH": "hug",
+        "sizingV": "hug",
+        "x": 40,
+        "y": 40,
+        "children": [
+          {
+            "id": "button-label",
+            "type": "text",
+            "name": "Label",
+            "bindings": {
+              "fills.0.color": "color-gray-0",
+              "fontFamily": "font-family-base",
+              "fontSize": "font-size-body"
+            },
+            "fills": [{}],
+            "fontWeight": 600,
+            "propRefs": { "text": "label" },
+            "text": "Next"
+          },
+          {
+            "id": "button-icon",
+            "type": "icon",
+            "name": "Icon",
+            "bindings": { "fills.0.color": "color-gray-0" },
+            "fills": [{}],
+            "h": 16,
+            "iconId": "arrows-arrow-right",
+            "propRefs": { "iconId": "icon" },
+            "w": 16
+          }
+        ]
+      },
+      "before": {
+        "id": "button",
+        "type": "component",
+        "name": "Button",
+        "description": "The .button class in src/styles/app.css",
+        "bindings": {
+          "fills.0.color": "accent",
+          "layout.gap": "space-2",
+          "layout.pb": "space-2",
+          "layout.pl": "space-4",
+          "layout.pr": "space-4",
+          "layout.pt": "space-2",
+          "radius": "radius-md"
+        },
+        "clip": false,
+        "codeName": "Button",
+        "fills": [{}],
+        "layout": { "alignC": "center", "mode": "horizontal" },
+        "props": {
+          "label": { "type": "text", "name": "Label", "default": "Continue" },
+          "icon": { "type": "icon", "name": "Icon", "default": "arrows-arrow-right" }
+        },
+        "sizingH": "hug",
+        "sizingV": "hug",
+        "x": 40,
+        "y": 40,
+        "children": [
+          {
+            "id": "button-label",
+            "type": "text",
+            "name": "Label",
+            "bindings": {
+              "fills.0.color": "color-gray-0",
+              "fontFamily": "font-family-base",
+              "fontSize": "font-size-body"
+            },
+            "fills": [{}],
+            "fontWeight": 600,
+            "propRefs": { "text": "label" },
+            "text": "Continue"
+          },
+          {
+            "id": "button-icon",
+            "type": "icon",
+            "name": "Icon",
+            "bindings": { "fills.0.color": "color-gray-0" },
+            "fills": [{}],
+            "h": 16,
+            "iconId": "arrows-arrow-right",
+            "propRefs": { "iconId": "icon" },
+            "w": 16
+          }
+        ]
+      },
+      "change": "changed",
+      "file": ".sigma/design/acme-library.sigma.json",
+      "key": ".sigma/design/acme-library.sigma.json#component:button",
+      "where": { "index": 0, "page": "components", "parent": null }
+    },
+    {
+      "kind": "page",
+      "id": "screens",
+      "name": "Screens",
+      "after": {
+        "id": "screens",
+        "name": "Screens",
+        "background": "#F5F5F5",
+        "children": [
+          { "id": "4a42ykq7", "type": "instance", "componentId": "card", "x": 40, "y": 40 }
+        ]
+      },
+      "before": null,
+      "change": "added",
+      "file": ".sigma/design/acme-library.sigma.json",
+      "key": ".sigma/design/acme-library.sigma.json#page:screens",
+      "where": { "index": 1 }
+    }
+  ],
+  "createdAt": "2026-10-12T18:24:06.992Z",
+  "note": "",
+  "renders": {
+    ".sigma/design/acme-library.sigma.json#component:button": {
+      "after": ".sigma/changesets/2026-10-12-button-says-next-a-screens-page-82xpwb/1-component-after.svg",
+      "before": ".sigma/changesets/2026-10-12-button-says-next-a-screens-page-82xpwb/1-component-before.svg"
+    },
+    ".sigma/design/acme-library.sigma.json#page:screens": {
+      "after": ".sigma/changesets/2026-10-12-button-says-next-a-screens-page-82xpwb/2-page-after.svg"
+    }
+  },
+  "status": "proposed",
+  "title": "Button says Next; a Screens page"
+}

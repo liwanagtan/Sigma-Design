@@ -9,6 +9,8 @@ back, and notices when an agent or git changes them on disk:
   GET  /api/project/file?path=P        a file's text (header X-Sigma-Mtime: its modification time)
   PUT  /api/project/file?path=P&base=M write a file; M is the mtime it was read at ("new" for a new file).
                                        409 if it changed on disk since (someone else wrote it)
+  GET  /api/project/base?path=P&rev=R  a file as committed in git (R defaults to HEAD), to compare with
+  GET  /api/project/changesets         the proposed changes in .sigma/changesets/
 
 Only .sigma/**/*.json, .sigma/**/*.svg and sigma.config.json can be written. The server listens on
 127.0.0.1 only, answers only requests addressed to localhost, and writes only for requests that carry the
@@ -17,6 +19,7 @@ X-Sigma header (which pages on other sites can't send), so other websites can't 
 import http.server
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import urllib.parse
@@ -112,6 +115,32 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 except ValueError:
                     config = {"invalid": True}
             return self.reply(200, {"name": os.path.basename(os.path.realpath(PROJECT)), "files": project_files(), "config": config})
+        if url.path == "/api/project/base" and method == "GET":
+            # A file as committed in git (HEAD, or ?rev=): what changes are compared with.
+            rel = (query.get("path") or [""])[0]
+            rev = (query.get("rev") or ["HEAD"])[0]
+            if not safe_path(rel) or rev.startswith("-"):
+                return self.reply(400, {"error": f"Sigma doesn't read {rel!r}"})
+            try:
+                top = subprocess.run(["git", "-C", PROJECT, "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=True).stdout.strip()
+                inside = os.path.relpath(os.path.join(os.path.realpath(PROJECT), rel), os.path.realpath(top)).replace(os.sep, "/")
+                shown = subprocess.run(["git", "-C", PROJECT, "show", f"{rev}:{inside}"], capture_output=True, check=False)
+            except (OSError, subprocess.CalledProcessError):
+                return self.reply(501, {"error": "The project isn't a git repository"})
+            if shown.returncode != 0:
+                return self.reply(404, {"error": f"{rel} isn't in {rev}"})
+            return self.reply(200, shown.stdout, "application/json; charset=utf-8")
+        if url.path == "/api/project/changesets" and method == "GET":
+            out = []
+            folder = os.path.join(PROJECT, ".sigma", "changesets")
+            for f in sorted(os.listdir(folder)) if os.path.isdir(folder) else []:
+                if f.endswith(".json"):
+                    try:
+                        with open(os.path.join(folder, f), encoding="utf-8") as fh:
+                            out.append(json.load(fh))
+                    except (ValueError, OSError):
+                        pass
+            return self.reply(200, out)
         if url.path != "/api/project/file":
             return self.reply(404, {"error": "Unknown API"})
         rel = (query.get("path") or [""])[0]
