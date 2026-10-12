@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Phases 1–14 and Part E (Phases 20–30) are done**, except Phase 26's real run (a Notion ticket and CI on a pull request). Part F: Sigma inside your project (Phases 31–34) has begun: Phase 31 is done; next is Phase 32. Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phases 20–25 are done, Phase 26 is built (its real GitHub/Notion run is waiting), Phases 27–30 are done. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -391,10 +391,6 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 28: Component library onboarding
 - [x] Phase 29: Page onboarding
 - [x] Phase 30: Design to code for components
-- [x] Phase 31: Project mode in the editor
-- [ ] Phase 32: Install like a dev tool (npm package)
-- [ ] Phase 33: Live sync while Sigma runs
-- [ ] Phase 34: Sigma renders the project's components
 
 ## Follow-ups
 
@@ -661,96 +657,3 @@ Unchanged from Phase 15 above: code names per platform for tokens, components an
 - ~~**Publish vs git (decide before Phase 21):**~~ Decided (16 above): with the repo as the source of truth, a design file could point at `.sigma/tokens/core.sigma.json` by path and use whatever version is checked out, with git doing the versioning. That drops the library copies (most of the point above). Decide what Publish and Accept update mean inside a project.
 - **A validator that runs in Node (Phase 20):** normalizing measures text with a canvas, icon import uses `DOMParser`, and `files.js` needs IndexedDB and BroadcastChannel. The validator needs a DOM-free core (schema, migrations, token resolution); layout and text measurement stay browser-only or are skipped when validating.
 - **Project folder access (Phase 21):** the File System Access API only works in Chrome and Edge. Sigma already runs from `serve.py` inside a project, so the server could read and write `.sigma/` and tell the editor when an agent or a `git pull` changes a file. That works in every browser and keeps the editor build-free; the browser API becomes the fallback.
-
-
-# Part F: Sigma inside your project
-
-Sigma installs into an existing project the way Storybook does: one command, a dev dependency, its config in
-the repo, and a script that runs it beside the app. It works on the project's real design system: its token
-files, its icons and its components. Unlike Storybook, it isn't only a showcase: you design pages and
-change components, tokens and icons in the GUI, and the code follows. Sigma doesn't work with Storybook; it
-is its own tool of that kind.
-
-Sigma also stays a **standalone design tool**: without a project, it works as it always has, with files in
-the browser.
-
-## Decisions
-
-1. **Code is the source of truth for tokens and icons.** While Sigma runs in a project, it watches the code
-   and keeps its Sigma Tokens and Sigma Icons files in step by itself (no import step), and saving in Sigma
-   writes the code directly, as exact edits. Designs (pages, component layouts) live in `.sigma/` files,
-   since code can't hold them. All `.sigma/` files stay committed, so agents and diffs work without Sigma
-   running.
-2. **Installed as an npm package,** with a Node command line (`sigma init`, `sigma dev`). The project server
-   moves from `serve.py` to Node; projects in other languages run it with `npx`.
-3. **No Storybook integration.** Sigma renders the project's components itself.
-4. **Standalone stays first-class:** a design tool on its own, with files in the browser.
-5. **Two speeds of change:** *direct* (save, and the working copy's code changes; the running app reloads; it
-   shows in `git diff`) and *propose* (a ticket and a pull request, for review or for designers who don't use
-   git).
-
-## Phases
-
-### Phase 31: Project mode in the editor
-
-- **The sections are the project's:** in a project, Sigma Tokens, Sigma Design and Sigma Icons list the
-  project's files (`.sigma/tokens/`, `.sigma/design/`, `.sigma/icons/`), and new files go into the project.
-  The separate Project section goes away.
-- **Proposals** get their own section (project mode only): Propose change, and each proposal with its
-  status and its pull request and ticket links.
-- **The project at the top of the sidebar:** its name and whether it's connected.
-- **Browser-only files** are hidden in project mode, with a one-time **Move into project…** for any that
-  exist. Recents lists project files; Welcome to Sigma stays (its samples are never saved); the Archive is
-  hidden (git is the history of project files).
-- **Standalone** is unchanged.
-- **Done when:** with `examples/css-app` connected, its tokens, icons, library and pages appear under their
-  kinds, proposals under Proposals, and Sigma without a project looks as it does today.
-- **What shipped:** in a project (`src/home.js`), the sidebar starts with the project's name and whether it's
-  connected; Recents, Sigma Design, Sigma Tokens and Sigma Icons list the project's files (sorted and searched
-  like browser files, with "Edited … ago" once opened); new files go into the project (and can't be made while
-  it's offline); **Proposals** has Propose change and every proposal with its status and pull request and
-  ticket links; Import, drops and the Archive are hidden. Browser-only files get a notice with **Move into
-  project…** (a dialog to pick them; token and icon files are moved first, and links between moved files
-  point at their new paths; the browser copies go to the Archive) or **Not now** (remembered per project).
-  Standalone is unchanged except that **Open project folder…** sits at the top of the sidebar. Verified on
-  `examples/css-app`: its four files under their kinds, PR #1's proposal under Proposals as Merged, and a
-  browser token file and a design file linked to it moved in with the link kept.
-
-### Phase 32: Install like a dev tool (npm package)
-
-- **The package:** Sigma's editor, the project server (in Node, replacing `serve.py` for projects) and
-  `tools/sigma.mjs`, published to npm.
-- **`sigma init`** in a project: adds the dev dependency and an `npm run sigma` script, finds the stack and
-  sets up `sigma.config.json` and `.sigma/` (CSS variables and SVG icons by itself; other stacks handed to
-  the sync skill).
-- **`sigma dev`:** opens the editor on the project in the current folder.
-- **Done when:** in a fresh copy of a real project, `npx sigma init` then `npm run sigma` opens Sigma on its
-  tokens and icons, with nothing else installed.
-
-### Phase 33: Live sync while Sigma runs
-
-- **Code → Sigma:** Sigma watches the token and icon sources; when they change (an edit, a `git pull`), its
-  Sigma Tokens and Sigma Icons files update by themselves, keeping ids and order.
-- **Sigma → code:** saving a token or icon change writes the code directly (the exact edits `tokens write`
-  and `icons write` make); saving a library component writes the exact part of its code (Phase 30), and
-  lists the rest for an agent or a proposal.
-- **Done when:** changing a token in Sigma reloads the running app with the new value, and editing
-  `tokens.css` updates Sigma, with no command run in between.
-
-### Phase 34: Sigma renders the project's components
-
-- **Sigma's own component pages:** `sigma init` sets up a page that renders each component in each variant
-  and state, built with the project's own tooling, like `examples/css-app/components.html`; Sigma serves the
-  app alongside itself (same origin), so it can capture and compare without manual steps.
-- **Library onboarding and checks run from the GUI:** capture, build the library, compare, and after a
-  component change, recapture and compare to confirm the code matches the design.
-- **Done when:** in a project with React components, the library builds from Sigma's component pages, and a
-  component change made in Sigma is confirmed against the rendered code from inside Sigma.
-
-## Risks and open questions
-
-- **Bundlers (Phase 34):** rendering components needs the project's build (Vite, webpack, Next). Serving the
-  app's dev server through Sigma's origin (a proxy) may be simpler than building pages ourselves.
-- **Writing code on save (Phase 33):** direct edits to a working copy should never surprise a developer.
-  Edits stay exact and minimal, and Sigma never writes while the code has a conflicting change it hasn't
-  read.

@@ -365,21 +365,16 @@ export async function reloadFromDisk(path) {
 }
 
 // Create a new file in the project and open it.
-// A new file in the project, opened unless `open` is false. Returns its path (null if it couldn't be made).
-// `paths`: where linked files are when they aren't project files yet ({ fileId: path }, for moving several).
-export async function newProjectFile(doc, { open = true, paths = {} } = {}) {
-  if (!adapter) return null;
+export async function newProjectFile(doc) {
+  if (!adapter) return;
   const path = freePath(fileKind(doc), doc.name);
-  const known = await pathMap();
-  const { text } = serializeForProject(doc, { pathOf: (id) => paths[id] || known(id), path });
+  const { text } = serializeForProject(doc, { pathOf: await pathMap(), path });
   try {
     await adapter.write(path, text, 'new');
     await refresh();
-    if (open) openFile(await bring(path));
-    return path;
+    openFile(await bring(path));
   } catch (err) {
     toast(`Couldn’t create ${path}: ${err.message}`);
-    return null;
   }
 }
 

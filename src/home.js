@@ -1,11 +1,8 @@
-// The files home. Standalone, it lists the Sigma files stored in this browser. In a project (Part F, Phase 31)
-// the same sections list the project's files (its .sigma/ folder), proposals get a section of their own, and
-// files kept only in the browser are hidden (they can be moved into the project).
+// The files home: lists every Sigma file stored in this browser.
 import {
   listFiles, createFile, renameFile, duplicateFile, deleteFile, downloadFile, importFiles, pickFilesToImport,
   listArchivedFiles, archiveFile, restoreFile, emptyArchive,
   storageSummary, openFile, fileHref, fileKind, newTokenDocument, newIconsDocument, welcomeFile, sampleTokenFile, isSampleFile,
-  loadFile,
 } from './files.js';
 import { blankDocument } from './sample.js';
 import { ICON_SETS, iconSetDocument, loadIconSet } from './icon-library.js';
@@ -14,7 +11,6 @@ import {
 } from './project.js';
 import { openProposeDialog, changesetListing } from './propose.js';
 import { showContextMenu } from './menu.js';
-import { modal } from './libraries.js';
 import { icons } from './icons.js';
 import { toast } from './io.js';
 
@@ -34,10 +30,9 @@ const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').
 try {
   Object.assign(prefs, JSON.parse(localStorage.getItem(PREFS_KEY) || '{}'));
   if (prefs.section === 'all') prefs.section = 'design'; // "All files" became "Design files"
-  if (prefs.section === 'project') prefs.section = 'recents'; // the Project section's files are in the kind sections now
 } catch {}
 
-const SECTIONS = { proposals: 'Proposals', recents: 'Recents', design: 'Sigma Design', tokens: 'Sigma Tokens', icons: 'Sigma Icons', welcome: 'Welcome to Sigma', archive: 'Archive' };
+const SECTIONS = { project: 'Project', recents: 'Recents', design: 'Sigma Design', tokens: 'Sigma Tokens', icons: 'Sigma Icons', welcome: 'Welcome to Sigma', archive: 'Archive' };
 
 // Open the files home on a section (e.g. the Archive, when an archived file's link is opened).
 export function showHomeSection(section) {
@@ -71,17 +66,16 @@ export function initHome(el) {
   root.innerHTML = `
     <aside class="home-side">
       <div class="home-brand">${icons.logo}<span>Sigma</span></div>
-      <div class="home-project" id="home-project"></div>
       <nav class="home-nav">
         <button class="nav-item" data-section="recents">Recents</button>
         <div class="nav-label">Files</div>
         <button class="nav-item" data-section="design">${NAV_DESIGN} Sigma Design</button>
         <button class="nav-item" data-section="tokens">${NAV_TOKENS} Sigma Tokens</button>
         <button class="nav-item" data-section="icons">${NAV_ICONS} Sigma Icons</button>
-        <button class="nav-item" data-section="proposals" id="nav-proposals" title="Changes proposed from Sigma, and their pull requests" hidden>${NAV_PROPOSALS} Proposals</button>
+        <div class="nav-project" id="home-project"></div>
         <div class="nav-spacer"></div>
         <button class="nav-item nav-welcome" data-section="welcome" title="The guide to Sigma and its sample tokens">${NAV_WELCOME} Welcome to Sigma</button>
-        <button class="nav-item" data-section="archive" id="nav-archive" title="Deleted files, until you delete them forever">${NAV_ARCHIVE} Archive</button>
+        <button class="nav-item" data-section="archive" title="Deleted files, until you delete them forever">${NAV_ARCHIVE} Archive</button>
       </nav>
       <div class="home-storage" id="home-storage"></div>
     </aside>
@@ -160,12 +154,6 @@ export function initHome(el) {
   const list = root.querySelector('#home-files');
   list.addEventListener('click', (e) => {
     if (e.target.closest('[data-propose-change]')) return openProposeDialog();
-    if (e.target.closest('[data-move-into-project]')) return moveIntoProjectDialog();
-    if (e.target.closest('[data-not-now]')) {
-      prefs.notNow = { ...(prefs.notNow || {}), [project.name]: true };
-      savePrefs();
-      return renderHome();
-    }
     const projectFile = e.target.closest('[data-project-path]');
     if (projectFile) {
       e.preventDefault();
@@ -230,7 +218,6 @@ export function initHome(el) {
     e.preventDefault();
     depth = 0;
     drop.hidden = true;
-    if (projectMode()) return toast('In a project, Sigma files live in its .sigma/ folder: add them there (or have the sync skill import tokens and icons).');
     const files = [...e.dataTransfer.files].filter((f) => /\.json$/i.test(f.name) || f.type === 'application/json');
     if (!files.length) return toast('Only .sigma.json and tokens.json files can be imported here.');
     afterImport(await importFiles(files));
@@ -249,133 +236,56 @@ export function setHomeNotice(msg) {
 // ---------- the project ----------
 const NAV_PROJECT = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1.5 3.5a1 1 0 0 1 1-1h3l1.5 1.5h4.5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z"/><path d="M5 8.5l1.5-1.5L5 5.5M7.5 9.5h2"/></svg>';
 
-// In a project, Sigma works on its files: the sections list them, and new files go into it.
-const projectMode = () => !!project.name;
-
-// The top of the sidebar: the project Sigma is working in (or, standalone, a way to open one).
+// The sidebar: the connected project, or a way to open one.
 function renderProjectNav() {
   const el = root.querySelector('#home-project');
-  if (projectMode()) {
-    el.innerHTML = `<div class="project-chip" title="${project.connected ? 'The Sigma files are in this project’s .sigma/ folder' : 'The project isn’t connected: start Sigma with the project again'}">${NAV_PROJECT}<span class="project-name">${esc(project.name)}</span><span class="project-state ${project.connected ? 'ok' : 'off'}">${project.connected ? 'Connected' : 'Offline'}</span></div>`;
+  if (project.name) {
+    el.innerHTML = `<div class="nav-label">Project</div><button class="nav-item${prefs.section === 'project' ? ' active' : ''}" data-section="project" title="${project.connected ? `The Sigma files in this project’s .sigma/ folder` : 'The project isn’t connected'}">${NAV_PROJECT} ${esc(project.name)}${project.connected ? '' : ' <span class="muted">(offline)</span>'}</button>`;
   } else {
     el.innerHTML = canPickFolder() ? `<button class="nav-item" data-pick-folder title="Open a codebase’s Sigma files (its .sigma/ folder)">${NAV_PROJECT} Open project folder…</button>` : '';
   }
-  root.querySelector('#nav-proposals').hidden = !projectMode();
-  root.querySelector('#nav-archive').hidden = projectMode(); // git is the history of project files
 }
 
-// A project file's card: opens it from the project.
-function projectCard(f) {
-  let thumb = '';
-  if (f.meta?.thumbnail instanceof Blob) {
-    const url = URL.createObjectURL(f.meta.thumbnail);
-    thumbURLs.push(url);
-    thumb = `<img src="${url}" alt="" draggable="false">`;
-  }
-  const plain = f.kind !== 'design';
-  if (!thumb) thumb = `<span class="thumb-placeholder">${f.kind === 'icons' ? NAV_ICONS : f.kind === 'tokens' ? NAV_TOKENS : NAV_DESIGN}</span>`;
-  const when = f.meta?.updatedAt ? `Edited ${ago(f.meta.updatedAt)}` : '';
-  return `<a class="file-card${plain ? ' tokens' : ''}" href="#" data-project-path="${esc(f.path)}" draggable="false" title="${esc(f.path)}">
-    <div class="file-thumb" style="background:${plain ? '#FFFFFF' : esc(f.meta?.background || '#F5F5F5')}">${thumb}</div>
-    <div class="file-info"><div class="card-name" title="${esc(f.name)}">${esc(f.name)}</div>
-    <div class="file-time">${kindBadge(f.kind)}${f.kind === 'invalid' ? '<span class="kind-badge sample">Not readable</span>' : ''}${when || `<span>${esc(f.path.replace(/^\.sigma\//, ''))}</span>`}</div></div>
-    <div class="file-created muted">${esc(f.path.replace(/^\.sigma\//, ''))}</div>
-  </a>`;
-}
-
-const EMPTY_PROJECT = {
-  design: ['No Sigma Design files in this project yet', 'Design pages and components on the project’s tokens and icons. The sync skill can also build them from the code (its components and pages).', 'blank', 'New Sigma Design file'],
-  tokens: ['No Sigma Tokens files in this project yet', 'The project’s design tokens, kept in step with the code. The sync skill sets this up from the code’s tokens (skills/sigma-sync).', 'tokens', 'New Sigma Tokens file'],
-  icons: ['No Sigma Icons files in this project yet', 'The project’s icons, kept in step with its icon folder. The sync skill sets this up (skills/sigma-sync).', 'icons', 'New Sigma Icons file'],
-};
-
-// Recents and the kind sections, in a project: the project's files.
-async function renderProjectFiles(list, section, q) {
-  let items = (await projectListing()).filter((f) => !q || f.name.toLowerCase().includes(q) || f.path.toLowerCase().includes(q));
-  const recents = section === 'recents';
-  if (!recents) items = items.filter((f) => f.kind === section);
-  const edited = (f) => f.meta?.updatedAt || 0;
-  const sort = recents ? 'edited' : prefs.sort;
-  items.sort((a, b) => (sort === 'name' ? a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
-    : sort === 'created' ? (b.meta?.createdAt || 0) - (a.meta?.createdAt || 0) : edited(b) - edited(a) || a.path.localeCompare(b.path)));
-  if (recents && !q) items = items.slice(0, 24);
-  const move = await moveNotice();
-  if (items.length) {
-    list.innerHTML = move + items.map(projectCard).join('');
-    return;
-  }
-  if (q) {
-    list.innerHTML = move + `<div class="home-empty"><p>No project files match “${esc(query)}”.</p></div>`;
-    return;
-  }
-  const [title, text, act, label] = EMPTY_PROJECT[section] || ['No Sigma files in this project yet', 'Create one with the buttons above, or let the sync skill set the project up from its code (skills/sigma-sync).', 'blank', 'New Sigma Design file'];
-  list.innerHTML = move + `<div class="home-empty"><div class="home-empty-title">${title}</div><p>${text}</p>
-    ${project.connected ? `<div class="home-empty-actions"><button class="btn primary" data-empty-action="${act}">${icons.plus} ${label}</button></div>` : ''}</div>`;
-}
-
-// Files kept only in this browser aren't part of the project: offer, once, to move them in.
-async function browserOnlyFiles() {
-  return (await listFiles()).filter((f) => !isSampleFile(f) && !f.project);
-}
-async function moveNotice() {
-  if (!project.connected || prefs.notNow?.[project.name]) return '';
-  const n = (await browserOnlyFiles()).length;
-  if (!n) return '';
-  return `<div class="home-notice move-notice">${n === 1 ? '1 file is' : `${n} files are`} saved in this browser, not in this project.
-    <button class="btn" data-move-into-project>Move into project…</button><button class="btn" data-not-now>Not now</button></div>`;
-}
-
-async function moveIntoProjectDialog() {
-  const files = await browserOnlyFiles();
-  if (!files.length) return renderHome();
-  const order = { tokens: 0, icons: 1, design: 2 };
-  files.sort((a, b) => order[fileKind(a)] - order[fileKind(b)] || a.name.localeCompare(b.name));
-  const body = `<p class="muted lib-intro">Moved files are written to the project’s <code>.sigma/</code> folder (git keeps their history from there) and leave this browser’s files for its Archive. Links between moved files are kept.</p>` +
-    files.map((f) => `<label class="propose-item"><input type="checkbox" data-id="${f.id}" checked>${kindBadge(fileKind(f))}<span class="propose-name">${esc(f.name)}</span><span class="muted">Edited ${ago(f.updatedAt)}</span></label>`).join('');
-  const wrap = modal('Move into project', body, '<span class="spacer"></span><button class="btn" data-close>Cancel</button><button class="btn primary" data-move>Move</button>');
-  wrap.querySelector('[data-move]').addEventListener('click', async () => {
-    const ids = [...wrap.querySelectorAll('input[data-id]:checked')].map((i) => i.dataset.id);
-    wrap.remove();
-    const paths = {};
-    let moved = 0;
-    // Token and icon files first, so the design files that link them keep their links.
-    for (const id of ids) {
-      const file = await loadFile(id);
-      if (!file) continue;
-      const path = await newProjectFile(file.doc, { open: false, paths });
-      if (!path) continue;
-      paths[id] = path;
-      await archiveFile(id);
-      moved++;
-    }
-    toast(moved === 1 ? 'Moved 1 file into the project' : `Moved ${moved} files into the project`);
-    renderHome();
-  });
-}
-
-// The Proposals section: changes proposed from Sigma, with their status, pull request and ticket.
-async function renderProposals(list, q) {
-  const all = project.connected ? await changesetListing() : [];
-  const changesets = all.filter((c) => !q || `${c.title} ${c.note || ''}`.toLowerCase().includes(q));
-  const intro = `<div class="welcome-intro"><p>Changes proposed from Sigma. <b>Propose change</b> picks edits that belong together; the sync skill turns each proposal into a ticket and a pull request, and its status follows the pull request.</p>
-    ${project.connected ? '<button class="btn primary" data-propose-change>Propose change…</button>' : '<p class="muted">The project isn’t connected.</p>'}</div>`;
-  const row = (c) => `<div class="changeset-row" title="${esc(c.note || '')}">
+async function renderProject(list, q) {
+  const items = (await projectListing()).filter((f) => !q || f.name.toLowerCase().includes(q) || f.path.toLowerCase().includes(q));
+  const changesets = project.connected ? await changesetListing() : [];
+  const intro = `<div class="welcome-intro"><p><b>${esc(project.name)}</b>: the Sigma files in this project’s <code>.sigma/</code> folder${project.via === 'folder' ? ' (opened in the browser)' : ''}. The repo is the source of truth, and git does the versioning.</p>
+    <p class="muted">Sigma saves your edits in this browser as you work; <b>⌘S</b> (or <b>Save to project</b> in a file’s menu) writes them to the project. When an agent or git changes a file on disk, Sigma reloads it. New files made here go in the project. To send changes to the codebase, <b>Propose change</b>: the sync skill turns a proposal into a ticket and a pull request.</p>
+    ${project.connected ? '<button class="btn primary" data-propose-change>Propose change…</button>' : ''}</div>` +
+    (changesets.length ? `<div class="changesets"><div class="nav-label">Proposals</div>${changesets.map((c) => `<div class="changeset-row" title="${esc(c.note || '')}">
       <span class="status-chip ${c.status === 'merged' ? 'ok' : c.status === 'changes-requested' ? 'warn' : ''}">${esc(c.statusLabel)}</span>
       <span class="changeset-title">${esc(c.title)}</span><span class="muted">${esc(c.summary)}</span>
       ${c.pr?.url ? `<a href="${esc(c.pr.url)}" target="_blank" rel="noopener">PR${c.pr.number ? ` #${esc(c.pr.number)}` : ''}</a>` : ''}
       ${c.ticket?.url ? `<a href="${esc(c.ticket.url)}" target="_blank" rel="noopener">Ticket</a>` : ''}
-      <span class="muted changeset-date">${esc(String(c.createdAt || '').slice(0, 10))}</span></div>`;
-  list.innerHTML = intro + (changesets.length ? `<div class="changesets">${changesets.map(row).join('')}</div>`
-    : `<div class="home-empty"><p>${q ? `No proposals match “${esc(query)}”.` : 'No proposals yet.'}</p></div>`);
+      <span class="muted changeset-date">${esc(String(c.createdAt || '').slice(0, 10))}</span></div>`).join('')}</div>` : '');
+  if (!items.length) {
+    list.innerHTML = intro + `<div class="home-empty"><div class="home-empty-title">${q ? `No project files match “${esc(query)}”` : 'No Sigma files in this project yet'}</div>
+      <p>Create one with the buttons above, or let the sync skill import the project’s tokens and icons (skills/sigma-sync).</p></div>`;
+    return;
+  }
+  const order = ['tokens', 'icons', 'design'];
+  items.sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind) || a.path.localeCompare(b.path));
+  list.innerHTML = intro + items.map((f) => {
+    let thumb = '';
+    if (f.meta?.thumbnail instanceof Blob) {
+      const url = URL.createObjectURL(f.meta.thumbnail);
+      thumbURLs.push(url);
+      thumb = `<img src="${url}" alt="" draggable="false">`;
+    }
+    const plain = f.kind !== 'design';
+    if (!thumb) thumb = `<span class="thumb-placeholder">${f.kind === 'icons' ? NAV_ICONS : f.kind === 'tokens' ? NAV_TOKENS : NAV_DESIGN}</span>`;
+    return `<a class="file-card${plain ? ' tokens' : ''}" href="#" data-project-path="${esc(f.path)}" draggable="false">
+      <div class="file-thumb" style="background:${plain ? '#FFFFFF' : esc(f.meta?.background || '#F5F5F5')}">${thumb}</div>
+      <div class="file-info"><div class="card-name" title="${esc(f.name)}">${esc(f.name)}</div>
+      <div class="file-time">${kindBadge(f.kind)}${f.kind === 'invalid' ? '<span class="kind-badge sample">Not readable</span>' : ''}<span title="${esc(f.path)}">${esc(f.path.replace(/^\.sigma\//, ''))}</span></div></div>
+    </a>`;
+  }).join('');
 }
 
 // ---------- actions ----------
-// In a project, new files are made in the project (.sigma/), otherwise in the browser.
-const inProjectSection = () => projectMode() && project.connected;
-const create = async (doc) => {
-  if (projectMode() && !project.connected) return toast('The project isn’t connected, so new files can’t be added to it.');
-  return inProjectSection() ? newProjectFile(doc) : openFile(await createFile(doc));
-};
+// In the Project section, new files are made in the project (.sigma/), otherwise in the browser.
+const inProjectSection = () => prefs.section === 'project' && project.connected;
+const create = async (doc) => (inProjectSection() ? newProjectFile(doc) : openFile(await createFile(doc)));
 
 async function newTokenFile() {
   await create(newTokenDocument());
@@ -510,30 +420,24 @@ async function startRename(id) {
 // ---------- render ----------
 export async function renderHome() {
   if (!root) return;
-  const pm = projectMode();
-  // Proposals only exist in a project; the Archive only standalone (git is the history of project files).
-  if (!SECTIONS[prefs.section] || (prefs.section === 'proposals' && !pm) || (prefs.section === 'archive' && pm)) prefs.section = 'recents';
+  if (!SECTIONS[prefs.section] || (prefs.section === 'project' && !project.name)) prefs.section = 'recents';
   const section = prefs.section;
   const archive = section === 'archive';
   let files = await listFiles();
   const total = files.length;
   const welcome = section === 'welcome';
-  const proposals = section === 'proposals';
-  const projectFiles = pm && !welcome && !proposals; // Recents and the kind sections list the project's files
+  const inProject = section === 'project';
   if (archive) files = await listArchivedFiles();
   else if (welcome) files = files.filter(isSampleFile);
-  else if (projectFiles || proposals) files = [];
-  else if (section !== 'recents') files = files.filter((f) => fileKind(f) === section && !isSampleFile(f) && !f.project); // samples have their own section
+  else if (inProject) files = [];
+  else if (section !== 'recents') files = files.filter((f) => fileKind(f) === section && !isSampleFile(f) && !f.project); // the sample and project files have their own sections
   renderProjectNav();
   const inSection = files.length;
 
   root.querySelectorAll('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.section === section));
   root.querySelectorAll('[data-layout]').forEach((b) => b.classList.toggle('on', b.dataset.layout === prefs.layout));
   const recents = section === 'recents';
-  root.querySelector('#home-title').textContent = SECTIONS[section];
-  root.querySelector('#home-search').placeholder = proposals ? 'Search proposals' : 'Search files';
-  root.querySelector('#home-import').hidden = pm; // imports land in the browser; a project's files come from the project
-  root.querySelector('.home-layout').hidden = proposals;
+  root.querySelector('#home-title').textContent = inProject ? project.name || 'Project' : SECTIONS[section];
   // The primary "New" button matches the section you're in.
   root.querySelector('#home-new').classList.toggle('primary', section !== 'tokens' && section !== 'icons');
   root.querySelector('#home-new-icons').classList.toggle('primary', section === 'icons');
@@ -541,7 +445,7 @@ export async function renderHome() {
   root.querySelector('#home-new-tokens').classList.toggle('primary', section === 'tokens');
   root.querySelector('#home-new-tokens-more').classList.toggle('primary', section === 'tokens');
   const sortSel = root.querySelector('#home-sort');
-  sortSel.hidden = recents || archive || proposals || welcome;
+  sortSel.hidden = recents || archive;
   sortSel.value = prefs.sort;
 
   const q = query.trim().toLowerCase();
@@ -565,10 +469,8 @@ export async function renderHome() {
   const list = root.querySelector('#home-files');
   list.className = `home-files ${prefs.layout}`;
 
-  if (proposals) {
-    await renderProposals(list, q);
-  } else if (projectFiles) {
-    await renderProjectFiles(list, section, q);
+  if (inProject) {
+    await renderProject(list, q);
   } else if (welcome) {
     list.innerHTML = WELCOME_INTRO +
       (files.length ? files.sort((a, b) => KIND_ORDER.indexOf(fileKind(a)) - KIND_ORDER.indexOf(fileKind(b))).map((f) => card(f, { describe: true })).join('')
@@ -602,9 +504,7 @@ export async function renderHome() {
   } else {
     list.innerHTML = files.map(card).join('');
   }
-  root.querySelector('#home-storage').textContent = pm
-    ? `${project.files.length} Sigma file${project.files.length === 1 ? '' : 's'} in the project’s .sigma/ folder`
-    : await storageSummary();
+  root.querySelector('#home-storage').textContent = await storageSummary();
 }
 
 function archivedCard(f) {
@@ -661,7 +561,6 @@ function card(f, { describe = false } = {}) {
 
 const NAV_DESIGN = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4.5 1.5v11M9.5 1.5v11M1.5 4.5h11M1.5 9.5h11"/></svg>';
 const NAV_WELCOME = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><circle cx="7" cy="7" r="5.5"/><path d="M5.6 5.4a1.5 1.5 0 1 1 2 1.4c-.4.2-.6.5-.6.9v.4M7 10v.1"/></svg>';
-const NAV_PROPOSALS = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><circle cx="3.5" cy="3" r="1.5"/><circle cx="3.5" cy="11" r="1.5"/><circle cx="10.5" cy="11" r="1.5"/><path d="M3.5 4.5v5M10.5 9.5V6a2 2 0 0 0-2-2H6.5M8 2.5 6.5 4 8 5.5"/></svg>';
 const NAV_ARCHIVE = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><rect x="1.5" y="2" width="11" height="3" rx=".5"/><path d="M2.5 5v6.5h9V5M5.5 7.5h3"/></svg>';
 const kindBadge = (kind) => (kind === 'tokens' ? '<span class="kind-badge">Tokens</span>' : kind === 'icons' ? '<span class="kind-badge">Icons</span>' : '');
 

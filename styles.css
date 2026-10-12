@@ -437,12 +437,6 @@ fieldset.readonly .field-label { cursor: default; }
 .assets-subgroup { color: var(--muted); font-weight: 500; padding: 8px 4px 6px; }
 
 /* ---------- token files on the home page ---------- */
-.home-project { padding: 8px 0 0; }
-.project-chip { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; min-width: 0; }
-.project-chip .project-name { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.project-state { font-size: 10px; padding: 1px 6px; border-radius: 8px; background: var(--hover); color: var(--muted); }
-.project-state.ok { background: #e7f7ee; color: #0f7a40; }
-.move-notice { grid-column: 1 / -1; margin: 0 0 4px; display: flex; align-items: center; justify-content: flex-start; gap: 8px; flex-wrap: wrap; }
 .nav-label { padding: 12px 10px 4px; color: var(--muted); font-size: 11px; font-weight: 600; }
 .nav-spacer { height: 12px; }
 .nav-item svg { vertical-align: -2px; margin-right: 4px; }
