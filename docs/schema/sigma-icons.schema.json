@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sigma Icons file",
+  "description": "Icons imported from SVG. See docs/schema/README.md.",
+  "type": "object",
+  "required": [
+    "format",
+    "kind",
+    "name",
+    "icons"
+  ],
+  "properties": {
+    "format": {
+      "const": 1,
+      "description": "Sigma project file format"
+    },
+    "kind": {
+      "const": "icons"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "license": {
+          "type": "string"
+        },
+        "licenseText": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "icons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "style",
+          "viewBox",
+          "body"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "group": {
+            "type": "string"
+          },
+          "keywords": {
+            "type": "string"
+          },
+          "style": {
+            "enum": [
+              "outline",
+              "filled"
+            ]
+          },
+          "viewBox": {
+            "type": "string",
+            "pattern": "^\\s*-?[\\d.]+[\\s,]+-?[\\d.]+[\\s,]+[\\d.]+[\\s,]+[\\d.]+\\s*$"
+          },
+          "strokeWidth": {
+            "type": "number",
+            "minimum": 0
+          },
+          "cap": {
+            "enum": [
+              "butt",
+              "round",
+              "square"
+            ]
+          },
+          "join": {
+            "enum": [
+              "miter",
+              "round",
+              "bevel"
+            ]
+          },
+          "body": {
+            "type": "string",
+            "description": "The icon's shapes as SVG markup without <svg>: path, circle, ellipse, rect, line, polyline, polygon, g; colors currentColor"
+          }
+        }
+      }
+    }
+  }
+}

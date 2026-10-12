@@ -1,0 +1,515 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sigma Tokens file",
+  "description": "Design tokens. See docs/schema/README.md.",
+  "type": "object",
+  "required": [
+    "format",
+    "kind",
+    "name",
+    "collections"
+  ],
+  "properties": {
+    "format": {
+      "const": 1,
+      "description": "Sigma project file format"
+    },
+    "kind": {
+      "const": "tokens"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "uses": {
+      "type": "object",
+      "properties": {
+        "tokens": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "\\.sigma\\.json$"
+          },
+          "description": "Project paths of Sigma Tokens files"
+        }
+      },
+      "additionalProperties": false
+    },
+    "collections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/collection"
+      }
+    }
+  },
+  "$defs": {
+    "alias": {
+      "type": "object",
+      "required": [
+        "alias"
+      ],
+      "properties": {
+        "alias": {
+          "type": "string",
+          "description": "Id of another token of the same type"
+        }
+      },
+      "additionalProperties": false
+    },
+    "collection": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "modes",
+        "defaultModeId"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "modes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "parentModeId": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "defaultModeId": {
+          "type": "string"
+        },
+        "extends": {
+          "type": "string",
+          "description": "Id of the collection this one extends (an extension has overrides, no tokens)"
+        },
+        "overrides": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          },
+          "description": "{ tokenId: { modeId: value } }"
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "parentId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "description": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/token"
+          }
+        }
+      }
+    },
+    "token": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "type",
+        "valuesByMode"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "description": "A path, like color/blue/500"
+        },
+        "type": {
+          "enum": [
+            "color",
+            "number",
+            "string",
+            "boolean",
+            "typography",
+            "shadow",
+            "duration",
+            "easing"
+          ]
+        },
+        "description": {
+          "type": "string"
+        },
+        "groupId": {
+          "type": "string"
+        },
+        "deprecated": {
+          "type": "boolean"
+        },
+        "contrastWith": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "valuesByMode": {
+          "type": "object",
+          "description": "{ modeId: value or { alias } }"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "color"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "valuesByMode": {
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^#([0-9a-fA-F]{6})([0-9a-fA-F]{2})?$"
+                    },
+                    {
+                      "$ref": "#/$defs/alias"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "number"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "valuesByMode": {
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "$ref": "#/$defs/alias"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "duration"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "valuesByMode": {
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    {
+                      "$ref": "#/$defs/alias"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "string"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "valuesByMode": {
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/$defs/alias"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "boolean"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "valuesByMode": {
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "$ref": "#/$defs/alias"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "easing"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "valuesByMode": {
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 4,
+                      "maxItems": 4
+                    },
+                    {
+                      "$ref": "#/$defs/alias"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "typography"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "valuesByMode": {
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "fontFamily": {
+                          "oneOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "$ref": "#/$defs/alias"
+                            }
+                          ]
+                        },
+                        "fontWeight": {
+                          "oneOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "$ref": "#/$defs/alias"
+                            }
+                          ]
+                        },
+                        "fontSize": {
+                          "oneOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "$ref": "#/$defs/alias"
+                            }
+                          ]
+                        },
+                        "lineHeight": {
+                          "oneOf": [
+                            {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            },
+                            {
+                              "$ref": "#/$defs/alias"
+                            }
+                          ]
+                        },
+                        "letterSpacing": {
+                          "oneOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "$ref": "#/$defs/alias"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/$defs/alias"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "shadow"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "valuesByMode": {
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "color": {
+                          "oneOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^#([0-9a-fA-F]{6})([0-9a-fA-F]{2})?$"
+                            },
+                            {
+                              "$ref": "#/$defs/alias"
+                            }
+                          ]
+                        },
+                        "x": {
+                          "oneOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "$ref": "#/$defs/alias"
+                            }
+                          ]
+                        },
+                        "y": {
+                          "oneOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "$ref": "#/$defs/alias"
+                            }
+                          ]
+                        },
+                        "blur": {
+                          "oneOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "$ref": "#/$defs/alias"
+                            }
+                          ]
+                        },
+                        "spread": {
+                          "oneOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "$ref": "#/$defs/alias"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/$defs/alias"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

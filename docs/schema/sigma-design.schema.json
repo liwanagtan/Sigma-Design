@@ -1,0 +1,580 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sigma Design file",
+  "description": "Pages, components and layouts. See docs/schema/README.md.",
+  "type": "object",
+  "required": [
+    "format",
+    "kind",
+    "name",
+    "pages"
+  ],
+  "properties": {
+    "format": {
+      "const": 1,
+      "description": "Sigma project file format"
+    },
+    "kind": {
+      "const": "design"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "uses": {
+      "type": "object",
+      "properties": {
+        "tokens": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "\\.sigma\\.json$"
+          },
+          "description": "Project paths of Sigma Tokens files"
+        },
+        "icons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "\\.sigma\\.json$"
+          },
+          "description": "Project paths of Sigma Tokens files"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "\\.sigma\\.json$"
+          },
+          "description": "Project paths of Sigma Tokens files"
+        }
+      },
+      "additionalProperties": false
+    },
+    "collections": {
+      "type": "array",
+      "description": "Local tokens (same shape as in a Sigma Tokens file)"
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "background": {
+            "type": "string",
+            "pattern": "^#([0-9a-fA-F]{6})([0-9a-fA-F]{2})?$"
+          },
+          "modes": {
+            "type": "object"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/node"
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "node": {
+      "type": "object",
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "frame",
+            "group",
+            "rect",
+            "ellipse",
+            "line",
+            "text",
+            "image",
+            "icon",
+            "component",
+            "componentSet",
+            "instance"
+          ]
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number"
+        },
+        "h": {
+          "type": "number"
+        },
+        "rotation": {
+          "type": "number"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "visible": {
+          "type": "boolean"
+        },
+        "locked": {
+          "type": "boolean"
+        },
+        "clip": {
+          "type": "boolean"
+        },
+        "fills": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "color": {
+                "type": "string",
+                "pattern": "^#([0-9a-fA-F]{6})([0-9a-fA-F]{2})?$"
+              },
+              "opacity": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "visible": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "strokes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "color": {
+                "type": "string",
+                "pattern": "^#([0-9a-fA-F]{6})([0-9a-fA-F]{2})?$"
+              },
+              "opacity": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "visible": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "strokeWidth": {
+          "type": "number"
+        },
+        "strokeAlign": {
+          "enum": [
+            "inside",
+            "center",
+            "outside"
+          ]
+        },
+        "strokeSides": {
+          "type": "object",
+          "properties": {
+            "top": {
+              "type": "boolean"
+            },
+            "right": {
+              "type": "boolean"
+            },
+            "bottom": {
+              "type": "boolean"
+            },
+            "left": {
+              "type": "boolean"
+            }
+          }
+        },
+        "radius": {
+          "type": "number"
+        },
+        "radii": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "effects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "enum": [
+                  "drop-shadow",
+                  "inner-shadow",
+                  "layer-blur"
+                ]
+              },
+              "color": {
+                "type": "string",
+                "pattern": "^#([0-9a-fA-F]{6})([0-9a-fA-F]{2})?$"
+              },
+              "opacity": {
+                "type": "number"
+              },
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "blur": {
+                "type": "number"
+              },
+              "spread": {
+                "type": "number"
+              },
+              "visible": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "layout": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "enum": [
+                "horizontal",
+                "vertical"
+              ]
+            },
+            "gap": {
+              "type": "number"
+            },
+            "spacing": {
+              "enum": [
+                "packed",
+                "auto"
+              ]
+            },
+            "pt": {
+              "type": "number"
+            },
+            "pr": {
+              "type": "number"
+            },
+            "pb": {
+              "type": "number"
+            },
+            "pl": {
+              "type": "number"
+            },
+            "alignP": {
+              "enum": [
+                "start",
+                "center",
+                "end"
+              ]
+            },
+            "alignC": {
+              "enum": [
+                "start",
+                "center",
+                "end"
+              ]
+            }
+          }
+        },
+        "sizingH": {
+          "enum": [
+            "fixed",
+            "hug",
+            "fill"
+          ]
+        },
+        "sizingV": {
+          "enum": [
+            "fixed",
+            "hug",
+            "fill"
+          ]
+        },
+        "minW": {
+          "type": "number"
+        },
+        "maxW": {
+          "type": "number"
+        },
+        "minH": {
+          "type": "number"
+        },
+        "maxH": {
+          "type": "number"
+        },
+        "absolute": {
+          "type": "boolean"
+        },
+        "constraints": {
+          "type": "object",
+          "properties": {
+            "h": {
+              "enum": [
+                "left",
+                "right",
+                "leftRight",
+                "center",
+                "scale"
+              ]
+            },
+            "v": {
+              "enum": [
+                "top",
+                "bottom",
+                "topBottom",
+                "center",
+                "scale"
+              ]
+            }
+          }
+        },
+        "layoutGrids": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "enum": [
+                  "columns",
+                  "rows",
+                  "grid"
+                ]
+              }
+            }
+          }
+        },
+        "bindings": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "{ property path: token id }; the property's value is left out"
+        },
+        "modes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "{ collection id: mode id }"
+        },
+        "text": {
+          "type": "string"
+        },
+        "fontFamily": {
+          "type": "string"
+        },
+        "fontSize": {
+          "type": "number"
+        },
+        "fontWeight": {
+          "type": "number"
+        },
+        "lineHeight": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "letterSpacing": {
+          "type": "number"
+        },
+        "textAlign": {
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ]
+        },
+        "autoResize": {
+          "enum": [
+            "width",
+            "height",
+            "fixed"
+          ]
+        },
+        "textCase": {
+          "enum": [
+            "upper",
+            "lower",
+            "title"
+          ]
+        },
+        "truncate": {
+          "type": "boolean"
+        },
+        "maxLines": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "src": {
+          "type": "string"
+        },
+        "iconId": {
+          "type": "string"
+        },
+        "iconStroke": {
+          "type": "number"
+        },
+        "description": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/prop"
+          }
+        },
+        "propRefs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "{ visible | text | componentId | iconId | slot: property id }"
+        },
+        "componentId": {
+          "type": "string"
+        },
+        "propValues": {
+          "type": "object"
+        },
+        "overrides": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "slots": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "nodes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/node"
+                }
+              }
+            }
+          }
+        },
+        "synced": {
+          "type": "object"
+        },
+        "exposed": {
+          "type": "boolean"
+        },
+        "deprecated": {
+          "type": "boolean"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "type": {
+            "const": "instance"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "children"
+          ]
+        }
+      }
+    },
+    "prop": {
+      "type": "object",
+      "required": [
+        "type",
+        "name"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "boolean",
+            "text",
+            "instance",
+            "icon",
+            "slot"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "default": {},
+        "defaultVar": {
+          "type": "string"
+        },
+        "preferred": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "min": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "max": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

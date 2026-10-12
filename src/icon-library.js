@@ -27,11 +27,100 @@ export function iconNameFrom(fileName) {
   return String(fileName || 'icon').replace(/\.svg$/i, '').trim().toLowerCase().replace(/[\s_]+/g, '-').replace(/[^\w-]/g, '') || 'icon';
 }
 
+// A small XML reader (no DOM, so icons import the same way in the browser and in Node): the root element
+// as { nodeName, getAttribute(name), children }. Comments, CDATA, processing instructions, doctypes and
+// text are skipped. Throws on markup that isn't well-formed.
+const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
+const decode = (v) => v.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => (e[0] === '#'
+  ? String.fromCodePoint(parseInt(e[1].toLowerCase() === 'x' ? e.slice(2) : e.slice(1), e[1].toLowerCase() === 'x' ? 16 : 10) || 0xfffd)
+  : ENTITIES[e.toLowerCase()] ?? m));
+export function parseXML(text) {
+  const s = String(text);
+  const top = { children: [] };
+  const stack = [top];
+  const bad = (why) => {
+    throw new Error(`not well-formed (${why})`);
+  };
+  const skipTo = (from, end) => {
+    const e = s.indexOf(end, from);
+    if (e < 0) bad(`missing ${end}`);
+    return e + end.length;
+  };
+  let i = 0;
+  while (i < s.length) {
+    const lt = s.indexOf('<', i);
+    if (lt < 0) break;
+    if (s.startsWith('<!--', lt)) i = skipTo(lt + 4, '-->');
+    else if (s.startsWith('<![CDATA[', lt)) i = skipTo(lt + 9, ']]>');
+    else if (s.startsWith('<?', lt)) i = skipTo(lt + 2, '?>');
+    else if (s.startsWith('<!', lt)) {
+      let j = lt + 2, depth = 0; // a doctype, maybe with an internal subset [ … ]
+      for (; j < s.length; j++) {
+        if (s[j] === '[') depth++;
+        else if (s[j] === ']') depth--;
+        else if (s[j] === '>' && depth <= 0) break;
+      }
+      i = j + 1;
+    } else if (s[lt + 1] === '/') {
+      const e = s.indexOf('>', lt);
+      if (e < 0) bad('unclosed end tag');
+      const name = s.slice(lt + 2, e).trim();
+      const open = stack.pop();
+      if (stack.length < 1 || open.nodeName !== name) bad(`</${name}> doesn’t match`);
+      i = e + 1;
+    } else {
+      let j = lt + 1;
+      const nm = /^[^\s/>]+/.exec(s.slice(j));
+      if (!nm) bad('a tag without a name');
+      j += nm[0].length;
+      const attrs = Object.create(null);
+      let selfClose = false;
+      for (;;) {
+        while (/\s/.test(s[j] || '')) j++;
+        if (j >= s.length) bad('unclosed tag');
+        if (s[j] === '>') {
+          j++;
+          break;
+        }
+        if (s[j] === '/' && s[j + 1] === '>') {
+          selfClose = true;
+          j += 2;
+          break;
+        }
+        const an = /^[^\s=/>]+/.exec(s.slice(j));
+        if (!an) bad('an attribute without a name');
+        j += an[0].length;
+        while (/\s/.test(s[j] || '')) j++;
+        if (s[j] !== '=') bad(`attribute ${an[0]} has no value`);
+        j++;
+        while (/\s/.test(s[j] || '')) j++;
+        const q = s[j];
+        if (q !== '"' && q !== "'") bad(`attribute ${an[0]} isn’t quoted`);
+        const end = s.indexOf(q, j + 1);
+        if (end < 0) bad(`attribute ${an[0]} isn’t closed`);
+        attrs[an[0]] = decode(s.slice(j + 1, end));
+        j = end + 1;
+      }
+      const el = { nodeName: nm[0], children: [], getAttribute: (a) => (a in attrs ? attrs[a] : null) };
+      stack[stack.length - 1].children.push(el);
+      if (!selfClose) stack.push(el);
+      i = j;
+    }
+  }
+  if (stack.length !== 1) bad(`<${stack[stack.length - 1].nodeName}> isn’t closed`);
+  if (top.children.length !== 1) bad(top.children.length ? 'more than one root element' : 'no root element');
+  return top.children[0];
+}
+
 // Read one SVG into an icon. Throws when it isn't an SVG or has no shapes.
 export function parseSVGIcon(text, { name = 'icon', group = '' } = {}) {
-  const doc = new DOMParser().parseFromString(String(text), 'image/svg+xml');
-  const svg = doc.documentElement;
-  if (!svg || svg.nodeName.toLowerCase() !== 'svg' || doc.querySelector('parsererror')) throw new Error('not an SVG file');
+  let svg;
+  try {
+    svg = parseXML(text);
+  } catch {
+    throw new Error('not an SVG file');
+  }
+  if (svg.nodeName.replace(/^.*:/, '').toLowerCase() !== 'svg') throw new Error('not an SVG file');
   const num = (v) => (Number.isFinite(parseFloat(v)) ? parseFloat(v) : null);
   let viewBox = (svg.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number);
   if (viewBox.length !== 4 || viewBox.some((v) => !Number.isFinite(v))) {
@@ -41,7 +130,7 @@ export function parseSVGIcon(text, { name = 'icon', group = '' } = {}) {
   const rootFill = svg.getAttribute('fill'), rootStroke = svg.getAttribute('stroke');
   let strokes = 0, fills = 0;
   const walk = (el) => [...el.children].map((child) => {
-    const tag = child.nodeName.toLowerCase();
+    const tag = child.nodeName.replace(/^.*:/, '').toLowerCase(); // "svg:path" → "path"
     if (!(tag in SHAPES)) return ''; // defs, masks, clip paths, use, style, script, text, images… are left out
     const attrs = [];
     for (const a of [...SHAPES[tag], ...SHARED]) {
@@ -59,7 +148,8 @@ export function parseSVGIcon(text, { name = 'icon', group = '' } = {}) {
     }
     const inner = tag === 'g' ? walk(child) : '';
     if (tag === 'g' && !inner) return '';
-    return tag === 'g' ? `<g ${attrs.join(' ')}>${inner}</g>` : `<${tag} ${attrs.join(' ')}/>`;
+    const at = attrs.length ? ` ${attrs.join(' ')}` : '';
+    return tag === 'g' ? `<g${at}>${inner}</g>` : `<${tag}${at}/>`;
   }).join('');
   const body = walk(svg);
   if (!body) throw new Error('no shapes found');

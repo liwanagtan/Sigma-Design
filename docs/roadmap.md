@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30), starting with Phase 20. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phase 20 is done; next is Phase 21. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -380,7 +380,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 12: Color opacity and typography tokens
 - [x] Phase 13: Linking design files to token files
 - [x] Phase 14: Export and import
-- [ ] Phase 20: File schema
+- [x] Phase 20: File schema
 - [ ] Phase 21: Project folder storage
 - [ ] Phase 22: Tokens sync skill (first milestone)
 - [ ] Phase 23: Icons sync
@@ -507,6 +507,8 @@ Part E reorders what's left: Part D's Phase 15 (code handoff) and Phase 16 (acce
 13. **Small teams first, designed for mature teams.** Pilot with two or three small teams. Keep everything config-driven so mature-team needs (permissions, audit, SSO, self-hosted git) can be added without a rewrite.
 14. **First integrations: GitHub and Notion.** Other git hosts (GitLab, Bitbucket, Azure DevOps) and trackers (Jira, Linear, GitHub Issues) come after.
 15. **The editor stays build-free.** Vanilla ES modules, no build step. Anything that can't run in a browser tab (a future CLI, server or GitHub App) lives in a separate package next to it.
+16. **Files link by path; git does the versioning.** In a project, a Sigma Design file points at `.sigma/tokens/core.sigma.json` (and its Sigma Icons and component library files) by path and uses whatever version is checked out. Publish and Accept update are for files kept only in the browser; in a project, a commit is the publish and a pull or checkout is the update.
+17. **Derived data stays out of saved files.** What Sigma can rebuild on load isn't written to the repo: instances' children, the values of token-bound properties, positions and sizes set by auto layout and text, and copies of linked files. A token change touches one line in one file.
 
 ## Data model
 
@@ -552,6 +554,7 @@ Sigma files use stable ids and a diff-friendly layout (sorted keys, one object p
 - **Diff-friendly saving:** stable key order and formatting when a file is written for a repo.
 - **Validator:** a dependency-free ES module (`tools/validate.js`) that runs in Node and in the browser. It reuses Sigma's own migrate and normalize code, and reports errors an agent can act on ("token `color-primary` aliases a missing token").
 - **Done when:** every sample file validates, a broken file gives clear errors, and the schema docs are enough for an agent to write a valid file without reading Sigma's source.
+- **What shipped:** `docs/schema/` (README and JSON Schemas for the three kinds of file and `sigma.config.json`); `src/project-format.js` (save without derived data or defaults, open and rebuild, stable JSON with small objects on one line); `src/validate.js` with `tools/validate.js`; `examples/sample-project/`. Instances keep only their choices; a resized instance keeps its size and `synced`. Saving, opening and saving again gives the same text, and a token change touches one line. SVG is now read without the DOM (`parseXML`), so icons import the same way in Node.
 
 ### Phase 21: Project folder storage
 
@@ -639,7 +642,7 @@ Unchanged from Phase 15 above: code names per platform for tokens, components an
 - **Rendering drift:** Sigma draws SVG; apps render CSS. Phase 28's comparison step and render parity address it.
 - **Scope:** Phases 28–30 are each larger than any phase so far. Ship Phases 20–23 on a real project before starting them.
 - **Pilot teams:** find two or three before Phase 26, and shape the workflow around how they actually work.
-- **Derived data in files (Phase 20):** files store a lot that Sigma can rebuild: instances' children, the resolved values of token-bound properties, and copies of the libraries a file links (tokens, components, icons). Written to a repo as-is, one token change rewrites thousands of lines across many files. Diff-friendly saving should leave derived data out and rebuild it on load.
-- **Publish vs git (decide before Phase 21):** with the repo as the source of truth, a design file could point at `.sigma/tokens/core.sigma.json` by path and use whatever version is checked out, with git doing the versioning. That drops the library copies (most of the point above). Decide what Publish and Accept update mean inside a project.
+- ~~**Derived data in files (Phase 20):**~~ Decided (16 and 17 above): files store a lot that Sigma can rebuild: instances' children, the resolved values of token-bound properties, and copies of the libraries a file links (tokens, components, icons). Written to a repo as-is, one token change rewrites thousands of lines across many files. Diff-friendly saving should leave derived data out and rebuild it on load.
+- ~~**Publish vs git (decide before Phase 21):**~~ Decided (16 above): with the repo as the source of truth, a design file could point at `.sigma/tokens/core.sigma.json` by path and use whatever version is checked out, with git doing the versioning. That drops the library copies (most of the point above). Decide what Publish and Accept update mean inside a project.
 - **A validator that runs in Node (Phase 20):** normalizing measures text with a canvas, icon import uses `DOMParser`, and `files.js` needs IndexedDB and BroadcastChannel. The validator needs a DOM-free core (schema, migrations, token resolution); layout and text measurement stay browser-only or are skipped when validating.
 - **Project folder access (Phase 21):** the File System Access API only works in Chrome and Edge. Sigma already runs from `serve.py` inside a project, so the server could read and write `.sigma/` and tell the editor when an agent or a `git pull` changes a file. That works in every browser and keeps the editor build-free; the browser API becomes the fallback.

@@ -186,6 +186,15 @@ Then open http://localhost:5173.
 
 Press `?` in the app to see every keyboard shortcut.
 
+## Sigma in a project
+
+Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.md](docs/schema/README.md) for the format, and [docs/roadmap.md](docs/roadmap.md), Part E):
+
+- **Files link by path, and git does the versioning.** A Sigma Design file lists the Sigma Tokens, Sigma Icons and component library files it uses by their paths; whatever is checked out is what it uses.
+- **Derived data is left out:** instances' layers, the values of token-bound properties, positions and sizes set by auto layout and text, and copies of linked files are rebuilt when a file opens. So is anything at its default value. A token change touches one line of one file.
+- **Check files** with `node tools/validate.js <project folder>` (Node 18+, no dependencies): it reports each problem with where it is and what to do, and exits with 1 when there are errors.
+- `examples/sample-project/` holds Sigma's sample files in this format (`node tools/build-sample-project.mjs` rebuilds them).
+
 ## Code layout
 
 | File | Purpose |
@@ -209,6 +218,10 @@ Press `?` in the app to see every keyboard shortcut.
 | `src/sample.js` | The blank Sigma Design file |
 | `src/welcome.js` | Welcome to Sigma: the guide file a new user starts with, built on the sample tokens and icons |
 | `src/sample-icons.js` | The sample Sigma Icons file (a selection of Lucide icons, outline and filled) |
+| `src/project-format.js` | Sigma files in a project: saving without derived data, opening (rebuilding it), stable JSON |
+| `src/validate.js` | Checks project files and says what's wrong (used by `tools/validate.js`) |
+| `src/project-config.js` | `sigma.config.json`: what the sync skill decided about a project |
+| `tools/validate.js` | Command-line check for a project's Sigma files |
 | `src/component-ui.js` | Figma-style component, component set, variant and instance panels; the property window; the component picker |
 | `src/history.js` | Version history panel: viewing a version read-only, restore, duplicate, named versions |
 | `src/tokens-io.js` | Token export (DTCG `tokens.json`, CSS) and import |

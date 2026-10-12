@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "sigma.config.json",
+  "description": "What the sync skill decided about a project. See docs/schema/README.md.",
+  "type": "object",
+  "required": [
+    "schema"
+  ],
+  "properties": {
+    "schema": {
+      "const": 1
+    },
+    "notes": {
+      "type": "string"
+    },
+    "stack": {
+      "type": "object",
+      "properties": {
+        "styling": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "framework": {
+          "type": "string"
+        }
+      }
+    },
+    "tokens": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sigma",
+          "sources"
+        ],
+        "properties": {
+          "sigma": {
+            "type": "string"
+          },
+          "naming": {
+            "enum": [
+              "kebab",
+              "camel",
+              "snake",
+              "path",
+              "as-is"
+            ]
+          },
+          "modes": {
+            "type": "object"
+          },
+          "map": {
+            "type": "object"
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "path",
+                "format"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "format": {
+                  "enum": [
+                    "css-variables",
+                    "scss-variables",
+                    "less-variables",
+                    "tailwind-config",
+                    "tailwind-theme",
+                    "js-theme",
+                    "ts-theme",
+                    "dtcg",
+                    "json",
+                    "other"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "icons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sigma",
+          "source"
+        ],
+        "properties": {
+          "sigma": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "output": {
+            "enum": [
+              "svg",
+              "react",
+              "vue",
+              "svelte",
+              "sprite",
+              "other"
+            ]
+          }
+        }
+      }
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sigma",
+          "source"
+        ],
+        "properties": {
+          "sigma": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sigma"
+        ],
+        "properties": {
+          "sigma": {
+            "type": "string"
+          },
+          "routes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "properties": {
+        "git": {
+          "type": "string"
+        },
+        "tracker": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "base": {
+          "type": "string"
+        },
+        "prTemplate": {
+          "type": "string"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reviewers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notion": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}
