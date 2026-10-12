@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Settings – Acme</title>
+  <link rel="stylesheet" href="src/styles/app.css">
+</head>
+<body>
+  <script type="module">
+    import { AppHeader } from './src/components/header.js';
+    import { Input } from './src/components/input.js';
+    import { Button } from './src/components/button.js';
+
+    const field = (label, input) => {
+      const el = Object.assign(document.createElement('label'), { className: 'field' });
+      el.append(Object.assign(document.createElement('span'), { className: 'field__label', textContent: label }), input);
+      return el;
+    };
+    const main = Object.assign(document.createElement('main'), { className: 'page' });
+    const form = Object.assign(document.createElement('form'), { className: 'panel' });
+    const actions = Object.assign(document.createElement('div'), { className: 'actions' });
+    actions.append(Button({ label: 'Save', icon: 'status/check' }), Button({ label: 'Delete account', variant: 'danger', icon: 'actions/trash' }));
+    form.append(field('Name', Input({ value: 'Ada Lovelace' })), field('Email', Input({ type: 'email', placeholder: 'you@example.com' })), actions);
+    main.append(Object.assign(document.createElement('h1'), { className: 'page__title', textContent: 'Settings' }), form);
+    document.body.append(AppHeader({ current: 'Settings' }), main);
+  </script>
+</body>
+</html>

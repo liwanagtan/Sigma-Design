@@ -1,6 +1,6 @@
 // Captured components → Sigma components (src/capture-to-sigma.js).
 import { test, eq, ok } from './harness.js';
-import { buildComponent, tokenIndex, compareBoxes } from '../src/capture-to-sigma.js';
+import { buildComponent, buildPage, tokenIndex, compareBoxes } from '../src/capture-to-sigma.js';
 import { defaultTokenCode } from '../src/code-names.js';
 
 const tokens = tokenIndex([{
@@ -114,4 +114,44 @@ test('capture: comparing finds layers whose size or place differ, also inside gr
   ] };
   eq(compareBoxes(sigma, capture), [{ layer: 'Card / Body', what: 'y', code: 40, sigma: 44 }], 'within 1.5px counts as the same');
   eq(compareBoxes(sigma, capture, { tolerance: 0.5 }).length, 2);
+});
+
+test('pages: matched elements become instances of the library, with their variant and property values', () => {
+  const ctx = { tokens, iconFor: () => null, componentIdFor: () => null, ids: new Set() };
+  const { node: buttons } = buildComponent({
+    name: 'Button', props: [{ name: 'Label', type: 'text' }],
+    captures: [
+      { variant: { Variant: 'Primary' }, capture: { tree: buttonCapture() } },
+      { variant: { Variant: 'Danger' }, capture: { tree: buttonCapture('rgb(220, 38, 38)') } },
+    ],
+  }, ctx);
+  const cardTree = { tag: 'section', name: 'Card', box: { x: 0, y: 0, w: 200, h: 98 }, style: style({ 'padding-top': '20px', 'padding-right': '20px', 'padding-bottom': '20px', 'padding-left': '20px' }), authored: {},
+    children: [text('Title', 'Acme', { x: 20, y: 20, w: 160, h: 20 }), { ...buttonCapture(), box: { x: 20, y: 40, w: 82, h: 38 } }] };
+  const { node: card } = buildComponent({ name: 'Card', props: [{ name: 'Title', type: 'text' }], instances: [{ layer: 'Button', component: 'Button', variant: { Variant: 'Primary' } }], captures: [{ capture: { tree: cardTree } }] },
+    { ...ctx, componentIdFor: () => buttons.children[0].id });
+  const library = [
+    { name: 'Button', node: buttons, match: { selector: '.button', variants: { Variant: { Danger: '.button--danger', Primary: '*' } }, props: { Label: 'text' } } },
+    { name: 'Card', node: card, match: { selector: '.card', props: { Title: 'text:.card__title' } } },
+  ];
+  const el = (over, matches) => ({ ...over, matches });
+  const page = { tree: {
+    tag: 'body', name: 'body', box: { x: 0, y: 0, w: 400, h: 220 }, style: style({ display: 'flex', 'flex-direction': 'column', 'row-gap': '20px', gap: '20px' }), authored: {},
+    children: [
+      el({ ...buttonCapture('rgb(220, 38, 38)'), box: { x: 0, y: 0, w: 82, h: 38 }, children: [{ tag: '#text', name: 'Text', text: 'Delete', box: { x: 13, y: 9, w: 56, h: 20 } }] }, ['.button', '.button--danger']),
+      el({ ...cardTree, box: { x: 0, y: 58, w: 400, h: 98 }, children: [
+        el(text('Card__title', 'Website', { x: 20, y: 78, w: 160, h: 20 }), ['.card__title']),
+        el({ ...buttonCapture(), box: { x: 20, y: 98, w: 82, h: 38 }, children: [{ tag: '#text', name: 'Text', text: 'Open', box: { x: 33, y: 107, w: 56, h: 20 } }] }, ['.button']),
+      ] }, ['.card']),
+      text('Note', 'Not a component', { x: 0, y: 176, w: 120, h: 20 }),
+    ],
+  } };
+  const { node, instances, loose } = buildPage(page, { name: 'Home — Desktop', tokens, iconFor: () => null, library, ids: ctx.ids });
+  eq(instances, 2);
+  const [button, cardInst] = node.children;
+  eq([button.type, button.componentId, button.propValues], ['instance', buttons.children[1].id, { 'button-label': 'Delete' }]);
+  eq([button.w, button.sizingH, button.synced], [undefined, undefined, undefined], 'a hugging instance keeps its main component’s size');
+  eq(cardInst.propValues, { 'card-title': 'Website' });
+  eq(cardInst.overrides, { Button: { propValues: { 'button-label': 'Open' } } }, 'the nested button’s label, as an override');
+  eq([cardInst.sizingH, cardInst.synced], ['fill', { sizingH: 'fixed' }], 'stretched across the column: it fills');
+  eq(loose.map((l) => [l.what, l.text]), [['text', 'Not a component']]);
 });

@@ -2,12 +2,15 @@
 // rendered (a Storybook story, a test page, the app): load it as a module, or paste it into the page through
 // a browser tool, then call
 //
-//   sigmaCapture(element, { state: 'default' | 'hover' | 'focus' | 'pressed' | 'disabled', name })
+//   sigmaCapture(element, { state: 'default' | 'hover' | 'focus' | 'pressed' | 'disabled', name, match })
+//   await sigmaCapturePage('/settings', { width: 375, match })      a whole page at a width (Phase 29)
 //
-// It returns a tree Sigma can turn into a component (tools/sigma.mjs library build): each element's box
-// (relative to the root), its computed style, the CSS it was written with (so var(--token) references are
-// kept), its text, and inline SVG. Layers are named by data-sigma-name, else aria-label, else their first
-// class, else their tag. No dependencies.
+// It returns a tree Sigma can turn into a component (tools/sigma.mjs library build) or a page (pages build):
+// each element's box (relative to the root), its computed style, the CSS it was written with (so
+// var(--token) references are kept), its text, inline SVG and image sources. Layers are named by
+// data-sigma-name, else aria-label, else their first class, else their tag. `match` is the captures'
+// manifest.json (or a list of selectors): each element lists the manifest's selectors it matches, which is
+// how pages find library components. No dependencies.
 const STYLE = [
   'display', 'flex-direction', 'flex-wrap', 'justify-content', 'align-items', 'align-self', 'flex-grow', 'gap', 'row-gap', 'column-gap',
   'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'width', 'height', 'min-width', 'max-width', 'min-height', 'max-height',
@@ -27,7 +30,7 @@ const AUTHORED = [
 ];
 const PSEUDO = { hover: ':hover', focus: ':focus', 'focus-visible': ':focus-visible', pressed: ':active' };
 
-function rulesOf(sheet, out = []) {
+function rulesOf(sheet, out, win) {
   let rules;
   try {
     rules = sheet.cssRules;
@@ -35,14 +38,14 @@ function rulesOf(sheet, out = []) {
     return out; // a stylesheet from another origin
   }
   for (const r of rules || []) {
-    if (r.styleSheet) rulesOf(r.styleSheet, out); // @import
+    if (r.styleSheet) rulesOf(r.styleSheet, out, win); // @import
     else if (r.cssRules && !r.selectorText) {
-      if (!r.media || window.matchMedia(r.media.mediaText).matches) rulesOf(r, out); // @media, @supports, @layer
+      if (!r.media || win.matchMedia(r.media.mediaText).matches) rulesOf(r, out, win); // @media, @supports, @layer
     } else if (r.selectorText) out.push(r);
   }
   return out;
 }
-const allRules = () => [...document.styleSheets].flatMap((s) => rulesOf(s));
+const allRules = (doc) => [...doc.styleSheets].flatMap((s) => rulesOf(s, [], doc.defaultView));
 
 // The CSS an element was written with: { property: text } from matching rules (in order) and its style attribute.
 function authored(el, rules, extra = []) {
@@ -100,12 +103,34 @@ function emulate(root, state, rules) {
 
 const nameOf = (el) => el.dataset?.sigmaName || el.getAttribute?.('aria-label') || (el.classList?.[0] ? el.classList[0].replace(/^[a-z]/, (c) => c.toUpperCase()) : el.tagName.toLowerCase());
 
-export function sigmaCapture(root, { state = 'default', name = null } = {}) {
-  const rules = allRules();
+// The selectors to look for: a manifest's components[].match (selector, variant and property selectors).
+function selectorsOf(match) {
+  if (!match) return [];
+  if (Array.isArray(match)) return match;
+  const out = new Set();
+  for (const c of match.components || []) {
+    const m = c.match;
+    if (!m) continue;
+    if (m.selector) out.add(m.selector);
+    for (const values of Object.values(m.variants || {})) for (const sel of Object.values(values)) if (sel !== '*') out.add(sel);
+    for (const spec of Object.values(m.props || {})) {
+      const sel = String(spec).split(':').slice(1).join(':');
+      if (sel) out.add(sel);
+    }
+  }
+  return [...out];
+}
+
+export function sigmaCapture(root, { state = 'default', name = null, match = null } = {}) {
+  const doc = root.ownerDocument;
+  const win = doc.defaultView;
+  const getComputedStyle = win.getComputedStyle.bind(win);
+  const rules = allRules(doc);
+  const selectors = selectorsOf(match);
   // Transitions would report a state's starting values; turn them (and animations) off while capturing.
-  const still = document.createElement('style');
+  const still = doc.createElement('style');
   still.textContent = '*, *::before, *::after { transition: none !important; animation: none !important; }';
-  document.head.appendChild(still);
+  doc.head.appendChild(still);
   const { undo, extra } = emulate(root, state, rules);
   try {
     const origin = root.getBoundingClientRect();
@@ -115,11 +140,19 @@ export function sigmaCapture(root, { state = 'default', name = null } = {}) {
       if (cs.display === 'none') return null;
       const node = { tag: el.tagName.toLowerCase(), name: nameOf(el), box: box(el.getBoundingClientRect()), style: {}, authored: authored(el, rules, extra) };
       for (const p of STYLE) node.style[p] = cs.getPropertyValue(p);
+      const hits = selectors.filter((sel) => {
+        try {
+          return el.matches(sel);
+        } catch {
+          return false;
+        }
+      });
+      if (hits.length) node.matches = hits;
       if (el.tagName.toLowerCase() === 'svg') {
         node.svg = el.outerHTML;
         return node;
       }
-      if (el.tagName === 'IMG') node.src = el.currentSrc || el.src;
+      if (el.tagName === 'IMG') node.src = new URL(el.currentSrc || el.src, doc.baseURI).pathname;
       if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
         node.text = el.value || el.placeholder || '';
         node.placeholder = !el.value && !!el.placeholder;
@@ -132,7 +165,7 @@ export function sigmaCapture(root, { state = 'default', name = null } = {}) {
           if (k) kids.push(k);
         } else if (child.nodeType === 3 && child.textContent.trim()) {
           // A run of text: its own box (from a range), with its parent's text style.
-          const range = document.createRange();
+          const range = doc.createRange();
           range.selectNodeContents(child);
           kids.push({ tag: '#text', name: el.dataset?.sigmaText || 'Text', text: child.textContent.replace(/\s+/g, ' ').trim(), box: box(range.getBoundingClientRect()), style: node.style, authored: node.authored });
         }
@@ -142,11 +175,38 @@ export function sigmaCapture(root, { state = 'default', name = null } = {}) {
     };
     const tree = visit(root);
     if (name) tree.name = name;
-    return { capturedAt: new Date().toISOString(), url: location.href, state, viewport: { w: innerWidth, h: innerHeight }, rootFontSize: parseFloat(getComputedStyle(document.documentElement).fontSize), tree };
+    return { capturedAt: new Date().toISOString(), url: win.location.href, state, viewport: { w: win.innerWidth, h: win.innerHeight }, rootFontSize: parseFloat(getComputedStyle(doc.documentElement).fontSize), tree };
   } finally {
     undo();
     still.remove();
   }
 }
 
-if (typeof window !== 'undefined') window.sigmaCapture = sigmaCapture;
+// A page of this app (same origin) at a width: loaded in a frame that wide, captured from its body once it
+// has loaded, its fonts are ready and it has settled. The frame is as tall as the page, so nothing scrolls.
+export async function sigmaCapturePage(url, { width = 1280, height = 800, match = null, name = null, settle = 300 } = {}) {
+  const frame = document.createElement('iframe');
+  frame.style.cssText = `position: fixed; left: -${width + 100}px; top: 0; width: ${width}px; height: ${height}px; border: 0; visibility: hidden;`;
+  const loaded = new Promise((resolve, reject) => {
+    frame.onload = resolve;
+    frame.onerror = reject;
+  });
+  frame.src = url;
+  document.body.appendChild(frame);
+  try {
+    await loaded;
+    const doc = frame.contentDocument;
+    if (!doc) throw new Error(`${url} isn’t on this page’s origin, so it can’t be captured from here`);
+    await doc.fonts?.ready;
+    await new Promise((r) => setTimeout(r, settle));
+    frame.style.height = `${Math.max(height, doc.documentElement.scrollHeight)}px`;
+    await new Promise((r) => setTimeout(r, 50));
+    const result = sigmaCapture(doc.body, { match, name });
+    result.viewport = { w: width, h: height };
+    return result;
+  } finally {
+    frame.remove();
+  }
+}
+
+if (typeof window !== 'undefined') Object.assign(window, { sigmaCapture, sigmaCapturePage });

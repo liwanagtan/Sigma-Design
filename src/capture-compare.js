@@ -25,25 +25,18 @@ function boxes(node, origin) {
   };
 }
 
-// { [component / variant]: [{ layer, what, code, sigma }] } for the components in captures/manifest.json.
-export async function compareLibrary({ captures = '.sigma/captures', tolerance = 1.5 } = {}) {
-  const manifest = await get(`${captures}/manifest.json`);
-  const project = await (await fetch('/api/project', { cache: 'no-store' })).json();
-  const files = {};
-  for (const f of project.files) files[f.path] = await get(f.path);
-  const lib = files[manifest.library];
-  if (!lib) throw new Error(`${manifest.library} isn’t in the project`);
+// The project's files, and a document from one of them laid out as the editor would (text measured, the
+// normalize pipeline run twice: instances size from their laid-out main components). `fn(doc)` runs while
+// it is the open document.
+async function withLaidOut(path, files, fn) {
   const ids = Object.fromEntries(Object.keys(files).map((p, i) => [p, `cmp-${i}`]));
-  const { doc } = fromProjectFile(lib, { path: manifest.library, resolve: (p) => (files[p] ? { fileId: ids[p], file: files[p] } : null) });
+  const { doc } = fromProjectFile(files[path], { path, resolve: (p) => (files[p] ? { fileId: ids[p], file: files[p] } : null) });
   const saved = { doc: state.doc, selection: state.selection };
-  const report = {};
   try {
     state.doc = doc;
     state.selection = [];
     reindex();
     for (const pg of doc.pages) walk(pg.children, (n) => void (n.type === 'text' && measureText(n)));
-    // The editor's normalize pipeline (this page doesn't load the editor), twice: instances size from their
-    // laid-out main components.
     for (let i = 0; i < 2; i++) {
       normalizeTokenGroups();
       syncInstances();
@@ -52,6 +45,32 @@ export async function compareLibrary({ captures = '.sigma/captures', tolerance =
       applyLayouts();
       fixGroups();
     }
+    return await fn(doc);
+  } finally {
+    state.doc = saved.doc;
+    state.selection = saved.selection;
+    reindex();
+  }
+}
+async function projectFiles() {
+  const project = await (await fetch('/api/project', { cache: 'no-store' })).json();
+  const files = {};
+  for (const f of project.files) files[f.path] = await get(f.path);
+  return files;
+}
+const exists = async (path) => (await fetch(`/api/project/file?path=${encodeURIComponent(path)}`, { cache: 'no-store' })).ok;
+const relBoxes = (node) => {
+  const b = worldBounds(node);
+  return boxes(node, { x: b.x, y: b.y });
+};
+
+// { [component / variant]: [{ layer, what, code, sigma }] } for the components in captures/manifest.json.
+export async function compareLibrary({ captures = '.sigma/captures', tolerance = 1.5, files = null } = {}) {
+  const manifest = await get(`${captures}/manifest.json`);
+  files ||= await projectFiles();
+  if (!files[manifest.library]) throw new Error(`${manifest.library} isn’t in the project`);
+  const report = {};
+  await withLaidOut(manifest.library, files, async (doc) => {
     const hosts = [];
     for (const pg of doc.pages) walk(pg.children, (n) => void ((n.type === 'component' || n.type === 'componentSet') && hosts.push(n)));
     for (const spec of manifest.components) {
@@ -64,16 +83,37 @@ export async function compareLibrary({ captures = '.sigma/captures', tolerance =
           report[key] = [{ layer: key, what: 'missing', code: 'captured', sigma: 'not in the library' }];
           continue;
         }
-        const capture = await get(`${captures}/${cap.file}`);
-        const b = worldBounds(node);
-        report[key] = compareBoxes(boxes(node, { x: b.x, y: b.y }), capture.tree, { tolerance });
+        report[key] = compareBoxes(relBoxes(node), (await get(`${captures}/${cap.file}`)).tree, { tolerance });
       }
     }
-  } finally {
-    state.doc = saved.doc;
-    state.selection = saved.selection;
-    reindex();
-  }
+  });
+  return report;
+}
+
+// The same for the pages in captures/pages.json (Phase 29): { [page — breakpoint]: [...] }.
+export async function comparePages({ captures = '.sigma/captures', tolerance = 1.5, files = null } = {}) {
+  if (!(await exists(`${captures}/pages.json`))) return {};
+  const spec = await get(`${captures}/pages.json`);
+  files ||= await projectFiles();
+  if (!files[spec.file]) throw new Error(`${spec.file} isn’t in the project (run pages build)`);
+  const slug = (x) => String(x).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const report = {};
+  await withLaidOut(spec.file, files, async (doc) => {
+    for (const page of spec.pages) {
+      for (const bp of spec.breakpoints) {
+        const key = `${page.name} — ${bp.name}`;
+        const file = `${captures}/page-${slug(page.name)}-${slug(bp.name)}.json`;
+        if (!(await exists(file))) continue;
+        const frame = doc.pages.find((p) => p.name === page.name)?.children.find((c) => c.name === key);
+        if (!frame) {
+          report[key] = [{ layer: key, what: 'missing', code: 'captured', sigma: 'not in the file' }];
+          continue;
+        }
+        const capture = (await get(file)).tree;
+        report[key] = compareBoxes(relBoxes(frame), { ...capture, name: key }, { tolerance });
+      }
+    }
+  });
   return report;
 }
 
@@ -90,6 +130,6 @@ export function formatComparison(report) {
     lines.push(`✗ ${key}`);
     for (const d of diffs) lines.push(`    ${d.layer}: ${d.what} ${d.sigma} in Sigma, ${d.code} in code`);
   }
-  lines.push(`${Object.keys(report).length - bad} of ${Object.keys(report).length} match the code${bad ? `; fix the ${bad} that don’t (in the captures’ manifest, or in the library file) and build again` : ''}.`);
+  lines.push(`${Object.keys(report).length - bad} of ${Object.keys(report).length} match the code${bad ? `; fix the ${bad} that don’t (in the captures’ manifest, the capture page or the Sigma file) and build again` : ''}.`);
   return lines.join('\n');
 }

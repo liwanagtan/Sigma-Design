@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phases 20–25 are done, Phase 26 is built (its real GitHub/Notion run is waiting), Phases 27 and 28 are done; next is Phase 29. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phases 20–25 are done, Phase 26 is built (its real GitHub/Notion run is waiting), Phases 27–29 are done; next is Phase 30. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -389,7 +389,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [ ] Phase 26: Team workflow (GitHub and Notion)
 - [x] Phase 27: Comments
 - [x] Phase 28: Component library onboarding
-- [ ] Phase 29: Page onboarding
+- [x] Phase 29: Page onboarding
 - [ ] Phase 30: Design to code for components
 
 ## Follow-ups
@@ -620,6 +620,7 @@ Unchanged from Phase 15 above: code names per platform for tokens, components an
 
 - **The skill builds page files** by visiting the app's routes, capturing each page, and rebuilding it from library instances (not loose shapes), one frame per page and breakpoint captured.
 - **Done when:** a few real pages arrive in Sigma made mostly of library instances, and the unmatched parts are listed for review.
+- **What shipped:** `match` rules in the captures' manifest (a selector per component, selectors per variant value, and where each property's value is: `text`, `has:`, `icon:`); `sigmaCapturePage(route, { width, match })` in `tools/capture/capture.js` (the route in a same-origin frame at the breakpoint's width, each element listing the selectors it matches); `.sigma/captures/pages.json` (routes and breakpoints); `tools/sigma.mjs pages build` (a Sigma page per route, a frame per breakpoint; matched elements become instances with their variant and property values, components inside them set through overrides, sizes kept only where they differ from the main component; `<img>` icons become icon layers; everything not from the library listed per frame); the compare page compares pages too. Fixed on the way: auto layout now re-runs when a text re-wraps after its width changed (a hugging group above it kept the old height). Verified on `examples/css-app`, which now has real pages built from shared components: Projects and Settings at 1280 and 375 wide arrive as 5 and 4 library instances each, with the header and the settings panel listed as not from the library, and all 4 frames match the code. The skill's steps are in `skills/sigma-sync/reference/pages.md`.
 
 ### Phase 30: Design to code for components
 

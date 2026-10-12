@@ -87,6 +87,18 @@ test('layout: fill children share the leftover width', () => {
   eq([a.w, b.w], [150, 150]);
 });
 
+test('layout: a group hugging a text that wraps once it fills a narrower column grows with it', () => {
+  const words = 'words that fit on one line at four hundred pixels but not at one hundred';
+  const text = createNode('text', { text: words, w: 400, sizingH: 'fill', autoResize: 'height', fontSize: 16 });
+  const group = createNode('frame', { w: 400, layout: { ...DEFAULT_LAYOUT, mode: 'vertical', gap: 0 }, sizingH: 'fill', sizingV: 'hug', children: [text] });
+  const column = createNode('frame', { w: 120, h: 400, layout: { ...DEFAULT_LAYOUT, mode: 'vertical', gap: 0 }, children: [group] });
+  useDoc([column]);
+  applyLayouts();
+  eq(text.w, 120);
+  ok(text.h > 30, 'the text wraps');
+  eq(group.h, text.h, 'the group was sized after the text wrapped');
+});
+
 test('pipeline: normalizeDocument is a no-op without a document', () => {
   state.doc = null;
   normalizeDocument();

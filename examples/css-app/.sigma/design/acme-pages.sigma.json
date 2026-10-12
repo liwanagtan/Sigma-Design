@@ -1,0 +1,1371 @@
+{
+  "format": 1,
+  "kind": "design",
+  "name": "Acme pages",
+  "uses": {
+    "components": [".sigma/design/acme-library.sigma.json"],
+    "tokens": [".sigma/tokens/acme.sigma.json"],
+    "icons": [".sigma/icons/acme-icons.sigma.json"]
+  },
+  "pages": [
+    {
+      "id": "projects",
+      "name": "Projects",
+      "background": "#F5F5F5",
+      "children": [
+        {
+          "id": "projects-desktop-root",
+          "type": "frame",
+          "name": "Projects — Desktop",
+          "bindings": { "fills.0.color": "surface-sunken" },
+          "clip": false,
+          "fills": [{}],
+          "h": 419.5,
+          "layout": {
+            "alignC": "start",
+            "alignP": "start",
+            "gap": 0,
+            "mode": "vertical",
+            "pb": 0,
+            "pl": 0,
+            "pr": 0,
+            "pt": 0,
+            "spacing": "packed"
+          },
+          "sizingH": "fixed",
+          "sizingV": "hug",
+          "w": 1280,
+          "x": 0,
+          "y": 0,
+          "children": [
+            {
+              "id": "projects-desktop-app-header-0",
+              "type": "frame",
+              "name": "App-header",
+              "bindings": {
+                "effects.0": "shadow-raised",
+                "fills.0.color": "surface",
+                "layout.gap": "space-4",
+                "layout.pb": "space-2",
+                "layout.pl": "space-8",
+                "layout.pr": "space-8",
+                "layout.pt": "space-2"
+              },
+              "clip": false,
+              "effects": [
+                {
+                  "type": "drop-shadow",
+                  "blur": 8,
+                  "color": "#000000",
+                  "opacity": 0.1,
+                  "spread": 0,
+                  "x": 0,
+                  "y": 2
+                }
+              ],
+              "fills": [{}],
+              "h": 48,
+              "layout": {
+                "alignC": "center",
+                "alignP": "start",
+                "gap": 20,
+                "mode": "horizontal",
+                "pb": 8,
+                "pl": 32,
+                "pr": 32,
+                "pt": 8,
+                "spacing": "auto"
+              },
+              "sizingH": "fill",
+              "sizingV": "hug",
+              "w": 1280,
+              "children": [
+                {
+                  "id": "projects-desktop-app-header-0-app-header-start-0",
+                  "type": "frame",
+                  "name": "App-header__start",
+                  "bindings": { "layout.gap": "space-8" },
+                  "clip": false,
+                  "h": 30,
+                  "layout": {
+                    "alignC": "center",
+                    "alignP": "start",
+                    "gap": 32,
+                    "mode": "horizontal",
+                    "pb": 0,
+                    "pl": 0,
+                    "pr": 0,
+                    "pt": 0,
+                    "spacing": "packed"
+                  },
+                  "sizingH": "hug",
+                  "sizingV": "hug",
+                  "w": 223.66,
+                  "children": [
+                    {
+                      "id": "projects-desktop-app-header-0-app-header-start-0-app-header-brand-0",
+                      "type": "text",
+                      "name": "App-header__brand",
+                      "autoResize": "width",
+                      "bindings": {
+                        "fills.0.color": "text-primary",
+                        "fontFamily": "font-family-base",
+                        "fontWeight": "font-weight-bold"
+                      },
+                      "fills": [{}],
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": 600,
+                      "h": 30,
+                      "letterSpacing": 0,
+                      "lineHeight": 150,
+                      "text": "Acme",
+                      "w": 52.59
+                    },
+                    {
+                      "id": "projects-desktop-app-header-0-app-header-start-0-app-header-nav-1",
+                      "type": "frame",
+                      "name": "App-header__nav",
+                      "bindings": { "layout.gap": "space-4" },
+                      "clip": false,
+                      "h": 24,
+                      "layout": {
+                        "alignC": "start",
+                        "alignP": "start",
+                        "gap": 20,
+                        "mode": "horizontal",
+                        "pb": 0,
+                        "pl": 0,
+                        "pr": 0,
+                        "pt": 0,
+                        "spacing": "packed"
+                      },
+                      "sizingH": "hug",
+                      "sizingV": "hug",
+                      "w": 139.08,
+                      "children": [
+                        {
+                          "id": "projects-desktop-app-header-0-app-header-start-0-app-header-nav-1-app-header-link-0",
+                          "type": "text",
+                          "name": "App-header__link",
+                          "autoResize": "width",
+                          "bindings": {
+                            "fills.0.color": "text-secondary",
+                            "fontFamily": "font-family-base",
+                            "fontSize": "font-size-body"
+                          },
+                          "fills": [{}],
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": 400,
+                          "h": 24,
+                          "letterSpacing": 0,
+                          "lineHeight": 150,
+                          "text": "Projects",
+                          "w": 59.2
+                        },
+                        {
+                          "id": "projects-desktop-app-header-0-app-header-start-0-app-header-nav-1-app-header-link-1",
+                          "type": "text",
+                          "name": "App-header__link",
+                          "autoResize": "width",
+                          "bindings": {
+                            "fills.0.color": "text-secondary",
+                            "fontFamily": "font-family-base",
+                            "fontSize": "font-size-body"
+                          },
+                          "fills": [{}],
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": 400,
+                          "h": 24,
+                          "letterSpacing": 0,
+                          "lineHeight": 150,
+                          "text": "Settings",
+                          "w": 59.88
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "projects-desktop-app-header-0-button-1",
+                  "type": "instance",
+                  "name": "Button",
+                  "componentId": "button-variant-primary-state-default",
+                  "propValues": { "button-icon": "actions-plus", "button-label": "New project" }
+                }
+              ]
+            },
+            {
+              "id": "projects-desktop-page-1",
+              "type": "frame",
+              "name": "Page",
+              "bindings": {
+                "layout.gap": "space-4",
+                "layout.pb": "space-8",
+                "layout.pl": "space-8",
+                "layout.pr": "space-8",
+                "layout.pt": "space-8"
+              },
+              "clip": false,
+              "h": 371.5,
+              "layout": {
+                "alignC": "start",
+                "alignP": "start",
+                "gap": 20,
+                "mode": "vertical",
+                "pb": 32,
+                "pl": 32,
+                "pr": 32,
+                "pt": 32,
+                "spacing": "packed"
+              },
+              "sizingH": "fixed",
+              "sizingV": "hug",
+              "w": 1024,
+              "children": [
+                {
+                  "id": "projects-desktop-page-1-page-title-0",
+                  "type": "text",
+                  "name": "Page__title",
+                  "autoResize": "height",
+                  "bindings": { "fills.0.color": "text-primary", "fontFamily": "font-family-base" },
+                  "fills": [{}],
+                  "fontFamily": "Inter",
+                  "fontSize": 32,
+                  "fontWeight": 700,
+                  "h": 48,
+                  "letterSpacing": 0,
+                  "lineHeight": 150,
+                  "sizingH": "fill",
+                  "text": "Projects",
+                  "w": 960
+                },
+                {
+                  "id": "projects-desktop-page-1-input-1",
+                  "type": "instance",
+                  "name": "Input",
+                  "componentId": "input-state-default"
+                },
+                {
+                  "id": "projects-desktop-page-1-grid-2",
+                  "type": "frame",
+                  "name": "Grid",
+                  "clip": false,
+                  "h": 177.5,
+                  "sizingH": "fill",
+                  "w": 960,
+                  "children": [
+                    {
+                      "id": "projects-desktop-page-1-grid-2-card-0",
+                      "type": "instance",
+                      "name": "Card",
+                      "componentId": "card",
+                      "h": 177.5,
+                      "overrides": {
+                        "Button": {
+                          "propValues": { "button-label": "Open", "button-show-icon": false }
+                        }
+                      },
+                      "propValues": {
+                        "card-body": "The marketing site: pages, blog and docs.",
+                        "card-title": "Website"
+                      },
+                      "sizingV": "fixed",
+                      "synced": { "h": 177.5, "sizingV": "hug", "w": 360 },
+                      "w": 306.66,
+                      "x": 0,
+                      "y": 0
+                    },
+                    {
+                      "id": "projects-desktop-page-1-grid-2-card-1",
+                      "type": "instance",
+                      "name": "Card",
+                      "componentId": "card",
+                      "h": 177.5,
+                      "overrides": {
+                        "Button": {
+                          "propValues": { "button-label": "Open", "button-show-icon": false }
+                        }
+                      },
+                      "propValues": {
+                        "card-body": "iOS and Android, sharing the design tokens.",
+                        "card-title": "Mobile app"
+                      },
+                      "sizingV": "fixed",
+                      "synced": { "h": 177.5, "sizingV": "hug", "w": 360 },
+                      "w": 306.66,
+                      "x": 326.66,
+                      "y": 0
+                    },
+                    {
+                      "id": "projects-desktop-page-1-grid-2-card-2",
+                      "type": "instance",
+                      "name": "Card",
+                      "componentId": "card",
+                      "h": 177.5,
+                      "overrides": {
+                        "Button": {
+                          "propValues": { "button-label": "Open", "button-show-icon": false }
+                        }
+                      },
+                      "propValues": {
+                        "card-body": "Tokens, icons and components, kept in sync with Sigma.",
+                        "card-title": "Design system"
+                      },
+                      "sizingV": "fixed",
+                      "synced": { "h": 177.5, "sizingV": "hug", "w": 360 },
+                      "w": 306.66,
+                      "x": 653.33,
+                      "y": 0
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "projects-mobile-root",
+          "type": "frame",
+          "name": "Projects — Mobile",
+          "bindings": { "fills.0.color": "surface-sunken" },
+          "clip": false,
+          "fills": [{}],
+          "h": 790.5,
+          "layout": {
+            "alignC": "start",
+            "alignP": "start",
+            "gap": 0,
+            "mode": "vertical",
+            "pb": 0,
+            "pl": 0,
+            "pr": 0,
+            "pt": 0,
+            "spacing": "packed"
+          },
+          "sizingH": "fixed",
+          "sizingV": "hug",
+          "w": 375,
+          "x": 1360,
+          "y": 0,
+          "children": [
+            {
+              "id": "projects-mobile-app-header-0",
+              "type": "frame",
+              "name": "App-header",
+              "bindings": {
+                "effects.0": "shadow-raised",
+                "fills.0.color": "surface",
+                "layout.gap": "space-4",
+                "layout.pb": "space-2",
+                "layout.pl": "space-4",
+                "layout.pr": "space-4",
+                "layout.pt": "space-2"
+              },
+              "clip": false,
+              "effects": [
+                {
+                  "type": "drop-shadow",
+                  "blur": 8,
+                  "color": "#000000",
+                  "opacity": 0.1,
+                  "spread": 0,
+                  "x": 0,
+                  "y": 2
+                }
+              ],
+              "fills": [{}],
+              "h": 48,
+              "layout": {
+                "alignC": "center",
+                "alignP": "start",
+                "gap": 20,
+                "mode": "horizontal",
+                "pb": 8,
+                "pl": 20,
+                "pr": 20,
+                "pt": 8,
+                "spacing": "auto"
+              },
+              "sizingH": "fill",
+              "sizingV": "hug",
+              "w": 375,
+              "children": [
+                {
+                  "id": "projects-mobile-app-header-0-app-header-start-0",
+                  "type": "frame",
+                  "name": "App-header__start",
+                  "bindings": { "layout.gap": "space-8" },
+                  "clip": false,
+                  "h": 30,
+                  "layout": {
+                    "alignC": "center",
+                    "alignP": "start",
+                    "gap": 32,
+                    "mode": "horizontal",
+                    "pb": 0,
+                    "pl": 0,
+                    "pr": 0,
+                    "pt": 0,
+                    "spacing": "packed"
+                  },
+                  "sizingH": "hug",
+                  "sizingV": "hug",
+                  "w": 52.59,
+                  "children": [
+                    {
+                      "id": "projects-mobile-app-header-0-app-header-start-0-app-header-brand-0",
+                      "type": "text",
+                      "name": "App-header__brand",
+                      "autoResize": "width",
+                      "bindings": {
+                        "fills.0.color": "text-primary",
+                        "fontFamily": "font-family-base",
+                        "fontWeight": "font-weight-bold"
+                      },
+                      "fills": [{}],
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": 600,
+                      "h": 30,
+                      "letterSpacing": 0,
+                      "lineHeight": 150,
+                      "text": "Acme",
+                      "w": 52.59
+                    }
+                  ]
+                },
+                {
+                  "id": "projects-mobile-app-header-0-button-1",
+                  "type": "instance",
+                  "name": "Button",
+                  "componentId": "button-variant-primary-state-default",
+                  "propValues": { "button-icon": "actions-plus", "button-label": "New project" }
+                }
+              ]
+            },
+            {
+              "id": "projects-mobile-page-1",
+              "type": "frame",
+              "name": "Page",
+              "bindings": {
+                "layout.gap": "space-4",
+                "layout.pb": "space-4",
+                "layout.pl": "space-4",
+                "layout.pr": "space-4",
+                "layout.pt": "space-4"
+              },
+              "clip": false,
+              "h": 742.5,
+              "layout": {
+                "alignC": "start",
+                "alignP": "start",
+                "gap": 20,
+                "mode": "vertical",
+                "pb": 20,
+                "pl": 20,
+                "pr": 20,
+                "pt": 20,
+                "spacing": "packed"
+              },
+              "sizingH": "fill",
+              "sizingV": "hug",
+              "w": 375,
+              "children": [
+                {
+                  "id": "projects-mobile-page-1-page-title-0",
+                  "type": "text",
+                  "name": "Page__title",
+                  "autoResize": "height",
+                  "bindings": { "fills.0.color": "text-primary", "fontFamily": "font-family-base" },
+                  "fills": [{}],
+                  "fontFamily": "Inter",
+                  "fontSize": 32,
+                  "fontWeight": 700,
+                  "h": 48,
+                  "letterSpacing": 0,
+                  "lineHeight": 150,
+                  "sizingH": "fill",
+                  "text": "Projects",
+                  "w": 335
+                },
+                {
+                  "id": "projects-mobile-page-1-input-1",
+                  "type": "instance",
+                  "name": "Input",
+                  "componentId": "input-state-default"
+                },
+                {
+                  "id": "projects-mobile-page-1-grid-2",
+                  "type": "frame",
+                  "name": "Grid",
+                  "bindings": { "layout.gap": "space-4" },
+                  "clip": false,
+                  "h": 572.5,
+                  "layout": {
+                    "alignC": "start",
+                    "alignP": "start",
+                    "gap": 20,
+                    "mode": "vertical",
+                    "pb": 0,
+                    "pl": 0,
+                    "pr": 0,
+                    "pt": 0,
+                    "spacing": "packed"
+                  },
+                  "sizingH": "fill",
+                  "sizingV": "hug",
+                  "w": 335,
+                  "children": [
+                    {
+                      "id": "projects-mobile-page-1-grid-2-card-0",
+                      "type": "instance",
+                      "name": "Card",
+                      "componentId": "card",
+                      "overrides": {
+                        "Button": {
+                          "propValues": { "button-label": "Open", "button-show-icon": false }
+                        }
+                      },
+                      "propValues": {
+                        "card-body": "The marketing site: pages, blog and docs.",
+                        "card-title": "Website"
+                      },
+                      "sizingH": "fill",
+                      "synced": { "sizingH": "fixed" }
+                    },
+                    {
+                      "id": "projects-mobile-page-1-grid-2-card-1",
+                      "type": "instance",
+                      "name": "Card",
+                      "componentId": "card",
+                      "overrides": {
+                        "Button": {
+                          "propValues": { "button-label": "Open", "button-show-icon": false }
+                        }
+                      },
+                      "propValues": {
+                        "card-body": "iOS and Android, sharing the design tokens.",
+                        "card-title": "Mobile app"
+                      },
+                      "sizingH": "fill",
+                      "synced": { "sizingH": "fixed" }
+                    },
+                    {
+                      "id": "projects-mobile-page-1-grid-2-card-2",
+                      "type": "instance",
+                      "name": "Card",
+                      "componentId": "card",
+                      "overrides": {
+                        "Button": {
+                          "propValues": { "button-label": "Open", "button-show-icon": false }
+                        }
+                      },
+                      "propValues": {
+                        "card-body": "Tokens, icons and components, kept in sync with Sigma.",
+                        "card-title": "Design system"
+                      },
+                      "sizingH": "fill",
+                      "synced": { "sizingH": "fixed" }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "name": "Settings",
+      "background": "#F5F5F5",
+      "children": [
+        {
+          "id": "settings-desktop-root",
+          "type": "frame",
+          "name": "Settings — Desktop",
+          "bindings": { "fills.0.color": "surface-sunken" },
+          "clip": false,
+          "fills": [{}],
+          "h": 430,
+          "layout": {
+            "alignC": "start",
+            "alignP": "start",
+            "gap": 0,
+            "mode": "vertical",
+            "pb": 0,
+            "pl": 0,
+            "pr": 0,
+            "pt": 0,
+            "spacing": "packed"
+          },
+          "sizingH": "fixed",
+          "sizingV": "hug",
+          "w": 1280,
+          "x": 0,
+          "y": 0,
+          "children": [
+            {
+              "id": "settings-desktop-app-header-0",
+              "type": "frame",
+              "name": "App-header",
+              "bindings": {
+                "effects.0": "shadow-raised",
+                "fills.0.color": "surface",
+                "layout.gap": "space-4",
+                "layout.pb": "space-2",
+                "layout.pl": "space-8",
+                "layout.pr": "space-8",
+                "layout.pt": "space-2"
+              },
+              "clip": false,
+              "effects": [
+                {
+                  "type": "drop-shadow",
+                  "blur": 8,
+                  "color": "#000000",
+                  "opacity": 0.1,
+                  "spread": 0,
+                  "x": 0,
+                  "y": 2
+                }
+              ],
+              "fills": [{}],
+              "h": 46,
+              "layout": {
+                "alignC": "center",
+                "alignP": "start",
+                "gap": 20,
+                "mode": "horizontal",
+                "pb": 8,
+                "pl": 32,
+                "pr": 32,
+                "pt": 8,
+                "spacing": "auto"
+              },
+              "sizingH": "fill",
+              "sizingV": "hug",
+              "w": 1280,
+              "children": [
+                {
+                  "id": "settings-desktop-app-header-0-app-header-start-0",
+                  "type": "frame",
+                  "name": "App-header__start",
+                  "bindings": { "layout.gap": "space-8" },
+                  "clip": false,
+                  "h": 30,
+                  "layout": {
+                    "alignC": "center",
+                    "alignP": "start",
+                    "gap": 32,
+                    "mode": "horizontal",
+                    "pb": 0,
+                    "pl": 0,
+                    "pr": 0,
+                    "pt": 0,
+                    "spacing": "packed"
+                  },
+                  "sizingH": "hug",
+                  "sizingV": "hug",
+                  "w": 223.66,
+                  "children": [
+                    {
+                      "id": "settings-desktop-app-header-0-app-header-start-0-app-header-brand-0",
+                      "type": "text",
+                      "name": "App-header__brand",
+                      "autoResize": "width",
+                      "bindings": {
+                        "fills.0.color": "text-primary",
+                        "fontFamily": "font-family-base",
+                        "fontWeight": "font-weight-bold"
+                      },
+                      "fills": [{}],
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": 600,
+                      "h": 30,
+                      "letterSpacing": 0,
+                      "lineHeight": 150,
+                      "text": "Acme",
+                      "w": 52.59
+                    },
+                    {
+                      "id": "settings-desktop-app-header-0-app-header-start-0-app-header-nav-1",
+                      "type": "frame",
+                      "name": "App-header__nav",
+                      "bindings": { "layout.gap": "space-4" },
+                      "clip": false,
+                      "h": 24,
+                      "layout": {
+                        "alignC": "start",
+                        "alignP": "start",
+                        "gap": 20,
+                        "mode": "horizontal",
+                        "pb": 0,
+                        "pl": 0,
+                        "pr": 0,
+                        "pt": 0,
+                        "spacing": "packed"
+                      },
+                      "sizingH": "hug",
+                      "sizingV": "hug",
+                      "w": 139.08,
+                      "children": [
+                        {
+                          "id": "settings-desktop-app-header-0-app-header-start-0-app-header-nav-1-app-header-link-0",
+                          "type": "text",
+                          "name": "App-header__link",
+                          "autoResize": "width",
+                          "bindings": {
+                            "fills.0.color": "text-secondary",
+                            "fontFamily": "font-family-base",
+                            "fontSize": "font-size-body"
+                          },
+                          "fills": [{}],
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": 400,
+                          "h": 24,
+                          "letterSpacing": 0,
+                          "lineHeight": 150,
+                          "text": "Projects",
+                          "w": 59.2
+                        },
+                        {
+                          "id": "settings-desktop-app-header-0-app-header-start-0-app-header-nav-1-app-header-link-1",
+                          "type": "text",
+                          "name": "App-header__link",
+                          "autoResize": "width",
+                          "bindings": {
+                            "fills.0.color": "text-secondary",
+                            "fontFamily": "font-family-base",
+                            "fontSize": "font-size-body"
+                          },
+                          "fills": [{}],
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": 400,
+                          "h": 24,
+                          "letterSpacing": 0,
+                          "lineHeight": 150,
+                          "text": "Settings",
+                          "w": 59.88
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "settings-desktop-page-1",
+              "type": "frame",
+              "name": "Page",
+              "bindings": {
+                "layout.gap": "space-4",
+                "layout.pb": "space-8",
+                "layout.pl": "space-8",
+                "layout.pr": "space-8",
+                "layout.pt": "space-8"
+              },
+              "clip": false,
+              "h": 384,
+              "layout": {
+                "alignC": "start",
+                "alignP": "start",
+                "gap": 20,
+                "mode": "vertical",
+                "pb": 32,
+                "pl": 32,
+                "pr": 32,
+                "pt": 32,
+                "spacing": "packed"
+              },
+              "sizingH": "fixed",
+              "sizingV": "hug",
+              "w": 1024,
+              "children": [
+                {
+                  "id": "settings-desktop-page-1-page-title-0",
+                  "type": "text",
+                  "name": "Page__title",
+                  "autoResize": "height",
+                  "bindings": { "fills.0.color": "text-primary", "fontFamily": "font-family-base" },
+                  "fills": [{}],
+                  "fontFamily": "Inter",
+                  "fontSize": 32,
+                  "fontWeight": 700,
+                  "h": 48,
+                  "letterSpacing": 0,
+                  "lineHeight": 150,
+                  "sizingH": "fill",
+                  "text": "Settings",
+                  "w": 960
+                },
+                {
+                  "id": "settings-desktop-page-1-panel-1",
+                  "type": "frame",
+                  "name": "Panel",
+                  "bindings": {
+                    "effects.0": "shadow-raised",
+                    "fills.0.color": "surface",
+                    "layout.gap": "space-4",
+                    "layout.pb": "space-4",
+                    "layout.pl": "space-4",
+                    "layout.pr": "space-4",
+                    "layout.pt": "space-4",
+                    "radius": "radius-md"
+                  },
+                  "clip": false,
+                  "effects": [
+                    {
+                      "type": "drop-shadow",
+                      "blur": 8,
+                      "color": "#000000",
+                      "opacity": 0.1,
+                      "spread": 0,
+                      "x": 0,
+                      "y": 2
+                    }
+                  ],
+                  "fills": [{}],
+                  "h": 252,
+                  "layout": {
+                    "alignC": "start",
+                    "alignP": "start",
+                    "gap": 20,
+                    "mode": "vertical",
+                    "pb": 20,
+                    "pl": 20,
+                    "pr": 20,
+                    "pt": 20,
+                    "spacing": "packed"
+                  },
+                  "radius": 8,
+                  "sizingH": "fill",
+                  "sizingV": "hug",
+                  "w": 960,
+                  "children": [
+                    {
+                      "id": "settings-desktop-page-1-panel-1-field-0",
+                      "type": "frame",
+                      "name": "Field",
+                      "bindings": { "layout.gap": "space-1" },
+                      "clip": false,
+                      "h": 70,
+                      "layout": {
+                        "alignC": "start",
+                        "alignP": "start",
+                        "gap": 4,
+                        "mode": "vertical",
+                        "pb": 0,
+                        "pl": 0,
+                        "pr": 0,
+                        "pt": 0,
+                        "spacing": "packed"
+                      },
+                      "sizingH": "fill",
+                      "sizingV": "hug",
+                      "w": 920,
+                      "children": [
+                        {
+                          "id": "settings-desktop-page-1-panel-1-field-0-field-label-0",
+                          "type": "text",
+                          "name": "Field__label",
+                          "autoResize": "height",
+                          "bindings": {
+                            "fills.0.color": "text-primary",
+                            "fontFamily": "font-family-base",
+                            "fontSize": "font-size-body",
+                            "fontWeight": "font-weight-bold"
+                          },
+                          "fills": [{}],
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": 600,
+                          "h": 24,
+                          "letterSpacing": 0,
+                          "lineHeight": 150,
+                          "sizingH": "fill",
+                          "text": "Name",
+                          "w": 920
+                        },
+                        {
+                          "id": "settings-desktop-page-1-panel-1-field-0-input-1",
+                          "type": "instance",
+                          "name": "Input",
+                          "componentId": "input-state-default",
+                          "propValues": { "input-placeholder": "Ada Lovelace" },
+                          "sizingH": "fill",
+                          "synced": { "sizingH": "fixed" }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "settings-desktop-page-1-panel-1-field-1",
+                      "type": "frame",
+                      "name": "Field",
+                      "bindings": { "layout.gap": "space-1" },
+                      "clip": false,
+                      "h": 70,
+                      "layout": {
+                        "alignC": "start",
+                        "alignP": "start",
+                        "gap": 4,
+                        "mode": "vertical",
+                        "pb": 0,
+                        "pl": 0,
+                        "pr": 0,
+                        "pt": 0,
+                        "spacing": "packed"
+                      },
+                      "sizingH": "fill",
+                      "sizingV": "hug",
+                      "w": 920,
+                      "children": [
+                        {
+                          "id": "settings-desktop-page-1-panel-1-field-1-field-label-0",
+                          "type": "text",
+                          "name": "Field__label",
+                          "autoResize": "height",
+                          "bindings": {
+                            "fills.0.color": "text-primary",
+                            "fontFamily": "font-family-base",
+                            "fontSize": "font-size-body",
+                            "fontWeight": "font-weight-bold"
+                          },
+                          "fills": [{}],
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": 600,
+                          "h": 24,
+                          "letterSpacing": 0,
+                          "lineHeight": 150,
+                          "sizingH": "fill",
+                          "text": "Email",
+                          "w": 920
+                        },
+                        {
+                          "id": "settings-desktop-page-1-panel-1-field-1-input-1",
+                          "type": "instance",
+                          "name": "Input",
+                          "componentId": "input-state-default",
+                          "propValues": { "input-placeholder": "you@example.com" },
+                          "sizingH": "fill",
+                          "synced": { "sizingH": "fixed" }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "settings-desktop-page-1-panel-1-actions-2",
+                      "type": "frame",
+                      "name": "Actions",
+                      "bindings": { "layout.gap": "space-2" },
+                      "clip": false,
+                      "h": 32,
+                      "layout": {
+                        "alignC": "start",
+                        "alignP": "start",
+                        "gap": 8,
+                        "mode": "horizontal",
+                        "pb": 0,
+                        "pl": 0,
+                        "pr": 0,
+                        "pt": 0,
+                        "spacing": "packed"
+                      },
+                      "sizingH": "fill",
+                      "sizingV": "hug",
+                      "w": 920,
+                      "children": [
+                        {
+                          "id": "settings-desktop-page-1-panel-1-actions-2-button-0",
+                          "type": "instance",
+                          "name": "Button",
+                          "componentId": "button-variant-primary-state-default",
+                          "propValues": { "button-icon": "status-check", "button-label": "Save" }
+                        },
+                        {
+                          "id": "settings-desktop-page-1-panel-1-actions-2-button-1",
+                          "type": "instance",
+                          "name": "Button",
+                          "componentId": "button-variant-danger-state-default",
+                          "propValues": {
+                            "button-icon": "actions-trash",
+                            "button-label": "Delete account"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "settings-mobile-root",
+          "type": "frame",
+          "name": "Settings — Mobile",
+          "bindings": { "fills.0.color": "surface-sunken" },
+          "clip": false,
+          "fills": [{}],
+          "h": 406,
+          "layout": {
+            "alignC": "start",
+            "alignP": "start",
+            "gap": 0,
+            "mode": "vertical",
+            "pb": 0,
+            "pl": 0,
+            "pr": 0,
+            "pt": 0,
+            "spacing": "packed"
+          },
+          "sizingH": "fixed",
+          "sizingV": "hug",
+          "w": 375,
+          "x": 1360,
+          "y": 0,
+          "children": [
+            {
+              "id": "settings-mobile-app-header-0",
+              "type": "frame",
+              "name": "App-header",
+              "bindings": {
+                "effects.0": "shadow-raised",
+                "fills.0.color": "surface",
+                "layout.gap": "space-4",
+                "layout.pb": "space-2",
+                "layout.pl": "space-4",
+                "layout.pr": "space-4",
+                "layout.pt": "space-2"
+              },
+              "clip": false,
+              "effects": [
+                {
+                  "type": "drop-shadow",
+                  "blur": 8,
+                  "color": "#000000",
+                  "opacity": 0.1,
+                  "spread": 0,
+                  "x": 0,
+                  "y": 2
+                }
+              ],
+              "fills": [{}],
+              "h": 46,
+              "layout": {
+                "alignC": "center",
+                "alignP": "start",
+                "gap": 20,
+                "mode": "horizontal",
+                "pb": 8,
+                "pl": 20,
+                "pr": 20,
+                "pt": 8,
+                "spacing": "auto"
+              },
+              "sizingH": "fill",
+              "sizingV": "hug",
+              "w": 375,
+              "children": [
+                {
+                  "id": "settings-mobile-app-header-0-app-header-start-0",
+                  "type": "frame",
+                  "name": "App-header__start",
+                  "bindings": { "layout.gap": "space-8" },
+                  "clip": false,
+                  "h": 30,
+                  "layout": {
+                    "alignC": "center",
+                    "alignP": "start",
+                    "gap": 32,
+                    "mode": "horizontal",
+                    "pb": 0,
+                    "pl": 0,
+                    "pr": 0,
+                    "pt": 0,
+                    "spacing": "packed"
+                  },
+                  "sizingH": "hug",
+                  "sizingV": "hug",
+                  "w": 52.59,
+                  "children": [
+                    {
+                      "id": "settings-mobile-app-header-0-app-header-start-0-app-header-brand-0",
+                      "type": "text",
+                      "name": "App-header__brand",
+                      "autoResize": "width",
+                      "bindings": {
+                        "fills.0.color": "text-primary",
+                        "fontFamily": "font-family-base",
+                        "fontWeight": "font-weight-bold"
+                      },
+                      "fills": [{}],
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": 600,
+                      "h": 30,
+                      "letterSpacing": 0,
+                      "lineHeight": 150,
+                      "text": "Acme",
+                      "w": 52.59
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "settings-mobile-page-1",
+              "type": "frame",
+              "name": "Page",
+              "bindings": {
+                "layout.gap": "space-4",
+                "layout.pb": "space-4",
+                "layout.pl": "space-4",
+                "layout.pr": "space-4",
+                "layout.pt": "space-4"
+              },
+              "clip": false,
+              "h": 360,
+              "layout": {
+                "alignC": "start",
+                "alignP": "start",
+                "gap": 20,
+                "mode": "vertical",
+                "pb": 20,
+                "pl": 20,
+                "pr": 20,
+                "pt": 20,
+                "spacing": "packed"
+              },
+              "sizingH": "fill",
+              "sizingV": "hug",
+              "w": 375,
+              "children": [
+                {
+                  "id": "settings-mobile-page-1-page-title-0",
+                  "type": "text",
+                  "name": "Page__title",
+                  "autoResize": "height",
+                  "bindings": { "fills.0.color": "text-primary", "fontFamily": "font-family-base" },
+                  "fills": [{}],
+                  "fontFamily": "Inter",
+                  "fontSize": 32,
+                  "fontWeight": 700,
+                  "h": 48,
+                  "letterSpacing": 0,
+                  "lineHeight": 150,
+                  "sizingH": "fill",
+                  "text": "Settings",
+                  "w": 335
+                },
+                {
+                  "id": "settings-mobile-page-1-panel-1",
+                  "type": "frame",
+                  "name": "Panel",
+                  "bindings": {
+                    "effects.0": "shadow-raised",
+                    "fills.0.color": "surface",
+                    "layout.gap": "space-4",
+                    "layout.pb": "space-4",
+                    "layout.pl": "space-4",
+                    "layout.pr": "space-4",
+                    "layout.pt": "space-4",
+                    "radius": "radius-md"
+                  },
+                  "clip": false,
+                  "effects": [
+                    {
+                      "type": "drop-shadow",
+                      "blur": 8,
+                      "color": "#000000",
+                      "opacity": 0.1,
+                      "spread": 0,
+                      "x": 0,
+                      "y": 2
+                    }
+                  ],
+                  "fills": [{}],
+                  "h": 252,
+                  "layout": {
+                    "alignC": "start",
+                    "alignP": "start",
+                    "gap": 20,
+                    "mode": "vertical",
+                    "pb": 20,
+                    "pl": 20,
+                    "pr": 20,
+                    "pt": 20,
+                    "spacing": "packed"
+                  },
+                  "radius": 8,
+                  "sizingH": "fill",
+                  "sizingV": "hug",
+                  "w": 335,
+                  "children": [
+                    {
+                      "id": "settings-mobile-page-1-panel-1-field-0",
+                      "type": "frame",
+                      "name": "Field",
+                      "bindings": { "layout.gap": "space-1" },
+                      "clip": false,
+                      "h": 70,
+                      "layout": {
+                        "alignC": "start",
+                        "alignP": "start",
+                        "gap": 4,
+                        "mode": "vertical",
+                        "pb": 0,
+                        "pl": 0,
+                        "pr": 0,
+                        "pt": 0,
+                        "spacing": "packed"
+                      },
+                      "sizingH": "fill",
+                      "sizingV": "hug",
+                      "w": 295,
+                      "children": [
+                        {
+                          "id": "settings-mobile-page-1-panel-1-field-0-field-label-0",
+                          "type": "text",
+                          "name": "Field__label",
+                          "autoResize": "height",
+                          "bindings": {
+                            "fills.0.color": "text-primary",
+                            "fontFamily": "font-family-base",
+                            "fontSize": "font-size-body",
+                            "fontWeight": "font-weight-bold"
+                          },
+                          "fills": [{}],
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": 600,
+                          "h": 24,
+                          "letterSpacing": 0,
+                          "lineHeight": 150,
+                          "sizingH": "fill",
+                          "text": "Name",
+                          "w": 295
+                        },
+                        {
+                          "id": "settings-mobile-page-1-panel-1-field-0-input-1",
+                          "type": "instance",
+                          "name": "Input",
+                          "componentId": "input-state-default",
+                          "propValues": { "input-placeholder": "Ada Lovelace" },
+                          "sizingH": "fill",
+                          "synced": { "sizingH": "fixed" }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "settings-mobile-page-1-panel-1-field-1",
+                      "type": "frame",
+                      "name": "Field",
+                      "bindings": { "layout.gap": "space-1" },
+                      "clip": false,
+                      "h": 70,
+                      "layout": {
+                        "alignC": "start",
+                        "alignP": "start",
+                        "gap": 4,
+                        "mode": "vertical",
+                        "pb": 0,
+                        "pl": 0,
+                        "pr": 0,
+                        "pt": 0,
+                        "spacing": "packed"
+                      },
+                      "sizingH": "fill",
+                      "sizingV": "hug",
+                      "w": 295,
+                      "children": [
+                        {
+                          "id": "settings-mobile-page-1-panel-1-field-1-field-label-0",
+                          "type": "text",
+                          "name": "Field__label",
+                          "autoResize": "height",
+                          "bindings": {
+                            "fills.0.color": "text-primary",
+                            "fontFamily": "font-family-base",
+                            "fontSize": "font-size-body",
+                            "fontWeight": "font-weight-bold"
+                          },
+                          "fills": [{}],
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": 600,
+                          "h": 24,
+                          "letterSpacing": 0,
+                          "lineHeight": 150,
+                          "sizingH": "fill",
+                          "text": "Email",
+                          "w": 295
+                        },
+                        {
+                          "id": "settings-mobile-page-1-panel-1-field-1-input-1",
+                          "type": "instance",
+                          "name": "Input",
+                          "componentId": "input-state-default",
+                          "propValues": { "input-placeholder": "you@example.com" },
+                          "sizingH": "fill",
+                          "synced": { "sizingH": "fixed" }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "settings-mobile-page-1-panel-1-actions-2",
+                      "type": "frame",
+                      "name": "Actions",
+                      "bindings": { "layout.gap": "space-2" },
+                      "clip": false,
+                      "h": 32,
+                      "layout": {
+                        "alignC": "start",
+                        "alignP": "start",
+                        "gap": 8,
+                        "mode": "horizontal",
+                        "pb": 0,
+                        "pl": 0,
+                        "pr": 0,
+                        "pt": 0,
+                        "spacing": "packed"
+                      },
+                      "sizingH": "fill",
+                      "sizingV": "hug",
+                      "w": 295,
+                      "children": [
+                        {
+                          "id": "settings-mobile-page-1-panel-1-actions-2-button-0",
+                          "type": "instance",
+                          "name": "Button",
+                          "componentId": "button-variant-primary-state-default",
+                          "propValues": { "button-icon": "status-check", "button-label": "Save" }
+                        },
+                        {
+                          "id": "settings-mobile-page-1-panel-1-actions-2-button-1",
+                          "type": "instance",
+                          "name": "Button",
+                          "componentId": "button-variant-danger-state-default",
+                          "propValues": {
+                            "button-icon": "actions-trash",
+                            "button-label": "Delete account"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

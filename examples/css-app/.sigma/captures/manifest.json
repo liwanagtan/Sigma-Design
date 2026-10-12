@@ -86,7 +86,25 @@
           },
           "file": "button-danger-disabled.json"
         }
-      ]
+      ],
+      "match": {
+        "selector": ".button",
+        "variants": {
+          "Variant": {
+            "Danger": ".button--danger",
+            "Primary": "*"
+          },
+          "State": {
+            "Disabled": ":disabled",
+            "Default": "*"
+          }
+        },
+        "props": {
+          "Label": "text",
+          "Show icon": "has:img, svg",
+          "Icon": "icon:img, svg"
+        }
+      }
     },
     {
       "name": "Input",
@@ -113,7 +131,18 @@
           },
           "file": "input-hover.json"
         }
-      ]
+      ],
+      "match": {
+        "selector": ".input",
+        "variants": {
+          "State": {
+            "Default": "*"
+          }
+        },
+        "props": {
+          "Placeholder": "text"
+        }
+      }
     },
     {
       "name": "Card",
@@ -136,7 +165,28 @@
         {
           "file": "card.json"
         }
-      ]
+      ],
+      "props": [
+        {
+          "name": "Title",
+          "type": "text",
+          "codeName": "title",
+          "layer": "Title"
+        },
+        {
+          "name": "Body",
+          "type": "text",
+          "codeName": "body",
+          "layer": "Body"
+        }
+      ],
+      "match": {
+        "selector": ".card",
+        "props": {
+          "Title": "text:.card__title",
+          "Body": "text:.card__body"
+        }
+      }
     }
   ]
 }

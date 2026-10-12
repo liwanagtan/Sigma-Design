@@ -20,6 +20,7 @@
 //   node tools/sigma.mjs changeset ticket <id> [project]
 //   node tools/sigma.mjs changeset sync [project]                 statuses from GitHub (gh pr view)
 //   node tools/sigma.mjs library build [project] --from DIR [--library PATH] [--dry-run]   components from captures
+//   node tools/sigma.mjs pages build [project] --from DIR [--dry-run]                       pages from captures, as library instances
 //   node tools/sigma.mjs comment list [project] [--all]
 //   node tools/sigma.mjs comment add [project] --file PATH --layer ID|NAME --text TEXT [--author NAME] [--reply-to ID]
 //   node tools/sigma.mjs comment resolve <id> [project] [--author NAME]
@@ -35,7 +36,7 @@ import { join } from 'node:path';
 import { iconsFromFiles, mergeIcons, iconChanges, iconFilePath, iconSVG, sameIcon, svgStyleOf } from '../src/icon-sync.js';
 import { parseSVGIcon } from '../src/icon-library.js';
 import { applyChanges, summarize, STATUSES, CHANGESET_DIR } from '../src/changesets.js';
-import { buildComponent, tokenIndex } from '../src/capture-to-sigma.js';
+import { buildComponent, buildPage, tokenIndex } from '../src/capture-to-sigma.js';
 import { defaultTokenCode } from '../src/code-names.js';
 import { parseVariantName } from '../src/components.js';
 import { validateProject } from '../src/validate.js';
@@ -647,6 +648,92 @@ function libraryBuild(dir) {
   }
 }
 
+// ---------- pages (Phase 29) ----------
+const pageSlug = (x) => String(x).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+// The capture file for a page at a breakpoint.
+const pageCaptureFile = (page, bp) => `page-${pageSlug(page.name)}-${pageSlug(bp.name)}.json`;
+
+function pagesBuild(dir) {
+  const root = resolve(dir || '.');
+  if (!flags.from) fail('say where the captures are: --from <folder with manifest.json and pages.json>');
+  const from = resolve(flags.from);
+  const manifest = JSON.parse(readFileSync(join(from, 'manifest.json'), 'utf8'));
+  const spec = JSON.parse(readFileSync(join(from, 'pages.json'), 'utf8'));
+  if (!spec.file) fail('pages.json needs "file": the Sigma Design file to build (.sigma/design/<name>.sigma.json)');
+  const files = Object.fromEntries(Object.entries(readProject(root).files).map(([p, t]) => [p, JSON.parse(t)]));
+  const libPath = manifest.library;
+  const lib = files[libPath];
+  if (!lib) fail(`${libPath} isn’t built yet: run library build first`);
+  const out0 = files[spec.file] || { format: 1, kind: 'design', name: spec.name || 'Pages', pages: [] };
+  out0.uses = { ...(lib.uses || {}), components: [libPath] };
+  const tokens = tokenIndex((lib.uses?.tokens || []).flatMap((p) => files[p]?.collections || []), defaultTokenCode);
+  const icons = (lib.uses?.icons || []).flatMap((p) => files[p]?.icons || []);
+  const iconFor = (svg) => {
+    try {
+      const parsed = parseSVGIcon(svg);
+      return icons.find((i) => i.body === parsed.body && i.viewBox === parsed.viewBox)?.id || null;
+    } catch {
+      return null;
+    }
+  };
+  // An image's URL path → the project file it is (the longest tail of the path that exists).
+  const iconForSrc = (src) => {
+    const parts = String(src || '').split('/').filter(Boolean);
+    for (let i = 0; i < parts.length; i++) {
+      const rel = parts.slice(i).join('/');
+      if (exists(root, rel)) return iconFor(readText(root, rel));
+    }
+    return null;
+  };
+  const libNodes = lib.pages.flatMap((pg) => pg.children);
+  const library = manifest.components.filter((c) => c.match).map((c) => ({ name: c.name, match: c.match, node: libNodes.find((n) => (n.type === 'component' || n.type === 'componentSet') && n.name === c.name) }));
+  for (const e of library) if (!e.node) fail(`${e.name} isn’t in ${libPath}: run library build first`);
+  const ids = new Set();
+  const report = [];
+  const notes = [];
+  for (const page of spec.pages) {
+    const id = pageSlug(page.name);
+    let pg = out0.pages.find((x) => x.name === page.name);
+    if (!pg) out0.pages.push((pg = { id, name: page.name, background: '#F5F5F5', children: [] }));
+    let x = 0;
+    for (const bp of spec.breakpoints) {
+      const file = join(from, pageCaptureFile(page, bp));
+      if (!existsSync(file)) {
+        notes.push(`${page.name} — ${bp.name}: no capture (${relative(root, file)})`);
+        continue;
+      }
+      const capture = JSON.parse(readFileSync(file, 'utf8'));
+      const name = `${page.name} — ${bp.name}`;
+      const built = buildPage(capture, { name, tokens, iconFor, iconForSrc, library, ids });
+      const frame = built.node;
+      Object.assign(frame, { x, y: 0 });
+      x += (frame.w || bp.width) + 80;
+      const at = pg.children.findIndex((c) => c.name === name);
+      if (at >= 0) pg.children[at] = frame;
+      else pg.children.push(frame);
+      report.push({ frame: name, instances: built.instances, loose: built.loose });
+      notes.push(...built.notes);
+    }
+  }
+  const text = formatProjectJSON(out0);
+  const check = validateProject({ ...files, [spec.file]: JSON.parse(text) }).filter((i) => i.file === spec.file && i.level === 'error');
+  if (!flags['dry-run']) writeText(root, spec.file, text);
+  if (json) return out({ file: spec.file, frames: report, notes: [...new Set(notes)], errors: check });
+  out(`${spec.file}: ${report.length} frames${flags['dry-run'] ? ' (dry run)' : ' — written'}`);
+  for (const r of report) {
+    const texts = r.loose.filter((l) => l.what === 'text');
+    const other = r.loose.filter((l) => l.what !== 'text');
+    out(`  ${r.frame}: ${r.instances} library instances; not from the library: ${other.length} boxes and icons, ${texts.length} texts`);
+    for (const l of other) out(`    ${l.what}: ${l.layer}`);
+    if (texts.length) out(`    texts: ${texts.map((t) => `“${t.text.length > 30 ? `${t.text.slice(0, 29)}…` : t.text}”`).join(', ')}`);
+  }
+  for (const n of [...new Set(notes)]) out(`  note: ${n}`);
+  if (check.length) {
+    out(formatIssues(check));
+    process.exit(1);
+  }
+}
+
 // ---------- comments (Phase 27) ----------
 const rid = () => Math.random().toString(36).slice(2, 10);
 // A layer by id, by name path ("Card / Title") or by name: { node, page, path }.
@@ -775,6 +862,7 @@ else if (cmd === 'changeset' && sub === 'pr-body') changesetPRBody(dir, pos[3]);
 else if (cmd === 'changeset' && sub === 'ticket') changesetTicket(dir, pos[3]);
 else if (cmd === 'changeset' && sub === 'sync') changesetSync(dir);
 else if (cmd === 'library' && sub === 'build') libraryBuild(dir);
+else if (cmd === 'pages' && sub === 'build') pagesBuild(dir);
 else if (cmd === 'comment' && sub === 'list') commentList(dir);
 else if (cmd === 'comment' && sub === 'add') commentAdd(dir);
 else if (cmd === 'comment' && sub === 'resolve') commentResolve(dir, pos[3]);
@@ -799,6 +887,7 @@ else {
   node tools/sigma.mjs changeset ticket <id> [project]
   node tools/sigma.mjs changeset sync [project]
   node tools/sigma.mjs library build [project] --from DIR [--library PATH] [--dry-run]
+  node tools/sigma.mjs pages build [project] --from DIR [--dry-run]
   node tools/sigma.mjs comment list [project] [--all]
   node tools/sigma.mjs comment add [project] --file PATH --layer ID|NAME --text TEXT [--author NAME] [--reply-to ID]
   node tools/sigma.mjs comment resolve <id> [project] [--author NAME]

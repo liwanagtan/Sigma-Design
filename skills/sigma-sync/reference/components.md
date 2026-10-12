@@ -31,7 +31,8 @@ capture itself (`:hover`, `:focus-visible`, `:active` rules, or `disabled`), wit
 so you don't need to hover anything. Capture variants the code can render (props like `variant="danger"`)
 by rendering them; capture states with `state`.
 
-Captures are regenerated, not edited: add `.sigma/captures/*.json` to `.gitignore`, but keep the manifest.
+Captures are regenerated, not edited: add `.sigma/captures/*.json` to `.gitignore`, but keep the manifest
+(and `pages.json`, `reference/pages.md`) with `!.sigma/captures/manifest.json`.
 
 ## 3. Write the manifest
 
@@ -73,6 +74,7 @@ commit it, and the next run follows it:
 - **Nested components** (`instances`): a layer that is another component in the code becomes an instance of
   it. List components before the ones that use them. `props` sets the instance's property values (by name).
 - One capture with no `variant` makes a plain component.
+- **`match`** (for pages): how to recognize the component in any page. See `reference/pages.md`.
 
 ## 4. Build
 

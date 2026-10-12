@@ -605,17 +605,31 @@
             }
           ],
           "fills": [{}],
-          "h": 179.5,
+          "h": 177.5,
           "layout": {
             "alignC": "start",
             "alignP": "start",
-            "gap": 16,
+            "gap": 20,
             "mode": "vertical",
             "pb": 20,
             "pl": 20,
             "pr": 20,
             "pt": 20,
             "spacing": "packed"
+          },
+          "props": {
+            "card-title": {
+              "type": "text",
+              "name": "Title",
+              "codeName": "title",
+              "default": "Acme"
+            },
+            "card-body": {
+              "type": "text",
+              "name": "Body",
+              "codeName": "body",
+              "default": "A small app whose design tokens live in src/styles/tokens.css."
+            }
           },
           "radius": 8,
           "sizingH": "fixed",
@@ -629,7 +643,7 @@
               "type": "frame",
               "name": "Title + Body",
               "clip": false,
-              "h": 92,
+              "h": 86,
               "layout": {
                 "alignC": "start",
                 "alignP": "start",
@@ -652,11 +666,12 @@
                   "autoResize": "height",
                   "fills": [{ "color": "#1E1E1E" }],
                   "fontFamily": "Inter",
-                  "fontSize": 24,
+                  "fontSize": 20,
                   "fontWeight": 700,
-                  "h": 36,
+                  "h": 30,
                   "letterSpacing": 0,
                   "lineHeight": 150,
+                  "propRefs": { "text": "card-title" },
                   "sizingH": "fill",
                   "text": "Acme",
                   "w": 320
@@ -666,13 +681,15 @@
                   "type": "text",
                   "name": "Body",
                   "autoResize": "height",
-                  "fills": [{ "color": "#1E1E1E" }],
+                  "bindings": { "fills.0.color": "text-secondary" },
+                  "fills": [{}],
                   "fontFamily": "Inter",
                   "fontSize": 16,
                   "fontWeight": 400,
                   "h": 48,
                   "letterSpacing": 0,
                   "lineHeight": 150,
+                  "propRefs": { "text": "card-body" },
                   "sizingH": "fill",
                   "text": "A small app whose design tokens live in src/styles/tokens.css.",
                   "w": 320

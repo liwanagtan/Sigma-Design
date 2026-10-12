@@ -2,18 +2,26 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
-  <title>Acme</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Projects – Acme</title>
   <link rel="stylesheet" href="src/styles/app.css">
 </head>
 <body>
-  <main class="card">
-    <h1>Acme</h1>
-    <p>A small app whose design tokens live in src/styles/tokens.css.</p>
-    <div id="actions"></div>
-  </main>
   <script type="module">
-    import { Button } from './src/components/button.js';
-    document.getElementById('actions').append(Button({ label: 'Continue', icon: 'arrows/arrow-right' }), Button({ label: 'Delete', variant: 'danger', icon: 'actions/trash' }));
+    import { AppHeader } from './src/components/header.js';
+    import { Input } from './src/components/input.js';
+    import { Card } from './src/components/card.js';
+
+    const projects = [
+      ['Website', 'The marketing site: pages, blog and docs.'],
+      ['Mobile app', 'iOS and Android, sharing the design tokens.'],
+      ['Design system', 'Tokens, icons and components, kept in sync with Sigma.'],
+    ];
+    const main = Object.assign(document.createElement('main'), { className: 'page' });
+    const grid = Object.assign(document.createElement('div'), { className: 'grid' });
+    grid.append(...projects.map(([title, body]) => Card({ title, body, action: { label: 'Open' } })));
+    main.append(Object.assign(document.createElement('h1'), { className: 'page__title', textContent: 'Projects' }), Input({ placeholder: 'Search projects' }), grid);
+    document.body.append(AppHeader({ current: 'Projects', action: { label: 'New project', icon: 'actions/plus' } }), main);
   </script>
 </body>
 </html>

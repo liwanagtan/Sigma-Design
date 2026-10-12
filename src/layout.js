@@ -114,7 +114,7 @@ function layoutChildren(f) {
       if (s === 'hug' && isAutoLayout(k)) k[axis] = round(clampSize(k, axis, hugSize(k)[axis]));
       if (s === 'fill' && axis === C && !(k.type === 'line' && axis === 'h')) k[axis] = round(Math.max(1, clampSize(k, axis, innerC)));
     }
-    if (k.type === 'text' && k.w !== w0) measureText(k);
+    if (k.type === 'text' && k.w !== w0) remeasure(k);
   }
   const gap = L.spacing === 'auto' ? 0 : L.gap;
   const fills = kids.filter((k) => getSizing(k, P) === 'fill' && !(k.type === 'line' && P === 'h'));
@@ -140,7 +140,7 @@ function layoutChildren(f) {
     for (const k of fills) {
       const w0 = k.w;
       k[P] = round(Math.max(1, size.get(k) ?? 1));
-      if (k.type === 'text' && k.w !== w0) measureText(k);
+      if (k.type === 'text' && k.w !== w0) remeasure(k);
     }
   }
 
@@ -182,8 +182,21 @@ function layoutPlain(nodes) {
   }
 }
 
+// A text given a new width can wrap onto more (or fewer) lines. Frames above it that hug were sized before
+// it was, so when a height changes the layout runs again: by then every width is settled.
+let rewrapped = false;
+function remeasure(k) {
+  const h0 = k.h;
+  measureText(k);
+  if (k.h !== h0) rewrapped = true;
+}
+
 export function applyLayouts() {
-  for (const pg of state.doc.pages) layoutPlain(pg.children);
+  for (let pass = 0; pass < 3; pass++) {
+    rewrapped = false;
+    for (const pg of state.doc.pages) layoutPlain(pg.children);
+    if (!rewrapped) break;
+  }
 }
 
 // ---------- helpers for editing ----------

@@ -9,15 +9,17 @@
 <body>
   <!-- Open with Sigma's server running on the project (python3 serve.py --project PATH):
        http://localhost:<port>/tools/capture/compare.html[?captures=.sigma/captures] -->
-  <h1>Library vs. code</h1>
+  <h1>Sigma vs. code</h1>
   <pre id="out">Comparing…</pre>
   <script type="module">
-    import { compareLibrary, formatComparison } from '../../src/capture-compare.js';
+    import { compareLibrary, comparePages, formatComparison } from '../../src/capture-compare.js';
     const captures = new URLSearchParams(location.search).get('captures') || '.sigma/captures';
     await document.fonts?.ready;
     try {
       const report = await compareLibrary({ captures });
-      document.getElementById('out').textContent = formatComparison(report);
+      const pages = await comparePages({ captures });
+      document.getElementById('out').textContent = formatComparison(report) + (Object.keys(pages).length ? `\n\nPages\n${formatComparison(pages)}` : '');
+      window.sigmaPagesComparison = pages;
       window.sigmaComparison = report;
     } catch (err) {
       document.getElementById('out').textContent = `Couldn’t compare: ${err.message}`;

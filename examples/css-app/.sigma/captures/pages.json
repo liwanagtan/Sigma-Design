@@ -1,0 +1,12 @@
+{
+  "file": ".sigma/design/acme-pages.sigma.json",
+  "name": "Acme pages",
+  "breakpoints": [
+    { "name": "Desktop", "width": 1280 },
+    { "name": "Mobile", "width": 375 }
+  ],
+  "pages": [
+    { "name": "Projects", "route": "index.html" },
+    { "name": "Settings", "route": "settings.html" }
+  ]
+}
