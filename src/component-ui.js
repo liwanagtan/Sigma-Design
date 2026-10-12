@@ -31,6 +31,8 @@ import {
 } from './commands.js';
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
+import { openIconPicker, availableIcons } from './icon-ui.js';
+import { findIcon, iconMarkup, iconGroups } from './icon-library.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const toast = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
@@ -43,6 +45,13 @@ export const PROP_ICONS = {
   text: SVG('<path d="M2.5 3V2h7v1M6 2v8M4.5 10h3"/>'),
   instance: SVG('<path d="M6 1.5L10.5 6 6 10.5 1.5 6z"/><path d="M4.5 6h3M6.5 5l1 1-1 1"/>'),
   slot: SVG('<rect x="1.2" y="1.2" width="9.6" height="9.6" rx="2" stroke-dasharray="2 1.5"/><path d="M6 4v4M4 6h4"/>'),
+  icon: SVG('<path d="M6 1.2l1.4 2.9 3.2.5-2.3 2.2.5 3.2L6 8.5 3.2 10l.5-3.2-2.3-2.2 3.2-.5z" stroke-linejoin="round"/>'),
+};
+// A button showing an icon and its name, which opens the icon picker.
+const iconChoice = (id, attrs, mixed = false) => {
+  const icon = !mixed && findIcon(id);
+  return `<button class="select swap-btn icon-choice" ${attrs}><span class="icon-choice-glyph">${icon ? iconMarkup(icon, { w: 14, h: 14 }) : ''}</span>` +
+    `<span class="swap-name">${mixed ? 'Mixed' : esc(icon ? icon.name : 'Choose an icon…')}</span>${CHEVRON}</button>`;
 };
 const COMPONENT_ICON = SVG('<path d="M6 .9l2 2-2 2-2-2zM6 7.1l2 2-2 2-2-2zM2.9 4l2 2-2 2-2-2zM9.1 4l2 2-2 2-2-2z"/>');
 const INSTANCE_ICON = SVG('<path d="M6 1.2L10.8 6 6 10.8 1.2 6z"/>');
@@ -141,6 +150,10 @@ function valuePreview(def) {
   if (def.defaultVar) return `<span class="token-ref">${esc(tokenName(def.defaultVar))}</span>`;
   if (def.type === 'boolean') return def.default ? 'True' : 'False';
   if (def.type === 'text') return `“${esc(def.default ?? '')}”`;
+  if (def.type === 'icon') {
+    const icon = findIcon(def.default);
+    return icon ? `<span class="icon-choice-glyph">${iconMarkup(icon, { w: 12, h: 12 })}</span>${esc(icon.name)}` : '—';
+  }
   const main = def.default && getNode(def.default);
   return main ? esc(displayName(main) + (isVariant(main) ? ` · ${main.name}` : '')) : '—';
 }
@@ -172,7 +185,7 @@ function propertiesSection(comp) {
         `<span class="prop-row-value">Properties shown</span><button class="icon-btn prop-remove" data-unexpose="${n.id}" title="Stop showing its properties">${icons.minus}</button></div>`).join('') +
       `<button class="link-btn prop-expose" data-expose-menu>${exposed.length ? 'Choose nested instances…' : 'Show properties of nested instances…'}</button>`
     : '';
-  const empty = rows.length ? '' : '<div class="muted prop-empty">Properties let instances change variants, show or hide layers, change text and swap nested instances.</div>';
+  const empty = rows.length ? '' : '<div class="muted prop-empty">Properties let instances change variants, show or hide layers, change text, choose icons and swap nested instances.</div>';
   return section('Properties', rows.join('') + empty + nestedRow,
     `<button class="icon-btn" data-prop-add title="Create component property">${icons.plus}</button>`);
 }
@@ -255,6 +268,7 @@ function instanceControls(inst, main, group = [inst]) {
     if (def.type === 'slot') continue; // slots get their own rows below
     if (def.type === 'boolean') control = toggle(`${tgt} data-instance-prop="${pid}"${v === MIXED ? ' data-mixed' : ''}`, v === true);
     else if (def.type === 'text') control = `<input class="prop-input" ${tgt} data-instance-prop="${pid}" value="${v === MIXED ? '' : esc(v ?? '')}" placeholder="${v === MIXED ? 'Mixed' : ''}" spellcheck="false">`;
+    else if (def.type === 'icon') control = iconChoice(v, `${tgt} data-prop-icon="${pid}"`, v === MIXED);
     else {
       const comp = v !== MIXED && v && getNode(v);
       control = `<button class="select swap-btn" ${tgt} data-prop-swap="${pid}"><span class="comp-icon inst">${INSTANCE_ICON}</span>` +
@@ -388,7 +402,7 @@ function exposedControls(inst) {
 }
 
 // ---------- applying properties to layers (used by panels.js) ----------
-const PATH_TYPE = { visible: 'boolean', text: 'text' };
+const PATH_TYPE = { visible: 'boolean', text: 'text', iconId: 'icon' };
 
 // The component property a layer's `path` is bound to, if the selection is one layer in a main component.
 export function boundProp(nodes, path) {
@@ -450,7 +464,7 @@ export function closePropWindow() {
   window.removeEventListener('keydown', winKey, true);
 }
 function outsideWin(e) {
-  if (win && !win.el.contains(e.target) && !e.target.closest?.('.menu, .comp-picker')) closePropWindow();
+  if (win && !win.el.contains(e.target) && !e.target.closest?.('.menu, .comp-picker, .icon-picker')) closePropWindow();
 }
 function winKey(e) {
   if (e.key === 'Escape' && win) {
@@ -471,6 +485,7 @@ export function openPropWindow({ comp, pid = null, type = null, variantProp = nu
     name: suggestName(comp, type, bind?.layer),
     default: type === 'boolean' ? (bind ? bind.layer.visible !== false : true)
       : type === 'text' ? (bind ? bind.layer.text : 'Text')
+        : type === 'icon' ? (bind ? bind.layer.iconId : firstIconIn(comp))
         : (bind ? bind.layer.componentId : listComponents().find(({ node }) => node.id !== comp.id && !isVariantOf(node, host))?.node.id),
     preferred: [],
   } : null;
@@ -501,12 +516,23 @@ export function openPropWindow({ comp, pid = null, type = null, variantProp = nu
   bindValueDrag(el);
 }
 
+// The first icon this file can use, preferring the component's own icon layers (for a new Icon property).
+function firstIconIn(comp) {
+  let id = null;
+  walk(propsHost(comp).children || [], (n) => {
+    if (!id && n.type === 'icon' && n.iconId) id = n.iconId;
+    if (n.type === 'instance') return false;
+  });
+  return id || availableIcons()[0]?.icon.id || null;
+}
+
 const isVariantOf = (node, set) => set.type === 'componentSet' && getParent(node.id) === set;
 
 function suggestName(comp, type, layer) {
   const taken = new Set(Object.values(propsOf(comp)).map((d) => d.name));
   let base = layer ? (type === 'boolean' ? `Show ${layer.name}` : layer.name) : PROP_TYPES[type];
   if (type === 'slot') base = layer ? layer.name : 'Slot';
+  if (type === 'icon') base = 'Icon'; // an icon layer is named after its icon, which instances change
   if (!layer && type !== 'variant') base = `${PROP_TYPES[type]}`;
   let name = base;
   for (let i = 2; taken.has(name); i++) name = `${base} ${i}`;
@@ -548,6 +574,16 @@ function renderWin() {
         return `<div class="w-pref"><span class="comp-icon inst">${INSTANCE_ICON}</span><span>${esc(c ? displayName(c) : 'Missing component')}</span><button class="icon-btn" data-w-unprefer="${id}" title="Remove">${icons.minus}</button></div>`;
       }).join('') +
       '<button class="link-btn" data-w-prefer>+ Add preferred value</button>';
+  } else if (type === 'icon') {
+    // The default icon, and the groups instances may choose from (all by default).
+    const groups = iconGroups(availableIcons({ withId: def.default }).map((x) => x.icon));
+    const allowed = def.groups;
+    const outside = allowed && findIcon(def.default) && !allowed.includes(findIcon(def.default).group || '');
+    body += '<label class="w-label">Value</label>' + iconChoice(def.default, 'data-w-icon') +
+      '<label class="w-label">Instances can choose from</label>' +
+      `<label class="check-row"><input type="checkbox" data-w-all-groups ${allowed ? '' : 'checked'}> All icons</label>` +
+      (allowed ? '<div class="w-groups">' + groups.map((g) => `<label class="check-row"><input type="checkbox" data-w-group="${esc(g.name)}" ${allowed.includes(g.name) ? 'checked' : ''}> ${esc(g.name || 'Ungrouped')} <span class="muted">${g.count}</span></label>`).join('') + '</div>' : '') +
+      (outside ? '<div class="warn">The default icon isn’t in these groups.</div>' : '');
   } else if (type === 'slot') {
     const num = (k) => (def[k] == null ? '' : def[k]);
     body += '<label class="w-label">Description</label>' +
@@ -607,6 +643,16 @@ function onWinClick(e) {
     return renderWin();
   }
   if (b.hasAttribute('data-w-create')) return createFromWin();
+  if (b.hasAttribute('data-w-icon')) {
+    return openIconPicker({
+      anchor: b.getBoundingClientRect(), currentId: def.default, groups: def.groups || null,
+      onPick: (id) => {
+        if (creating) draft.default = id;
+        else updateAndCommit({ default: id });
+        renderWin();
+      },
+    });
+  }
   if (b.dataset.wBool !== undefined) {
     const v = b.dataset.wBool === '1';
     if (creating) draft.default = v;
@@ -659,6 +705,21 @@ function onWinChange(e) {
       return renderWin();
     }
     return updateAndCommit({ name: t.value });
+  }
+  if (t.hasAttribute('data-w-all-groups') || t.dataset.wGroup !== undefined) {
+    const def = creating ? draft : propsOf(comp)[win.pid];
+    let groups;
+    if (t.hasAttribute('data-w-all-groups')) groups = t.checked ? null : [findIcon(def.default)?.group || ''];
+    else {
+      const set = new Set(def.groups || []);
+      t.checked ? set.add(t.dataset.wGroup) : set.delete(t.dataset.wGroup);
+      groups = [...set];
+    }
+    if (creating) {
+      if (groups?.length) draft.groups = groups;
+      else delete draft.groups;
+    } else updateAndCommit({ groups });
+    return renderWin();
   }
   if (t.dataset.wSlot) {
     const key = t.dataset.wSlot;
@@ -727,12 +788,14 @@ function createFromWin() {
   const name = String(draft.name || '').trim() || PROP_TYPES[type];
   if (Object.values(propsOf(comp)).some((d) => d.name === name)) return toast(`There's already a property named “${name}”.`);
   if (type === 'instance' && !draft.default) return toast('Choose a component for the value.');
+  if (type === 'icon' && !draft.default) return toast('Choose an icon for the value.');
   if (bind?.path === 'slot') {
     // Slot properties go on frames below the component's top level.
     if (bind.layer === comp || !isFrameLike(bind.layer) || bind.layer.type === 'instance') return toast('A slot has to be a frame inside the component.');
   }
   const pid = addComponentProp(comp, type, { name, value: type === 'slot' ? undefined : draft.default });
   if (draft.preferred?.length) updateComponentProp(comp, pid, { preferred: draft.preferred });
+  if (draft.groups?.length) updateComponentProp(comp, pid, { groups: draft.groups });
   if (type === 'slot') {
     const def = propsOf(comp)[pid];
     for (const k of ['description', 'min', 'max', 'preferredOnly', 'showEmpty', 'fillCounter']) if (draft[k] != null && draft[k] !== false && draft[k] !== '') def[k] = draft[k];
@@ -866,6 +929,19 @@ export function onComponentClick(e) {
   if (b.dataset.slotAdd) return addToSlot(b.getBoundingClientRect(), getNode(b.dataset.slotAdd)), true;
   if (b.dataset.slotMenu) return slotActionMenu(b, getNode(b.dataset.slotMenu)), true;
   if (b.dataset.convertSlot || b.dataset.slotPill) return slotMenu(b.getBoundingClientRect(), getNode(b.dataset.convertSlot || b.dataset.slotPill)), true;
+  if (b.dataset.propIcon) {
+    // An instance's Icon property: an icon from the allowed groups.
+    const insts = targetsOf(b);
+    const def = propsOf(mainComponentOf(insts[0]))[b.dataset.propIcon];
+    openIconPicker({
+      anchor: b.getBoundingClientRect(), currentId: (insts[0].propValues || {})[b.dataset.propIcon] ?? def?.default, groups: def?.groups || null,
+      onPick: (id) => {
+        for (const n of insts) setInstanceProp(n, b.dataset.propIcon, id);
+        commit();
+      },
+    });
+    return true;
+  }
   if (b.dataset.propSwap) {
     const insts = targetsOf(b);
     const inst = insts[0];
@@ -1085,8 +1161,8 @@ function highlightFor(row) {
     if (key.startsWith('v:')) return [];
     return layersUsingProp(node, key).map((u) => u.layer.id);
   }
-  const control = row.querySelector('[data-instance-prop], [data-prop-swap]');
-  const pid = control?.dataset.instanceProp || control?.dataset.propSwap;
+  const control = row.querySelector('[data-instance-prop], [data-prop-swap], [data-prop-icon]');
+  const pid = control?.dataset.instanceProp || control?.dataset.propSwap || control?.dataset.propIcon;
   const inst = control && targetOf(control);
   const main = inst && mainComponentOf(inst);
   if (!pid || !main) return [];
@@ -1107,6 +1183,7 @@ function addPropMenu(btn, node) {
     { label: 'Boolean', action: () => openPropWindow({ comp, type: 'boolean', anchor: r }) },
     { label: 'Instance swap', disabled: listComponents().length < 2, action: () => openPropWindow({ comp, type: 'instance', anchor: r }) },
     { label: 'Text', action: () => openPropWindow({ comp, type: 'text', anchor: r }) },
+    { label: 'Icon', disabled: !availableIcons().length, action: () => openPropWindow({ comp, type: 'icon', anchor: r }) },
     { label: 'Slot', action: () => openPropWindow({ comp, type: 'slot', anchor: r }) },
   ]);
 }
@@ -1236,6 +1313,7 @@ export function openPlayground(componentId) {
       let control;
       if (def.type === 'boolean') control = toggle(`data-pg-prop="${pid}"`, !!v);
       else if (def.type === 'text') control = `<input class="prop-input" data-pg-prop="${pid}" value="${esc(v ?? '')}" spellcheck="false">`;
+      else if (def.type === 'icon') control = iconChoice(v, `data-pg-icon="${pid}"`);
       else {
         const options = listComponents().filter(({ node }) => canPlaceInside({ type: 'instance', componentId: node.id }, main));
         const pref = def.preferred || [];
@@ -1262,6 +1340,18 @@ export function openPlayground(componentId) {
       return render();
     }
     if (e.target.closest('[data-pg-insert]')) return insertFromPlayground();
+    const iconBtn = e.target.closest('[data-pg-icon]');
+    if (iconBtn) {
+      const pid = iconBtn.dataset.pgIcon;
+      const def = propsOf(getNode(play.mainId))[pid];
+      return openIconPicker({
+        anchor: iconBtn.getBoundingClientRect(), currentId: play.values[pid] ?? def?.default, groups: def?.groups || null,
+        onPick: (id) => {
+          play.values[pid] = id;
+          render();
+        },
+      });
+    }
   });
   el.addEventListener('change', (e) => {
     const t = e.target;

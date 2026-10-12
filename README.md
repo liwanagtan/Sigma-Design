@@ -53,10 +53,10 @@ Then open http://localhost:5173.
   - changes to the main component flow to every instance, live; an instance can change appearance and text, and size and position come from the main component
   - a component can never end up containing an instance of itself
 - **Component properties:** select a main component or component set; its **Properties** section lists variant properties first, then the others, each with its type and value
-  - **+** creates a property: **Variant**, **Boolean**, **Instance swap** or **Text**. A window asks for its **Name** and **Value** (True/False for a boolean, the default text, or the default component plus **Preferred values** for an instance swap)
+  - **+** creates a property: **Variant**, **Boolean**, **Instance swap**, **Text**, **Icon** or **Slot**. A window asks for its **Name** and **Value** (True/False for a boolean, the default text, the default component plus **Preferred values** for an instance swap, or the default icon plus the icon groups instances can choose from for an icon: **All icons** by default)
   - click a property (or its settings icon) to edit it in the same window; double-click its name to rename it; drag it to reorder; − , right-click → **Delete property**, or select it and press Delete. Hovering a property outlines the layers it controls
   - **Apply variable** in the window lets a Boolean or Text default come from a design token (boolean or string); instances that keep the default follow the token in every mode, and a value set on an instance still wins
-  - **apply a property to a layer** in the main component: the apply variable/property button next to **Visibility** (boolean) or **Text content** (text) lists the component's properties and **Create … property…**; a nested instance has **Apply instance swap property** in its header. A bound layer shows a purple pill; click it to switch, edit or detach
+  - **apply a property to a layer** in the main component: the apply variable/property button next to **Visibility** (boolean) or **Text content** (text) lists the component's properties and **Create … property…**; a nested instance has **Apply instance swap property** in its header, and an icon layer has **Apply icon property** next to **Swap icon…**. A bound layer shows a purple pill; click it to switch, edit or detach
   - a property's default is what the main component shows: changing the default updates the bound layers, and editing a bound layer in the main component updates the default
   - **Nested instances:** "Show properties of nested instances…" lists nested instances that have properties; the chosen ones show their controls on instances of the outer component
 - **Slots** (Figma's flexible areas in components):
@@ -73,7 +73,7 @@ Then open http://localhost:5173.
 - **Instances:** the panel shows the component name (click it to swap with a searchable picker with thumbnails, preferred components first) and ⋯ with **Go to main component**, **Reset all changes**, **Push changes to main component** and **Detach instance** (⌥⌘B); ↺ appears when the instance has changes
   - select several instances of the same component to change their properties together (differing values show as Mixed)
   - a dropdown for each variant property, or an **on/off toggle** when its values are true/false (or yes/no, on/off)
-  - an **on/off toggle** for each boolean property, a text field for each text property, and a component picker for each instance swap property
+  - an **on/off toggle** for each boolean property, a text field for each text property, a component picker for each instance swap property, and an icon picker for each icon property (only the groups the property allows). An instance chooses only the icon: its size, color and stroke come from the main component
   - exposed nested instances follow, each with its own controls; changing properties or switching variants keeps your overrides
   - if a layer in the main component is renamed or removed, its instances show "N overrides no longer apply", with a Clear button
 - **Design tokens** (Sigma's name for Figma's variables):
@@ -121,7 +121,7 @@ Then open http://localhost:5173.
   - icons go inside main components (not loose on the canvas, for now): select a component or a layer in one, then **+** in the panel's Icon section, or **Insert icon…** on right-click. The picker has a search and the icons by group
   - an icon layer has a size (W, H), a **Color** (its fill, which can use a color token) and, for outline icons, a stroke width (which can use a number token). **Swap icon…** changes the icon
   - instances show the main component's icon, at its size, color and stroke: none of these can be overridden in an instance
-  - publishing components includes the icons they use, so files that link the component library show them without linking the Sigma Icons file
+  - publishing components includes the icons they use, so files that link the component library show them, and records their Sigma Icons files: linking the component library links those too, so instances can choose other icons
 - **Version history** (Σ menu → **Show version history**, in Sigma Design, Sigma Tokens and Sigma Icons files):
   - Sigma keeps an autosave version before each editing session and every 10 minutes while you work (the newest 50), plus one for every publish
   - **Save to version history…** (⌥⌘S) adds a named version with a description; named and published versions are kept until you delete them

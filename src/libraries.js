@@ -89,6 +89,20 @@ export function unlinkIconLibrary(fileId) {
   toast(`Unlinked “${lib.name}”`);
 }
 
+// The Sigma Icons files components use (in icon layers or Icon properties), recorded when publishing so a
+// file linking the component library links them too (to choose other icons in instances).
+function componentIconFiles(components) {
+  const used = usedIconIds(components);
+  if (!used.size && !hasIconProps(components)) return [];
+  return iconLibraries().filter((l) => l.icons.some((x) => used.has(x.id)) || hasIconProps(components))
+    .map((l) => ({ fileId: l.fileId, name: l.name, version: l.version }));
+}
+const hasIconProps = (components) => {
+  let found = false;
+  walk(components, (n) => void (Object.values(n.props || {}).some((d) => d.type === 'icon') && (found = true)));
+  return found;
+};
+
 // The icons published components use, so files that link the component library can show them.
 function componentIcons(components) {
   const out = {};
@@ -305,10 +319,20 @@ export async function linkComponentLibrary(fileId) {
     await useTokenFile(needs.fileId);
     alsoTokens = libraries().some((l) => l.fileId === needs.fileId);
   }
+  // Components with Icon properties choose from their Sigma Icons files: link those too.
+  const iconFiles = [];
+  for (const f of res.published.iconFiles || []) {
+    if (iconLibraries().some((l) => l.fileId === f.fileId)) continue;
+    const icons = await loadPublishedIcons(f.fileId);
+    if (!icons?.published) continue;
+    setIconLibrary(f.fileId, icons.meta.name, icons.published);
+    iconFiles.push(icons.meta.name);
+  }
   const missing = setComponentLibrary(fileId, res.meta.name, res.published);
   commit();
   toast(`Linked components from “${res.meta.name}” (v${res.published.version})` +
     (alsoTokens ? `, and this file now uses their design tokens from “${needs.name}”` : '') +
+    (iconFiles.length ? `, and their icons from ${iconFiles.map((n) => `“${n}”`).join(', ')}` : '') +
     (missing ? `. ${missing} token use${missing === 1 ? '' : 's'} in them aren’t in this file’s Sigma Tokens, so those layers keep their colors` : ''));
 }
 
@@ -404,7 +428,7 @@ export function openPublishComponentsDialog() {
     const components = componentSnapshot();
     state.doc.publishedComponents = {
       version, publishedAt: Date.now(), notes: wrap.querySelector('.publish-notes').value.trim(), components,
-      tokens: componentTokens(components).tokens, icons: componentIcons(components),
+      tokens: componentTokens(components).tokens, icons: componentIcons(components), iconFiles: componentIconFiles(components),
     };
     commit();
     wrap.remove();

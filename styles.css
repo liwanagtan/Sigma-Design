@@ -496,7 +496,7 @@ fieldset.readonly .field-label { cursor: default; }
 .icons-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-right: 24px; }
 .icons-drop { inset: 8px; }
 
-.token-picker.icon-picker { width: 296px; }
+.token-picker.icon-picker { width: 296px; z-index: 80; }
 .icon-picker-list { max-height: 320px; }
 .icon-picker-tiles { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; padding: 0 6px 6px; }
 .icon-picker-tile { display: grid; place-items: center; height: 32px; border-radius: 5px; color: #1e1e1e; border: 1px solid transparent; background: none; }
@@ -504,6 +504,12 @@ fieldset.readonly .field-label { cursor: default; }
 .icon-picker-tile.current { border-color: var(--accent); background: var(--accent-soft); }
 .icon-picker-name { padding: 6px 10px; border-top: 1px solid var(--border); font-size: 11px; min-height: 16px; }
 .icon-picker .btn.wide { margin: 0 8px 8px; width: calc(100% - 16px); }
+.icon-actions { display: flex; align-items: center; gap: 6px; margin-right: 24px; }
+.icon-actions .btn { flex: 1; }
+.icon-choice { display: flex; align-items: center; gap: 6px; }
+.icon-choice-glyph { display: inline-grid; place-items: center; color: #1e1e1e; vertical-align: -2px; margin-right: 4px; }
+.icon-choice .icon-choice-glyph { margin-right: 0; }
+.w-groups { display: flex; flex-direction: column; max-height: 160px; overflow: auto; padding-left: 16px; }
 .icon-layer-row { display: flex; align-items: center; gap: 8px; margin: 2px 24px 8px 0; }
 .icon-layer-preview { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: 6px; background: var(--input); color: #1e1e1e; }
 .icon-layer-name { display: flex; flex-direction: column; min-width: 0; }

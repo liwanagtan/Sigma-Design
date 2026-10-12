@@ -17,7 +17,7 @@ import {
 import { exportNodes, saveFile, pickImages } from './io.js';
 import { createFile, openFile, goHome, pickFilesToImport, welcomeFile } from './files.js';
 import {
-  componentPanel, onComponentClick, onComponentChange, bindPropertyDrag, propBinding, propMenuItems, openPlayground,
+  componentPanel, onComponentClick, onComponentChange, bindPropertyDrag, propBinding, propMenuItems, openPlayground, APPLY_PROP_ICON,
 } from './component-ui.js';
 import {
   libraries, componentLibraries, openLibrariesDialog, openPublishComponentsDialog, componentPublishStatus, openDesignTokensDialog,
@@ -1052,9 +1052,13 @@ function buildProps() {
   if (types.size === 1 && types.has('icon')) {
     const info = iconLayerInfo(nodes);
     const inInstance = nodes.some(isInsideInstance);
+    // In a main component, the icon can come from an Icon property (instances then choose it).
+    const pill = !inInstance && propBinding(nodes, 'iconId');
+    const propBtn = inInstance || !propMenuItems(nodes, 'iconId', null).length ? ''
+      : pill || `<button class="icon-btn" data-action="icon-prop" title="Apply icon property">${APPLY_PROP_ICON}</button>`;
     html += section('Icon', info.html +
       (inInstance ? '<div class="muted">Comes from the main component. An Icon property lets instances choose it.</div>'
-        : '<button class="btn wide" data-action="swap-icon">Swap icon…</button>') +
+        : `<div class="icon-actions"><button class="btn" data-action="swap-icon">Swap icon…</button>${propBtn}</div>`) +
       (info.outline ? (inInstance ? `<fieldset class="readonly" disabled>${numField('iconStroke', '', nodes, { icon: '<span class="mini" title="Stroke width">≡</span>' })}</fieldset>`
         : `<div class="grid2">${numField('iconStroke', '', nodes, { icon: '<span class="mini" title="Stroke width (in the icon’s units)">≡</span>' })}<span></span></div>`) : ''));
   } else if (canInsertIcon()) {
@@ -1514,6 +1518,10 @@ function initProps() {
         return openInsertIcon(b.getBoundingClientRect());
       case 'swap-icon':
         return openSwapIcon(b.getBoundingClientRect());
+      case 'icon-prop': {
+        const r = b.getBoundingClientRect();
+        return showContextMenu(r.left, r.bottom + 4, propMenuItems(nodes, 'iconId', r));
+      }
       case 'open-design-tokens':
         return openDesignTokensDialog();
       case 'publish-components':

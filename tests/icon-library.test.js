@@ -169,3 +169,46 @@ test('icon libraries: updates keep icons in use, and components publish the icon
   ok(findIcon(STAR.id), 'icons come with library components');
   ok(nodeSVG(inst).includes('fill="#1E1E1E" stroke="none"'), 'and show');
 });
+
+// ---------- the Icon property ----------
+import { addComponentProp, bindLayerProp, setInstanceProp, updateComponentProp, propsOf, PROP_TARGET } from '../src/components.js';
+
+test('icon property: instances choose the icon; size, color and stroke stay the main component’s', () => {
+  const glyph = createNode('icon', { name: 'Icon', iconId: ARROW.id, fills: [makePaint('#0D99FF')], w: 20, h: 20, iconStroke: 1.5 });
+  const btn = createNode('component', { name: 'Button', w: 120, h: 40, children: [glyph] });
+  useDoc([btn]);
+  linkIcons();
+  eq(PROP_TARGET.icon, 'iconId');
+  const pid = addComponentProp(btn, 'icon', { name: 'Icon', value: STAR.id });
+  bindLayerProp(glyph, 'iconId', pid);
+  eq(glyph.iconId, STAR.id, 'the main component shows the default');
+  const inst = createInstance(getNode(btn.id));
+  eq(inst.children[0].iconId, STAR.id);
+  setInstanceProp(inst, pid, ARROW.id);
+  syncInstances();
+  const copy = inst.children[0];
+  eq([copy.iconId, copy.fills[0].color, copy.w, copy.iconStroke], [ARROW.id, '#0D99FF', 20, 1.5]);
+  // Choosing the icon on the layer inside the instance sets the property too.
+  editNode(copy, ['iconId'], (n) => void (n.iconId = STAR.id));
+  syncInstances();
+  eq([inst.propValues[pid], inst.children[0].iconId], [STAR.id, STAR.id]);
+  // Swapping the main component's icon changes the default; instances that chose one keep theirs.
+  const other = createInstance(getNode(btn.id));
+  editNode(glyph, ['iconId'], (n) => void (n.iconId = ARROW.id));
+  syncInstances();
+  eq(propsOf(btn)[pid].default, ARROW.id);
+  eq([other.children[0].iconId, inst.children[0].iconId], [ARROW.id, STAR.id]);
+});
+
+test('icon property: allowed groups limit the choice (all by default)', () => {
+  const btn = createNode('component', { name: 'B', w: 40, h: 40, children: [createNode('icon', { iconId: ARROW.id })] });
+  useDoc([btn]);
+  linkIcons();
+  const pid = addComponentProp(btn, 'icon', { value: ARROW.id });
+  eq(propsOf(btn)[pid].groups, undefined);
+  updateComponentProp(btn, pid, { groups: ['Arrows', 'Arrows'] });
+  eq(propsOf(btn)[pid].groups, ['Arrows']);
+  eq(availableIcons({ groups: propsOf(btn)[pid].groups }).map((x) => x.icon.name), ['arrow-right']);
+  updateComponentProp(btn, pid, { groups: [] });
+  eq(propsOf(btn)[pid].groups, undefined, 'none means all');
+});

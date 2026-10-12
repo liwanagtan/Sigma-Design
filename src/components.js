@@ -786,11 +786,12 @@ export function mainComponentOf(inst) {
 
 
 // ---------- component properties ----------
-export const PROP_TYPES = { boolean: 'Boolean', text: 'Text', instance: 'Instance swap', slot: 'Slot' };
+export const PROP_TYPES = { boolean: 'Boolean', text: 'Text', instance: 'Instance swap', slot: 'Slot', icon: 'Icon' };
 // Like Figma, a component's properties are listed variant properties first, then the others in order.
-//   def = { name, type, default, preferred?: [componentId] (instance swap) }
+//   def = { name, type, default, preferred?: [componentId] (instance swap), groups?: [name] (icon: the
+//   icon groups instances can choose from; all when absent) }
 // Which layer property each property type binds to.
-export const PROP_TARGET = { boolean: 'visible', text: 'text', instance: 'componentId', slot: 'slot' };
+export const PROP_TARGET = { boolean: 'visible', text: 'text', instance: 'componentId', slot: 'slot', icon: 'iconId' };
 
 // Properties are defined on the component (or on its component set, for variants).
 export function propsHost(comp) {
@@ -821,6 +822,10 @@ export function updateComponentProp(comp, pid, changes) {
     if (changes.preferred?.length) def.preferred = [...new Set(changes.preferred)];
     else delete def.preferred;
   }
+  if ('groups' in changes) {
+    if (changes.groups?.length) def.groups = [...new Set(changes.groups)];
+    else delete def.groups;
+  }
 }
 
 // Let a property's default come from a design token (Boolean ↔ boolean token, Text ↔ string token), or
@@ -828,7 +833,7 @@ export function updateComponentProp(comp, pid, changes) {
 // keeps the default) follow the token in each mode.
 export function setPropDefaultVar(comp, pid, varId) {
   const def = propsHost(comp).props?.[pid];
-  if (!def || def.type === 'instance') return;
+  if (!def || def.type === 'instance' || def.type === 'icon') return;
   if (varId) def.defaultVar = varId;
   else delete def.defaultVar;
   for (const { layer, target } of layersUsingProp(comp, pid)) {
