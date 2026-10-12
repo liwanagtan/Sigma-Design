@@ -270,6 +270,23 @@ const metaFor = (id, doc, extra = {}) => ({
   ...extra,
 });
 
+// Replace a stored file's document (a project file reloaded from disk), keeping its views and history.
+export async function replaceFile(id, doc, metaPatch = {}) {
+  migrateDocument(doc);
+  const ok = await db.updateFile(id, (meta, rec) => meta && {
+    meta: { ...meta, kind: fileKind(doc), name: doc.name || 'Untitled', background: doc.pages?.[0]?.background || meta.background,
+      tokenVersion: doc.published?.version || 0, componentVersion: doc.publishedComponents?.version || 0, ...metaPatch, updatedAt: Date.now() },
+    doc: { id, doc, views: rec?.views || {} },
+  });
+  if (ok) broadcast('saved', id);
+  return ok;
+}
+
+// Change a stored file's metadata only.
+export async function updateFileMeta(id, patch) {
+  return db.updateFile(id, (meta) => meta && { meta: { ...meta, ...patch } });
+}
+
 export async function createFile(doc, views = {}, extra = {}) {
   const id = uid() + uid();
   migrateDocument(doc);

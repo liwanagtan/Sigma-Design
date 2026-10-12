@@ -227,28 +227,29 @@ export function fromProjectFile(file, { resolve = () => null, path = null } = {}
       if (seen.has(dp) || dp === p) continue;
       seen.add(dp);
       const d = tokenEntry(dp, seen);
-      if (d) deps.push({ fileId: d.fileId, name: d.name, version: 0, collections: d.collections }, ...(d.dependencies || []));
+      if (d) deps.push({ fileId: d.fileId, name: d.name, version: 1, collections: d.collections }, ...(d.dependencies || []));
     }
-    const entry = libraryEntry(r.fileId, r.file.name, { version: 0, collections: r.file.collections || [], dependencies: deps });
+    const entry = libraryEntry(r.fileId, r.file.name, { version: 1, collections: r.file.collections || [], dependencies: deps });
     entry.path = p;
     return entry;
   };
   doc.libraries = (uses?.tokens || []).map((p) => tokenEntry(p)).filter(Boolean);
   if (!doc.libraries.length) delete doc.libraries;
   if (kind === 'tokens') {
-    // Inside a project the file as checked out is what other files use (git does the versioning).
-    doc.published = { version: 0, live: true, collections: structuredClone(doc.variables.collections) };
+    // Inside a project the file as checked out is what other files use (git does the versioning): it's
+    // always "published", as version 1, so files that link it never wait for an update.
+    doc.published = { version: 1, live: true, collections: structuredClone(doc.variables.collections) };
   }
   if (kind === 'icons') {
     doc.icons = icons || [];
     if (source) doc.source = source;
-    doc.published = { version: 0, live: true, icons: structuredClone(doc.icons) };
+    doc.published = { version: 1, live: true, icons: structuredClone(doc.icons) };
   }
   if (kind === 'design') {
     const used = usedIconIds(doc.pages.flatMap((pg) => pg.children));
     const iconFiles = (uses?.icons || []).map((p) => [p, linked(p, 'icons')]).filter(([, r]) => r);
     doc.iconLibraries = iconFiles.map(([p, r]) => ({
-      fileId: r.fileId, name: r.file.name, version: 0, path: p, count: (r.file.icons || []).length,
+      fileId: r.fileId, name: r.file.name, version: 1, path: p, count: (r.file.icons || []).length,
       icons: structuredClone((r.file.icons || []).filter((x) => used.has(x.id))),
     }));
     if (!doc.iconLibraries.length) delete doc.iconLibraries;
@@ -257,13 +258,13 @@ export function fromProjectFile(file, { resolve = () => null, path = null } = {}
       if (!r) return null;
       const lib = fromProjectFile(r.file, { resolve, path: p }).doc;
       const components = publishableComponents(lib);
-      const entry = { fileId: r.fileId, name: r.file.name, version: 0, path: p, components };
+      const entry = { fileId: r.fileId, name: r.file.name, version: 1, path: p, components };
       // The tokens and icons its components use, by name (see libraries.js relinkLibraryTokens).
       const names = {};
       for (const l of lib.libraries || []) for (const c of [l, ...(l.dependencies || [])]) {
         for (const col of c.collections || []) for (const v of col.variables || []) names[v.id] = `${v.type}:${v.name}`;
       }
-      entry.tokens = { files: (lib.libraries || []).map((l) => ({ fileId: l.fileId, name: l.name, version: 0 })), names };
+      entry.tokens = { files: (lib.libraries || []).map((l) => ({ fileId: l.fileId, name: l.name, version: 1 })), names };
       const iconIds = usedIconIds(components);
       entry.icons = {};
       for (const l of lib.iconLibraries || []) for (const x of l.icons) if (iconIds.has(x.id)) entry.icons[x.id] = x;
@@ -271,7 +272,7 @@ export function fromProjectFile(file, { resolve = () => null, path = null } = {}
     }).filter(Boolean);
     if (!doc.componentLibraries.length) delete doc.componentLibraries;
     // A library file's own components, as files that use it see them.
-    doc.publishedComponents = { version: 0, live: true, components: structuredClone(publishableComponents(doc)) };
+    doc.publishedComponents = { version: 1, live: true, components: structuredClone(publishableComponents(doc)) };
     if (!doc.publishedComponents.components.length) delete doc.publishedComponents;
   }
   migrateDocument(doc);

@@ -192,6 +192,10 @@ Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.
 
 - **Files link by path, and git does the versioning.** A Sigma Design file lists the Sigma Tokens, Sigma Icons and component library files it uses by their paths; whatever is checked out is what it uses.
 - **Derived data is left out:** instances' layers, the values of token-bound properties, positions and sizes set by auto layout and text, and copies of linked files are rebuilt when a file opens. So is anything at its default value. A token change touches one line of one file.
+- **Open a project:** `python3 serve.py 5173 --project ../my-app` (or `SIGMA_PROJECT=../my-app`). The files home gets a **Project** section with the project's Sigma files; new files made there go in the project. In Chrome and Edge, **Open project folder…** in the sidebar opens one without the server (the folder has to be picked again after a reload).
+- **Save to project (⌘S):** Sigma saves your edits in the browser as you work, as always; ⌘S (or **Save to project** in the file's menu, or the status chip by the file name) writes the file to the project, checked by the validator. The chip says **In project** or **Save to project** (changes not saved yet). In a project file, Publish is hidden: saving is publishing.
+- **Changes on disk:** Sigma checks the project every 2 seconds. When an agent or git changes the open file, it reloads (or asks, if it has changes not saved to the project); when a file it uses changes (new tokens or icons), it updates its copies and keeps your edits. Writes never overwrite a file that changed on disk since Sigma read it; Sigma asks instead.
+- **Safety:** the server listens on 127.0.0.1, answers only requests addressed to localhost, writes only `.sigma/` files and `sigma.config.json`, and only for requests from Sigma (they carry a header other websites can't send). Writes are logged.
 - **Check files** with `node tools/validate.js <project folder>` (Node 18+, no dependencies): it reports each problem with where it is and what to do, and exits with 1 when there are errors.
 - `examples/sample-project/` holds Sigma's sample files in this format (`node tools/build-sample-project.mjs` rebuilds them).
 
@@ -220,6 +224,8 @@ Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.
 | `src/sample-icons.js` | The sample Sigma Icons file (a selection of Lucide icons, outline and filled) |
 | `src/project-format.js` | Sigma files in a project: saving without derived data, opening (rebuilding it), stable JSON |
 | `src/validate.js` | Checks project files and says what's wrong (used by `tools/validate.js`) |
+| `src/project.js` | Projects: reaching one (the server or a picked folder), bringing files in, saving to the project, watching for changes on disk |
+| `src/project-ui.js` | The project status chip and menu items |
 | `src/project-config.js` | `sigma.config.json`: what the sync skill decided about a project |
 | `tools/validate.js` | Command-line check for a project's Sigma files |
 | `src/component-ui.js` | Figma-style component, component set, variant and instance panels; the property window; the component picker |

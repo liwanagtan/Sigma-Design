@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phase 20 is done; next is Phase 21. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phases 20 and 21 are done; next is Phase 22. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -381,7 +381,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 13: Linking design files to token files
 - [x] Phase 14: Export and import
 - [x] Phase 20: File schema
-- [ ] Phase 21: Project folder storage
+- [x] Phase 21: Project folder storage
 - [ ] Phase 22: Tokens sync skill (first milestone)
 - [ ] Phase 23: Icons sync
 - [ ] Phase 24: Code handoff (Part D, Phase 15)
@@ -562,6 +562,7 @@ Sigma files use stable ids and a diff-friendly layout (sorted keys, one object p
 - **Save to the folder:** edits autosave to IndexedDB as today. Saving to the project folder writes the diff-friendly format.
 - **Reload from disk:** when an agent or a git pull changes a file, Sigma offers to reload it.
 - **Done when:** a Sigma file edited by an agent on disk reloads in an open editor, and Sigma's own save produces a minimal git diff.
+- **What shipped:** `serve.py --project PATH` (a small project API: list, read, and write with a check that the file didn't change on disk since it was read; localhost only, writes need Sigma's header and are logged) is the main route, and **Open project folder…** (File System Access, Chrome and Edge) the fallback. Project files are kept in the browser like other files (`meta.project`), so autosave, undo and version history work as before; **⌘S** saves to the project. Sigma checks the project every 2 seconds: a changed open file reloads (or asks, if it has unsaved changes), and changed files it uses update in place, keeping its edits. Verified: opening the sample guide, editing one text and saving gives a one-line diff; a token changed on disk shows in the open design file within 2 seconds. The browser-folder route isn't covered by automated tests (it needs a person to pick the folder).
 
 ### Phase 22: Tokens sync skill (first milestone)
 

@@ -17,6 +17,10 @@ import {
   isSampleFile,
 } from './files.js';
 import { diffIcons, findIcon, usedIconIds, libraryIconCache } from './icon-library.js';
+import { project } from './project.js';
+
+// A project file links only files of its project (links are paths in the repo); a browser file, any.
+const linkable = (meta) => meta.id !== getCurrentFileId() && (state.doc?.project?.path ? meta.project?.name === project.name : true);
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
 
@@ -592,7 +596,7 @@ const openBtn = (id) => `<button class="btn" data-open="${id}" title="Open the f
 
 // Design files: choose the one token file this file uses.
 export async function openDesignTokensDialog() {
-  const files = (await listTokenFiles()).filter((f) => f.id !== getCurrentFileId());
+  const files = (await listTokenFiles()).filter(linkable);
   const using = new Map(libraries().map((l) => [l.fileId, l]));
   const several = libraries().length > 1;
   const rows = files.map((f) => {
@@ -628,7 +632,7 @@ export async function openDesignTokensDialog() {
 // Design files: link component libraries. Token files: link other token files (to point tokens at theirs).
 export async function openLibrariesDialog() {
   if (!isDesignFile()) return openLinkedTokenFilesDialog();
-  const compFiles = (await listComponentLibraries()).filter((f) => f.id !== getCurrentFileId());
+  const compFiles = (await listComponentLibraries()).filter(linkable);
   const linkedComps = new Map(componentLibraries().map((l) => [l.fileId, l]));
   const compRows = compFiles.map((f) => {
     const lib = linkedComps.get(f.id);
@@ -659,7 +663,7 @@ export async function openLibrariesDialog() {
 
 // Design files: link Sigma Icons files, whose icons components can use.
 export async function openIconLibrariesDialog() {
-  const files = await listIconFiles();
+  const files = (await listIconFiles()).filter(linkable);
   const linked = new Map(iconLibraries().map((l) => [l.fileId, l]));
   const count = (l) => l.icons.filter((x) => !x.removed).length;
   const rows = files.map((f) => {
@@ -687,7 +691,7 @@ export async function openIconLibrariesDialog() {
 }
 
 async function openLinkedTokenFilesDialog() {
-  const tokenFiles = (await listTokenFiles()).filter((f) => f.id !== getCurrentFileId());
+  const tokenFiles = (await listTokenFiles()).filter(linkable);
   const linked = new Map(libraries().map((l) => [l.fileId, l]));
   const rows = tokenFiles.map((f) => {
     const lib = linked.get(f.id);

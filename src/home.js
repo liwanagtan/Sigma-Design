@@ -6,6 +6,9 @@ import {
 } from './files.js';
 import { blankDocument } from './sample.js';
 import { ICON_SETS, iconSetDocument, loadIconSet } from './icon-library.js';
+import {
+  project, onProjectChange, projectListing, openProjectFile, newProjectFile, pickProjectFolder, canPickFolder,
+} from './project.js';
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
 import { toast } from './io.js';
@@ -28,7 +31,7 @@ try {
   if (prefs.section === 'all') prefs.section = 'design'; // "All files" became "Design files"
 } catch {}
 
-const SECTIONS = { recents: 'Recents', design: 'Sigma Design', tokens: 'Sigma Tokens', icons: 'Sigma Icons', welcome: 'Welcome to Sigma', archive: 'Archive' };
+const SECTIONS = { project: 'Project', recents: 'Recents', design: 'Sigma Design', tokens: 'Sigma Tokens', icons: 'Sigma Icons', welcome: 'Welcome to Sigma', archive: 'Archive' };
 
 // Open the files home on a section (e.g. the Archive, when an archived file's link is opened).
 export function showHomeSection(section) {
@@ -68,6 +71,7 @@ export function initHome(el) {
         <button class="nav-item" data-section="design">${NAV_DESIGN} Sigma Design</button>
         <button class="nav-item" data-section="tokens">${NAV_TOKENS} Sigma Tokens</button>
         <button class="nav-item" data-section="icons">${NAV_ICONS} Sigma Icons</button>
+        <div class="nav-project" id="home-project"></div>
         <div class="nav-spacer"></div>
         <button class="nav-item nav-welcome" data-section="welcome" title="The guide to Sigma and its sample tokens">${NAV_WELCOME} Welcome to Sigma</button>
         <button class="nav-item" data-section="archive" title="Deleted files, until you delete them forever">${NAV_ARCHIVE} Archive</button>
@@ -121,6 +125,10 @@ export function initHome(el) {
   root.querySelector('#home-new').addEventListener('click', () => newBlankFile());
   root.querySelector('#home-new-tokens').addEventListener('click', () => newTokenFile());
   root.querySelector('#home-new-icons').addEventListener('click', () => newIconsFile());
+  root.querySelector('#home-project').addEventListener('click', (e) => {
+    if (e.target.closest('[data-pick-folder]')) return pickProjectFolder();
+  });
+  onProjectChange(() => !root.hidden && renderHome());
   root.querySelector('#home-new-icons-more').addEventListener('click', (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     showContextMenu(r.right - 240, r.bottom + 4, [
@@ -143,6 +151,11 @@ export function initHome(el) {
 
   const list = root.querySelector('#home-files');
   list.addEventListener('click', (e) => {
+    const projectFile = e.target.closest('[data-project-path]');
+    if (projectFile) {
+      e.preventDefault();
+      return openProjectFile(projectFile.dataset.projectPath);
+    }
     const archived = e.target.closest('[data-archived]');
     if (archived) {
       e.preventDefault();
@@ -217,13 +230,58 @@ export function setHomeNotice(msg) {
   notice = msg || '';
 }
 
+// ---------- the project ----------
+const NAV_PROJECT = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1.5 3.5a1 1 0 0 1 1-1h3l1.5 1.5h4.5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z"/><path d="M5 8.5l1.5-1.5L5 5.5M7.5 9.5h2"/></svg>';
+
+// The sidebar: the connected project, or a way to open one.
+function renderProjectNav() {
+  const el = root.querySelector('#home-project');
+  if (project.name) {
+    el.innerHTML = `<div class="nav-label">Project</div><button class="nav-item${prefs.section === 'project' ? ' active' : ''}" data-section="project" title="${project.connected ? `The Sigma files in this project’s .sigma/ folder` : 'The project isn’t connected'}">${NAV_PROJECT} ${esc(project.name)}${project.connected ? '' : ' <span class="muted">(offline)</span>'}</button>`;
+  } else {
+    el.innerHTML = canPickFolder() ? `<button class="nav-item" data-pick-folder title="Open a codebase’s Sigma files (its .sigma/ folder)">${NAV_PROJECT} Open project folder…</button>` : '';
+  }
+}
+
+async function renderProject(list, q) {
+  const items = (await projectListing()).filter((f) => !q || f.name.toLowerCase().includes(q) || f.path.toLowerCase().includes(q));
+  const intro = `<div class="welcome-intro"><p><b>${esc(project.name)}</b>: the Sigma files in this project’s <code>.sigma/</code> folder${project.via === 'folder' ? ' (opened in the browser)' : ''}. The repo is the source of truth, and git does the versioning.</p>
+    <p class="muted">Sigma saves your edits in this browser as you work; <b>⌘S</b> (or <b>Save to project</b> in a file’s menu) writes them to the project. When an agent or git changes a file on disk, Sigma reloads it. New files made here go in the project.</p></div>`;
+  if (!items.length) {
+    list.innerHTML = intro + `<div class="home-empty"><div class="home-empty-title">${q ? `No project files match “${esc(query)}”` : 'No Sigma files in this project yet'}</div>
+      <p>Create one with the buttons above, or let the sync skill import the project’s tokens and icons (skills/sigma-sync).</p></div>`;
+    return;
+  }
+  const order = ['tokens', 'icons', 'design'];
+  items.sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind) || a.path.localeCompare(b.path));
+  list.innerHTML = intro + items.map((f) => {
+    let thumb = '';
+    if (f.meta?.thumbnail instanceof Blob) {
+      const url = URL.createObjectURL(f.meta.thumbnail);
+      thumbURLs.push(url);
+      thumb = `<img src="${url}" alt="" draggable="false">`;
+    }
+    const plain = f.kind !== 'design';
+    if (!thumb) thumb = `<span class="thumb-placeholder">${f.kind === 'icons' ? NAV_ICONS : f.kind === 'tokens' ? NAV_TOKENS : NAV_DESIGN}</span>`;
+    return `<a class="file-card${plain ? ' tokens' : ''}" href="#" data-project-path="${esc(f.path)}" draggable="false">
+      <div class="file-thumb" style="background:${plain ? '#FFFFFF' : esc(f.meta?.background || '#F5F5F5')}">${thumb}</div>
+      <div class="file-info"><div class="card-name" title="${esc(f.name)}">${esc(f.name)}</div>
+      <div class="file-time">${kindBadge(f.kind)}${f.kind === 'invalid' ? '<span class="kind-badge sample">Not readable</span>' : ''}<span title="${esc(f.path)}">${esc(f.path.replace(/^\.sigma\//, ''))}</span></div></div>
+    </a>`;
+  }).join('');
+}
+
 // ---------- actions ----------
+// In the Project section, new files are made in the project (.sigma/), otherwise in the browser.
+const inProjectSection = () => prefs.section === 'project' && project.connected;
+const create = async (doc) => (inProjectSection() ? newProjectFile(doc) : openFile(await createFile(doc)));
+
 async function newTokenFile() {
-  openFile(await createFile(newTokenDocument()));
+  await create(newTokenDocument());
 }
 
 async function newIconsFile() {
-  openFile(await createFile(newIconsDocument()));
+  await create(newIconsDocument());
 }
 
 // A Sigma Icons file with a free icon set (Lucide), published so Sigma Design files can link it.
@@ -235,7 +293,10 @@ async function newIconSetFile(set) {
   try {
     const data = await loadIconSet(set);
     const doc = iconSetDocument(set, data);
-    openFile(await createFile(doc));
+    if (inProjectSection()) {
+      delete doc.published; // in a project, git does the versioning
+      await newProjectFile(doc);
+    } else openFile(await createFile(doc));
     toast(`${data.name} ${data.version}: ${doc.icons.length.toLocaleString()} icons, published and ready to link`);
   } catch (err) {
     toast(`Couldn’t add ${set.name}: ${err.message}`);
@@ -245,7 +306,7 @@ async function newIconSetFile(set) {
 }
 
 async function newBlankFile() {
-  openFile(await createFile(blankDocument()));
+  await create(blankDocument());
 }
 
 // "Welcome to Sigma", the guide file (made the first time, and again when its content is newer).
@@ -348,21 +409,24 @@ async function startRename(id) {
 // ---------- render ----------
 export async function renderHome() {
   if (!root) return;
-  if (!SECTIONS[prefs.section]) prefs.section = 'recents';
+  if (!SECTIONS[prefs.section] || (prefs.section === 'project' && !project.name)) prefs.section = 'recents';
   const section = prefs.section;
   const archive = section === 'archive';
   let files = await listFiles();
   const total = files.length;
   const welcome = section === 'welcome';
+  const inProject = section === 'project';
   if (archive) files = await listArchivedFiles();
   else if (welcome) files = files.filter(isSampleFile);
-  else if (section !== 'recents') files = files.filter((f) => fileKind(f) === section && !isSampleFile(f)); // the sample files have their own folder
+  else if (inProject) files = [];
+  else if (section !== 'recents') files = files.filter((f) => fileKind(f) === section && !isSampleFile(f) && !f.project); // the sample and project files have their own sections
+  renderProjectNav();
   const inSection = files.length;
 
   root.querySelectorAll('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.section === section));
   root.querySelectorAll('[data-layout]').forEach((b) => b.classList.toggle('on', b.dataset.layout === prefs.layout));
   const recents = section === 'recents';
-  root.querySelector('#home-title').textContent = SECTIONS[section];
+  root.querySelector('#home-title').textContent = inProject ? project.name || 'Project' : SECTIONS[section];
   // The primary "New" button matches the section you're in.
   root.querySelector('#home-new').classList.toggle('primary', section !== 'tokens' && section !== 'icons');
   root.querySelector('#home-new-icons').classList.toggle('primary', section === 'icons');
@@ -394,7 +458,9 @@ export async function renderHome() {
   const list = root.querySelector('#home-files');
   list.className = `home-files ${prefs.layout}`;
 
-  if (welcome) {
+  if (inProject) {
+    await renderProject(list, q);
+  } else if (welcome) {
     list.innerHTML = WELCOME_INTRO +
       (files.length ? files.sort((a, b) => KIND_ORDER.indexOf(fileKind(a)) - KIND_ORDER.indexOf(fileKind(b))).map((f) => card(f, { describe: true })).join('')
         : `<div class="home-empty"><div class="home-empty-title">Welcome to Sigma</div><p>The guide isn’t here (it may be in the Archive).</p>

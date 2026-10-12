@@ -24,6 +24,7 @@ import { checkLibraryUpdates, migrateLegacyTokens, usesLibrary, repairIcons } fr
 import { hideContextMenu } from './menu.js';
 import { arrangeWelcome } from './welcome.js';
 import { clearViewing, resetHistory } from './history.js';
+import { connectProject, saveToProject, project, syncOpenProjectFile } from './project.js';
 
 const appEl = document.getElementById('app');
 const homeEl = document.getElementById('home');
@@ -177,6 +178,7 @@ async function showFile(id, { force = false, discard = false } = {}) {
     iconsEl.hidden = false;
     loadDocument(file.doc, file.views);
     showIconsScreen();
+    syncOpenProjectFile();
     if (sample) {
       sampleBanner();
       setTimeout(() => getCurrentFileId() === id && updateThumbnail(), 1500); // of the original, once
@@ -191,6 +193,7 @@ async function showFile(id, { force = false, discard = false } = {}) {
     tokensEl.hidden = false;
     loadDocument(file.doc, file.views);
     showTokensScreen();
+    syncOpenProjectFile();
     if (sample) sampleBanner();
     checkLibraryUpdates(); // token files it points at may have published new versions
     return;
@@ -216,6 +219,7 @@ async function showFile(id, { force = false, discard = false } = {}) {
   emit('tool');
   await migrateLegacyTokens(wasVersion);
   checkLibraryUpdates();
+  await syncOpenProjectFile();
   repairIcons(); // icons in use the file has no copy of (pasted from another file)
 }
 
@@ -284,8 +288,18 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') void saveNow();
 });
 
+// ⌘S saves the open file to the project (Sigma autosaves to the browser anyway).
+window.addEventListener('keydown', (e) => {
+  if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== 's') return;
+  if (state.screen !== 'editor' && state.screen !== 'tokens' && state.screen !== 'icons') return;
+  e.preventDefault(); // never the browser's "Save page"
+  if (project.connected) saveToProject();
+  else window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'Sigma saves as you work. To save to a codebase, start Sigma with python3 serve.py --project PATH.' }));
+});
+
 initFiles({ onRemoteChange })
   .then(async () => {
+    await connectProject();
     // A first visit opens "Welcome to Sigma".
     const welcome = await welcomeOnFirstVisit().catch((err) => console.error('Could not create Welcome to Sigma', err));
     if (welcome && !/^#\/file\//.test(location.hash)) return openFile(welcome);

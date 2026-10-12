@@ -11,6 +11,7 @@ import { modal } from './libraries.js';
 import {
   parseSVGIcon, iconMarkup, iconGroups, iconMatches, iconNameFrom, diffIcons, ICON_STYLES,
 } from './icon-library.js';
+import { projectMenuItems } from './project-ui.js';
 
 let root = null;
 let selected = new Set(); // icon ids (this screen's own selection, not part of the document)
@@ -34,6 +35,7 @@ export function initIconsScreen(el) {
       <input class="file-name tokens-file-name icons-file-name" spellcheck="false" aria-label="Sigma Icons file name">
       <span class="kind-badge tokens-kind icons-kind">Sigma Icons</span>
       <div class="tokens-header-actions">
+        <button class="project-status" data-project-status hidden></button>
         <span class="publish-status" data-publish-status></span>
         <button class="btn primary" data-publish>Publish…</button>
         <button class="icon-btn" data-undo title="Undo  ⌘Z"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><path d="M5 3L2 6l3 3"/><path d="M2 6h7.5a4 4 0 0 1 0 8H7"/></svg></button>
@@ -62,6 +64,7 @@ export function initIconsScreen(el) {
       { label: 'Import SVGs…', action: pickSVGs },
       { label: 'Download a copy (.sigma.json)', action: saveFile },
       '-',
+      ...projectMenuItems(),
       { label: 'Save to version history…', shortcut: '⌥⌘S', action: () => openSaveVersionDialog() },
       { label: 'Show version history', action: () => openHistory() },
       '-',

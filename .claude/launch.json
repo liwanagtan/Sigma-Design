@@ -4,8 +4,22 @@
     {
       "name": "sigma",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["serve.py", "5174"],
+      "runtimeArgs": [
+        "serve.py",
+        "5174"
+      ],
       "port": 5174
+    },
+    {
+      "name": "sigma-sample-project",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "serve.py",
+        "5175",
+        "--project",
+        "examples/sample-project"
+      ],
+      "port": 5175
     }
   ]
 }

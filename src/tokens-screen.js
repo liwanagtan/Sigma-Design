@@ -9,6 +9,7 @@ import { saveFile, download } from './io.js';
 import { exportDTCG, exportCSS, importTokens, mergeCollections } from './tokens-io.js';
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
+import { projectMenuItems } from './project-ui.js';
 
 let root = null;
 
@@ -20,6 +21,7 @@ export function initTokensScreen(el) {
       <input class="file-name tokens-file-name" spellcheck="false" aria-label="Sigma Tokens file name">
       <span class="kind-badge tokens-kind">Sigma Tokens</span>
       <div class="tokens-header-actions">
+        <button class="project-status" data-project-status hidden></button>
         <span class="publish-status" data-publish-status></span>
         <button class="btn primary" data-publish>Publish…</button>
         <button class="icon-btn" data-undo title="Undo  ⌘Z"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><path d="M5 3L2 6l3 3"/><path d="M2 6h7.5a4 4 0 0 1 0 8H7"/></svg></button>
@@ -41,6 +43,7 @@ export function initTokensScreen(el) {
       '-',
       { label: 'Libraries…', action: () => openLibrariesDialog() },
       '-',
+      ...projectMenuItems(),
       { label: 'Save to version history…', shortcut: '⌥⌘S', action: () => openSaveVersionDialog() },
       { label: 'Show version history', action: () => openHistory() },
       '-',

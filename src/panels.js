@@ -39,6 +39,7 @@ import { toWorld, nodeWorldSVG, strokeSides } from './render.js';
 import { GRID_TYPES, newGrid, retypeGrid } from './grids.js';
 import { textContrast, contrastBadge } from './contrast.js';
 import { openAuditDialog } from './audit-ui.js';
+import { projectMenuItems } from './project-ui.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -114,6 +115,7 @@ function initFileHeader() {
       { label: 'Undo', shortcut: '⌘Z', action: undo },
       { label: 'Redo', shortcut: '⇧⌘Z', action: redo },
       '-',
+      ...projectMenuItems(),
       { label: 'Save to version history…', shortcut: '⌥⌘S', action: () => openSaveVersionDialog() },
       { label: 'Show version history', action: () => openHistory() },
       '-',
@@ -951,7 +953,9 @@ function buildProps() {
       (iconLibs.length ? iconLibs.map((l) => libLine(ICONS_ICON.replace(/16/g, '12'), l)).join('') : '<div class="muted">Link Sigma Icons files to use their icons in components.</div>') +
       '<button class="btn wide" data-action="open-icon-libraries">Manage icon libraries…</button>');
     const pub = componentPublishStatus();
-    if (pub.count) {
+    if (pub.count && state.doc.project?.path) {
+      html += section('Components', `<div class="muted">${pub.count} component${pub.count === 1 ? '' : 's'} in this file. In a project, saving is publishing: files that use them read them from the project.</div>`);
+    } else if (pub.count) {
       html += section('Components',
         `<div class="muted">${pub.count} component${pub.count === 1 ? '' : 's'} in this file · ${!pub.pub ? 'not published' : pub.dirty ? `v${pub.pub.version} published, changes not published` : `v${pub.pub.version} published`}</div>` +
         `<button class="btn wide" data-action="publish-components" ${pub.pub && !pub.dirty ? 'disabled' : ''}>Publish components…</button>`);

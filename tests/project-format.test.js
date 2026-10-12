@@ -178,3 +178,70 @@ test('project format: serializeForProject names new files by kind and name', () 
   const { path } = serializeForProject({ kind: 'icons', name: 'App Icons', icons: [] });
   eq(path, '.sigma/icons/app-icons.sigma.json');
 });
+
+// ---------- projects (src/project.js), with an in-memory project ----------
+import { connectWith, bringProjectFile, hasUnsavedProjectChanges, textHash, project } from '../src/project.js';
+import { loadFile, deleteFile, listFiles, replaceFile } from '../src/files.js';
+
+function memoryProject(files) {
+  const disk = new Map(Object.entries(files).map(([p, f]) => [p, { text: formatProjectJSON(f), mtime: '1' }]));
+  let clock = 1;
+  return {
+    disk,
+    via: 'memory',
+    async list() {
+      return { name: `test-project-${Date.now()}`, files: [...disk].map(([path, { text, mtime }]) => ({ path, kind: JSON.parse(text).kind, name: JSON.parse(text).name, mtime, size: text.length })), config: null };
+    },
+    async read(path) {
+      if (!disk.has(path)) throw new Error(`${path} doesn’t exist`);
+      return { ...disk.get(path) };
+    },
+    async write(path, text, base) {
+      const cur = disk.get(path);
+      if ((base === 'new' && cur) || (base && base !== 'new' && cur && cur.mtime !== base)) throw Object.assign(new Error('changed'), { conflict: true, mtime: cur.mtime });
+      disk.set(path, { text, mtime: String(++clock) });
+      return { path, mtime: String(clock) };
+    },
+    touch(path, edit) { // an agent edits the file on disk
+      const file = JSON.parse(disk.get(path).text);
+      edit(file);
+      disk.set(path, { text: formatProjectJSON(file), mtime: String(++clock) });
+    },
+  };
+}
+
+test('projects: a project file and the files it uses come into the browser, linked by path; unchanged files stay as they are', async () => {
+  const { files, paths } = await sampleProject();
+  const mem = memoryProject(files);
+  await connectWith(mem);
+  const made = [];
+  try {
+    const id = await bringProjectFile(paths.guide);
+    const metas = (await listFiles()).filter((m) => m.project?.name === project.name);
+    made.push(...metas.map((m) => m.id));
+    eq(metas.map((m) => m.project.path).sort(), Object.values(paths).sort(), 'the guide and the files it uses');
+    const guide = (await loadFile(id)).doc;
+    eq(guide.project.path, paths.guide);
+    eq([guide.libraries[0].path, guide.iconLibraries[0].path], [paths.tokens, paths.icons]);
+    ok(!(await hasUnsavedProjectChanges(id)), 'a file just brought in has nothing to save');
+    eq(await bringProjectFile(paths.guide), id, 'bringing it again reuses the stored copy');
+    // An agent changes the token file on disk: bringing the guide brings the new tokens too.
+    mem.touch(paths.tokens, (f) => (f.name = 'Renamed tokens'));
+    await bringProjectFile(paths.guide);
+    const tokens = (await loadFile(metas.find((m) => m.project.path === paths.tokens).id)).doc;
+    eq(tokens.name, 'Renamed tokens');
+    // Changes made in the browser are kept when the disk version hasn't changed.
+    const edited = structuredClone(guide);
+    edited.pages[0].name = 'Edited here';
+    await replaceFile(id, edited);
+    ok(await hasUnsavedProjectChanges(id), 'an edit here is a change not saved to the project');
+    await bringProjectFile(paths.guide);
+    eq((await loadFile(id)).doc.pages[0].name, 'Edited here', 'not overwritten by an unchanged disk file');
+    await bringProjectFile(paths.guide, { force: true });
+    ok((await loadFile(id)).doc.pages[0].name !== 'Edited here', 'force loads the disk version');
+    eq(textHash('abc'), textHash('abc'));
+    ok(textHash('abc') !== textHash('abd'));
+  } finally {
+    for (const m of await listFiles()) if (m.project?.name === project.name) await deleteFile(m.id);
+  }
+});
