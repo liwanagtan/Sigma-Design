@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Phases 1–14 and Part E (Phases 20–30) are done**, except Phase 26's real run (a Notion ticket and CI on a pull request). Next is **Part F: Sigma inside your project** (Phases 31–34), starting with Phase 31. Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **Phases 1–14 and Part E (Phases 20–30) are done**, except Phase 26's real run (a Notion ticket and CI on a pull request). Part F: Sigma inside your project (Phases 31–34) has begun: Phase 31 is done; next is Phase 32. Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -391,7 +391,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 28: Component library onboarding
 - [x] Phase 29: Page onboarding
 - [x] Phase 30: Design to code for components
-- [ ] Phase 31: Project mode in the editor
+- [x] Phase 31: Project mode in the editor
 - [ ] Phase 32: Install like a dev tool (npm package)
 - [ ] Phase 33: Live sync while Sigma runs
 - [ ] Phase 34: Sigma renders the project's components
@@ -705,6 +705,16 @@ the browser.
 - **Standalone** is unchanged.
 - **Done when:** with `examples/css-app` connected, its tokens, icons, library and pages appear under their
   kinds, proposals under Proposals, and Sigma without a project looks as it does today.
+- **What shipped:** in a project (`src/home.js`), the sidebar starts with the project's name and whether it's
+  connected; Recents, Sigma Design, Sigma Tokens and Sigma Icons list the project's files (sorted and searched
+  like browser files, with "Edited … ago" once opened); new files go into the project (and can't be made while
+  it's offline); **Proposals** has Propose change and every proposal with its status and pull request and
+  ticket links; Import, drops and the Archive are hidden. Browser-only files get a notice with **Move into
+  project…** (a dialog to pick them; token and icon files are moved first, and links between moved files
+  point at their new paths; the browser copies go to the Archive) or **Not now** (remembered per project).
+  Standalone is unchanged except that **Open project folder…** sits at the top of the sidebar. Verified on
+  `examples/css-app`: its four files under their kinds, PR #1's proposal under Proposals as Merged, and a
+  browser token file and a design file linked to it moved in with the link kept.
 
 ### Phase 32: Install like a dev tool (npm package)
 
