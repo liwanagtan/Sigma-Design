@@ -1,0 +1,31 @@
+{
+  "format": 1,
+  "kind": "icons",
+  "name": "Acme MUI icons",
+  "icons": [
+    {
+      "id": "arrow-right",
+      "name": "arrow-right",
+      "body": "<path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/>",
+      "cap": "round",
+      "group": "",
+      "join": "round",
+      "keywords": "",
+      "strokeWidth": 2,
+      "style": "outline",
+      "viewBox": "0 0 24 24"
+    },
+    {
+      "id": "close",
+      "name": "close",
+      "body": "<path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/>",
+      "cap": "round",
+      "group": "",
+      "join": "round",
+      "keywords": "",
+      "strokeWidth": 2,
+      "style": "outline",
+      "viewBox": "0 0 24 24"
+    }
+  ]
+}

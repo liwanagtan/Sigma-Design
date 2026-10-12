@@ -1,15 +1,44 @@
 {
   "schema": 1,
-  "stack": { "styling": ["js-theme"], "framework": "react" },
+  "stack": {
+    "styling": [
+      "js-theme"
+    ],
+    "framework": "react"
+  },
   "tokens": [
     {
       "sigma": ".sigma/tokens/mui.sigma.json",
       "name": "Acme MUI tokens",
-      "sources": [{ "path": "src/theme.js", "format": "js-theme" }],
+      "sources": [
+        {
+          "path": "src/theme.js",
+          "format": "js-theme"
+        }
+      ],
       "naming": "path",
-      "modes": { "Light": "lightTheme", "Dark": "darkTheme" }
+      "modes": {
+        "Light": "lightTheme",
+        "Dark": "darkTheme"
+      }
     }
   ],
-  "notes": "Tokens are extracted from src/theme.js by the agent (skills/sigma-sync/reference/tokens.md): palette.* → Semantic (Light/Dark from lightTheme/darkTheme), shared spacing/shape/typography → Primitives. Code names are theme paths (palette.primary.main).",
-  "workflow": { "git": "github", "tracker": "none", "branch": "design/{slug}", "base": "main", "labels": ["design"] }
+  "notes": "Tokens are extracted from src/theme.js by the agent (skills/sigma-sync/reference/tokens.md): palette.* \u2192 Semantic (Light/Dark from lightTheme/darkTheme), shared spacing/shape/typography \u2192 Primitives. Code names are theme paths (palette.primary.main).",
+  "workflow": {
+    "git": "github",
+    "tracker": "none",
+    "branch": "design/{slug}",
+    "base": "main",
+    "labels": [
+      "design"
+    ]
+  },
+  "icons": [
+    {
+      "sigma": ".sigma/icons/mui-icons.sigma.json",
+      "name": "Acme MUI icons",
+      "source": "src/icons",
+      "output": "react"
+    }
+  ]
 }
