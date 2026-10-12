@@ -333,6 +333,18 @@ export function validateFile(file, { path = '(file)', files = {} } = {}) {
       if (pg.background !== undefined && !HEX.test(pg.background)) error(`${at}.background`, 'should be a color like "#F5F5F5"');
       (pg.children || []).forEach((n, i) => checkNode(n, `${at}.children[${i}]`, null, null));
     });
+    // Comments: on a page of this file, and (if on a layer) a layer that's still there.
+    const commentIds = new Set();
+    (file.comments || []).forEach((c, ci) => {
+      const at = `comments[${ci}]`;
+      if (!c || typeof c !== 'object') return error(at, 'should be a comment object');
+      if (typeof c.id !== 'string' || commentIds.has(c.id)) error(`${at}.id`, 'should be a unique id');
+      commentIds.add(c.id);
+      if (typeof c.text !== 'string' || !c.text.trim()) error(`${at}.text`, 'is missing');
+      if (!(file.pages || []).some((p) => p.id === c.pageId)) error(`${at}.pageId`, `${c.pageId} isn’t a page of this file`);
+      if (c.nodeId && !nodeIds.has(c.nodeId)) warn(`${at}.nodeId`, `the layer it was on (${c.layer || c.nodeId}) isn’t there any more`);
+      if (!c.at || !num(c.at.x) || !num(c.at.y)) error(`${at}.at`, 'should be { "x": …, "y": … }');
+    });
   }
   return issues;
 }

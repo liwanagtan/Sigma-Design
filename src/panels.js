@@ -41,6 +41,7 @@ import { textContrast, contrastBadge } from './contrast.js';
 import { openAuditDialog } from './audit-ui.js';
 import { projectMenuItems } from './project-ui.js';
 import { inspectHTML } from './inspect.js';
+import { commentsListHTML, onCommentsListClick, onCommentsListChange } from './comments.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -72,7 +73,8 @@ export function initPanels() {
 const TOOLS = [
   ['move', 'Move', 'V'], ['hand', 'Hand tool', 'H'], '|',
   ['frame', 'Frame', 'F'], ['rect', 'Rectangle', 'R'], ['ellipse', 'Ellipse', 'O'], ['line', 'Line', 'L'], '|',
-  ['text', 'Text', 'T'], ['image', 'Place image', '⇧⌘K'],
+  ['text', 'Text', 'T'], ['image', 'Place image', '⇧⌘K'], '|',
+  ['comment', 'Comment', 'C'],
 ];
 
 function initToolbar() {
@@ -152,7 +154,7 @@ export function renderFileHeader() {
 
 function showShortcuts() {
   const rows = [
-    ['Tools', [['Move', 'V'], ['Hand / pan', 'H or hold Space'], ['Frame', 'F'], ['Rectangle', 'R'], ['Ellipse', 'O'], ['Line', 'L'], ['Text', 'T'], ['Place image', '⇧⌘K']]],
+    ['Tools', [['Move', 'V'], ['Hand / pan', 'H or hold Space'], ['Frame', 'F'], ['Rectangle', 'R'], ['Ellipse', 'O'], ['Line', 'L'], ['Text', 'T'], ['Place image', '⇧⌘K'], ['Comment', 'C']]],
     ['Canvas', [['Zoom in / out', '⌘+ / ⌘−  or ⌘-scroll / pinch'], ['Zoom to 100%', '⇧0'], ['Zoom to fit', '⇧1'], ['Zoom to selection', '⇧2'], ['Pan', 'Scroll / Space-drag'], ['Show / hide layout grids', '⌃G']]],
     ['Selection', [['Select all', '⌘A'], ['Deep select', '⌘-click'], ['Select inside', 'Double-click / Enter'], ['Select parent', '⇧Enter'], ['Measure distance', 'Hold ⌥']]],
     ['Edit', [['Undo / Redo', '⌘Z / ⇧⌘Z'], ['Copy / Paste / Cut', '⌘C / ⌘V / ⌘X'], ['Duplicate', '⌘D or ⌥-drag'], ['Delete', '⌫'], ['Group / Ungroup', '⌘G / ⇧⌘G'], ['Frame selection', '⌥⌘G'], ['Add / remove auto layout', '⇧A / ⌥⇧A'], ['Create component', '⌥⌘K'], ['Detach instance', '⌥⌘B'], ['Save to version history', '⌥⌘S'], ['Reorder in auto layout', 'Drag or arrow keys'], ['Nudge', 'Arrows (⇧ = 10px)'], ['Bring forward / Send backward', '⌘] / ⌘['], ['To front / To back', '⌥⌘] / ⌥⌘['], ['Hide / Lock', '⇧⌘H / ⇧⌘L'], ['Rename', '⌘R'], ['Flip', '⇧H / ⇧V']]],
@@ -1200,10 +1202,14 @@ function initAssets() {
     leftTab = b.dataset.leftTab;
     for (const t of document.querySelectorAll('[data-left-tab]')) t.classList.toggle('active', t === b);
     $('#left-assets').hidden = leftTab !== 'assets';
+    $('#left-comments').hidden = leftTab !== 'comments';
     document.querySelector('#left .pages').hidden = leftTab !== 'layers';
     document.querySelector('#left .layers').hidden = leftTab !== 'layers';
     renderAssets();
+    renderCommentsList();
   });
+  $('#left-comments').addEventListener('click', (e) => onCommentsListClick(e));
+  $('#left-comments').addEventListener('change', (e) => onCommentsListChange(e));
   $('#assets-search').addEventListener('input', (e) => {
     assetQuery = e.target.value;
     renderAssets();
@@ -1251,6 +1257,11 @@ function initAssets() {
 
 const ASSET_INFO_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><circle cx="6" cy="6" r="4.8"/><path d="M6 5.4v3M6 3.6v.1"/></svg>';
 const COMPONENT_LIB_ICON = '<svg class="lib-glyph" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M6 1.2l1.9 1.9L6 5 4.1 3.1zM6 7l1.9 1.9L6 10.8 4.1 8.9zM3.1 4.1L5 6 3.1 7.9 1.2 6zM8.9 4.1L10.8 6 8.9 7.9 7 6z"/></svg> ';
+
+export function renderCommentsList() {
+  if (leftTab !== 'comments' || !state.doc) return;
+  $('#left-comments').innerHTML = commentsListHTML();
+}
 
 export function renderAssets() {
   if (leftTab !== 'assets' || !state.doc) return;

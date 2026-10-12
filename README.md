@@ -186,6 +186,11 @@ Then open http://localhost:5173.
 
 Press `?` in the app to see every keyboard shortcut.
 
+## Comments
+
+- **Comment tool** (C, or the speech bubble in the toolbar): click a layer to comment on it; the pin stays on the layer as it moves. Click a pin to read the thread, reply, resolve or delete. The **Comments** tab (left panel) lists them (open ones, or all), and jumps to one.
+- Comments are stored in the file, so in a project they travel through git: **Propose change** includes them, and the pull request's description lists them with the layer each is on. An agent can bring pull request review feedback onto the exact layer with `node tools/sigma.mjs comment add --file … --layer "Card / Title" --text …` (and `comment list`, `comment resolve`); Sigma reloads and shows it.
+
 ## Code handoff
 
 - **Inspect** (the tab next to Design in the right panel) shows, for the selected layer: its CSS (size, auto layout, padding, radius, fills, borders, shadows, type), with every value that comes from a token written as the token's variable (`var(--surface-default)`, the same names as **Export CSS variables**); the tokens it uses with their values in its modes and their code names on Web, iOS and Android; and for an instance, how it's written in code (`<Button variant="primary" label="Save" />`: variant properties always, other properties when they differ from the default). Each block has a copy button.
@@ -244,6 +249,7 @@ Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.
 | `src/inspect.js` | The Inspect panel: CSS with token variables, tokens used, instance usage, component API |
 | `src/changesets.js` | Changesets: what changed (by token, icon, component, page), applying some of it onto the base |
 | `src/propose.js` | The Propose change dialog, with before and after renders |
+| `src/comments.js` | Comments on layers: pins, threads, the Comments list |
 | `tools/validate.js` | Command-line check for a project's Sigma files |
 | `src/component-ui.js` | Figma-style component, component set, variant and instance panels; the property window; the component picker |
 | `src/history.js` | Version history panel: viewing a version read-only, restore, duplicate, named versions |

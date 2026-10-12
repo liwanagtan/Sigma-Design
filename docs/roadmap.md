@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phases 20–25 are done, Phase 26 is built (its real GitHub/Notion run is waiting); next is Phase 27. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phases 20–25 are done, Phase 26 is built (its real GitHub/Notion run is waiting), Phase 27 is done; next is Phase 28. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -387,7 +387,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 24: Code handoff (Part D, Phase 15)
 - [x] Phase 25: Propose change
 - [ ] Phase 26: Team workflow (GitHub and Notion)
-- [ ] Phase 27: Comments
+- [x] Phase 27: Comments
 - [ ] Phase 28: Component library onboarding
 - [ ] Phase 29: Page onboarding
 - [ ] Phase 30: Design to code for components
@@ -606,6 +606,7 @@ Unchanged from Phase 15 above: code names per platform for tokens, components an
 
 - **Comments on layers,** stored in the Sigma file, so PR review feedback can point at the exact layer it's about.
 - **Done when:** a comment added in Sigma shows in the PR's design diff, and resolving it is saved.
+- **What shipped:** the comment tool (C), pins that follow their layer, threads (reply, resolve, delete), the Comments tab; `doc.comments` in the file format; comments as changeset items and a "Comments on the design" section in `changeset pr-body`; `tools/sigma.mjs comment list | add | resolve` so agents bring review feedback onto layers; the validator flags comments whose layer is gone. Verified on `examples/css-app`: a comment made in Sigma and a reviewer's comment added from the command line (which Sigma reloaded) both appeared in a proposal's PR body, and resolving was saved in the file. Sigma also checks the project as soon as its tab is visible again.
 
 ### Phase 28: Component library onboarding
 

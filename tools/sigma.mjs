@@ -19,6 +19,9 @@
 //   node tools/sigma.mjs changeset pr-body <id> [project] [--images-base URL]
 //   node tools/sigma.mjs changeset ticket <id> [project]
 //   node tools/sigma.mjs changeset sync [project]                 statuses from GitHub (gh pr view)
+//   node tools/sigma.mjs comment list [project] [--all]
+//   node tools/sigma.mjs comment add [project] --file PATH --layer ID|NAME --text TEXT [--author NAME] [--reply-to ID]
+//   node tools/sigma.mjs comment resolve <id> [project] [--author NAME]
 //
 // [project] is the folder with sigma.config.json (default: the current folder). Token commands work on
 // the config's "tokens" entries (all of them, or --entry N). --json prints machine-readable output.
@@ -49,7 +52,7 @@ for (let i = 0; i < argv.length; i++) {
   if (a.startsWith('--')) {
     const [k, v] = a.slice(2).split('=');
     if (v !== undefined) flags[k] = v;
-    else if (argv[i + 1] && !argv[i + 1].startsWith('--') && ['from', 'entry', 'base', 'format', 'to', 'pr', 'pr-number', 'ticket', 'tracker', 'branch', 'images-base'].includes(k)) flags[k] = argv[++i];
+    else if (argv[i + 1] && !argv[i + 1].startsWith('--') && ['from', 'entry', 'base', 'format', 'to', 'pr', 'pr-number', 'ticket', 'tracker', 'branch', 'images-base', 'file', 'layer', 'text', 'author', 'reply-to'].includes(k)) flags[k] = argv[++i];
     else flags[k] = true;
   } else pos.push(a);
 }
@@ -439,7 +442,9 @@ function changeLines(c, root) {
   }
   const show2 = (v) => (v === null || v === undefined ? '—' : typeof v === 'object' ? (v.alias ? `{${tokenNames.get(v.alias) || v.alias}}` : JSON.stringify(v)) : String(v));
   return c.changes.map((ch) => {
-    const what = ch.kind === 'file' ? `${ch.file}: name, links, collections or modes` : `${ch.kind} **${ch.name}**`;
+    const what = ch.kind === 'file' ? `${ch.file}: name, links, collections or modes`
+      : ch.kind === 'comment' ? `comment by ${ch.after?.author || ch.before?.author} on _${(ch.after || ch.before)?.layer || 'the page'}_${ch.after?.resolved && !ch.before?.resolved ? ' (resolved)' : ''}`
+        : `${ch.kind} **${ch.name}**`;
     let detail = '';
     if (ch.kind === 'token') {
       const modes = new Set([...Object.keys(ch.before?.valuesByMode || {}), ...Object.keys(ch.after?.valuesByMode || {})]);
@@ -464,6 +469,17 @@ function changesetPRBody(id, dir) {
     for (const ch of pics) {
       const r = c.renders[ch.key];
       lines.push(`| ${ch.kind} ${ch.name} | ${r.before ? `<img src="${img(r.before)}" width="280">` : '—'} | ${r.after ? `<img src="${img(r.after)}" width="280">` : '—'} |`);
+    }
+    lines.push('');
+  }
+  // Comments on the design (made in Sigma), with the layer each is on.
+  const notes = c.changes.filter((ch) => ch.kind === 'comment' && ch.after);
+  if (notes.length) {
+    lines.push('### Comments on the design', '');
+    for (const ch of notes) {
+      const m = ch.after;
+      lines.push(`- ${m.resolved ? '✅ ' : ''}**${m.author}** on _${m.layer || 'the page'}_: ${m.text}`);
+      for (const r of m.replies || []) lines.push(`  - **${r.author}**: ${r.text}`);
     }
     lines.push('');
   }
@@ -546,6 +562,80 @@ function changesetSync(dir) {
   for (const u of updated) out(`${u.title}: ${STATUSES[u.from] || u.from} → ${STATUSES[u.to]}${u.to === 'merged' && u.ticket ? `  (move the ticket to Done: ${u.ticket})` : ''}`);
 }
 
+// ---------- comments (Phase 27) ----------
+const rid = () => Math.random().toString(36).slice(2, 10);
+// A layer by id, by name path ("Card / Title") or by name: { node, page, path }.
+function findLayer(file, ref) {
+  const hits = [];
+  for (const pg of file.pages || []) {
+    const visit = (nodes, trail) => {
+      for (const n of nodes || []) {
+        const path = [...trail, n.name].join(' / ');
+        if (n.id === ref || path === ref || n.name === ref) hits.push({ node: n, page: pg, path, exact: n.id === ref || path === ref });
+        visit(n.children, [...trail, n.name]);
+      }
+    };
+    visit(pg.children, []);
+  }
+  const exact = hits.filter((h) => h.exact);
+  if (exact.length === 1) return exact[0];
+  if (hits.length === 1) return hits[0];
+  fail(hits.length ? `${ref} matches ${hits.length} layers (${hits.slice(0, 4).map((h) => h.path).join('; ')}); use its id or full path` : `no layer ${ref} in this file`);
+}
+
+function designFiles(root) {
+  return Object.entries(readProject(root).files).map(([path, text]) => [path, JSON.parse(text)]).filter(([, f]) => f.kind === 'design');
+}
+
+function commentList(dir) {
+  const root = resolve(dir || '.');
+  const all = designFiles(root).flatMap(([path, f]) => (f.comments || []).map((c) => ({ file: path, ...c })));
+  const shown = flags.all ? all : all.filter((c) => !c.resolved);
+  if (json) return out(shown);
+  if (!shown.length) return out(all.length ? 'All comments are resolved (--all lists them).' : 'No comments.');
+  for (const c of shown) {
+    out(`${c.id}  ${c.resolved ? '[resolved] ' : ''}${c.author} on ${c.layer || 'the page'} (${c.file}): ${c.text}`);
+    for (const r of c.replies || []) out(`    ↳ ${r.author}: ${r.text}`);
+  }
+}
+
+function commentAdd(dir) {
+  const root = resolve(dir || '.');
+  if (!flags.text) fail('say what the comment says: --text "…"');
+  const author = flags.author || 'Agent';
+  const now = new Date().toISOString();
+  if (flags['reply-to']) {
+    for (const [path, f] of designFiles(root)) {
+      const c = (f.comments || []).find((x) => x.id === flags['reply-to']);
+      if (!c) continue;
+      (c.replies ||= []).push({ id: rid(), text: String(flags.text), author, createdAt: now });
+      writeText(root, path, formatProjectJSON(f));
+      return out(`Replied to ${c.id} in ${path}`);
+    }
+    fail(`no comment ${flags['reply-to']}`);
+  }
+  if (!flags.file || !flags.layer) fail('say where: --file <.sigma/design/….sigma.json> --layer <id or name path>');
+  const f = JSON.parse(readText(root, flags.file));
+  const hit = findLayer(f, String(flags.layer));
+  const c = { id: rid(), pageId: hit.page.id, nodeId: hit.node.id, at: { x: 0, y: 0 }, layer: hit.path, text: String(flags.text), author, createdAt: now, replies: [] };
+  (f.comments ||= []).push(c);
+  writeText(root, flags.file, formatProjectJSON(f));
+  out(`Commented on ${hit.path} in ${flags.file} (${c.id})`);
+}
+
+function commentResolve(id, dir) {
+  const root = resolve(dir || '.');
+  for (const [path, f] of designFiles(root)) {
+    const c = (f.comments || []).find((x) => x.id === id);
+    if (!c) continue;
+    c.resolved = true;
+    c.resolvedBy = flags.author || 'Agent';
+    writeText(root, path, formatProjectJSON(f));
+    return out(`Resolved ${id} in ${path}`);
+  }
+  fail(`no comment ${id}`);
+}
+
 // validate + every CSS-sourced token file matches its code (an import would change nothing).
 function checkAll(dir) {
   const { root, config } = project(dir);
@@ -599,6 +689,9 @@ else if (cmd === 'changeset' && sub === 'prepare') changesetPrepare(dir, pos[3])
 else if (cmd === 'changeset' && sub === 'pr-body') changesetPRBody(dir, pos[3]);
 else if (cmd === 'changeset' && sub === 'ticket') changesetTicket(dir, pos[3]);
 else if (cmd === 'changeset' && sub === 'sync') changesetSync(dir);
+else if (cmd === 'comment' && sub === 'list') commentList(dir);
+else if (cmd === 'comment' && sub === 'add') commentAdd(dir);
+else if (cmd === 'comment' && sub === 'resolve') commentResolve(dir, pos[3]);
 else {
   out(`Usage:
   node tools/sigma.mjs validate [project]
@@ -619,6 +712,9 @@ else {
   node tools/sigma.mjs changeset pr-body <id> [project] [--images-base URL]
   node tools/sigma.mjs changeset ticket <id> [project]
   node tools/sigma.mjs changeset sync [project]
+  node tools/sigma.mjs comment list [project] [--all]
+  node tools/sigma.mjs comment add [project] --file PATH --layer ID|NAME --text TEXT [--author NAME] [--reply-to ID]
+  node tools/sigma.mjs comment resolve <id> [project] [--author NAME]
 Add --json for machine-readable output. See skills/sigma-sync/SKILL.md.`);
   process.exit(cmd ? 2 : 0);
 }

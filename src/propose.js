@@ -13,7 +13,7 @@ import { iconMarkup } from './icon-library.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const toast = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
-const KINDS = { file: 'File', token: 'Token', icon: 'Icon', component: 'Component', page: 'Page' };
+const KINDS = { file: 'File', token: 'Token', icon: 'Icon', component: 'Component', page: 'Page', comment: 'Comment' };
 
 // Render layers of a project file version (another document than the open one): load it into the editor's
 // state for a moment, rebuild its derived data, draw, and put the open document back.

@@ -47,7 +47,7 @@ function pageContent(pg) {
   const strip = (nodes) => nodes.map((n) => (isComponent(n) ? { $component: n.id } : n.children ? { ...n, children: strip(n.children) } : n));
   return { ...pg, children: strip(pg.children || []) };
 }
-const designShell = (file) => file && { ...file, pages: undefined, collections: file.collections };
+const designShell = (file) => file && { ...file, pages: undefined, comments: undefined, collections: file.collections };
 
 // Every change between the base and the current project files: { [path]: file | null } each.
 export function projectChanges(base, current) {
@@ -78,6 +78,11 @@ export function projectChanges(base, current) {
         const x = ca.get(id), y = cb.get(id);
         push(path, 'component', id, (y || x).node.name, x?.node, y?.node, { where: y ? { page: y.page, parent: y.parent, index: y.index } : undefined });
       }
+      const ma = new Map((a?.comments || []).map((c) => [c.id, c])), mb = new Map((b?.comments || []).map((c) => [c.id, c]));
+      for (const id of new Set([...ma.keys(), ...mb.keys()])) {
+        const c = mb.get(id) || ma.get(id);
+        push(path, 'comment', id, `${c.author}: ${String(c.text).slice(0, 60)}`, ma.get(id), mb.get(id));
+      }
       const pa = new Map((a?.pages || []).map((p) => [p.id, p])), pb = new Map((b?.pages || []).map((p) => [p.id, p]));
       for (const id of new Set([...pa.keys(), ...pb.keys()])) {
         const x = pa.get(id), y = pb.get(id);
@@ -85,7 +90,7 @@ export function projectChanges(base, current) {
       }
     }
   }
-  const order = { file: 0, token: 1, icon: 2, component: 3, page: 4 };
+  const order = { file: 0, token: 1, icon: 2, component: 3, page: 4, comment: 5 };
   return items.sort((x, y) => x.file.localeCompare(y.file) || order[x.kind] - order[y.kind]);
 }
 
@@ -122,6 +127,14 @@ export function applyChanges(base, items) {
     const included = new Set(mine.filter((i) => i.kind === 'component').map((i) => i.id));
     for (const it of mine.filter((i) => i.kind === 'page')) applyPage(file, it, base[path], included, mine);
     for (const it of mine.filter((i) => i.kind === 'component')) applyComponent(file, it);
+    for (const it of mine.filter((i) => i.kind === 'comment')) {
+      const list = (file.comments ||= []);
+      const at = list.findIndex((c) => c.id === it.id);
+      if (!it.after) at >= 0 && list.splice(at, 1);
+      else if (at >= 0) list[at] = clone(it.after);
+      else list.push(clone(it.after));
+      if (!list.length) delete file.comments;
+    }
     out[path] = file;
   }
   return out;
@@ -237,6 +250,6 @@ export function newChangeset({ title, note = '', author = '', changes, base = 'H
 export function summarize(changes) {
   const n = {};
   for (const c of changes) n[c.kind] = (n[c.kind] || 0) + 1;
-  const words = { token: 'token', icon: 'icon', component: 'component', page: 'page', file: 'file setting' };
+  const words = { token: 'token', icon: 'icon', component: 'component', page: 'page', file: 'file setting', comment: 'comment' };
   return Object.entries(n).map(([k, v]) => `${v} ${words[k]}${v === 1 ? '' : 's'}`).join(', ') || 'no changes';
 }

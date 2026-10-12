@@ -467,6 +467,27 @@ fieldset.readonly .field-label { cursor: default; }
 .tokens-editor { flex: 1; min-height: 0; display: flex; }
 .vars-modal.inline { flex: 1; display: flex; flex-direction: column; width: auto; height: auto; max-height: none; border-radius: 0; box-shadow: none; }
 
+/* ---------- comments ---------- */
+.comment-pins { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 2; }
+.comment-pins[hidden] { display: none; }
+.comment-pin { position: absolute; transform: translate(0, -100%); pointer-events: auto; min-width: 26px; height: 26px; padding: 0 7px; border: 2px solid #fff; border-radius: 13px 13px 13px 2px; background: #9747ff; color: #fff; font: 600 11px/22px Inter, sans-serif; box-shadow: 0 2px 6px rgba(0,0,0,0.25); cursor: pointer; }
+.comment-pin.resolved { background: #b3b3b3; }
+.comment-pin.open { background: #0d99ff; }
+.comment-popover { position: fixed; z-index: 60; width: 280px; padding: 10px 12px; background: #fff; border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 8px; }
+.comment-popover .desc { width: 100%; box-sizing: border-box; }
+.comment-target { font-size: 11px; }
+.comment-msg { display: flex; flex-direction: column; gap: 2px; }
+.comment-meta { display: flex; gap: 6px; align-items: baseline; font-size: 11px; }
+.comment-text { white-space: pre-wrap; line-height: 1.45; }
+.comment-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.comment-actions .spacer { flex: 1; }
+.comments-pane { overflow: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.comments-head { display: flex; justify-content: space-between; align-items: center; padding: 0 4px; }
+.comment-row { text-align: left; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: #fff; display: flex; flex-direction: column; gap: 3px; cursor: pointer; }
+.comment-row:hover { background: var(--hover); }
+.comment-row.resolved { opacity: 0.6; }
+.comment-on { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* ---------- inspect ---------- */
 .right-head .tabs { display: flex; gap: 2px; }
 .right-head .tab { border: 0; background: none; padding: 4px 8px; border-radius: 5px; font: inherit; font-weight: 600; color: var(--muted); cursor: pointer; }

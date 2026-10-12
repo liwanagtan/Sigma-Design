@@ -19,6 +19,7 @@ export const icons = {
   eyeOff: s16('<path d="M2.5 5.5C4 7.5 6 8.5 8 8.5s4-1 5.5-3M4.5 7.5l-1 1.5M8 8.5V10.5M11.5 7.5l1 1.5"/>'),
   lock: s16('<rect x="4" y="7" width="8" height="6" rx="1"/><path d="M5.5 7V5.5a2.5 2.5 0 0 1 5 0V7"/>'),
   unlock: s16('<rect x="4" y="7" width="8" height="6" rx="1"/><path d="M5.5 7V5.5a2.5 2.5 0 0 1 4.9-.7"/>'),
+  comment: s('<path d="M5 18.5V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H8.5z"/><path d="M9 9.5h6M9 12.5h4"/>'),
   plus: s16('<path d="M8 3.5v9M3.5 8h9"/>'),
   minus: s16('<path d="M3.5 8h9"/>'),
   close: s16('<path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/>'),

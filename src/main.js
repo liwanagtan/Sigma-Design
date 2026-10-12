@@ -11,8 +11,9 @@ import { initTextEditor, positionEditor, measureText, stopEditing } from './text
 import { setViewportElement, zoomToFit } from './commands.js';
 import {
   initPanels, renderLayers, renderProps, renderPages, renderToolbar, renderZoomLabel, renderFileHeader, highlightLayerHover,
-  renderAssets,
+  renderAssets, renderCommentsList,
 } from './panels.js';
+import { initComments, renderCommentPins } from './comments.js';
 import {
   initFiles, loadFile, setCurrentFile, closeCurrentFile, discardCurrentFile, saveNow, getCurrentFileId, goHome, fileKind, isArchived,
   welcomeOnFirstVisit, openFile, isSampleFile, duplicateCurrent, updateThumbnail,
@@ -63,12 +64,14 @@ function frame() {
     renderZoomLabel();
   }
   if (dirty.overlay) renderOverlay(overlay);
+  if (dirty.view || dirty.scene || dirty.tool) renderCommentPins();
   if (dirty.view || dirty.scene) positionEditor();
   if (dirty.layers) {
     renderLayers();
     renderPages();
     renderFileHeader();
     renderAssets();
+    renderCommentsList();
   } else if (dirty.hover) {
     highlightLayerHover();
   }
@@ -275,6 +278,7 @@ initTextEditor(canvas);
 setViewportElement(canvas);
 initPanels();
 initInteractions(canvas);
+initComments(canvas);
 initHome(homeEl);
 initTokensScreen(tokensEl);
 initIconsScreen(iconsEl);

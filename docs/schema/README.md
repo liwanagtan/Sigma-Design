@@ -274,6 +274,21 @@ and sets), paints' `opacity: 1` and `visible: true`; for text `text: ""`, `fontF
 `autoResize: "width"`; for auto layout the values of an unset layout (`gap: 10`, padding 0, `spacing:
 "packed"`, alignments `start`). No `fills` or `strokes` means none.
 
+## Comments
+
+A design file can have `comments`, pinned to layers (made with Sigma's comment tool, or added by an agent with
+`node tools/sigma.mjs comment add`):
+
+```json
+"comments": [{ "id": "kx8mkqa2", "pageId": "components", "nodeId": "card-title", "at": { "x": 10, "y": 10 },
+               "layer": "Card / Title", "text": "Use the heading token here.", "author": "Ana",
+               "createdAt": "2026-10-13T09:00:00.000Z", "resolved": true, "resolvedBy": "Ben",
+               "replies": [{ "id": "r1", "text": "Done", "author": "Ben", "createdAt": "…" }] }]
+```
+
+`at` is in the layer's own coordinates (so the pin moves with it), or the page's when `nodeId` is null;
+`layer` is its name path when the comment was made, for reading it outside Sigma.
+
 ## Changesets (`.sigma/changesets/<id>.json`)
 
 What a designer proposes with **Propose change**: some of the edits made since the last commit, to become a

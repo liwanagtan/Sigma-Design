@@ -179,7 +179,12 @@ export async function connectProject() {
     console.warn('No project server', err);
   }
   setInterval(poll, POLL_MS);
+  // Coming back to the tab: check at once (checks pause while it's hidden).
+  document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && poll());
 }
+
+// Check the project for changes on disk now.
+export const checkProjectNow = () => poll({ force: true });
 
 export const canPickFolder = () => typeof window.showDirectoryPicker === 'function';
 
@@ -381,8 +386,8 @@ async function refresh() {
 }
 
 let polling = false;
-async function poll() {
-  if (!adapter || polling || document.visibilityState === 'hidden') return;
+async function poll({ force = false } = {}) {
+  if (!adapter || polling || (document.visibilityState === 'hidden' && !force)) return;
   polling = true;
   try {
     const before = JSON.stringify(project.files);

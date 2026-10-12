@@ -19,6 +19,7 @@ import { copySelection, cutSelection, paste, pasteHere, importImages, pickImages
 import { isAutoLayout, flowInsertBefore } from './layout.js';
 import { isInsideInstance, isTransparentContainer, canPlaceInside, createInstance, containingComponent } from './components.js';
 import { slotMenu } from './component-ui.js';
+import { startComment, closeCommentPopover } from './comments.js';
 import { canInsertIcon, openInsertIcon } from './icon-ui.js';
 import { gridSnapTargets } from './grids.js';
 import { applyConstraints } from './constraints.js';
@@ -250,6 +251,7 @@ function updateCursor() {
   if (state.spaceDown || state.tool === 'hand') c = drag?.type === 'pan' ? 'grabbing' : 'grab';
   else if (cursorOverride) c = cursorOverride;
   else if (['rect', 'ellipse', 'frame', 'line'].includes(state.tool)) c = 'crosshair';
+  else if (state.tool === 'comment') c = 'cell';
   else if (state.tool === 'text') c = 'text';
   canvasEl.style.cursor = c;
 }
@@ -273,6 +275,8 @@ function onPointerDown(e) {
   if (e.button !== 0) return;
 
   if (['rect', 'ellipse', 'frame', 'line', 'text'].includes(state.tool)) return beginDraw(wp, sp, e);
+  if (state.tool === 'comment') return startComment(sp);
+  closeCommentPopover();
 
   if (addVariantButton && Math.hypot(sp.x - addVariantButton.x, sp.y - addVariantButton.y) <= addVariantButton.r + 2) {
     const set = getNode(addVariantButton.setId);
@@ -939,7 +943,7 @@ function onContextMenu(e) {
 
 // ---------- keyboard ----------
 const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
-const TOOL_KEYS = { v: 'move', h: 'hand', f: 'frame', a: 'frame', r: 'rect', o: 'ellipse', l: 'line', t: 'text' };
+const TOOL_KEYS = { v: 'move', h: 'hand', f: 'frame', a: 'frame', r: 'rect', o: 'ellipse', l: 'line', t: 'text', c: 'comment' };
 
 function onKeyDown(e) {
   if (state.screen !== 'editor' || !state.doc) return;
