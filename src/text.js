@@ -30,6 +30,23 @@ export function textStyle(n) {
   ].join(';');
 }
 
+// Truncation: text that doesn't fit ends with "…". node.truncate turns it on; node.maxLines limits the
+// lines (an auto-height text box stops growing there). Without maxLines, fixed-size text keeps the lines
+// that fit its height, and other text keeps one line.
+export function truncateLines(n) {
+  if (!n.truncate) return 0;
+  if (Number(n.maxLines) >= 1) return Math.round(Number(n.maxLines));
+  if (n.autoResize === 'fixed') {
+    const line = n.lineHeight ? (n.lineHeight / 100) * n.fontSize : n.fontSize * 1.2;
+    return Math.max(1, Math.floor(n.h / line));
+  }
+  return 1;
+}
+export function truncateStyle(n) {
+  const lines = truncateLines(n);
+  return lines ? `display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:${lines};overflow:hidden` : '';
+}
+
 let measurer = null;
 
 // Updates w/h of a text node according to its autoResize mode.
@@ -52,14 +69,14 @@ export function measureText(n) {
     let r = measure(`${textStyle({ ...n, maxW: null })};width:auto;display:inline-block`);
     let w = Math.ceil(r.width);
     if (max !== null && w > max) {
-      r = measure(`${textStyle({ ...n, autoResize: 'height' })};width:${max}px;display:block`);
+      r = measure(`${textStyle({ ...n, autoResize: 'height' })};width:${max}px;display:block;${truncateStyle(n)}`);
       w = max;
     }
     n.w = Math.max(1, Number(n.minW) > 0 ? Math.max(w, Number(n.minW)) : w);
     n.h = Math.max(1, Math.ceil(r.height));
     return;
   }
-  const r = measure(`${textStyle(n)};width:${n.w}px;display:block`);
+  const r = measure(`${textStyle(n)};width:${n.w}px;display:block;${truncateStyle(n)}`);
   n.h = Math.max(1, Math.ceil(r.height));
 }
 

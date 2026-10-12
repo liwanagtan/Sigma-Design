@@ -3,7 +3,7 @@ import { test, eq, ok } from './harness.js';
 import { useDoc } from './core.test.js';
 import { state, createNode, editNode, makePaint } from '../src/store.js';
 import { gridBands, gridLines, gridSnapTargets, newGrid, retypeGrid } from '../src/grids.js';
-import { caseText, measureText } from '../src/text.js';
+import { caseText, measureText, truncateLines } from '../src/text.js';
 import { syncInstances, createInstance, isDeprecated, setDeprecated } from '../src/components.js';
 import { buildSVG } from '../src/io.js';
 import { auditDocument, applyToken, colorDistance } from '../src/audit.js';
@@ -378,4 +378,31 @@ test('min / max sizes: limit hug and fill, share what a clamped fill leaves, and
   label.maxW = undefined;
   measureText(label);
   ok(label.w > 120 && label.h < 30, 'without a max it stays on one line');
+});
+
+test('text truncation: an ellipsis after max lines, an auto-height box stops growing there, instances can override it', () => {
+  const long = 'A long description that certainly needs several lines at this width to show everything it says';
+  const t = createNode('text', { text: long, autoResize: 'height', w: 140, fontSize: 14, lineHeight: 150 });
+  useDoc([t]);
+  measureText(t);
+  const full = t.h;
+  ok(full > 63, 'more than three lines when not truncated');
+  t.truncate = true;
+  t.maxLines = 2;
+  measureText(t);
+  eq(t.h, 42); // two lines of 21px
+  ok(nodeSVG(t).includes('-webkit-line-clamp:2'), 'drawn with an ellipsis after two lines');
+  t.maxLines = undefined;
+  measureText(t);
+  eq(t.h, 21); // one line by default
+  eq(truncateLines({ ...t, autoResize: 'fixed', h: 70 }), 3); // fixed size: the lines that fit
+  // In an instance
+  const label = createNode('text', { name: 'Label', text: long, autoResize: 'height', w: 140, truncate: true, maxLines: 1 });
+  const main = createNode('component', { name: 'Row', children: [label] });
+  useDoc([main]);
+  const inst = createInstance(main, { x: 400 });
+  editNode(inst.children[0], ['maxLines'], (n) => void (n.maxLines = 2));
+  syncInstances();
+  eq(inst.children[0].maxLines, 2);
+  eq(main.children[0].maxLines, 1);
 });

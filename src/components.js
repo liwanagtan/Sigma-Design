@@ -28,10 +28,10 @@ const ROOT_FOLLOW = ['w', 'h', 'sizingH', 'sizingV'];
 // structure) comes from the main component.
 const CHILD_OVERRIDABLE = new Set([
   'fills', 'strokes', 'strokeWidth', 'strokeAlign', 'strokeSides', 'cap', 'opacity', 'effects', 'visible', 'radius', 'radii', 'name',
-  'text', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'textCase',
+  'text', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'textCase', 'truncate', 'maxLines',
   'componentId', 'propValues', 'variantProps', 'bindings', 'modes',
 ]);
-const TEXT_PROPS = ['text', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textCase'];
+const TEXT_PROPS = ['text', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textCase', 'truncate', 'maxLines'];
 
 const clone = (v) => (v === undefined || v === null || typeof v !== 'object' ? v : structuredClone(v));
 const escKey = (name) => String(name).replace(/%/g, '%25').replace(/\//g, '%2F').replace(/#/g, '%23');
@@ -161,7 +161,7 @@ const measureCache = new Map();
 // Text layers whose text or font was overridden need re-measuring; cache by content.
 function remeasure(n) {
   if (n.autoResize === 'fixed') return;
-  const key = JSON.stringify([n.text, n.fontFamily, n.fontSize, n.fontWeight, n.lineHeight, n.letterSpacing, n.textCase, n.minW, n.maxW, n.autoResize, n.autoResize === 'height' ? n.w : 0]);
+  const key = JSON.stringify([n.text, n.fontFamily, n.fontSize, n.fontWeight, n.lineHeight, n.letterSpacing, n.textCase, n.minW, n.maxW, n.truncate, n.maxLines, n.autoResize, n.autoResize === 'height' ? n.w : 0]);
   let size = measureCache.get(key);
   if (!size) {
     measureText(n);

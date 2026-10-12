@@ -438,6 +438,10 @@ const FIELDS = {
     get: (n) => (Array.isArray(n.radii) && n.radii.some((r) => r !== n.radii[0]) ? 'Mixed' : n.radii ? n.radii[0] : n.radius),
     set: (v) => ({ radius: Math.max(0, v) }),
   },
+  maxLines: {
+    get: (n) => (n.maxLines === undefined || n.maxLines === null ? '' : n.maxLines),
+    set: (v) => ({ maxLines: Math.max(1, Math.round(v)) }), auto: /^\s*$/, autoValue: { maxLines: undefined },
+  },
   // Min / max sizes: empty means no limit.
   ...Object.fromEntries(['minW', 'maxW', 'minH', 'maxH'].map((k) => [k, {
     get: (n) => (n[k] === undefined || n[k] === null ? '' : n[k]), set: (v) => ({ [k]: Math.max(0, v) }),
@@ -1044,6 +1048,10 @@ function buildProps() {
     const tc = common(nodes, (n) => n.textCase || 'none');
     t += `<div class="text-case-row"><span class="muted">Case</span><div class="seg">${[['none', '—'], ['upper', 'AG'], ['lower', 'ag'], ['title', 'Ag']].map(([k, l]) =>
       `<button class="icon-btn text-case${tc === k ? ' on' : ''}" data-text-case="${k}" title="${TEXT_CASES[k]}">${l}</button>`).join('')}</div></div>`;
+    // Truncation: an ellipsis when the text doesn't fit, after Max lines (empty: the lines that fit).
+    const trunc = common(nodes, (n) => !!n.truncate);
+    t += `<div class="grid2"><label class="check-row" title="End text that doesn’t fit with “…”"><input type="checkbox" data-bool="truncate" ${trunc === true ? 'checked' : ''}> Truncate</label>` +
+      (trunc === true ? numField('maxLines', '', nodes, { icon: '<span class="mini" title="Max lines (empty: the lines that fit)">≡#</span>' }) : '<span></span>') + '</div>';
     t += `<div class="bind-inline wide"><span class="muted">Text style</span>${varControl(nodes, 'typography')}</div>`;
     t += `<div class="bind-inline wide"><span class="muted">Text content</span>${varControl(nodes, 'text')}</div>`;
     html += section('Text', t);
