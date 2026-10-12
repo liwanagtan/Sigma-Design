@@ -48,16 +48,50 @@ export function strokeOverhang(n) {
   return Math.max(0, n.strokeWidth / 2 - strokeInset(n));
 }
 
+// ---------- corners and stroke sides ----------
+// Corner radii, clockwise from top-left: node.radii = [tl, tr, br, bl] when set separately, else `radius`
+// for all four. Each is limited to half the shorter side.
+export function cornerRadii(n) {
+  const max = Math.max(0, Math.min(n.w, n.h) / 2);
+  const list = Array.isArray(n.radii) && n.radii.length === 4 ? n.radii : [n.radius || 0, n.radius || 0, n.radius || 0, n.radius || 0];
+  return list.map((r) => Math.min(Math.max(0, Number(r) || 0), max));
+}
+
+// A rectangle (x, y, w, h) with corner radii `rs`, as an SVG element opening ("<rect …" or "<path …"),
+// for the caller to add attributes and close.
+function roundedRect(x, y, w, h, rs) {
+  if (rs.every((r) => r === rs[0])) return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rs[0]}"`;
+  const [tl, tr, br, bl] = rs;
+  const arc = (r, tx, ty) => (r ? `A${r} ${r} 0 0 1 ${tx} ${ty}` : `L${tx} ${ty}`);
+  return `<path d="M${x + tl} ${y}H${x + w - tr}${arc(tr, x + w, y + tr)}V${y + h - br}${arc(br, x + w - br, y + h)}` +
+    `H${x + bl}${arc(bl, x, y + h - bl)}V${y + tl}${arc(tl, x + tl, y)}Z"`;
+}
+const shapeRect = (n, attrs) => `${roundedRect(0, 0, n.w, n.h, cornerRadii(n))} ${attrs}/>`;
+
+// Which sides of a rectangle-like layer have a stroke: node.strokeSides = { top, right, bottom, left }
+// (missing means all four).
+export const strokeSides = (n) => ({ top: true, right: true, bottom: true, left: true, ...(n.strokeSides || {}) });
+const allSides = (s) => s.top && s.right && s.bottom && s.left;
+
 function strokeLayers(n, shape) {
   if (!hasStroke(n)) return '';
   const sw = n.strokeWidth, d = strokeInset(n);
   let geom;
   if (shape === 'ellipse') {
     geom = `<ellipse cx="${n.w / 2}" cy="${n.h / 2}" rx="${Math.max(0, n.w / 2 - d)}" ry="${Math.max(0, n.h / 2 - d)}"`;
+  } else if (!allSides(strokeSides(n))) {
+    // Only some sides: a line along each, on the stroke's centerline, running into the corners.
+    const s = strokeSides(n), e = sw / 2;
+    const x0 = d, y0 = d, x1 = n.w - d, y1 = n.h - d;
+    const segs = [
+      s.top && `M${x0 - e} ${y0}H${x1 + e}`, s.bottom && `M${x0 - e} ${y1}H${x1 + e}`,
+      s.left && `M${x0} ${y0 - e}V${y1 + e}`, s.right && `M${x1} ${y0 - e}V${y1 + e}`,
+    ].filter(Boolean);
+    if (!segs.length) return '';
+    geom = `<path d="${segs.join('')}"`;
   } else {
-    const r0 = Math.min(n.radius || 0, n.w / 2, n.h / 2);
-    const r = r0 > 0 ? Math.max(0, r0 - d) : 0;
-    geom = `<rect x="${d}" y="${d}" width="${Math.max(0, n.w - 2 * d)}" height="${Math.max(0, n.h - 2 * d)}" rx="${r}"`;
+    const rs = cornerRadii(n).map((r) => (r > 0 ? Math.max(0, r - d) : 0));
+    geom = roundedRect(d, d, Math.max(0, n.w - 2 * d), Math.max(0, n.h - 2 * d), rs);
   }
   return visiblePaints(n.strokes)
     .map((p) => `${geom} fill="none" ${paint(p.color, p.opacity, 'stroke')} stroke-width="${sw}"/>`).join('');
@@ -116,7 +150,6 @@ function effectsFilter(n, id) {
 // Renders a node in its parent's coordinate space.
 export function nodeSVG(n, opts = {}) {
   if (!n.visible) return '';
-  const r = Math.min(n.radius || 0, n.w / 2, n.h / 2);
   let inner = '';
   switch (n.type) {
     case 'frame':
@@ -125,9 +158,9 @@ export function nodeSVG(n, opts = {}) {
     case 'instance': {
       const cid = `clip-${n.id}`;
       const kids = n.children.map((c) => nodeSVG(c, opts)).join('');
-      inner = fillLayers(n, (a) => `<rect width="${n.w}" height="${n.h}" rx="${r}" ${a}/>`);
+      inner = fillLayers(n, (a) => shapeRect(n, a));
       inner += n.clip
-        ? `<clipPath id="${cid}"><rect width="${n.w}" height="${n.h}" rx="${r}"/></clipPath><g clip-path="url(#${cid})">${kids}</g>`
+        ? `<clipPath id="${cid}">${shapeRect(n, '')}</clipPath><g clip-path="url(#${cid})">${kids}</g>`
         : `<g>${kids}</g>`;
       inner += strokeLayers(n, 'rect');
       break;
@@ -136,7 +169,7 @@ export function nodeSVG(n, opts = {}) {
       inner = n.children.map((c) => nodeSVG(c, opts)).join('');
       break;
     case 'rect':
-      inner = fillLayers(n, (a) => `<rect width="${n.w}" height="${n.h}" rx="${r}" ${a}/>`) + strokeLayers(n, 'rect');
+      inner = fillLayers(n, (a) => shapeRect(n, a)) + strokeLayers(n, 'rect');
       break;
     case 'ellipse':
       inner = fillLayers(n, (a) => `<ellipse cx="${n.w / 2}" cy="${n.h / 2}" rx="${n.w / 2}" ry="${n.h / 2}" ${a}/>`) + strokeLayers(n, 'ellipse');
@@ -147,8 +180,8 @@ export function nodeSVG(n, opts = {}) {
       break;
     case 'image': {
       const cid = `clip-${n.id}`;
-      inner = fillLayers(n, (a) => `<rect width="${n.w}" height="${n.h}" rx="${r}" ${a}/>`) +
-        `<clipPath id="${cid}"><rect width="${n.w}" height="${n.h}" rx="${r}"/></clipPath>` +
+      inner = fillLayers(n, (a) => shapeRect(n, a)) +
+        `<clipPath id="${cid}">${shapeRect(n, '')}</clipPath>` +
         `<image href="${esc(n.src)}" width="${n.w}" height="${n.h}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${cid})"/>` +
         strokeLayers(n, 'rect');
       break;

@@ -62,6 +62,7 @@ export function typeForPath(path) {
   if (/^(fills|strokes)\.\d+\.color$/.test(path)) return 'color';
   if (/^effects\.\d+$/.test(path)) return 'shadow';
   if (/^layoutGrids\.\d+\.(count|size|gutter|margin)$/.test(path)) return 'number';
+  if (/^radii\.[0-3]$/.test(path)) return 'number';
   if (NUMBER_PATHS.has(path)) return 'number';
   if (path === 'text' || path === 'fontFamily') return 'string';
   if (path === 'visible') return 'boolean';

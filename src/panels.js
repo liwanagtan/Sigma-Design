@@ -32,7 +32,7 @@ import {
 import { openVariablesEditor } from './variables-ui.js';
 import { showContextMenu } from './menu.js';
 import { stopEditing, TEXT_CASES } from './text.js';
-import { toWorld, nodeWorldSVG } from './render.js';
+import { toWorld, nodeWorldSVG, strokeSides } from './render.js';
 import { GRID_TYPES, newGrid, retypeGrid } from './grids.js';
 import { textContrast, contrastBadge } from './contrast.js';
 import { openAuditDialog } from './audit-ui.js';
@@ -434,7 +434,14 @@ const num = (key, min = -Infinity) => ({ get: (n) => n[key], set: (v) => ({ [key
 const FIELDS = {
   x: num('x'), y: num('y'), w: num('w', 0.01), h: num('h', 0.01),
   rotation: { get: (n) => -(n.rotation || 0), set: (v) => ({ rotation: -(((v + 180) % 360 + 360) % 360 - 180) }), suffix: '°' },
-  radius: num('radius', 0),
+  radius: {
+    get: (n) => (Array.isArray(n.radii) && n.radii.some((r) => r !== n.radii[0]) ? 'Mixed' : n.radii ? n.radii[0] : n.radius),
+    set: (v) => ({ radius: Math.max(0, v) }),
+  },
+  ...Object.fromEntries(['TL', 'TR', 'BR', 'BL'].map((c, i) => [`radius${c}`, {
+    get: (n) => (Array.isArray(n.radii) ? n.radii[i] : n.radius || 0),
+    set: (v) => ({ [`radii.${i}`]: Math.max(0, v) }),
+  }])),
   opacity: pct('opacity'),
   strokeWidth: num('strokeWidth', 0),
   fontSize: num('fontSize', 1),
@@ -489,6 +496,7 @@ function normHex(str) {
 // Fields that can be bound to number variables, and the property path they bind.
 const FIELD_BIND = {
   w: 'w', h: 'h', radius: 'radius', opacity: 'opacity', strokeWidth: 'strokeWidth', fontSize: 'fontSize',
+  radiusTL: 'radii.0', radiusTR: 'radii.1', radiusBR: 'radii.2', radiusBL: 'radii.3',
   lineHeight: 'lineHeight', letterSpacing: 'letterSpacing', gap: 'layout.gap',
 };
 
@@ -653,6 +661,8 @@ function variableFromValue(nodes, path, type) {
 
 // ---------- paints (multiple fills / strokes) ----------
 const PAINT_KINDS = { fills: 'fill', strokes: 'stroke' };
+const CORNERS_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M1.5 4.5V3a1.5 1.5 0 0 1 1.5-1.5h1.5M7.5 1.5H9A1.5 1.5 0 0 1 10.5 3v1.5M10.5 7.5V9A1.5 1.5 0 0 1 9 10.5H7.5M4.5 10.5H3A1.5 1.5 0 0 1 1.5 9V7.5"/></svg>';
+const SIDES = [['top', 'M1.5 1.5h9', 'Top'], ['right', 'M10.5 1.5v9', 'Right'], ['bottom', 'M1.5 10.5h9', 'Bottom'], ['left', 'M1.5 1.5v9', 'Left']];
 const canHavePaint = (n, kind) => (kind === 'fills' ? !['line', 'group'].includes(n.type) : !['group', 'text'].includes(n.type));
 const defaultPaintColor = (n, kind) =>
   kind === 'strokes' ? '#000000' : n.type === 'text' ? '#000000' : isFrameLike(n) ? '#FFFFFF' : '#D9D9D9';
@@ -965,7 +975,14 @@ function buildProps() {
     layout += `<div class="grid2">${sizingSelect('w')}${showH ? sizingSelect('h') : '<span></span>'}</div>`;
   }
   const hasRadius = has((n) => isFrameLike(n) || ['rect', 'image'].includes(n.type));
-  layout += `<div class="grid2">${numField('rotation', '', nodes, { icon: icons.rotation })}${hasRadius ? numField('radius', '', nodes, { icon: icons.radius }) : ''}</div>`;
+  const corners = hasRadius && nodes.every((n) => Array.isArray(n.radii));
+  layout += `<div class="grid2 wh-row">${numField('rotation', '', nodes, { icon: icons.rotation })}${hasRadius ? numField('radius', '', nodes, { icon: icons.radius }) : '<span></span>'}` +
+    (hasRadius ? `<button class="icon-btn lock-aspect${corners ? ' on' : ''}" data-action="independent-corners" title="${corners ? 'One radius for all corners' : 'Set each corner separately'}">${CORNERS_ICON}</button>` : '') + '</div>';
+  if (corners) {
+    const c = (key, d) => numField(key, '', nodes, { icon: `<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.2"><path d="${d}"/></svg>` });
+    layout += `<div class="grid2">${c('radiusTL', 'M1.5 9V5a3.5 3.5 0 0 1 3.5-3.5H9')}${c('radiusTR', 'M1 1.5h4A3.5 3.5 0 0 1 8.5 5v4')}</div>` +
+      `<div class="grid2">${c('radiusBL', 'M1.5 1v4A3.5 3.5 0 0 0 5 8.5h4')}${c('radiusBR', 'M1 8.5h4A3.5 3.5 0 0 0 8.5 5V1')}</div>`;
+  }
   if (nodes.every(isFrameLike)) {
     const clip = common(nodes, (n) => !!n.clip);
     layout += `<label class="check-row"><input type="checkbox" data-bool="clip" ${clip === true ? 'checked' : ''}> Clip content</label>`;
@@ -1040,6 +1057,15 @@ function buildProps() {
         : '';
       body +=
         `<div class="grid2">${alignSelect || capSelect || '<span></span>'}${numField('strokeWidth', '', strokeNodes, { icon: '<span class="mini">≡</span>' })}</div>`;
+      // Sides: rectangles, frames and images can have a stroke on only some sides.
+      const boxes = strokeNodes.filter((n) => isFrameLike(n) || ['rect', 'image'].includes(n.type));
+      if (boxes.length === strokeNodes.length) {
+        body += `<div class="text-case-row"><span class="muted">Sides</span><div class="seg stroke-sides">${SIDES.map(([side, d, label]) => {
+          const on = common(boxes, (n) => strokeSides(n)[side]);
+          return `<button class="icon-btn${on === true ? ' on' : ''}" data-stroke-side="${side}" title="${label} ${on === true ? '(on)' : '(off)'}">` +
+            `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><rect x="1.5" y="1.5" width="9" height="9" stroke-opacity=".3"/><path d="${d}" stroke-width="2"/></svg></button>`;
+        }).join('')}</div></div>`;
+      }
     }
     html += section('Stroke', body, addPaintButton('strokes'));
   }
@@ -1371,6 +1397,18 @@ function initProps() {
     if (b.dataset.distribute) return distribute(b.dataset.distribute);
     if (b.dataset.textAlign) return setProps({ textAlign: b.dataset.textAlign });
     if (b.dataset.textCase) return setProps({ textCase: b.dataset.textCase });
+    if (b.dataset.strokeSide) {
+      const side = b.dataset.strokeSide;
+      const turnOn = !nodes.every((n) => strokeSides(n)[side]);
+      for (const n of nodes) {
+        editNode(n, ['strokeSides'], () => {
+          const s = { ...strokeSides(n), [side]: turnOn };
+          if (s.top && s.right && s.bottom && s.left) delete n.strokeSides;
+          else n.strokeSides = s;
+        });
+      }
+      return commit();
+    }
     if (b.dataset.autoResize) return setProps({ autoResize: b.dataset.autoResize });
     if (b.dataset.varMenu) return variableMenu(b, b.dataset.varMenu);
     if (b.dataset.paintAct === 'toggle') return updatePaint(b.dataset.paint, 'visible', (p) => void (p.visible = p.visible === false));
@@ -1422,6 +1460,21 @@ function initProps() {
         return addAutoLayout();
       case 'remove-al':
         return removeAutoLayout();
+      case 'independent-corners': {
+        // Toggle between one radius and four: going back keeps the top-left corner's value for all.
+        const split = !nodes.every((n) => Array.isArray(n.radii));
+        for (const n of nodes) {
+          if (!(isFrameLike(n) || ['rect', 'image'].includes(n.type))) continue;
+          editNode(n, ['radius', 'radii'], () => {
+            if (split) n.radii = [0, 1, 2, 3].map(() => n.radius || 0);
+            else {
+              n.radius = n.radii?.[0] ?? n.radius ?? 0;
+              delete n.radii;
+            }
+          });
+        }
+        return commit();
+      }
       case 'lock-aspect': {
         const on = !nodes.every((n) => n.lockAspect);
         for (const n of nodes) editNode(n, ['lockAspect'], () => void (n.lockAspect = on));

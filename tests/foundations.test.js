@@ -10,7 +10,8 @@ import { auditDocument, applyToken, colorDistance } from '../src/audit.js';
 import { parseEasing, resolveVariables, shiftPaintBindings, resolveIn, addContrastPair, deleteVariable, setTokenDeprecated, diffCollections } from '../src/variables.js';
 import { contrastRatio, contrastLevel, formatRatio, isLargeText, backgroundBehind, textContrast } from '../src/contrast.js';
 import { sampleTokenDocument } from '../src/sample-tokens.js';
-import { nodeSVG, effectOverhang } from '../src/render.js';
+import { nodeSVG, effectOverhang, cornerRadii, strokeSides } from '../src/render.js';
+import { setProps } from '../src/commands.js';
 import { exportDTCG, exportCSS, importTokens } from '../src/tokens-io.js';
 
 test('text case: upper, lower and title case change how text shows, not the text itself', () => {
@@ -315,4 +316,32 @@ test('audit: one-off values are grouped with the token that matches, in each lay
   stack.children.pop();
   ok(!auditDocument().groups.some((g) => g.kind === 'spacing' && g.value === 12), 'a gap with one layer in the flow does nothing, so it isn’t listed');
   ok(colorDistance('#FFFFFF', '#FEFEFE') < 1 && colorDistance('#FFFFFF', '#000000') > 90, 'color distance');
+});
+
+test('corners and stroke sides: separate radii draw a path, can use tokens; strokes can be on some sides only', () => {
+  const tab = createNode('rect', { name: 'Tab', w: 100, h: 40, radius: 8 });
+  useDoc([tab]);
+  ok(nodeSVG(tab).includes('rx="8"'), 'one radius: a plain rounded rect');
+  setProps({ 'radii.2': 0 }, { nodes: [tab] });
+  setProps({ 'radii.3': 0 }, { nodes: [tab] });
+  eq(tab.radii, [8, 8, 0, 0]);
+  eq(cornerRadii(tab), [8, 8, 0, 0]);
+  ok(/<path d="M8 0H92A8 8 0 0 1 100 8V40L100 40H0L0 40V8A8 8 0 0 1 8 0Z"/.test(nodeSVG(tab)), 'top corners rounded only');
+  setProps({ radius: 4 }, { nodes: [tab] });
+  ok(!tab.radii && tab.radius === 4, 'one radius for all again');
+  eq(cornerRadii(createNode('rect', { w: 10, h: 10, radii: [50, 0, 0, 0] })), [5, 0, 0, 0]); // limited to half the side
+  // A corner can use a number token.
+  const doc = useDoc([tab]);
+  tab.radii = [4, 4, 4, 4];
+  doc.variables = { collections: [{ id: 'c', name: 'R', modes: [{ id: 'm', name: 'Default' }], defaultModeId: 'm', variables: [{ id: 'r', name: 'radius/lg', type: 'number', valuesByMode: { m: 12 } }] }] };
+  tab.bindings = { 'radii.0': 'r' };
+  resolveVariables();
+  eq(tab.radii, [12, 4, 4, 4]);
+  // Stroke sides
+  const input = createNode('rect', { name: 'Input', w: 200, h: 40, strokes: [makePaint('#000000')], strokeWidth: 1, strokeAlign: 'inside', strokeSides: { top: false, left: false, right: false } });
+  useDoc([input]);
+  const svg = nodeSVG(input);
+  ok(svg.includes('<path d="M0 39.5H200"'), 'only the bottom line, inside the edge');
+  ok(!svg.includes('<rect x="0.5"'), 'no full outline');
+  eq(strokeSides(input), { top: false, right: false, bottom: true, left: false });
 });

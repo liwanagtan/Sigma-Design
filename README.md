@@ -149,6 +149,8 @@ Then open http://localhost:5173.
   - the rules apply when the frame is resized by its handles or its W/H fields; hold ⌘ while dragging to ignore them
   - they also apply when an instance is sized differently from its main component
 - **Resizing:** each layer can be **Fixed**, **Hug** contents (auto-layout frames and text) or **Fill** container (children of auto-layout frames), separately for width and height
+- **Corners:** the button next to the corner radius sets each corner separately (top-left, top-right, bottom-right, bottom-left), for tabs and other shapes rounded on some corners only. Each corner can use a number token; the shared field shows "Mixed", and typing a value there, or the button again, gives all four one radius
+- **Stroke sides:** in the Stroke section, **Sides** turns the stroke on or off for each side of a rectangle, frame or image (an input with only a bottom border, a divider). Both corners and sides can be overridden in instances
 - **Lock aspect ratio:** the link button next to W/H. It applies to typed sizes and to resize handles (hold ⇧ to override).
 - **Layers panel:** tree view, rename (double-click or ⌘R), hide, lock, drag to reorder or nest
 - **Pages:** add, rename and delete pages

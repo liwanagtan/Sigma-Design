@@ -381,6 +381,15 @@ export function setProps(props, { live = false, nodes = selectedNodes() } = {}) 
           n.constraints = { ...(n.constraints || {}), [k.slice(12)]: v };
           continue;
         }
+        if (k.startsWith('radii.')) {
+          // One corner: the others keep the shared radius until they're set too.
+          if (!(isFrameLike(n) || ['rect', 'image'].includes(n.type))) continue;
+          const r = n.radius || 0;
+          n.radii = Array.isArray(n.radii) && n.radii.length === 4 ? [...n.radii] : [r, r, r, r];
+          n.radii[+k.slice(6)] = v;
+          continue;
+        }
+        if (k === 'radius' && n.radii) delete n.radii; // one radius for all four corners again
         if (k === 'sizingH' || k === 'sizingV') {
           const axis = k === 'sizingH' ? 'w' : 'h';
           if (v === 'hug' && !(isAutoLayout(n) || n.type === 'text')) continue;
