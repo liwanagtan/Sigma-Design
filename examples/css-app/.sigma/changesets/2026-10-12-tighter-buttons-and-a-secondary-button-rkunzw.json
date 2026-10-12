@@ -2,6 +2,7 @@
   "id": "2026-10-12-tighter-buttons-and-a-secondary-button-rkunzw",
   "author": "",
   "base": "HEAD",
+  "branch": "design/tighter-buttons-and-a-secondary-button",
   "changes": [
     {
       "kind": "component",
@@ -1291,6 +1292,11 @@
   ],
   "createdAt": "2026-10-12T22:47:30.492Z",
   "note": "Buttons get 16px side padding (was --space-4). New Secondary variant for less important actions: a light background with an accent label. Card and Input only moved on the canvas.",
+  "pr": {
+    "host": "github",
+    "number": 1,
+    "url": "https://github.com/liwanagtan/Sigma-Design/pull/1"
+  },
   "renders": {
     ".sigma/design/acme-library.sigma.json#component:button": {
       "after": ".sigma/changesets/2026-10-12-tighter-buttons-and-a-secondary-button-rkunzw/1-component-after.svg",
@@ -1305,6 +1311,7 @@
       "before": ".sigma/changesets/2026-10-12-tighter-buttons-and-a-secondary-button-rkunzw/3-component-before.svg"
     }
   },
-  "status": "proposed",
-  "title": "Tighter buttons and a Secondary button"
+  "status": "in-review",
+  "title": "Tighter buttons and a Secondary button",
+  "updatedAt": "2026-10-12T22:59:56.797Z"
 }
