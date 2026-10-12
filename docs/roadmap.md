@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Phases 1–14 and Part E (Phases 20–30) are done**, except Phase 26's real run (a Notion ticket and CI on a pull request). Part F: Sigma inside your project (Phases 31–34) has begun: Phase 31 is done; next is Phase 32. Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **Phases 1–14 and Part E (Phases 20–30) are done**, except Phase 26's real run (a Notion ticket and CI on a pull request). Part F: Sigma inside your project (Phases 31–35) has begun: Phase 31 is done; next is Phase 32. Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -392,9 +392,10 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 29: Page onboarding
 - [x] Phase 30: Design to code for components
 - [x] Phase 31: Project mode in the editor
-- [ ] Phase 32: Install like a dev tool (npm package)
-- [ ] Phase 33: Live sync while Sigma runs
-- [ ] Phase 34: Sigma renders the project's components
+- [ ] Phase 32: Install like a dev tool (npm package `sigma-design`)
+- [ ] Phase 33: Setup by the agent: adapters, rules and project skills
+- [ ] Phase 34: Live sync while Sigma runs
+- [ ] Phase 35: Sigma renders the project's components
 
 ## Follow-ups
 
@@ -681,13 +682,30 @@ the browser.
    writes the code directly, as exact edits. Designs (pages, component layouts) live in `.sigma/` files,
    since code can't hold them. All `.sigma/` files stay committed, so agents and diffs work without Sigma
    running.
-2. **Installed as an npm package,** with a Node command line (`sigma init`, `sigma dev`). The project server
-   moves from `serve.py` to Node; projects in other languages run it with `npx`.
+2. **Installed as an npm package, `sigma-design`,** with a Node command line: `npx sigma-design init` once, then
+   `npm run sigma` (a script `init` adds, running `sigma-design dev`). The project server moves from `serve.py`
+   to Node; projects in other languages run it with `npx`. (`sigma` on npm is sigma.js, a graph library, so
+   the package and its command are `sigma-design`.) Sigma runs inside the project it was started in; it
+   doesn't open projects itself.
 3. **No Storybook integration.** Sigma renders the project's components itself.
 4. **Standalone stays first-class:** a design tool on its own, with files in the browser.
 5. **Two speeds of change:** *direct* (save, and the working copy's code changes; the running app reloads; it
    shows in `git diff`) and *propose* (a ticket and a pull request, for review or for designers who don't use
    git).
+6. **Adapters instead of stack support.** Sigma reads and writes CSS variables and SVG icons itself. For any
+   other stack (Tailwind, a JS theme, SCSS, icon components…), the agent writes a small adapter once, at
+   setup, committed in the project (`.sigma/adapters/tokens.mjs`, `icons.mjs`): `read()` the project's
+   tokens (or icons) as DTCG (or SVG), and `write(changes)` to apply Sigma's changes as minimal edits. From
+   then on Sigma runs the adapter itself: fast, the same every time, no AI in the loop, and reviewable like
+   any code. Every write is checked by reading back: what the adapter reads after writing must be what Sigma
+   has. When an adapter can't handle a change (a new token file, a restructured theme), Sigma says so and the
+   agent updates the adapter.
+7. **Setup teaches the project's agents.** The first setup writes **rules** (a marked Sigma section in the
+   repo's agent instructions: `AGENTS.md`, `CLAUDE.md`, Cursor or Copilot rules, whichever it has; `AGENTS.md`
+   if none) and **project skills** (`.claude/skills/sigma-*`), so every agent in the repo knows the design
+   system has a Sigma side. Project skills hold only this project's facts and point to the general skill
+   shipped (and versioned) with the package, so they don't go stale; values stay in `sigma.config.json`, not
+   copied into prose; re-running setup replaces only Sigma's marked parts, and shows the change first.
 
 ## Phases
 
@@ -717,31 +735,50 @@ the browser.
   `examples/css-app`: its four files under their kinds, PR #1's proposal under Proposals as Merged, and a
   browser token file and a design file linked to it moved in with the link kept.
 
-### Phase 32: Install like a dev tool (npm package)
+### Phase 32: Install like a dev tool (npm package `sigma-design`)
 
-- **The package:** Sigma's editor, the project server (in Node, replacing `serve.py` for projects) and
-  `tools/sigma.mjs`, published to npm.
-- **`sigma init`** in a project: adds the dev dependency and an `npm run sigma` script, finds the stack and
-  sets up `sigma.config.json` and `.sigma/` (CSS variables and SVG icons by itself; other stacks handed to
-  the sync skill).
-- **`sigma dev`:** opens the editor on the project in the current folder.
-- **Done when:** in a fresh copy of a real project, `npx sigma init` then `npm run sigma` opens Sigma on its
-  tokens and icons, with nothing else installed.
+- **The package:** Sigma's editor, the project server in Node (replacing `serve.py` for projects, with the same
+  API and safety rules) and `tools/sigma.mjs`, as `sigma-design` on npm. Nothing else to install.
+- **`npx sigma-design init`** in a project: adds the dev dependency and an `npm run sigma` script, creates
+  `sigma.config.json` and `.sigma/`, and for CSS variables and SVG icons imports them itself. Anything else
+  is handed to the agent (Phase 33).
+- **`sigma-design dev`** (`npm run sigma`): starts the server on the project in the current folder and opens
+  Sigma on it.
+- **Done when:** in a fresh copy of a real project using CSS variables, `npx sigma-design init` then
+  `npm run sigma` opens Sigma on its tokens and icons, with nothing else installed. (Publishing to npm needs
+  the owner's account: until then, it's installed from the repo or a packed tarball.)
 
-### Phase 33: Live sync while Sigma runs
+### Phase 33: Setup by the agent: adapters, rules and project skills
+
+- **Adapters** (decision 6): for a stack Sigma doesn't read itself, the setup skill writes
+  `.sigma/adapters/tokens.mjs` (and `icons.mjs` when icons aren't SVG files) and proves it: reading gives the
+  tokens Sigma imports, and writing a change then reading back gives the same change, with a minimal diff.
+  `tools/sigma.mjs` (and Sigma) use the adapter wherever they'd use the built-in CSS reader and writer.
+- **Rules** (decision 7): a marked Sigma section in the repo's agent instructions: where the design system
+  lives, code is the truth for tokens and icons, `sigma check` after changing them, never hand-edit `.sigma/`
+  files, keep the components page up to date when adding or changing a component, use the project skills.
+- **Project skills:** `sigma-tokens` (syncing through this project's adapter, and fixing it), `sigma-components`
+  (where components live, how they're styled, how variants map to props, how they're rendered for capture),
+  `sigma-propose` (this team's tracker, branch names, PR template and checks), `sigma-design-to-code` (this
+  project's conventions for component changes). Each points to the general skill in the package.
+- **Done when:** `examples/mui-app` (a JS theme) gets an adapter that round-trips its tokens, a token changed
+  in Sigma is written by the adapter (no agent) as a one-line diff, and a fresh agent session in the repo
+  follows the rules and skills without being told about Sigma.
+
+### Phase 34: Live sync while Sigma runs
 
 - **Code → Sigma:** Sigma watches the token and icon sources; when they change (an edit, a `git pull`), its
   Sigma Tokens and Sigma Icons files update by themselves, keeping ids and order.
-- **Sigma → code:** saving a token or icon change writes the code directly (the exact edits `tokens write`
-  and `icons write` make); saving a library component writes the exact part of its code (Phase 30), and
-  lists the rest for an agent or a proposal.
-- **Done when:** changing a token in Sigma reloads the running app with the new value, and editing
-  `tokens.css` updates Sigma, with no command run in between.
+- **Sigma → code:** saving a token or icon change writes the code directly, through the built-in writers or
+  the project's adapter; saving a library component writes the exact part of its code (Phase 30), and lists
+  the rest for an agent or a proposal.
+- **Done when:** changing a token in Sigma reloads the running app with the new value, and editing the token
+  source updates Sigma, with no command run in between, for both a CSS-variables project and an adapter one.
 
-### Phase 34: Sigma renders the project's components
+### Phase 35: Sigma renders the project's components
 
-- **Sigma's own component pages:** `sigma init` sets up a page that renders each component in each variant
-  and state, built with the project's own tooling, like `examples/css-app/components.html`; Sigma serves the
+- **Sigma's own component pages:** setup creates a page that renders each component in each variant and
+  state, built with the project's own tooling, like `examples/css-app/components.html`; Sigma serves the
   app alongside itself (same origin), so it can capture and compare without manual steps.
 - **Library onboarding and checks run from the GUI:** capture, build the library, compare, and after a
   component change, recapture and compare to confirm the code matches the design.
@@ -750,8 +787,12 @@ the browser.
 
 ## Risks and open questions
 
-- **Bundlers (Phase 34):** rendering components needs the project's build (Vite, webpack, Next). Serving the
+- **Bundlers (Phase 35):** rendering components needs the project's build (Vite, webpack, Next). Serving the
   app's dev server through Sigma's origin (a proxy) may be simpler than building pages ourselves.
-- **Writing code on save (Phase 33):** direct edits to a working copy should never surprise a developer.
+- **Writing code on save (Phase 34):** direct edits to a working copy should never surprise a developer.
   Edits stay exact and minimal, and Sigma never writes while the code has a conflicting change it hasn't
   read.
+- **Adapters (Phase 33):** code an agent writes runs on every save. It stays in the repo and is reviewed like
+  any code; Sigma runs it only from the project it's in, checks every write by reading back, and never
+  writes outside the token and icon sources the config names.
+- **The package name:** `sigma-design` is free on npm today; it should be claimed when Phase 32 is ready.
