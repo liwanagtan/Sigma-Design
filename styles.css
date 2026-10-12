@@ -313,7 +313,7 @@ kbd { font-family: inherit; color: var(--muted); }
 .file-banner { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 4; display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 14px; background: #1e1e1e; color: #fff; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); white-space: nowrap; }
 .file-banner .btn { height: 26px; background: #fff; color: #1e1e1e; border: 0; }
 /* The token screen's header spans the width: the banner sits at the bottom there. */
-#tokens:not([hidden]) ~ .file-banner { top: auto; bottom: 16px; }
+#tokens:not([hidden]) ~ .file-banner, #icons:not([hidden]) ~ .file-banner { top: auto; bottom: 16px; }
 
 @media (max-width: 760px) {
   .home { grid-template-columns: 1fr; }
@@ -461,6 +461,40 @@ fieldset.readonly .field-label { cursor: default; }
 .tokens-header-actions { margin-left: auto; display: flex; gap: 2px; }
 .tokens-editor { flex: 1; min-height: 0; display: flex; }
 .vars-modal.inline { flex: 1; display: flex; flex-direction: column; width: auto; height: auto; max-height: none; border-radius: 0; box-shadow: none; }
+
+/* ---------- icon file screen ---------- */
+.icons-body { flex: 1; min-height: 0; display: flex; }
+.icons-groups { width: 200px; flex: none; border-right: 1px solid var(--border); padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; overflow: auto; }
+.icons-groups .nav-label { padding: 0 10px 6px; font-size: 11px; font-weight: 600; color: var(--muted); }
+.icons-groups .nav-item { display: flex; align-items: center; gap: 8px; flex: none; }
+.icons-group-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.icons-main { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+.icons-toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--border); flex: none; }
+.icons-toolbar .spacer { flex: 1; }
+.icons-toolbar .btn { height: 30px; padding: 0 12px; }
+.icons-styles .icon-btn { padding: 0 10px; font-size: 12px; }
+.icons-grid { flex: 1; min-height: 0; overflow: auto; padding: 8px 16px 32px; outline: none; }
+.icons-section-title { font-weight: 600; padding: 14px 0 8px; position: sticky; top: -8px; background: #fff; z-index: 1; }
+.icons-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 6px; }
+.icon-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; height: 84px; padding: 8px 4px; border: 1px solid transparent; border-radius: 8px; background: none; color: #1e1e1e; }
+.icon-tile:hover { background: var(--hover); }
+.icon-tile.selected { background: var(--accent-soft); border-color: var(--accent); }
+.icon-tile svg { flex: none; }
+.icon-tile-name { max-width: 100%; font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.icons-empty p { max-width: 460px; margin: 0 auto; line-height: 1.5; }
+.icons-inspector { width: 260px; flex: none; border-left: 1px solid var(--border); padding: 12px 0 24px 16px; overflow: auto; display: flex; flex-direction: column; }
+.icons-inspector .inspector-title { font-weight: 600; margin-bottom: 4px; }
+.icons-inspector .desc { min-height: 0; height: 28px; }
+.icons-inspector .seg { margin-right: 24px; }
+.icons-inspector .seg .icon-btn { font-size: 12px; }
+.icons-inspector .btn.wide { margin-top: 12px; }
+.icons-help { line-height: 1.5; margin: 0 24px 8px 0; }
+.icon-preview { display: grid; place-items: center; height: 160px; margin-right: 24px; border-radius: 8px; color: #1e1e1e;
+  background: #fff linear-gradient(var(--border) 1px, transparent 1px) 0 0 / 100% 20px; border: 1px solid var(--border); }
+.icon-sizes { display: flex; align-items: flex-end; justify-content: center; gap: 16px; margin: 10px 24px 4px 0; color: #1e1e1e; }
+.icons-multi { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 24px 4px 0; color: #1e1e1e; }
+.icons-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-right: 24px; }
+.icons-drop { inset: 8px; }
 
 /* ---------- token editor workspace ---------- */
 .vars-work { flex: 1; min-height: 0; display: flex; }

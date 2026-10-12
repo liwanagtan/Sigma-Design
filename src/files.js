@@ -7,6 +7,7 @@ import {
 import { buildSVG, download, toast } from './io.js';
 import { libraryEntry } from './variables.js';
 import { welcomeDocument, WELCOME_VERSION } from './welcome.js';
+import { newIconsDocument, sanitizeIcons, iconMarkup } from './icon-library.js';
 
 // The sample files (the Welcome to Sigma guide and its Sigma Tokens) live in the files home's Welcome to
 // Sigma folder rather than with your own files.
@@ -244,8 +245,10 @@ export async function storageSummary() {
 }
 
 // ---------- mutations ----------
-// Files are Sigma Design files (a canvas) or Sigma Tokens files (design tokens only, no canvas).
-export const fileKind = (metaOrDoc) => (metaOrDoc?.kind === 'tokens' ? 'tokens' : 'design');
+// Files are Sigma Design files (a canvas), Sigma Tokens files (design tokens only, no canvas) or Sigma
+// Icons files (icons imported from SVG, no canvas).
+export const fileKind = (metaOrDoc) => (metaOrDoc?.kind === 'tokens' || metaOrDoc?.kind === 'icons' ? metaOrDoc.kind : 'design');
+export { newIconsDocument };
 
 export function newTokenDocument(name = 'Untitled tokens') {
   return { kind: 'tokens', name, pages: [], currentPageId: null, variables: { collections: [] } };
@@ -314,7 +317,10 @@ export async function importFiles(fileList) {
       const json = JSON.parse(await f.text());
       const name = f.name.replace(/(\.sigma|\.tokens)?\.json$/i, ''); // the name you see in Finder wins
       let doc = json;
-      if (fileKind(json) !== 'tokens' && !json?.pages?.length) {
+      if (fileKind(json) === 'icons') {
+        json.icons = sanitizeIcons(json.icons); // icons from elsewhere go through the SVG filter
+        if (json.published) json.published.icons = sanitizeIcons(json.published.icons);
+      } else if (fileKind(json) !== 'tokens' && !json?.pages?.length) {
         const { collections, skipped } = importTokens(json);
         if (!collections.some((c) => c.variables.length)) throw new Error('no Sigma file or design tokens found');
         doc = newTokenDocument(name || 'Imported tokens');
@@ -352,6 +358,18 @@ export async function loadPublishedComponents(id) {
   const file = await loadFile(id);
   if (!file || fileKind(file.meta) !== 'design') return null;
   return { meta: file.meta, published: file.doc.publishedComponents || null };
+}
+
+// ---------- icon files as libraries ----------
+export async function listIconFiles() {
+  return (await listFiles()).filter((f) => fileKind(f) === 'icons');
+}
+
+// The latest published icons of a Sigma Icons file: { meta, published } or null.
+export async function loadPublishedIcons(id) {
+  const file = await loadFile(id);
+  if (!file || fileKind(file.meta) !== 'icons') return null;
+  return { meta: file.meta, published: file.doc.published || null };
 }
 
 // ---------- token files as libraries ----------
@@ -514,7 +532,10 @@ function persistCurrent(doc, views, { edited }) {
       // Every publish is kept in the version history.
       const tokens = tokenVersion !== +publishedBefore.split('/')[0];
       const pub = tokens ? doc.published : doc.publishedComponents;
-      await addVersion(id, doc, { kind: 'publish', title: `Published ${tokens ? 'tokens' : 'components'} v${pub.version}`, description: pub.notes || '' });
+      if (pub) { // (none when a publish was undone)
+        const what = fileKind(doc) === 'icons' ? 'icons' : tokens ? 'tokens' : 'components';
+        await addVersion(id, doc, { kind: 'publish', title: `Published ${what} v${pub.version}`, description: pub.notes || '' });
+      }
       broadcast('published', id);
     }
   }).catch((err) => {
@@ -701,8 +722,30 @@ async function renderTokenThumbnail() {
   return new Promise((resolve) => cv.toBlob(resolve, 'image/png'));
 }
 
+// Icon files: their first icons in a grid.
+async function renderIconThumbnail() {
+  const shown = (state.doc.icons || []).slice(0, 24);
+  if (!shown.length) return null;
+  const cols = Math.min(6, shown.length), rows = Math.ceil(shown.length / cols);
+  const pad = 48, cell = Math.min((THUMB_W - pad * 2) / cols, (THUMB_H - pad * 2) / rows), size = Math.min(cell * 0.55, 48);
+  const x0 = (THUMB_W - cols * cell) / 2, y0 = (THUMB_H - rows * cell) / 2;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${THUMB_W}" height="${THUMB_H}"><rect width="100%" height="100%" fill="#FFFFFF"/>` +
+    shown.map((icon, i) => iconMarkup(icon, {
+      x: x0 + (i % cols) * cell + (cell - size) / 2, y: y0 + Math.floor(i / cols) * cell + (cell - size) / 2, w: size, h: size, color: '#1E1E1E',
+    })).join('') + '</svg>';
+  const img = new Image();
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  await img.decode();
+  const cv = document.createElement('canvas');
+  cv.width = THUMB_W;
+  cv.height = THUMB_H;
+  cv.getContext('2d').drawImage(img, 0, 0);
+  return new Promise((resolve) => cv.toBlob(resolve, 'image/png'));
+}
+
 async function renderThumbnail() {
   if (fileKind(state.doc) === 'tokens') return renderTokenThumbnail();
+  if (fileKind(state.doc) === 'icons') return renderIconThumbnail();
   const pg = state.doc?.pages?.[0];
   const nodes = pg?.children.filter((n) => n.visible) || [];
   if (!nodes.length) return null;

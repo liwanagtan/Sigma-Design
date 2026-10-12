@@ -19,6 +19,7 @@ import {
 } from './files.js';
 import { initHome, renderHome, setHomeNotice, showHomeSection } from './home.js';
 import { initTokensScreen, showTokensScreen, hideTokensScreen } from './tokens-screen.js';
+import { initIconsScreen, showIconsScreen, hideIconsScreen } from './icons-screen.js';
 import { checkLibraryUpdates, migrateLegacyTokens, usesLibrary } from './libraries.js';
 import { hideContextMenu } from './menu.js';
 import { arrangeWelcome } from './welcome.js';
@@ -27,6 +28,7 @@ import { clearViewing, resetHistory } from './history.js';
 const appEl = document.getElementById('app');
 const homeEl = document.getElementById('home');
 const tokensEl = document.getElementById('tokens');
+const iconsEl = document.getElementById('icons');
 const canvas = document.getElementById('canvas');
 const world = document.getElementById('world');
 const overlay = document.getElementById('overlay');
@@ -109,6 +111,7 @@ window.addEventListener('sigma:banner', (e) => (e.detail ? showBanner(e.detail.t
 // Version history swapped the document for an older version (read-only) …
 window.addEventListener('sigma:doc-replaced', () => {
   if (state.screen === 'tokens') showTokensScreen();
+  else if (state.screen === 'icons') showIconsScreen();
   else remeasureAllText();
   emit('view');
 });
@@ -132,6 +135,7 @@ async function leaveEditor({ discard = false } = {}) {
     await closeCurrentFile();
   }
   hideTokensScreen();
+  hideIconsScreen();
   unloadDocument();
   hideBanner();
 }
@@ -142,6 +146,7 @@ async function showHome() {
   state.screen = 'home';
   appEl.hidden = true;
   tokensEl.hidden = true;
+  iconsEl.hidden = true;
   homeEl.hidden = false;
   document.title = 'Sigma – Files';
   await renderHome();
@@ -164,6 +169,18 @@ async function showFile(id, { force = false, discard = false } = {}) {
   const sample = isSampleFile(file.meta);
   setCurrentFile(id, { sample });
   homeEl.hidden = true;
+  if (fileKind(file.meta) === 'icons') {
+    // Icon files have no canvas either: a grid of their icons.
+    state.screen = 'icons';
+    appEl.hidden = true;
+    tokensEl.hidden = true;
+    iconsEl.hidden = false;
+    loadDocument(file.doc, file.views);
+    showIconsScreen();
+    if (sample) sampleBanner();
+    return;
+  }
+  iconsEl.hidden = true;
   if (fileKind(file.meta) === 'tokens') {
     // Token files have no canvas: the design token editor fills the screen.
     state.screen = 'tokens';
@@ -191,7 +208,7 @@ async function showFile(id, { force = false, discard = false } = {}) {
     sampleBanner();
     setTimeout(() => getCurrentFileId() === id && updateThumbnail(), 1500); // of the original, once
   }
-  if (!state.pageViews[page().id]) requestAnimationFrame(() => zoomToFit());
+  if (!state.pageViews[page().id]) requestAnimationFrame(() => getCurrentFileId() === id && state.screen === 'editor' && zoomToFit()); // unless you've left already
   emit('view');
   emit('tool');
   await migrateLegacyTokens(wasVersion);
@@ -252,6 +269,7 @@ initPanels();
 initInteractions(canvas);
 initHome(homeEl);
 initTokensScreen(tokensEl);
+initIconsScreen(iconsEl);
 
 document.fonts?.ready.then(remeasureAllText);
 document.fonts?.addEventListener?.('loadingdone', remeasureAllText);

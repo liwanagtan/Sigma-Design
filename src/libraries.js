@@ -139,7 +139,7 @@ const tokenIds = () => new Set(collections().flatMap((c) => (c.variables || []).
 // ---------- a design file's design tokens ----------
 // A design file uses one token file (plus its own local tokens). Token files can link several, to point
 // their tokens at other token files.
-export const isDesignFile = () => state.doc?.kind !== 'tokens';
+export const isDesignFile = () => state.doc?.kind !== 'tokens' && state.doc?.kind !== 'icons';
 export const tokenFile = () => libraries()[0] || null;
 
 // Point every binding and alias at token ids in `remap` (old id → new id). Returns the number of layers

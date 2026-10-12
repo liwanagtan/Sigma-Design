@@ -2,7 +2,7 @@
 import {
   listFiles, createFile, renameFile, duplicateFile, deleteFile, downloadFile, importFiles, pickFilesToImport,
   listArchivedFiles, archiveFile, restoreFile, emptyArchive,
-  storageSummary, openFile, fileHref, fileKind, newTokenDocument, welcomeFile, sampleTokenFile, isSampleFile,
+  storageSummary, openFile, fileHref, fileKind, newTokenDocument, newIconsDocument, welcomeFile, sampleTokenFile, isSampleFile,
 } from './files.js';
 import { blankDocument } from './sample.js';
 import { showContextMenu } from './menu.js';
@@ -26,7 +26,7 @@ try {
   if (prefs.section === 'all') prefs.section = 'design'; // "All files" became "Design files"
 } catch {}
 
-const SECTIONS = { recents: 'Recents', design: 'Sigma Design', tokens: 'Sigma Tokens', welcome: 'Welcome to Sigma', archive: 'Archive' };
+const SECTIONS = { recents: 'Recents', design: 'Sigma Design', tokens: 'Sigma Tokens', icons: 'Sigma Icons', welcome: 'Welcome to Sigma', archive: 'Archive' };
 
 // Open the files home on a section (e.g. the Archive, when an archived file's link is opened).
 export function showHomeSection(section) {
@@ -65,6 +65,7 @@ export function initHome(el) {
         <div class="nav-label">Files</div>
         <button class="nav-item" data-section="design">${NAV_DESIGN} Sigma Design</button>
         <button class="nav-item" data-section="tokens">${NAV_TOKENS} Sigma Tokens</button>
+        <button class="nav-item" data-section="icons">${NAV_ICONS} Sigma Icons</button>
         <div class="nav-spacer"></div>
         <button class="nav-item nav-welcome" data-section="welcome" title="The guide to Sigma and its sample tokens">${NAV_WELCOME} Welcome to Sigma</button>
         <button class="nav-item" data-section="archive" title="Deleted files, until you delete them forever">${NAV_ARCHIVE} Archive</button>
@@ -82,6 +83,7 @@ export function initHome(el) {
             <button class="icon-btn" data-layout="list" title="List view">${LIST_ICON}</button>
           </div>
           <button class="btn" id="home-import">Import</button>
+          <button class="btn" id="home-new-icons" title="New Sigma Icons file">${icons.plus} Sigma Icons</button>
           <span class="split-btn"><button class="btn" id="home-new-tokens" title="New Sigma Tokens file">${icons.plus} Sigma Tokens</button><button class="btn split-more" id="home-new-tokens-more" title="More Sigma Tokens options">${icons.chevronDown}</button></span>
           <button class="btn primary" id="home-new" title="New Sigma Design file">${icons.plus} Sigma Design</button>
         </div>
@@ -116,6 +118,7 @@ export function initHome(el) {
   });
   root.querySelector('#home-new').addEventListener('click', () => newBlankFile());
   root.querySelector('#home-new-tokens').addEventListener('click', () => newTokenFile());
+  root.querySelector('#home-new-icons').addEventListener('click', () => newIconsFile());
   root.querySelector('#home-new-tokens-more').addEventListener('click', (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     showContextMenu(r.right - 220, r.bottom + 4, [
@@ -145,6 +148,7 @@ export function initHome(el) {
       e.preventDefault();
       const act = action.dataset.emptyAction;
       if (act === 'sample-tokens') return openSampleTokenFile();
+      if (act === 'icons') return newIconsFile();
       return act === 'welcome' ? openWelcome() : act === 'tokens' ? newTokenFile() : newBlankFile();
     }
     if (more) {
@@ -205,6 +209,10 @@ export function setHomeNotice(msg) {
 // ---------- actions ----------
 async function newTokenFile() {
   openFile(await createFile(newTokenDocument()));
+}
+
+async function newIconsFile() {
+  openFile(await createFile(newIconsDocument()));
 }
 
 async function newBlankFile() {
@@ -327,7 +335,8 @@ export async function renderHome() {
   const recents = section === 'recents';
   root.querySelector('#home-title').textContent = SECTIONS[section];
   // The primary "New" button matches the section you're in.
-  root.querySelector('#home-new').classList.toggle('primary', section !== 'tokens');
+  root.querySelector('#home-new').classList.toggle('primary', section !== 'tokens' && section !== 'icons');
+  root.querySelector('#home-new-icons').classList.toggle('primary', section === 'icons');
   root.querySelector('#home-new-tokens').classList.toggle('primary', section === 'tokens');
   root.querySelector('#home-new-tokens-more').classList.toggle('primary', section === 'tokens');
   const sortSel = root.querySelector('#home-sort');
@@ -374,6 +383,10 @@ export async function renderHome() {
       <p>A Sigma Tokens file holds your design tokens (colors, spacing, type, shadows, motion) for Sigma Design files to use. It has no canvas.</p>
       <div class="home-empty-actions"><button class="btn primary" data-empty-action="tokens">${icons.plus} New Sigma Tokens file</button>
       <button class="btn" data-empty-action="sample-tokens">Open the sample tokens</button></div></div>`;
+  } else if (!inSection && section === 'icons') {
+    list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No Sigma Icons files yet</div>
+      <p>A Sigma Icons file holds icons imported from SVG (from a free icon set, for example). Components in Sigma Design files pick their icons from it. It has no canvas.</p>
+      <div class="home-empty-actions"><button class="btn primary" data-empty-action="icons">${icons.plus} New Sigma Icons file</button></div></div>`;
   } else if (!inSection) {
     list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No Sigma Design files yet</div>
       <div class="home-empty-actions"><button class="btn primary" data-empty-action="blank">${icons.plus} New Sigma Design file</button>
@@ -393,11 +406,11 @@ function archivedCard(f) {
     thumbURLs.push(url);
     thumb = `<img src="${url}" alt="" draggable="false">`;
   }
-  const tokens = fileKind(f) === 'tokens';
-  if (!thumb && tokens) thumb = `<span class="thumb-placeholder">${NAV_TOKENS}</span>`;
+  const kind = fileKind(f), tokens = kind !== 'design';
+  if (!thumb && tokens) thumb = `<span class="thumb-placeholder">${kind === 'icons' ? NAV_ICONS : NAV_TOKENS}</span>`;
   return `<div class="file-card archived${tokens ? ' tokens' : ''}" data-archived="${f.id}" title="Click for Restore or Delete forever">
     <div class="file-thumb" style="background:${tokens ? '#FFFFFF' : esc(f.background || '#F5F5F5')}">${thumb}</div>
-    <div class="file-info"><div class="card-name" title="${esc(f.name)}">${esc(f.name)}</div><div class="file-time">${tokens ? '<span class="kind-badge">Tokens</span>' : ''}Archived ${ago(f.archivedAt)}</div></div>
+    <div class="file-info"><div class="card-name" title="${esc(f.name)}">${esc(f.name)}</div><div class="file-time">${kindBadge(kind)}Archived ${ago(f.archivedAt)}</div></div>
     <button class="btn archive-restore" data-restore>Restore</button>
     <button class="icon-btn file-more" data-more title="More actions">${MORE_ICON}</button>
   </div>`;
@@ -410,15 +423,15 @@ function card(f) {
     thumbURLs.push(url);
     thumb = `<img src="${url}" alt="" draggable="false">`;
   }
-  const tokens = fileKind(f) === 'tokens';
+  const kind = fileKind(f), tokens = kind !== 'design'; // no canvas: shown on white
   const sample = isSampleFile(f);
-  if (!thumb && tokens) thumb = `<span class="thumb-placeholder">${NAV_TOKENS}</span>`;
+  if (!thumb && tokens) thumb = `<span class="thumb-placeholder">${kind === 'icons' ? NAV_ICONS : NAV_TOKENS}</span>`;
   const name = renaming === f.id
     ? `<input class="rename-input" value="${esc(f.name)}" spellcheck="false">`
     : `<div class="card-name" title="${esc(f.name)}">${esc(f.name)}</div>`;
   return `<a class="file-card${tokens ? ' tokens' : ''}" href="${fileHref(f.id)}" data-id="${f.id}" draggable="false">
     <div class="file-thumb" style="background:${tokens ? '#FFFFFF' : esc(f.background || '#F5F5F5')}">${thumb}</div>
-    <div class="file-info">${name}<div class="file-time">${tokens ? '<span class="kind-badge">Tokens</span>' : ''}${sample
+    <div class="file-info">${name}<div class="file-time">${kindBadge(kind)}${sample
       ? `<span class="kind-badge sample" title="A sample file: try anything; nothing is saved, and it resets when reopened">Sample</span>${tokens ? 'For the guide' : 'Guide to Sigma'}` // never edited, so no "Edited … ago"
       : `Edited ${ago(f.updatedAt)}`}</div></div>
     <div class="file-created">${sample ? '' : new Date(f.createdAt).toLocaleDateString()}</div>
@@ -429,6 +442,9 @@ function card(f) {
 const NAV_DESIGN = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4.5 1.5v11M9.5 1.5v11M1.5 4.5h11M1.5 9.5h11"/></svg>';
 const NAV_WELCOME = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><circle cx="7" cy="7" r="5.5"/><path d="M5.6 5.4a1.5 1.5 0 1 1 2 1.4c-.4.2-.6.5-.6.9v.4M7 10v.1"/></svg>';
 const NAV_ARCHIVE = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><rect x="1.5" y="2" width="11" height="3" rx=".5"/><path d="M2.5 5v6.5h9V5M5.5 7.5h3"/></svg>';
+const kindBadge = (kind) => (kind === 'tokens' ? '<span class="kind-badge">Tokens</span>' : kind === 'icons' ? '<span class="kind-badge">Icons</span>' : '');
+
+const NAV_ICONS = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 1.5l1.6 3.3 3.6.5-2.6 2.5.6 3.6L7 9.7l-3.2 1.7.6-3.6L1.8 5.3l3.6-.5z" stroke-linejoin="round"/></svg>';
 const NAV_TOKENS = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 1.2l5 2.9v5.8L7 12.8 2 9.9V4.1z"/><circle cx="7" cy="7" r="1.6"/></svg>';
 
 const MORE_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="3.5" cy="8" r="1.25"/><circle cx="8" cy="8" r="1.25"/><circle cx="12.5" cy="8" r="1.25"/></svg>';

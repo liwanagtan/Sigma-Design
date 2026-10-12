@@ -109,7 +109,14 @@ Then open http://localhost:5173.
   - a Sigma Tokens file can link other Sigma Tokens files (**Linked Sigma Tokens files…**), so its tokens can point at theirs (a "Brand" file whose colors point at a "Core" file). Linked collections show read-only in the token editor
   - publishing a Sigma Tokens file includes copies of the Sigma Tokens files it points at, so a Sigma Design file that uses "Brand" still resolves the "Core" values
   - unlinking a Sigma Tokens file turns references to it into plain values
-- **Version history** (Σ menu → **Show version history**, in design and Sigma Tokens files):
+- **Sigma Icons files** (icons are a library of their own, not components):
+  - **+ Sigma Icons** creates a Sigma Icons file: a grid of icons by group, with a search and an All / Outline / Filled filter. It has no canvas
+  - **Import SVGs** (or drop .svg files on it, or paste SVG code) adds icons from any free icon set (Lucide, Tabler, Heroicons, Phosphor, Material Symbols…). Icons go into the group you have open; importing an icon with the same name and group updates it
+  - import keeps only plain shapes (paths, circles, rects, lines, polygons, groups) and their geometry: scripts, styles, images, links and references are dropped. Colors become the layer's color, so an icon takes the color of the layer that shows it
+  - each icon is **Outline** (drawn with strokes, keeping its stroke width) or **Filled**, detected on import and changeable. More styles can come later
+  - select icons (⌘-click adds, ⇧-click selects a range, ⌘A all) to edit their name, group, keywords (for search), style and stroke width, download or copy one as SVG, or delete them (⌫). Double-click a group to rename it
+  - **Publish…** creates a numbered version with notes and a list of what changed
+- **Version history** (Σ menu → **Show version history**, in Sigma Design, Sigma Tokens and Sigma Icons files):
   - Sigma keeps an autosave version before each editing session and every 10 minutes while you work (the newest 50), plus one for every publish
   - **Save to version history…** (⌥⌘S) adds a named version with a description; named and published versions are kept until you delete them
   - click a version to view it read-only in place; **Restore this version** makes it current (the state it replaces is kept as a version first), and the ⋯ menu can copy it to a new file, name it or delete it
@@ -187,6 +194,8 @@ Press `?` in the app to see every keyboard shortcut.
 | `src/variables.js` | Variables, aliases, modes and binding (normalize step `resolveVariables`) |
 | `src/variables-ui.js` | The design token editor (a modal in Sigma Design files, full-screen in Sigma Tokens files) |
 | `src/tokens-screen.js` | The Sigma Tokens file screen |
+| `src/icon-library.js` | Icons: SVG import and cleaning, drawing, groups, search, version changes |
+| `src/icons-screen.js` | The Sigma Icons file screen |
 | `src/libraries.js` | Token and component libraries: publishing, linking, updates, migration |
 | `src/sample-tokens.js` | The sample token file (a complete small design system) |
 | `src/sample.js` | The blank Sigma Design file |

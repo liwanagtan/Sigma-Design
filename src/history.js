@@ -215,7 +215,7 @@ export function openSaveVersionDialog(v = null) {
 
 window.addEventListener('keydown', (e) => {
   if (!(e.metaKey || e.ctrlKey) || !e.altKey || e.code !== 'KeyS') return;
-  if (state.screen !== 'editor' && state.screen !== 'tokens') return;
+  if (state.screen !== 'editor' && state.screen !== 'tokens' && state.screen !== 'icons') return;
   e.preventDefault();
   openSaveVersionDialog();
 });
