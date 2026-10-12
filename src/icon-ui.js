@@ -3,7 +3,7 @@
 import { commit, getParent, ancestors, insertNode, createNode, select, selectedNodes, editNode } from './store.js';
 import { isInsideInstance } from './components.js';
 import { isAutoLayout } from './layout.js';
-import { iconMarkup, iconMatches, findIcon, iconLibraryOf } from './icon-library.js';
+import { iconMarkup, iconMatches, findIcon, iconLibraryOf, ICON_STYLES } from './icon-library.js';
 import { iconLibraries, openIconLibrariesDialog } from './libraries.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -46,8 +46,15 @@ export function openIconPicker({ anchor, currentId = null, groups = null, onPick
   }
   const search = picker.querySelector('input');
   const list = picker.querySelector('.icon-picker-list');
-  const all = availableIcons({ groups, withId: currentId });
-  const several = iconLibraries().length > 1;
+  // By library, then style, then group (ungrouped last), so the picker reads like the Sigma Icons file.
+  const styleOrder = Object.keys(ICON_STYLES), libs = iconLibraries();
+  const found = availableIcons({ groups, withId: currentId });
+  const firstOf = new Map(); // group → where it first appears
+  found.forEach((x, i) => !firstOf.has(x.icon.group || '') && firstOf.set(x.icon.group || '', i));
+  const rank = (x) => [libs.indexOf(x.lib), styleOrder.indexOf(x.icon.style), x.icon.group ? 0 : 1, firstOf.get(x.icon.group || '')];
+  const all = found.map((x, i) => ({ ...x, i, r: rank(x) })).sort((a, b) => a.r.reduce((d, v, k) => d || v - b.r[k], 0) || a.i - b.i);
+  const several = libs.length > 1;
+  const styles = new Set(all.map((x) => x.icon.style)).size > 1;
   let shown = [];
   let active = 0;
   const render = () => {
@@ -55,7 +62,7 @@ export function openIconPicker({ anchor, currentId = null, groups = null, onPick
     if (active >= shown.length) active = Math.max(0, shown.length - 1);
     const heads = new Map();
     for (const [i, x] of shown.entries()) {
-      const head = `${several ? `${x.lib.name}${x.icon.group ? ' / ' : ''}` : ''}${x.icon.group || (several ? '' : 'Ungrouped')}`;
+      const head = [several && x.lib.name, styles && ICON_STYLES[x.icon.style], x.icon.group || 'Ungrouped'].filter(Boolean).join(' · ');
       if (!heads.has(head)) heads.set(head, []);
       heads.get(head).push(i);
     }

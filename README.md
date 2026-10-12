@@ -110,15 +110,15 @@ Then open http://localhost:5173.
   - publishing a Sigma Tokens file includes copies of the Sigma Tokens files it points at, so a Sigma Design file that uses "Brand" still resolves the "Core" values
   - unlinking a Sigma Tokens file turns references to it into plain values
 - **Sigma Icons files** (icons are a library of their own, not components):
-  - **+ Sigma Icons** creates a Sigma Icons file: a grid of icons by group, with a search and an All / Outline / Filled filter. It has no canvas
-  - **Import SVGs** (or drop .svg files on it, or paste SVG code) adds icons from any free icon set (Lucide, Tabler, Heroicons, Phosphor, Material Symbols…). Icons go into the group you have open; importing an icon with the same name and group updates it
+  - **+ Sigma Icons** creates a Sigma Icons file: a grid of icons by style (Outline, Filled) and, within each style, by group, with a search. The sidebar lists the styles and their groups to show just one. It has no canvas
+  - **Import SVGs** (or drop .svg files on it, or paste SVG code) adds icons from any free icon set (Lucide, Tabler, Heroicons, Phosphor, Material Symbols…). Icons go into the group you have open; importing an icon with the same name, group and style updates it (an outline and a filled icon can share a name)
   - import keeps only plain shapes (paths, circles, rects, lines, polygons, groups) and their geometry: scripts, styles, images, links and references are dropped. Colors become the layer's color, so an icon takes the color of the layer that shows it
   - each icon is **Outline** (drawn with strokes, keeping its stroke width) or **Filled**, detected on import and changeable. More styles can come later
-  - select icons (⌘-click adds, ⇧-click selects a range, ⌘A all) to edit their name, group, keywords (for search), style and stroke width, download or copy one as SVG, or delete them (⌫). Double-click a group to rename it
+  - select icons (⌘-click adds, ⇧-click selects a range, ⌘A all) to edit their name, group, keywords (for search), style and stroke width, download or copy one as SVG, or delete them (⌫). Double-click a group to rename it (within its style)
   - **Publish…** creates a numbered version with notes and a list of what changed
 - **Icons in components:**
   - a Sigma Design file links Sigma Icons files from **Icon libraries…** (Σ menu, or the panel with nothing selected). Updates arrive like other libraries: a banner, **Review**, accept. Icons a new version removed stay where they're used (but aren't offered any more) until you swap them; a Sigma Icons file can't be unlinked while its icons are in use
-  - icons go inside main components (not loose on the canvas, for now): select a component or a layer in one, then **+** in the panel's Icon section, or **Insert icon…** on right-click. The picker has a search and the icons by group
+  - icons go inside main components (not loose on the canvas, for now): select a component or a layer in one, then **+** in the panel's Icon section, or **Insert icon…** on right-click. The picker has a search and the icons by style and group
   - an icon layer has a size (W, H), a **Color** (its fill, which can use a color token) and, for outline icons, a stroke width (which can use a number token). **Swap icon…** changes the icon
   - instances show the main component's icon, at its size, color and stroke: none of these can be overridden in an instance
   - publishing components includes the icons they use, so files that link the component library show them, and records their Sigma Icons files: linking the component library links those too, so instances can choose other icons

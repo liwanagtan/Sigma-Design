@@ -212,3 +212,17 @@ test('icon property: allowed groups limit the choice (all by default)', () => {
   updateComponentProp(btn, pid, { groups: [] });
   eq(propsOf(btn)[pid].groups, undefined, 'none means all');
 });
+
+import { importSVGTexts } from '../src/icons-screen.js';
+
+test('icons: an outline and a filled icon can share a name; re-importing updates the one of the same style', () => {
+  useDoc([]);
+  state.doc.icons = [];
+  const heartLine = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21 3 12a5 5 0 0 1 9-6 5 5 0 0 1 9 6z"/></svg>`;
+  const heartFill = `<svg viewBox="0 0 24 24"><path d="M12 21 3 12a5 5 0 0 1 9-6 5 5 0 0 1 9 6z"/></svg>`;
+  importSVGTexts([{ text: heartLine, name: 'heart' }, { text: heartFill, name: 'heart' }], { group: 'Social' });
+  eq(state.doc.icons.map((i) => i.style), ['outline', 'filled']);
+  const outlineId = state.doc.icons[0].id;
+  const r = importSVGTexts([{ text: heartLine.replace('stroke-width="2"', 'stroke-width="1.5"'), name: 'heart' }], { group: 'Social' });
+  eq([r.added, r.updated, state.doc.icons.length, state.doc.icons[0].id, state.doc.icons[0].strokeWidth], [0, 1, 2, outlineId, 1.5]);
+});

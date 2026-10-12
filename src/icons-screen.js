@@ -17,7 +17,7 @@ let selected = new Set(); // icon ids (this screen's own selection, not part of 
 let anchor = null; // for shift-click ranges
 let query = '';
 let groupFilter = null; // null: all groups; '' : ungrouped
-let styleFilter = 'all';
+let styleFilter = 'all'; // 'all' or a style; groups are listed within each style
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -45,7 +45,6 @@ export function initIconsScreen(el) {
       <main class="icons-main">
         <div class="icons-toolbar">
           <input type="search" class="home-search icons-search" placeholder="Search icons" spellcheck="false">
-          <div class="seg icons-styles">${['all', ...Object.keys(ICON_STYLES)].map((s) => `<button class="icon-btn" data-style-filter="${s}">${s === 'all' ? 'All' : ICON_STYLES[s]}</button>`).join('')}</div>
           <span class="spacer"></span>
           <button class="btn primary" data-import>${uiIcons.plus} Import SVGs</button>
         </div>
@@ -84,34 +83,29 @@ export function initIconsScreen(el) {
     query = e.target.value;
     renderGrid();
   });
-  el.querySelector('.icons-styles').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-style-filter]');
-    if (!b) return;
-    styleFilter = b.dataset.styleFilter;
-    render();
-  });
-
-  // Groups: pick one to show only it (new imports go into it); double-click to rename.
+  // Styles, and the groups in each: pick one to show only it (new imports go into the group); double-click
+  // a group to rename it.
   const groupsEl = el.querySelector('[data-groups]');
   groupsEl.addEventListener('click', (e) => {
     const b = e.target.closest('[data-group]');
     if (!b) return;
+    styleFilter = b.dataset.style;
     groupFilter = b.dataset.group === '*' ? null : b.dataset.group;
     render();
   });
   groupsEl.addEventListener('dblclick', (e) => {
     const b = e.target.closest('[data-group]');
-    if (b && b.dataset.group !== '*' && b.dataset.group !== '') renameGroup(b.dataset.group);
+    if (b && b.dataset.group !== '*' && b.dataset.group !== '') renameGroup(b.dataset.group, b.dataset.style);
   });
   groupsEl.addEventListener('contextmenu', (e) => {
     const b = e.target.closest('[data-group]');
     if (!b || b.dataset.group === '*') return;
     e.preventDefault();
-    const g = b.dataset.group;
-    const ids = list().filter((i) => (i.group || '') === g).map((i) => i.id);
+    const g = b.dataset.group, style = b.dataset.style;
+    const ids = list().filter((i) => (i.group || '') === g && i.style === style).map((i) => i.id);
     showContextMenu(e.clientX, e.clientY, [
       { label: 'Select all in group', action: () => setSelection(ids) },
-      ...(g ? [{ label: 'Rename group…', action: () => renameGroup(g) }, { label: 'Ungroup icons', action: () => setGroup(ids, '') }] : []),
+      ...(g ? [{ label: 'Rename group…', action: () => renameGroup(g, style) }, { label: 'Ungroup icons', action: () => setGroup(ids, '') }] : []),
       '-',
       { label: `Delete ${plural(ids.length, 'icon')}…`, action: () => deleteIcons(ids) },
     ]);
@@ -124,7 +118,7 @@ export function initIconsScreen(el) {
     if (!t) return setSelection([]);
     const id = t.dataset.icon;
     if (e.shiftKey && anchor) {
-      const order = visible().map((i) => i.id);
+      const order = displayOrder().map((i) => i.id);
       const [a, b] = [order.indexOf(anchor), order.indexOf(id)].sort((x, y) => x - y);
       if (a >= 0) return setSelection([...selected, ...order.slice(a, b + 1)], { keepAnchor: true });
     }
@@ -220,7 +214,8 @@ async function importSVGFiles(files) {
   importSVGTexts(await Promise.all(svgs.map(async (f) => ({ text: await f.text(), name: iconNameFrom(f.name) }))));
 }
 
-// Icons whose name (and group) is already here are updated in place: same id, so files using them update.
+// Icons whose name, group and style are already here are updated in place: same id, so files using them
+// update. (An outline and a filled icon can share a name.)
 export function importSVGTexts(entries, { group = groupFilter || '' } = {}) {
   if (state.readOnly) return commit(); // shows the read-only hint
   let added = 0, updated = 0;
@@ -234,7 +229,7 @@ export function importSVGTexts(entries, { group = groupFilter || '' } = {}) {
       failed.push(`${name} (${err.message})`);
       continue;
     }
-    const same = list().find((i) => i.name === name && (i.group || '') === group);
+    const same = list().find((i) => i.name === name && (i.group || '') === group && i.style === icon.style);
     if (same) {
       Object.assign(same, { viewBox: icon.viewBox, body: icon.body, style: icon.style, strokeWidth: icon.strokeWidth, cap: icon.cap, join: icon.join });
       ids.push(same.id);
@@ -271,10 +266,11 @@ function setGroup(ids, group) {
   commit();
 }
 
-function renameGroup(from) {
-  const to = prompt(`Rename the group “${from}” to:`, from);
+// Rename a group within one style (the same group name in another style is its own group).
+function renameGroup(from, style) {
+  const to = prompt(`Rename the ${ICON_STYLES[style].toLowerCase()} group “${from}” to:`, from);
   if (to === null || !to.trim() || to.trim() === from) return;
-  setGroup(list().filter((i) => (i.group || '') === from).map((i) => i.id), to);
+  setGroup(list().filter((i) => (i.group || '') === from && i.style === style).map((i) => i.id), to);
   if (groupFilter === from) groupFilter = to.trim();
   render();
 }
@@ -337,6 +333,17 @@ function onInspectorClick(e) {
 const visible = () => list().filter((i) => (groupFilter === null || (i.group || '') === groupFilter) &&
   (styleFilter === 'all' || i.style === styleFilter) && iconMatches(i, query));
 
+// Icons by style, then by group (ungrouped last): [{ style, count, groups: [{ name, icons }] }].
+function sections(icons) {
+  return Object.keys(ICON_STYLES).map((style) => {
+    const of = icons.filter((i) => i.style === style);
+    const groups = iconGroups(of).sort((a, b) => (!a.name) - (!b.name)).map((g) => ({ name: g.name, icons: of.filter((i) => (i.group || '') === g.name) }));
+    return { style, count: of.length, groups };
+  }).filter((s) => s.count);
+}
+// The shown icons in the order the grid shows them.
+const displayOrder = () => sections(visible()).flatMap((s) => s.groups.flatMap((g) => g.icons));
+
 export function showIconsScreen() {
   selected = new Set();
   anchor = null;
@@ -353,7 +360,8 @@ export function hideIconsScreen() {
 
 function render() {
   if (!root || state.screen !== 'icons' || !state.doc) return;
-  if (groupFilter !== null && !list().some((i) => (i.group || '') === groupFilter)) groupFilter = null;
+  if (styleFilter !== 'all' && !list().some((i) => i.style === styleFilter)) styleFilter = 'all';
+  if (groupFilter !== null && !list().some((i) => (i.group || '') === groupFilter && (styleFilter === 'all' || i.style === styleFilter))) groupFilter = null;
   for (const id of selected) if (!byId(id)) selected.delete(id);
   renderHeader();
   renderGroups();
@@ -372,16 +380,17 @@ function renderHeader() {
     : dirty ? `<span class="status-chip warn">Unpublished changes · v${pub.version} live</span>`
       : `<span class="status-chip ok">v${pub.version} published</span>`;
   root.querySelector('[data-publish]').disabled = (!!pub && !dirty) || !list().length;
-  root.querySelectorAll('[data-style-filter]').forEach((b) => b.classList.toggle('on', b.dataset.styleFilter === styleFilter));
 }
 
 function renderGroups() {
-  const groups = iconGroups(list());
-  const item = (key, label, count) => `<button class="nav-item${(key === '*' ? groupFilter === null : groupFilter === key) ? ' active' : ''}" data-group="${esc(key)}" title="${key === '*' || key === '' ? '' : 'Double-click to rename'}">` +
-    `<span class="icons-group-name">${esc(label)}</span><span class="muted">${count}</span></button>`;
-  root.querySelector('[data-groups]').innerHTML = '<div class="nav-label">Groups</div>' + item('*', 'All icons', list().length) +
-    groups.filter((g) => g.name).map((g) => item(g.name, g.name, g.count)).join('') +
-    groups.filter((g) => !g.name).map((g) => item('', 'Ungrouped', g.count)).join('');
+  const item = (style, key, label, count, cls = '') => {
+    const active = styleFilter === style && (key === '*' ? groupFilter === null : groupFilter === key);
+    return `<button class="nav-item${cls}${active ? ' active' : ''}" data-style="${style}" data-group="${esc(key)}" title="${key === '*' || key === '' ? '' : 'Double-click to rename'}">` +
+      `<span class="icons-group-name">${esc(label)}</span><span class="muted">${count}</span></button>`;
+  };
+  root.querySelector('[data-groups]').innerHTML = item('all', '*', 'All icons', list().length) +
+    sections(list()).map((s) => `<div class="nav-label icons-style-label">${ICON_STYLES[s.style]}</div>` + item(s.style, '*', `All ${ICON_STYLES[s.style].toLowerCase()}`, s.count) +
+      s.groups.map((g) => item(s.style, g.name, groupLabel(g.name), g.icons.length, ' sub')).join('')).join('');
 }
 
 function renderGrid() {
@@ -400,11 +409,11 @@ function renderGrid() {
     grid.innerHTML = `<div class="home-empty"><p>${query ? `No icons match “${esc(query)}”.` : 'No icons here.'}</p></div>`;
     return;
   }
-  const order = iconGroups(shown).sort((a, b) => (!a.name) - (!b.name)); // ungrouped last
-  grid.innerHTML = order.map((g) => `<section class="icons-section"><div class="icons-section-title">${esc(groupLabel(g.name))} <span class="muted">${g.count}</span></div>` +
-    '<div class="icons-tiles">' + shown.filter((i) => (i.group || '') === g.name).map((i) =>
-      `<button class="icon-tile${selected.has(i.id) ? ' selected' : ''}" data-icon="${i.id}" title="${esc(i.name)}${i.keywords ? ` · ${esc(i.keywords)}` : ''}">` +
-      `${iconMarkup(i, { w: 24, h: 24 })}<span class="icon-tile-name">${esc(i.name)}</span></button>`).join('') + '</div></section>').join('');
+  const tile = (i) => `<button class="icon-tile${selected.has(i.id) ? ' selected' : ''}" data-icon="${i.id}" title="${esc(i.name)}${i.keywords ? ` · ${esc(i.keywords)}` : ''}">` +
+    `${iconMarkup(i, { w: 24, h: 24 })}<span class="icon-tile-name">${esc(i.name)}</span></button>`;
+  grid.innerHTML = sections(shown).map((s) => `<div class="icons-style-title">${ICON_STYLES[s.style]} <span class="muted">${s.count}</span></div>` +
+    s.groups.map((g) => `<section class="icons-section"><div class="icons-section-title">${esc(groupLabel(g.name))} <span class="muted">${g.icons.length}</span></div>` +
+      `<div class="icons-tiles">${g.icons.map(tile).join('')}</div></section>`).join('')).join('');
 }
 
 function renderInspector() {
@@ -419,7 +428,7 @@ function renderInspector() {
     const outline = list().filter((i) => i.style === 'outline').length;
     el.innerHTML = `<div class="inspector-title">Sigma Icons</div>
       <p class="muted icons-help">${list().length ? `${plural(list().length, 'icon')} in ${plural(groups.length, 'group')}: ${outline} outline, ${list().length - outline} filled.` : 'No icons yet.'}</p>
-      <p class="muted icons-help">Import SVGs, drop them anywhere here, or paste SVG code (⌘V). Icons go into the group you have open. Re-importing an icon with the same name and group updates it.</p>
+      <p class="muted icons-help">Import SVGs, drop them anywhere here, or paste SVG code (⌘V). Icons go into the group you have open. Re-importing an icon with the same name, group and style updates it.</p>
       <p class="muted icons-help">Colors are removed on import: an icon takes the color of the layer that shows it. Outline icons keep their stroke width, which components can change.</p>
       <p class="muted icons-help">Publish to let Sigma Design files use these icons in components.</p>
       <button class="btn wide" data-import>${uiIcons.plus} Import SVGs</button>`;
