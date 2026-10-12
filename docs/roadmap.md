@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phases 20–25 are done; next is Phase 26. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **All phases (1–14) done.** Next is **Part E: Sigma in your codebase** (Phases 20–30): Phases 20–25 are done, Phase 26 is built (its real GitHub/Notion run is waiting); next is Phase 27. Part E folds in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -600,6 +600,7 @@ Unchanged from Phase 15 above: code names per platform for tokens, components an
 - **Branch and PR:** the skill creates a branch named by `workflow.branch`, writes the code changes (tokens and icons from Phases 22–23; components from Phase 30) and the Sigma files, and opens a draft PR using the repo's template, linked to the ticket.
 - **Status in Sigma:** each changeset shows Proposed, In review, Changes requested or Merged. On merge the ticket moves to Done.
 - **Done when:** on a real repo, a proposed token change becomes a Notion ticket and a GitHub PR that passes the team's CI, and Sigma shows it as merged after merge.
+- **What shipped (not yet run for real):** `skills/sigma-sync/reference/workflow.md` and `tools/sigma.mjs changeset branch | prepare | pr-body | ticket | sync`; statuses in the Project section. Dry run on `examples/css-app` (local only): `prepare` into a worktree on `design/darker-hover-for-buttons` gave the token change in the Sigma file and in `tokens.css` (`#2741d9`, plus the dark theme keeping its reference) and passed `check`; the PR body and ticket text read well. **Still to do:** a real run — a GitHub pull request (and CI) and a Notion ticket — which needs the team's go-ahead and a Notion connection (none in this session).
 
 ### Phase 27: Comments
 

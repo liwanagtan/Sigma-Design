@@ -14,11 +14,18 @@
 //   node tools/sigma.mjs changeset show <id> [project]
 //   node tools/sigma.mjs changeset apply <id> [project] --to DIR [--base REV]
 //   node tools/sigma.mjs changeset status <id> <status> [project] [--pr URL] [--pr-number N] [--ticket URL] [--branch NAME]
+//   node tools/sigma.mjs changeset branch <id> [project]          the branch name (workflow.branch)
+//   node tools/sigma.mjs changeset prepare <id> [project] --to DIR  apply it, write the code, copy it in, check
+//   node tools/sigma.mjs changeset pr-body <id> [project] [--images-base URL]
+//   node tools/sigma.mjs changeset ticket <id> [project]
+//   node tools/sigma.mjs changeset sync [project]                 statuses from GitHub (gh pr view)
 //
 // [project] is the folder with sigma.config.json (default: the current folder). Token commands work on
 // the config's "tokens" entries (all of them, or --entry N). --json prints machine-readable output.
 import { resolve, basename } from 'node:path';
-import { readFileSync } from 'node:fs';
+import { readFileSync, copyFileSync, mkdirSync, existsSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { dirname, relative } from 'node:path';
 import { readProject, readText, exists, writeText, gitShow, removeFile, listFilesIn } from './lib/project.mjs';
 import { join } from 'node:path';
 import { iconsFromFiles, mergeIcons, iconChanges, iconFilePath, iconSVG, sameIcon, svgStyleOf } from '../src/icon-sync.js';
@@ -42,7 +49,7 @@ for (let i = 0; i < argv.length; i++) {
   if (a.startsWith('--')) {
     const [k, v] = a.slice(2).split('=');
     if (v !== undefined) flags[k] = v;
-    else if (argv[i + 1] && !argv[i + 1].startsWith('--') && ['from', 'entry', 'base', 'format', 'to', 'pr', 'pr-number', 'ticket', 'tracker', 'branch'].includes(k)) flags[k] = argv[++i];
+    else if (argv[i + 1] && !argv[i + 1].startsWith('--') && ['from', 'entry', 'base', 'format', 'to', 'pr', 'pr-number', 'ticket', 'tracker', 'branch', 'images-base'].includes(k)) flags[k] = argv[++i];
     else flags[k] = true;
   } else pos.push(a);
 }
@@ -404,6 +411,141 @@ function changesetStatus(id, status, dir) {
   out(`${c.title}: ${STATUSES[status]}`);
 }
 
+// ---------- team workflow (Phase 26) ----------
+const slugOf = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'change';
+function branchName(config, c) {
+  const pattern = config.workflow?.branch || 'design/{slug}';
+  const ticket = c.ticket?.id || c.ticket?.url?.match(/([0-9a-f]{32}|[A-Z]+-\d+)\/?$/i)?.[1]?.slice(0, 8) || '';
+  return pattern.replace('{slug}', slugOf(c.title)).replace('{id}', c.id).replace('{ticket}', ticket).replace(/\/-|-\/|--+/g, (m) => (m.includes('/') ? '/' : '-')).replace(/-$/, '');
+}
+
+function changesetBranch(id, dir) {
+  const { root, config } = project(dir);
+  out(branchName(config, changeset(root, id)));
+}
+
+// One line per change, with token values before → after per mode (mode and token names from the project's
+// files, when they're there).
+function changeLines(c, root) {
+  const modeNames = new Map(), tokenNames = new Map();
+  for (const path of new Set(c.changes.filter((ch) => ch.kind === 'token').map((ch) => ch.file))) {
+    for (const text of [root && exists(root, path) ? readText(root, path) : null, root ? gitShow(root, c.base === 'disk' ? 'HEAD' : c.base, path) : null]) {
+      if (!text) continue;
+      for (const col of JSON.parse(text).collections || []) {
+        for (const m of col.modes || []) modeNames.set(m.id, m.name);
+        for (const v of col.variables || []) tokenNames.set(v.id, v.name);
+      }
+    }
+  }
+  const show2 = (v) => (v === null || v === undefined ? '—' : typeof v === 'object' ? (v.alias ? `{${tokenNames.get(v.alias) || v.alias}}` : JSON.stringify(v)) : String(v));
+  return c.changes.map((ch) => {
+    const what = ch.kind === 'file' ? `${ch.file}: name, links, collections or modes` : `${ch.kind} **${ch.name}**`;
+    let detail = '';
+    if (ch.kind === 'token') {
+      const modes = new Set([...Object.keys(ch.before?.valuesByMode || {}), ...Object.keys(ch.after?.valuesByMode || {})]);
+      detail = [...modes].filter((m) => show2(ch.before?.valuesByMode?.[m]) !== show2(ch.after?.valuesByMode?.[m]))
+        .map((m) => `${modeNames.get(m) || m}: ${show2(ch.before?.valuesByMode?.[m])} → ${show2(ch.after?.valuesByMode?.[m])}`).join(', ');
+      if (ch.after?.codeSyntax?.web) detail = `\`${ch.after.codeSyntax.web}\` ${detail}`;
+    }
+    return `- ${ch.change} ${what}${detail ? ` — ${detail}` : ''}`;
+  });
+}
+
+function changesetPRBody(id, dir) {
+  const root = resolve(dir || '.');
+  const c = changeset(root, id);
+  const img = (p) => (flags['images-base'] ? `${String(flags['images-base']).replace(/\/$/, '')}/${p}` : p);
+  const lines = [];
+  if (c.note) lines.push(c.note, '');
+  lines.push(`**Design change from Sigma:** ${summarize(c.changes)}.`, '', '### What changed', '', ...changeLines(c, root), '');
+  const pics = c.changes.filter((ch) => c.renders?.[ch.key]);
+  if (pics.length) {
+    lines.push('### Before and after', '', '| | Before | After |', '| --- | --- | --- |');
+    for (const ch of pics) {
+      const r = c.renders[ch.key];
+      lines.push(`| ${ch.kind} ${ch.name} | ${r.before ? `<img src="${img(r.before)}" width="280">` : '—'} | ${r.after ? `<img src="${img(r.after)}" width="280">` : '—'} |`);
+    }
+    lines.push('');
+  }
+  if (c.ticket?.url) lines.push(`Ticket: ${c.ticket.url}`, '');
+  lines.push(`<sub>Proposed in Sigma as \`${c.path}\`. Sigma files changed by this pull request were checked with \`tools/sigma.mjs check\`.</sub>`);
+  out(lines.join('\n'));
+}
+
+function changesetTicket(id, dir) {
+  const root = resolve(dir || '.');
+  const c = changeset(root, id);
+  const body = [c.note, '', `Design change proposed in Sigma (${summarize(c.changes)}):`, '', ...changeLines(c, root), '',
+    ...Object.values(c.renders || {}).flatMap((r) => [r.before && `Before: ${r.before}`, r.after && `After: ${r.after}`].filter(Boolean)),
+    '', `Changeset: ${c.path}`].filter((x) => x !== undefined);
+  if (json) return out({ title: c.title, body: body.join('\n'), status: 'To do' });
+  out(`# ${c.title}\n\n${body.join('\n')}`);
+}
+
+// Everything a pull request's branch needs, in DIR (a worktree of the base branch): the changeset applied
+// to the Sigma files, the code written from them (tokens and icons), the changeset and its pictures copied
+// in, and the checks run.
+function changesetPrepare(id, dir) {
+  const root = resolve(dir || '.');
+  if (!flags.to) fail('say where the branch is checked out: --to <folder> (git worktree add -b <branch> <folder> <base>)');
+  const to = resolve(flags.to);
+  if (to === root) fail('--to must be another checkout (a worktree), so your working copy isn’t touched');
+  const c = changeset(root, id);
+  changesetApply(id, dir);
+  // The changeset and its pictures go in the branch, for reviewers.
+  for (const p of [c.path, ...Object.values(c.renders || {}).flatMap((r) => [r.before, r.after]).filter(Boolean)]) {
+    mkdirSync(dirname(join(to, p)), { recursive: true });
+    copyFileSync(join(root, p), join(to, p));
+  }
+  // Code from the Sigma files this changeset touched.
+  const { config } = project(to);
+  const touched = new Set(c.changes.map((ch) => ch.file));
+  const code = [];
+  const keep = { ...flags };
+  config.tokens.forEach((e, i) => {
+    if (!touched.has(e.sigma)) return;
+    Object.assign(flags, { entry: String(i), json: false, 'dry-run': false });
+    tokensWrite(to);
+    code.push(e.sigma);
+  });
+  config.icons.forEach((e, i) => {
+    if (!touched.has(e.sigma)) return;
+    Object.assign(flags, { entry: String(i), json: false, 'dry-run': false });
+    iconsWrite(to);
+    code.push(e.sigma);
+  });
+  for (const k of Object.keys(flags)) delete flags[k];
+  Object.assign(flags, keep);
+  out(`Branch files ready in ${to}. Run the project's own checks (tests, lint, build) there before committing.`);
+  if (c.changes.some((ch) => ch.kind === 'component' || ch.kind === 'page')) {
+    out('Components and pages changed: their code isn’t written by this tool (see skills/sigma-sync/reference/design-to-code.md).');
+  }
+}
+
+// Statuses from GitHub for proposals with a pull request.
+function changesetSync(dir) {
+  const root = resolve(dir || '.');
+  const updated = [];
+  for (const c of changesets(root)) {
+    if (!c.pr?.url || c.status === 'merged' || c.status === 'closed') continue;
+    let pr;
+    try {
+      pr = JSON.parse(execFileSync('gh', ['pr', 'view', c.pr.url, '--json', 'state,isDraft,reviewDecision,mergedAt,number'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
+    } catch (err) {
+      fail(`couldn’t read ${c.pr.url} with gh (is gh installed and signed in?): ${String(err.stderr || err.message).trim()}`);
+    }
+    const status = pr.state === 'MERGED' ? 'merged' : pr.state === 'CLOSED' ? 'closed' : pr.reviewDecision === 'CHANGES_REQUESTED' ? 'changes-requested' : 'in-review';
+    if (status !== c.status) {
+      const { path, ...data } = c;
+      writeText(root, path, formatProjectJSON({ ...data, status, pr: { ...c.pr, number: pr.number }, updatedAt: new Date().toISOString(), ...(pr.mergedAt ? { mergedAt: pr.mergedAt } : {}) }));
+      updated.push({ id: c.id, title: c.title, from: c.status, to: status, ticket: c.ticket?.url || null });
+    }
+  }
+  if (json) return out(updated);
+  if (!updated.length) return out('Statuses are up to date.');
+  for (const u of updated) out(`${u.title}: ${STATUSES[u.from] || u.from} → ${STATUSES[u.to]}${u.to === 'merged' && u.ticket ? `  (move the ticket to Done: ${u.ticket})` : ''}`);
+}
+
 // validate + every CSS-sourced token file matches its code (an import would change nothing).
 function checkAll(dir) {
   const { root, config } = project(dir);
@@ -452,6 +594,11 @@ else if (cmd === 'changeset' && sub === 'list') changesetList(dir);
 else if (cmd === 'changeset' && sub === 'show') changesetShow(dir, pos[3]);
 else if (cmd === 'changeset' && sub === 'apply') changesetApply(dir, pos[3]);
 else if (cmd === 'changeset' && sub === 'status') changesetStatus(dir, pos[3], pos[4]);
+else if (cmd === 'changeset' && sub === 'branch') changesetBranch(dir, pos[3]);
+else if (cmd === 'changeset' && sub === 'prepare') changesetPrepare(dir, pos[3]);
+else if (cmd === 'changeset' && sub === 'pr-body') changesetPRBody(dir, pos[3]);
+else if (cmd === 'changeset' && sub === 'ticket') changesetTicket(dir, pos[3]);
+else if (cmd === 'changeset' && sub === 'sync') changesetSync(dir);
 else {
   out(`Usage:
   node tools/sigma.mjs validate [project]
@@ -467,6 +614,11 @@ else {
   node tools/sigma.mjs changeset show <id> [project]
   node tools/sigma.mjs changeset apply <id> [project] --to DIR [--base REV]
   node tools/sigma.mjs changeset status <id> <status> [project] [--pr URL] [--pr-number N] [--ticket URL] [--branch NAME]
+  node tools/sigma.mjs changeset branch <id> [project]
+  node tools/sigma.mjs changeset prepare <id> [project] --to DIR
+  node tools/sigma.mjs changeset pr-body <id> [project] [--images-base URL]
+  node tools/sigma.mjs changeset ticket <id> [project]
+  node tools/sigma.mjs changeset sync [project]
 Add --json for machine-readable output. See skills/sigma-sync/SKILL.md.`);
   process.exit(cmd ? 2 : 0);
 }

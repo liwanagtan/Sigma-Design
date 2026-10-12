@@ -120,3 +120,10 @@ was skipped and why, and the result of `check`. If Sigma is running with the pro
 ## Icons
 
 See `reference/icons.md`.
+
+## Proposals → tickets and pull requests
+
+When a designer uses **Propose change** in Sigma, a changeset waits in `.sigma/changesets/`. To send it (only
+when asked): `reference/workflow.md`. In short: a ticket, a branch in a worktree, `changeset prepare` (Sigma
+files and code), the project's own checks, a draft pull request in the repo's template, then
+`changeset sync` keeps Sigma's statuses current.

@@ -428,6 +428,8 @@ export function applyToCSS(text, collections, { modes = { Default: ':root' }, re
   const ids = new Map(collections.flatMap((c) => (c.variables || []).map((v) => [v.id, v])));
   const codeOf = (v) => v.codeSyntax?.web || codeNameFor(v.name, { naming, prefix, map });
   const edits = [], inserts = [], missing = [];
+  // How this file writes colors, for a value that had none to copy (it was a var() before).
+  const fileColor = decls.map((d) => parseColorValue(d.value)).find(Boolean) || { format: 'hex' };
   const find = (name, selector) => decls.find((d) => d.name === name && normSel(d.selector) === normSel(selector));
   for (const c of collections) {
     if (c.extends) continue;
@@ -454,14 +456,15 @@ export function applyToCSS(text, collections, { modes = { Default: ':root' }, re
           const same = want.alias ? parsed.alias === want.alias
             : !parsed.alias && sameValue(v.type, parsed.value, want.value);
           if (same) continue;
-          const after = want.alias ? `var(${want.alias})` : formatCSSValue(v.type, want.value, { ...(parsed.like || {}), name }, { remBase });
+          const like = parsed.like?.format || parsed.like?.unit !== undefined ? parsed.like : v.type === 'color' ? fileColor : {};
+          const after = want.alias ? `var(${want.alias})` : formatCSSValue(v.type, want.value, { ...like, name }, { remBase });
           edits.push({ name, selector, before: have.value, after, start: have.start, end: have.end });
         } else {
           // Next to its closest relative (--space-8 after --space-4), written the same way.
           const block = blockOf(text, decls, selector, name);
           const like = block?.neighbor ? parseCSSValue(block.neighbor.value, { remBase, name: block.neighbor.name }) : null;
           const fallback = { unit: v.type === 'number' && !/opacity|weight|line-height|z-index/.test(name) ? 'px' : '', name };
-          const after = want.alias ? `var(${want.alias})` : formatCSSValue(v.type, want.value, like?.type === v.type ? { ...like.like, name } : fallback, { remBase });
+          const after = want.alias ? `var(${want.alias})` : formatCSSValue(v.type, want.value, like?.type === v.type ? { ...like.like, name } : v.type === 'color' ? { ...fileColor, name } : fallback, { remBase });
           if (block) inserts.push({ name, selector, after, at: block.at, indent: block.indent });
           else missing.push({ name, selector });
         }
