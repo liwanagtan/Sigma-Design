@@ -1291,6 +1291,7 @@
     }
   ],
   "createdAt": "2026-10-12T22:47:30.492Z",
+  "mergedAt": "2026-10-12T23:03:38Z",
   "note": "Buttons get 16px side padding (was --space-4). New Secondary variant for less important actions: a light background with an accent label. Card and Input only moved on the canvas.",
   "pr": {
     "host": "github",
@@ -1311,7 +1312,7 @@
       "before": ".sigma/changesets/2026-10-12-tighter-buttons-and-a-secondary-button-rkunzw/3-component-before.svg"
     }
   },
-  "status": "in-review",
+  "status": "merged",
   "title": "Tighter buttons and a Secondary button",
-  "updatedAt": "2026-10-12T22:59:56.797Z"
+  "updatedAt": "2026-10-12T23:03:47.458Z"
 }
