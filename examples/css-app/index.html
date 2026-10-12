@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <title>Acme</title>
+  <link rel="stylesheet" href="src/styles/app.css">
+</head>
+<body>
+  <main class="card">
+    <h1>Acme</h1>
+    <p>A small app whose design tokens live in src/styles/tokens.css.</p>
+    <div id="actions"></div>
+  </main>
+  <script type="module">
+    import { Button } from './src/components/button.js';
+    document.getElementById('actions').append(Button({ label: 'Continue', icon: 'arrow-right' }), Button({ label: 'Delete', variant: 'danger', icon: 'trash' }));
+  </script>
+</body>
+</html>

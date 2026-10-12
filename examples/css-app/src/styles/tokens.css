@@ -1,0 +1,45 @@
+/* Design tokens for the Acme web app. Edited by hand and by the Sigma sync skill. */
+
+:root {
+  /* Palette */
+  --color-blue-500: #0d99ff;
+  --color-blue-600: #0a7ccf;
+  --color-gray-0: #ffffff;
+  --color-gray-50: #f5f5f5;
+  --color-gray-600: rgb(117 117 117);
+  --color-gray-900: #1e1e1e;
+  --color-red-500: hsl(0 84% 60%);
+
+  /* Spacing and shape */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-4: 1rem;
+  --radius-md: 8px;
+
+  /* Type */
+  --font-family-base: "Inter", system-ui, sans-serif;
+  --font-size-body: 1rem;
+  --font-weight-bold: 600;
+
+  /* Motion and elevation */
+  --duration-fast: 150ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --shadow-raised: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  /* Semantic */
+  --surface: var(--color-gray-0);
+  --surface-sunken: var(--color-gray-50);
+  --text-primary: var(--color-gray-900);
+  --text-secondary: var(--color-gray-600);
+  --accent: var(--color-blue-500);
+  --accent-hover: var(--color-blue-600);
+  --danger: var(--color-red-500);
+}
+
+[data-theme="dark"] {
+  --surface: var(--color-gray-900);
+  --surface-sunken: #2c3038;
+  --text-primary: var(--color-gray-0);
+  --text-secondary: #a0a6b0;
+  --accent: #4db5ff;
+}

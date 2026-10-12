@@ -1,0 +1,258 @@
+{
+  "format": 1,
+  "kind": "tokens",
+  "name": "Acme tokens",
+  "collections": [
+    {
+      "id": "primitives",
+      "name": "Primitives",
+      "defaultModeId": "primitives-default",
+      "groups": [
+        { "id": "g10b4zvk4hf3x8", "name": "color", "parentId": null },
+        { "id": "g13ct3v91f8myyz", "name": "blue", "parentId": "g10b4zvk4hf3x8" },
+        { "id": "g197m6bmcqr442", "name": "gray", "parentId": "g10b4zvk4hf3x8" },
+        { "id": "g1npxdl0srofay", "name": "red", "parentId": "g10b4zvk4hf3x8" },
+        { "id": "g1li5pdpcpl38p", "name": "space", "parentId": null },
+        { "id": "gk92pu3r3ksbb", "name": "radius", "parentId": null },
+        { "id": "g1sh4dzs1u7ne7e", "name": "font", "parentId": null },
+        { "id": "gs4xiftsqq7z7", "name": "family", "parentId": "g1sh4dzs1u7ne7e" },
+        { "id": "g419qp8k2d47y", "name": "size", "parentId": "g1sh4dzs1u7ne7e" },
+        { "id": "g12wfk098wtz2v", "name": "weight", "parentId": "g1sh4dzs1u7ne7e" },
+        { "id": "g11hn8zp10llgyd", "name": "duration", "parentId": null },
+        { "id": "g9ygg6f12oqav7", "name": "ease", "parentId": null },
+        { "id": "gw763491ao5pmh", "name": "shadow", "parentId": null }
+      ],
+      "modes": [{ "id": "primitives-default", "name": "Default" }],
+      "variables": [
+        {
+          "id": "color-blue-500",
+          "type": "color",
+          "name": "color/blue/500",
+          "codeSyntax": { "web": "--color-blue-500" },
+          "groupId": "g13ct3v91f8myyz",
+          "valuesByMode": { "primitives-default": "#0D99FF" }
+        },
+        {
+          "id": "color-blue-600",
+          "type": "color",
+          "name": "color/blue/600",
+          "codeSyntax": { "web": "--color-blue-600" },
+          "groupId": "g13ct3v91f8myyz",
+          "valuesByMode": { "primitives-default": "#0A7CCF" }
+        },
+        {
+          "id": "color-gray-0",
+          "type": "color",
+          "name": "color/gray/0",
+          "codeSyntax": { "web": "--color-gray-0" },
+          "groupId": "g197m6bmcqr442",
+          "valuesByMode": { "primitives-default": "#FFFFFF" }
+        },
+        {
+          "id": "color-gray-50",
+          "type": "color",
+          "name": "color/gray/50",
+          "codeSyntax": { "web": "--color-gray-50" },
+          "groupId": "g197m6bmcqr442",
+          "valuesByMode": { "primitives-default": "#F5F5F5" }
+        },
+        {
+          "id": "color-gray-600",
+          "type": "color",
+          "name": "color/gray/600",
+          "codeSyntax": { "web": "--color-gray-600" },
+          "groupId": "g197m6bmcqr442",
+          "valuesByMode": { "primitives-default": "#757575" }
+        },
+        {
+          "id": "color-gray-900",
+          "type": "color",
+          "name": "color/gray/900",
+          "codeSyntax": { "web": "--color-gray-900" },
+          "groupId": "g197m6bmcqr442",
+          "valuesByMode": { "primitives-default": "#1E1E1E" }
+        },
+        {
+          "id": "color-red-500",
+          "type": "color",
+          "name": "color/red/500",
+          "codeSyntax": { "web": "--color-red-500" },
+          "groupId": "g1npxdl0srofay",
+          "valuesByMode": { "primitives-default": "#EF4343" }
+        },
+        {
+          "id": "space-1",
+          "type": "number",
+          "name": "space/1",
+          "codeSyntax": { "web": "--space-1" },
+          "groupId": "g1li5pdpcpl38p",
+          "valuesByMode": { "primitives-default": 4 }
+        },
+        {
+          "id": "space-2",
+          "type": "number",
+          "name": "space/2",
+          "codeSyntax": { "web": "--space-2" },
+          "groupId": "g1li5pdpcpl38p",
+          "valuesByMode": { "primitives-default": 8 }
+        },
+        {
+          "id": "space-4",
+          "type": "number",
+          "name": "space/4",
+          "codeSyntax": { "web": "--space-4" },
+          "groupId": "g1li5pdpcpl38p",
+          "valuesByMode": { "primitives-default": 16 }
+        },
+        {
+          "id": "radius-md",
+          "type": "number",
+          "name": "radius/md",
+          "codeSyntax": { "web": "--radius-md" },
+          "groupId": "gk92pu3r3ksbb",
+          "valuesByMode": { "primitives-default": 8 }
+        },
+        {
+          "id": "font-family-base",
+          "type": "string",
+          "name": "font/family/base",
+          "codeSyntax": { "web": "--font-family-base" },
+          "groupId": "gs4xiftsqq7z7",
+          "valuesByMode": { "primitives-default": "\"Inter\", system-ui, sans-serif" }
+        },
+        {
+          "id": "font-size-body",
+          "type": "number",
+          "name": "font/size/body",
+          "codeSyntax": { "web": "--font-size-body" },
+          "groupId": "g419qp8k2d47y",
+          "valuesByMode": { "primitives-default": 16 }
+        },
+        {
+          "id": "font-weight-bold",
+          "type": "number",
+          "name": "font/weight/bold",
+          "codeSyntax": { "web": "--font-weight-bold" },
+          "groupId": "g12wfk098wtz2v",
+          "valuesByMode": { "primitives-default": 600 }
+        },
+        {
+          "id": "duration-fast",
+          "type": "duration",
+          "name": "duration/fast",
+          "codeSyntax": { "web": "--duration-fast" },
+          "groupId": "g11hn8zp10llgyd",
+          "valuesByMode": { "primitives-default": 150 }
+        },
+        {
+          "id": "ease-standard",
+          "type": "easing",
+          "name": "ease/standard",
+          "codeSyntax": { "web": "--ease-standard" },
+          "groupId": "g9ygg6f12oqav7",
+          "valuesByMode": { "primitives-default": [0.2, 0, 0, 1] }
+        },
+        {
+          "id": "shadow-raised",
+          "type": "shadow",
+          "name": "shadow/raised",
+          "codeSyntax": { "web": "--shadow-raised" },
+          "groupId": "gw763491ao5pmh",
+          "valuesByMode": {
+            "primitives-default": { "blur": 8, "color": "#0000001A", "spread": 0, "x": 0, "y": 2 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "semantic",
+      "name": "Semantic",
+      "defaultModeId": "semantic-light",
+      "groups": [
+        { "id": "gpgfw7yx3axdc", "name": "surface", "parentId": null },
+        { "id": "g1cmiib81lj8kce", "name": "text", "parentId": null },
+        { "id": "gtw5e151xcnlhl", "name": "accent", "parentId": null }
+      ],
+      "modes": [
+        { "id": "semantic-light", "name": "Light" },
+        { "id": "semantic-dark", "name": "Dark" }
+      ],
+      "variables": [
+        {
+          "id": "surface",
+          "type": "color",
+          "name": "surface",
+          "codeSyntax": { "web": "--surface" },
+          "valuesByMode": {
+            "semantic-dark": { "alias": "color-gray-900" },
+            "semantic-light": { "alias": "color-gray-0" }
+          }
+        },
+        {
+          "id": "surface-sunken",
+          "type": "color",
+          "name": "surface/sunken",
+          "codeSyntax": { "web": "--surface-sunken" },
+          "groupId": "gpgfw7yx3axdc",
+          "valuesByMode": {
+            "semantic-dark": "#2C3038",
+            "semantic-light": { "alias": "color-gray-50" }
+          }
+        },
+        {
+          "id": "text-primary",
+          "type": "color",
+          "name": "text/primary",
+          "codeSyntax": { "web": "--text-primary" },
+          "groupId": "g1cmiib81lj8kce",
+          "valuesByMode": {
+            "semantic-dark": { "alias": "color-gray-0" },
+            "semantic-light": { "alias": "color-gray-900" }
+          }
+        },
+        {
+          "id": "text-secondary",
+          "type": "color",
+          "name": "text/secondary",
+          "codeSyntax": { "web": "--text-secondary" },
+          "groupId": "g1cmiib81lj8kce",
+          "valuesByMode": {
+            "semantic-dark": "#A0A6B0",
+            "semantic-light": { "alias": "color-gray-600" }
+          }
+        },
+        {
+          "id": "accent",
+          "type": "color",
+          "name": "accent",
+          "codeSyntax": { "web": "--accent" },
+          "valuesByMode": {
+            "semantic-dark": "#4DB5FF",
+            "semantic-light": { "alias": "color-blue-500" }
+          }
+        },
+        {
+          "id": "accent-hover",
+          "type": "color",
+          "name": "accent/hover",
+          "codeSyntax": { "web": "--accent-hover" },
+          "groupId": "gtw5e151xcnlhl",
+          "valuesByMode": {
+            "semantic-dark": { "alias": "color-blue-600" },
+            "semantic-light": { "alias": "color-blue-600" }
+          }
+        },
+        {
+          "id": "danger",
+          "type": "color",
+          "name": "danger",
+          "codeSyntax": { "web": "--danger" },
+          "valuesByMode": {
+            "semantic-dark": { "alias": "color-red-500" },
+            "semantic-light": { "alias": "color-red-500" }
+          }
+        }
+      ]
+    }
+  ]
+}

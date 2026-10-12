@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "stack": { "styling": ["css-variables"], "framework": "none" },
+  "tokens": [
+    {
+      "sigma": ".sigma/tokens/acme.sigma.json",
+      "name": "Acme tokens",
+      "sources": [{ "path": "src/styles/tokens.css", "format": "css-variables" }],
+      "naming": "kebab",
+      "modes": { "Light": ":root", "Dark": "[data-theme=\"dark\"]" }
+    }
+  ],
+  "workflow": { "git": "github", "tracker": "none", "branch": "design/{slug}", "base": "main", "labels": ["design"] }
+}

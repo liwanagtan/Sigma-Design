@@ -1,0 +1,36 @@
+@import "./tokens.css";
+
+body {
+  margin: 0;
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font: var(--font-size-body) / 1.5 var(--font-family-base);
+}
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised);
+  padding: var(--space-4);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--color-gray-0);
+  font-weight: var(--font-weight-bold);
+  transition: background var(--duration-fast) var(--ease-standard);
+}
+
+.button:hover {
+  background: var(--accent-hover);
+}
+
+.button--danger {
+  background: var(--danger);
+}
