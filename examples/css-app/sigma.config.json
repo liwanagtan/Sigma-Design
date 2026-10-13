@@ -25,7 +25,7 @@
   ],
   "workflow": {
     "git": "github",
-    "tracker": "none",
+    "tracker": "github",
     "branch": "design/{slug}",
     "base": "main",
     "labels": [

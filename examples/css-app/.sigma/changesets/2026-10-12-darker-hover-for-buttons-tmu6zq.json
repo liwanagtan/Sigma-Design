@@ -40,5 +40,7 @@
   "note": "The hover state was too close to the default.",
   "renders": {},
   "status": "proposed",
-  "title": "Darker hover for buttons"
+  "ticket": { "tracker": "notion", "url": "https://github.com/liwanagtan/Sigma-Design/issues/4" },
+  "title": "Darker hover for buttons",
+  "updatedAt": "2026-10-13T06:10:08.568Z"
 }
