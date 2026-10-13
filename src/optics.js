@@ -19,11 +19,11 @@ const I = (name, filled = false) => `optics-${name}${filled ? '-filled' : ''}`;
 export const OPTICS_ICON_NAMES = ['plus', 'search', 'x', 'check', 'minus', 'chevron-down', 'info', 'circle-check', 'circle-alert', 'triangle-alert', 'loader', 'zap', 'pencil', 'trash', 'star'];
 export const OPTICS_ICONS = OPTICS_ICON_NAMES.map((n) => I(n));
 
-/** Optics Icons: a Sigma Icons file made from the Sigma Icons sample's icons (outline and filled), published v1. */
+/** Optics Icons: a Sigma Icons file made from the Sigma Icons sample's icons (the whole Lucide set, outline and filled), published v1. */
 export function opticsIconsDocument(sampleIcons, source = null) {
   const doc = newIconsDocument(OPTICS_ICONS_NAME);
   doc.icons = sampleIcons.map((icon) => ({ ...structuredClone(icon), id: I(icon.name, icon.style === 'filled') }));
-  if (source) doc.source = { ...structuredClone(source), note: 'Optics’ icons: the Sigma Icons selection of Lucide icons, outline and filled.' };
+  if (source) doc.source = { ...structuredClone(source), note: 'Optics’ icons: the whole Lucide set from Sigma Icons, outline and filled.' };
   doc.published = { version: 1, publishedAt: Date.now(), notes: 'Optics Icons v1', icons: structuredClone(doc.icons) };
   return doc;
 }
@@ -574,14 +574,17 @@ export function opticsFoundationsDocument(collections, { icons = [] } = {}) {
   // ---------- Icons ----------
   const groups = {};
   for (const ic of icons.filter((x) => x.style === 'outline')) (groups[ic.group] ||= []).push(ic);
+  // A row of examples per group (the whole set is in Optics Icons, with search).
+  const SHOWN = 12;
   const iconRows = Object.entries(groups).map(([g, list]) => box('frame', g, { dir: 'vertical', gap: '200' }, [
-    text('Group', g, 'text/default', 'heading/xs'),
-    box('frame', 'Icons', { dir: 'horizontal', gap: '200' }, list.map((ic) => box('frame', ic.name, { dir: 'vertical', gap: '100', w: 112, pad: '200', alignC: 'center', radius: '200', stroke: 'border/default' }, [
+    text('Group', list.length > SHOWN ? `${g} · ${list.length} icons` : g, 'text/default', 'heading/xs'),
+    box('frame', 'Icons', { dir: 'horizontal', gap: '200' }, list.slice(0, SHOWN).map((ic) => box('frame', ic.name, { dir: 'vertical', gap: '100', w: 112, pad: '200', alignC: 'center', radius: '200', stroke: 'border/default' }, [
       icon('Icon', ic.id, 'icon/default', 24),
       text('Name', ic.name, 'text/secondary', 'body/sm'),
     ]))),
   ]));
-  const iconSheet = sheet('Icons', 'Optics Icons are Lucide icons (from Sigma Icons): 24px outlines with a 2px stroke, colored with the icon tokens. Pick icons people already know, and name icon-only controls for screen readers.',
+  const total = icons.filter((x) => x.style === 'outline').length;
+  const iconSheet = sheet('Icons', `Optics Icons is the whole Lucide set from Sigma Icons: ${total.toLocaleString()} outline icons, 24px with a 2px stroke, colored with the icon tokens. Here are some from each group; open Optics Icons to see and search them all. Pick icons people already know, and name icon-only controls for screen readers.`,
     iconRows.length ? [section('Optics Icons', iconRows)] : [para('None', 'Optics Icons couldn’t be made, so this page has no icons.', 'text/secondary', 'body/md')]);
 
   const pages = [

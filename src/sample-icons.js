@@ -1,11 +1,14 @@
-// The sample Sigma Icons file ("Sigma Icons" in the Welcome to Sigma folder): a small set picked from Lucide
-// (https://lucide.dev, ISC License), in groups, with filled versions of some shapes so it shows both styles.
-// The Welcome to Sigma guide links it and uses its icons in components.
+// The sample Sigma Icons file ("Sigma Icons" in the Welcome to Sigma folder): the whole Lucide set
+// (https://lucide.dev, ISC License, about 1,900 icons), with filled versions of some shapes so it shows both
+// styles. The icons the guide uses are in groups of their own (Actions, Arrows, Status…); the rest are in
+// Lucide's categories. The Welcome to Sigma guide links it and uses its icons in components; Optics Icons is
+// made from it.
+export const SAMPLE_ICONS_VERSION = 2; // 2: the whole Lucide set (1: a selection of 72 icons)
 import { newIconsDocument, sanitizeIcons } from './icon-library.js';
 
 export const SAMPLE_ICONS_NAME = 'Sigma Icons';
 
-// Group → Lucide icon names (outline).
+// The guide's groups → Lucide icon names (outline). Every other Lucide icon keeps its Lucide category.
 const OUTLINE = {
   Actions: ['plus', 'minus', 'x', 'check', 'search', 'settings', 'trash', 'pencil', 'copy', 'download', 'upload', 'share-2', 'external-link', 'funnel'],
   Arrows: ['arrow-left', 'arrow-right', 'arrow-up', 'arrow-down', 'chevron-left', 'chevron-right', 'chevron-up', 'chevron-down'],
@@ -30,27 +33,29 @@ export const sampleIconId = (name, filled = false) => `sigma-${name}${filled ? '
 
 // The sample Sigma Icons document from the Lucide data (icon-sets/lucide.json), published as v1.
 export function sampleIconsDocument(lucide) {
-  const byName = new Map(lucide.icons.map(([name, , keywords, body]) => [name, { keywords, body }]));
+  const byName = new Map(lucide.icons.map(([name, category, keywords, body]) => [name, { category, keywords, body }]));
   const icons = [];
-  const add = (groups, style) => {
-    for (const [group, names] of Object.entries(groups)) {
-      for (const name of names) {
-        const src = byName.get(name);
-        if (!src) throw new Error(`Lucide has no icon named ${name}`);
-        icons.push({
-          id: sampleIconId(name, style === 'filled'), name, group, keywords: src.keywords, body: src.body,
-          viewBox: lucide.viewBox, style, strokeWidth: lucide.strokeWidth, cap: lucide.cap, join: lucide.join,
-        });
-      }
-    }
+  const push = (name, group, style) => {
+    const src = byName.get(name);
+    if (!src) throw new Error(`Lucide has no icon named ${name}`);
+    icons.push({
+      id: sampleIconId(name, style === 'filled'), name, group, keywords: src.keywords, body: src.body,
+      viewBox: lucide.viewBox, style, strokeWidth: lucide.strokeWidth, cap: lucide.cap, join: lucide.join,
+    });
   };
-  add(OUTLINE, 'outline');
-  add(FILLED, 'filled');
+  // The guide's icons first, in their groups; then every other Lucide icon, in its category; then the filled ones.
+  const placed = new Set();
+  for (const [group, names] of Object.entries(OUTLINE)) for (const name of names) {
+    push(name, group, 'outline');
+    placed.add(name);
+  }
+  for (const [name, { category }] of byName) if (!placed.has(name)) push(name, category || 'Other', 'outline');
+  for (const [group, names] of Object.entries(FILLED)) for (const name of names) push(name, group, 'filled');
   const doc = newIconsDocument(SAMPLE_ICONS_NAME);
   doc.icons = sanitizeIcons(icons);
   doc.source = {
     name: 'Lucide', version: lucide.version, url: lucide.url, license: lucide.license, licenseText: lucide.licenseText,
-    note: 'A selection of Lucide icons. The filled versions are Lucide shapes, filled.',
+    note: 'The whole Lucide set. The filled versions are Lucide shapes, filled.',
   };
   doc.published = { version: 1, publishedAt: Date.now(), notes: 'Sample icons', icons: structuredClone(doc.icons) };
   return doc;

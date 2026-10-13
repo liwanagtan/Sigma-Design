@@ -731,7 +731,7 @@ const WELCOME_INTRO = `<div class="welcome-intro">
 const SAMPLE_DESCRIPTIONS = {
   design: 'The guide. Ten pages, each with a short explanation and examples: the canvas, layout, components, design tokens, style, quality checks, libraries and versions, Sigma Tokens and Sigma Icons.',
   tokens: 'The design tokens the guide is built with: primitives, semantic colors in Light and Dark, a Brand B, text styles and component tokens.',
-  icons: 'The icons the guide’s components use: a selection of Lucide icons in groups, outline and filled.',
+  icons: 'The whole Lucide set, about 1,900 icons, outline and filled, in groups. The guide’s components use them, and Optics Icons is made from it.',
 };
 
 // `describe`: a sample file's card also says what the file holds (in the Welcome to Sigma folder).

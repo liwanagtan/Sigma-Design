@@ -8,7 +8,7 @@ import { buildSVG, download, toast } from './io.js';
 import { libraryEntry } from './variables.js';
 import { welcomeDocument, WELCOME_VERSION, WELCOME_ICONS } from './welcome.js';
 import { newIconsDocument, sanitizeIcons, iconMarkup, usedIconIds, ICON_SETS, loadIconSet } from './icon-library.js';
-import { sampleIconsDocument, SAMPLE_ICONS_NAME, sampleIconId } from './sample-icons.js';
+import { sampleIconsDocument, SAMPLE_ICONS_NAME, SAMPLE_ICONS_VERSION, sampleIconId } from './sample-icons.js';
 import { opticsTokenDocument } from './optics-tokens.js';
 import { opticsComponentsDocument, opticsFoundationsDocument, opticsIconsDocument, OPTICS_ICON_NAMES } from './optics.js';
 
@@ -468,10 +468,11 @@ export async function sampleTokenFile() {
   return createTokenFileWith(name, collections, 'Sample tokens', { meta: { sample: true } });
 }
 
-// The sample Sigma Icons (made from the Lucide set the first time). Reuses one that still has every icon
-// the guide uses; null if the Lucide data can't be read (the guide is then made without icons).
+// The sample Sigma Icons (the whole Lucide set, made the first time). Reuses one of the current kind
+// (SAMPLE_ICONS_VERSION) that still has every icon the guide uses; null if the Lucide data can't be read (the
+// guide is then made without icons).
 export async function sampleIconFile() {
-  for (const meta of (await listIconFiles()).filter((m) => m.sample).sort((a, b) => b.updatedAt - a.updatedAt)) {
+  for (const meta of (await listIconFiles()).filter((m) => m.sample && m.sampleIcons === SAMPLE_ICONS_VERSION).sort((a, b) => b.updatedAt - a.updatedAt)) {
     const published = (await loadPublishedIcons(meta.id))?.published;
     if (!published) continue;
     const ids = new Set(published.icons.map((x) => x.id));
@@ -485,7 +486,7 @@ export async function sampleIconFile() {
     console.warn('Could not make the sample Sigma Icons', err);
     return null;
   }
-  const id = await createFile(doc, {}, { sample: true });
+  const id = await createFile(doc, {}, { sample: true, sampleIcons: SAMPLE_ICONS_VERSION });
   return { id, name: SAMPLE_ICONS_NAME, published: doc.published };
 }
 
