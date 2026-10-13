@@ -331,6 +331,7 @@ export function validateFile(file, { path = '(file)', files = {} } = {}) {
       else if (pageIds.has(pg.id)) error(`${at}.id`, `${pg.id} is used by another page`);
       pageIds.add(pg.id);
       if (pg.background !== undefined && !HEX.test(pg.background)) error(`${at}.background`, 'should be a color like "#F5F5F5"');
+      if (pg.handoff !== undefined && pg.handoff !== true) error(`${at}.handoff`, 'should be true (a page marked for handoff), or left out');
       (pg.children || []).forEach((n, i) => checkNode(n, `${at}.children[${i}]`, null, null));
     });
     // Comments: on a page of this file, and (if on a layer) a layer that's still there.

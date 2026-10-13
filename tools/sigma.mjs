@@ -29,7 +29,7 @@
 // [project] is the folder with sigma.config.json (default: the current folder). Token commands work on
 // the config's "tokens" entries (all of them, or --entry N). --json prints machine-readable output.
 import { resolve, basename } from 'node:path';
-import { readFileSync, copyFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, copyFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { dirname, relative } from 'node:path';
 import { readProject, readText, exists, writeText, gitShow, removeFile, listFilesIn } from './lib/project.mjs';
@@ -41,6 +41,7 @@ import { buildComponent, buildPage, tokenIndex } from '../src/capture-to-sigma.j
 import { componentDiff, formatComponentDiff } from '../src/component-diff.js';
 import { loadAdapter, adapterContext, Snapshot, changedLines } from './lib/adapters.mjs';
 import { parseRules, findRule, editRules } from '../src/css-rules.js';
+import { useReport, formatUseReport } from '../src/use-report.js';
 import { defaultTokenCode } from '../src/code-names.js';
 import { parseVariantName } from '../src/components.js';
 import { validateProject } from '../src/validate.js';
@@ -61,7 +62,7 @@ for (let i = 0; i < argv.length; i++) {
   if (a.startsWith('--')) {
     const [k, v] = a.slice(2).split('=');
     if (v !== undefined) flags[k] = v;
-    else if (argv[i + 1] && !argv[i + 1].startsWith('--') && ['from', 'entry', 'base', 'format', 'to', 'pr', 'pr-number', 'ticket', 'tracker', 'branch', 'images-base', 'file', 'layer', 'text', 'author', 'reply-to', 'library', 'kind', 'base-file'].includes(k)) flags[k] = argv[++i];
+    else if (argv[i + 1] && !argv[i + 1].startsWith('--') && ['from', 'entry', 'base', 'format', 'to', 'pr', 'pr-number', 'ticket', 'tracker', 'branch', 'images-base', 'file', 'layer', 'text', 'author', 'reply-to', 'library', 'kind', 'base-file', 'days'].includes(k)) flags[k] = argv[++i];
     else flags[k] = true;
   } else pos.push(a);
 }
@@ -1117,6 +1118,20 @@ async function adapterTest(dir) {
   process.exit(failures ? 1 : 0);
 }
 
+// ---------- design system use report (Part D, Phase 17) ----------
+function report(dir) {
+  const root = resolve(dir || '.');
+  const files = Object.fromEntries(Object.entries(readProject(root).files).map(([p, t]) => [p, JSON.parse(t)]));
+  const resolveFile = (p) => (files[p] ? { fileId: p, file: files[p] } : null);
+  const design = Object.entries(files).filter(([, f]) => f.kind === 'design').map(([path, file]) => ({
+    name: file.name, path, doc: fromProjectFile(structuredClone(file), { path, resolve: resolveFile }).doc,
+    editedAt: statSync(join(root, path)).mtimeMs,
+  }));
+  if (!design.length) fail('no Sigma Design files in this project');
+  const r = useReport(design, { since: flags.days ? Date.now() - Number(flags.days) * 86400000 : null, handoff: !!flags.handoff });
+  out(json ? r : formatUseReport(r));
+}
+
 // ---------- comments (Phase 27) ----------
 const rid = () => Math.random().toString(36).slice(2, 10);
 // A layer by id, by name path ("Card / Title") or by name: { node, page, path }.
@@ -1264,6 +1279,7 @@ else if (cmd === 'pages' && sub === 'build') pagesBuild(dir);
 else if (cmd === 'components' && sub === 'diff') componentsDiff(dir);
 else if (cmd === 'components' && sub === 'write') componentsWrite(dir);
 else if (cmd === 'adapter' && sub === 'test') await adapterTest(dir);
+else if (cmd === 'report') report(sub);
 else if (cmd === 'comment' && sub === 'list') commentList(dir);
 else if (cmd === 'comment' && sub === 'add') commentAdd(dir);
 else if (cmd === 'comment' && sub === 'resolve') commentResolve(dir, pos[3]);
@@ -1292,6 +1308,7 @@ else {
   node tools/sigma.mjs components diff [project] [--base REV] [--entry N]
   node tools/sigma.mjs components write [project] [--base REV] [--entry N] [--dry-run]
   node tools/sigma.mjs adapter test [project] [--kind tokens|icons]
+  node tools/sigma.mjs report [project] [--days N] [--handoff] [--json]
   node tools/sigma.mjs comment list [project] [--all]
   node tools/sigma.mjs comment add [project] --file PATH --layer ID|NAME --text TEXT [--author NAME] [--reply-to ID]
   node tools/sigma.mjs comment resolve <id> [project] [--author NAME]

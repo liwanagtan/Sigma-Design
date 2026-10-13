@@ -12,6 +12,7 @@
       "id": "projects",
       "name": "Projects",
       "background": "#F5F5F5",
+      "handoff": true,
       "children": [
         {
           "id": "projects-desktop-root",
