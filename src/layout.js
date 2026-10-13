@@ -1,6 +1,6 @@
 // Auto layout engine (Figma-style): frames with `layout` arrange their children in a row or column,
 // and every layer can be Fixed / Hug contents / Fill container on each axis.
-import { state, isFrameLike } from './store.js';
+import { state, isFrameLike, getParent } from './store.js';
 import { round } from './geom.js';
 import { measureText } from './text.js';
 
@@ -14,6 +14,14 @@ export const DEFAULT_LAYOUT = {
 };
 
 export const isAutoLayout = (n) => !!(isFrameLike(n) && n.layout && n.layout.mode);
+
+// Right to left (like HTML's dir): a frame's `dir` ('rtl' | 'ltr') applies to everything inside it, unless a
+// frame inside sets its own. Auto layout then runs rows from the right, and its counter-axis start is the
+// right edge. Padding stays where it is (pl is the left padding), as in CSS.
+export function directionOf(n) {
+  for (let x = n; x; x = getParent(x.id)) if (x.dir === 'rtl' || x.dir === 'ltr') return x.dir;
+  return 'ltr';
+}
 
 export const inFlow = (n) => n.visible !== false && !n.absolute;
 
@@ -93,13 +101,17 @@ function normalize(n, parentIsAL) {
   }
 }
 
-function layoutChildren(f) {
+function layoutChildren(f, dir = 'ltr') {
   const L = f.layout;
+  dir = f.dir === 'rtl' || f.dir === 'ltr' ? f.dir : dir;
+  const rtl = dir === 'rtl';
   const horiz = L.mode === 'horizontal';
   const P = horiz ? 'w' : 'h', C = horiz ? 'h' : 'w';
   const posP = horiz ? 'x' : 'y', posC = horiz ? 'y' : 'x';
-  const padStart = horiz ? L.pl : L.pt, padEnd = horiz ? L.pr : L.pb;
-  const cStart = horiz ? L.pt : L.pl, cEnd = horiz ? L.pb : L.pr;
+  // Right to left: laid out from the right edge (its padding is pr), then x is mirrored.
+  const [left, right] = rtl ? [L.pr, L.pl] : [L.pl, L.pr];
+  const padStart = horiz ? left : L.pt, padEnd = horiz ? right : L.pb;
+  const cStart = horiz ? L.pt : left, cEnd = horiz ? L.pb : right;
   const innerP = f[P] - padStart - padEnd;
   const innerC = f[C] - cStart - cEnd;
 
@@ -158,26 +170,28 @@ function layoutChildren(f) {
       const free = innerC - k[C];
       k[posP] = round(cursor);
       k[posC] = round(cStart + (L.alignC === 'center' ? free / 2 : L.alignC === 'end' ? free : 0));
+      if (rtl) k.x = round(f.w - k.x - k.w);
     }
     cursor += k[P] + spacing;
   }
 
   // 3. Recurse
   for (const k of f.children) {
-    if (isAutoLayout(k)) layoutChildren(k);
-    else if (k.children) layoutPlain(k.children);
+    if (isAutoLayout(k)) layoutChildren(k, dir);
+    else if (k.children) layoutPlain(k.children, dir);
   }
 }
 
-function layoutPlain(nodes) {
+function layoutPlain(nodes, dir = 'ltr') {
   for (const n of nodes) {
     normalize(n, false);
+    const own = n.dir === 'rtl' || n.dir === 'ltr' ? n.dir : dir;
     if (isAutoLayout(n)) {
       if (getSizing(n, 'w') === 'hug') n.w = round(clampSize(n, 'w', hugSize(n).w));
       if (getSizing(n, 'h') === 'hug') n.h = round(clampSize(n, 'h', hugSize(n).h));
-      layoutChildren(n);
+      layoutChildren(n, own);
     } else if (n.children) {
-      layoutPlain(n.children);
+      layoutPlain(n.children, own);
     }
   }
 }
@@ -204,13 +218,14 @@ export function applyLayouts() {
 // Index (into f.children minus `exclude`) where a point should insert into an auto layout frame.
 export function flowInsertBefore(f, localPt, exclude) {
   const horiz = f.layout.mode === 'horizontal';
+  const rtl = horiz && directionOf(f) === 'rtl'; // a row that runs from the right
   const others = f.children.filter((c) => !exclude.has(c.id));
   const v = horiz ? localPt.x : localPt.y;
   let idx = 0;
   others.forEach((c, i) => {
     if (!inFlow(c)) return;
     const mid = horiz ? c.x + c.w / 2 : c.y + c.h / 2;
-    if (v > mid) idx = i + 1;
+    if (rtl ? v < mid : v > mid) idx = i + 1;
   });
   return others[idx] || null; // insert before this node (null = at the end)
 }
@@ -223,7 +238,8 @@ export function guessLayout(f) {
   const horiz = kids.length < 2 ? true : span(cx) >= span(cy);
   const P = horiz ? 'w' : 'h', C = horiz ? 'h' : 'w';
   const pos = horiz ? 'x' : 'y', cpos = horiz ? 'y' : 'x';
-  f.children.sort((a, b) => a[pos] - b[pos]);
+  const fromRight = horiz && directionOf(f) === 'rtl'; // a right-to-left row starts at the right
+  f.children.sort((a, b) => (fromRight ? b[pos] - a[pos] : a[pos] - b[pos]));
 
   let gap = 10;
   if (kids.length > 1) {

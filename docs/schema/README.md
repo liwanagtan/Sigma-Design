@@ -256,6 +256,11 @@ for agents mapping Sigma to the code library: `codeName` on a component (or its 
 `a11y.role` below) and `keyboard` (how it works with a keyboard and screen readers); `"checks"` records what a
 person confirmed for its readiness: `{ "variants": true, "breakpoints": true, "accessibility": true }`.
 
+**Direction** (optional): `"dir": "rtl"` on a frame lays out right to left, like HTML's `dir`: auto layout
+rows start at the right and the counter-axis start is the right edge, for this frame and everything inside it
+until a frame sets its own (`"ltr"`). Padding stays physical (`pl` is the left padding). An instance follows its
+main component's `dir`, or its own.
+
 **Accessibility annotations** (optional) on any layer, in `"a11y"`:
 
 ```json

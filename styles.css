@@ -1017,3 +1017,6 @@ button.group-caret.open { transform: rotate(90deg); }
 .a11y-row { grid-template-columns: 80px minmax(0, 1fr); }
 .a11y-row .prop-input { width: 100%; min-width: 0; box-sizing: border-box; }
 .a11y-row input[type="checkbox"] { justify-self: start; width: auto; }
+.al-dir-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding-right: 24px; }
+.al-dir-row .seg { margin-left: auto; }
+.al-dir { width: auto; padding: 0 8px; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; }

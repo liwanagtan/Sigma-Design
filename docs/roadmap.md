@@ -558,7 +558,7 @@ From Figma's Schema talks ("Taking cues from code": test-driven design and visua
 
 - **Branching and review:** propose a change to a library on a branch, review it, then merge and publish (*Future is complicated*, ChimeKit). Local branches can work in the browser; reviews between people need a backend.
 - **Plugins and automation:** a way to script repetitive work and extend Sigma (*Future is automated*). Large; needs an API design first.
-- **Right-to-left layout:** auto layout that can flip for right-to-left languages. Language modes on text tokens already cover the strings.
+- ~~**Right-to-left layout:**~~ Done: a frame's direction (Auto layout → Direction, `"dir": "rtl"`) applies to everything inside it, like HTML's `dir`: rows start at the right, the counter axis starts at the right edge, padding stays physical, instances follow the frame they're in (their main component stays as it is), dropping into a row and adding auto layout follow the direction, and Inspect writes `direction: rtl`. Language modes on text tokens already cover the strings; text alignment stays as set.
 
 
 # Part E: Sigma in your codebase
