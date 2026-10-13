@@ -112,6 +112,7 @@ async function onClick(e) {
     const v = versions.find((x) => x.id === more.dataset.more);
     const r = more.getBoundingClientRect();
     return showContextMenu(r.right - 180, r.bottom + 4, [
+      { label: 'Compare with current…', action: () => compare(v) },
       { label: 'Restore this version', action: () => restore(v) },
       { label: 'Duplicate as new file', action: () => duplicate(v) },
       '-',
@@ -143,6 +144,13 @@ async function view(v) {
   render();
 }
 
+// What changed between a version and the current state, rendered (visual change review).
+async function compare(v) {
+  if (viewing) await backToCurrent();
+  const doc = await loadVersionDoc(v.id);
+  if (!doc) return toast('That version could not be loaded.');
+  (await import('./visual-review.js')).compareVersion(doc, label(v));
+}
 async function backToCurrent() {
   if (!viewing) return;
   viewing = null;

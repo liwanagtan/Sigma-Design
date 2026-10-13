@@ -463,9 +463,10 @@ export function openPublishComponentsDialog() {
     (local ? `<div class="warn">${local} use${local === 1 ? '' : 's'} of this file’s local tokens. Other files won’t have them, so those layers keep their current values there. Move the tokens to a Sigma Tokens file first (Design tokens window → Move to Sigma Tokens…).</div>` : '') +
     (diffList('Added', d.added, 'added') + diffList('Changed', d.changed, 'changed') + diffList('Removed', d.removed, 'removed') || '<div class="muted">No changes since the last version.</div>') +
     '<label class="inspector-label">Notes (optional)</label><textarea class="desc publish-notes" rows="3" placeholder="What changed and why?"></textarea>';
-  const wrap = modal('Publish components', body, `<button class="btn" data-close>Cancel</button><button class="btn primary" data-confirm>Publish v${version}</button>`);
+  const wrap = modal('Publish components', body, `<button class="btn" data-compare title="The components as published and as they are now, and the files they reach">Compare…</button><span class="spacer"></span><button class="btn" data-close>Cancel</button><button class="btn primary" data-confirm>Publish v${version}</button>`);
   wrap.querySelector('.publish-notes').focus();
   wrap.addEventListener('click', (e) => {
+    if (e.target.closest('[data-compare]')) return import('./visual-review.js').then((m) => m.comparePublish(pub, componentSnapshot(), state.doc.project?.path || getCurrentFileId()));
     if (!e.target.closest('[data-confirm]')) return;
     const components = componentSnapshot();
     state.doc.publishedComponents = {
@@ -542,12 +543,13 @@ function reviewUpdates() {
       (diffList('Added', d.added, 'added') + diffList('Changed', d.changed, 'changed') + diffList('Removed', d.removed, 'removed') +
         diffList('Sigma Tokens files it points at', deps, 'changed') || '<div class="muted">No changes.</div>') +
       (d.removed.length ? `<div class="muted">${comps ? 'Instances of removed components keep their current look.' : iconsKind ? 'Layers using removed icons keep them until you swap them.' : 'Layers using removed tokens keep their current values.'}</div>` : '') +
-      `<button class="btn primary" data-accept="${i}">Accept update</button></div>`;
+      `<div class="update-actions"><button class="btn" data-compare="${i}" title="See this file before and after the update">Compare…</button><button class="btn primary" data-accept="${i}">Accept update</button></div></div>`;
   }).join('');
   const wrap = modal('Review updates', rows, '<button class="btn" data-close>Later</button>' + (pending.length > 1 ? '<button class="btn primary" data-accept-all>Accept all</button>' : ''));
   wrap.addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;
+    if (b.dataset.compare !== undefined) return import('./visual-review.js').then((m) => m.compareUpdate(pending[+b.dataset.compare], acceptUpdate));
     if (b.hasAttribute('data-accept-all')) pending.forEach(acceptUpdate);
     else if (b.dataset.accept !== undefined) acceptUpdate(pending[+b.dataset.accept]);
     else return;

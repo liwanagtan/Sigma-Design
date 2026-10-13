@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Phases 1–14, Part E (Phases 20–30) and Part F (Phases 31–35) are done.** Part D's Phases 17 and 18 are done; next is Phase 19 (visual change review), then Phase 16 (accessibility checks). Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **Phases 1–14, Part E (Phases 20–30) and Part F (Phases 31–35) are done.** Part D's Phases 17, 18 and 19 are done; next is Phase 16 (accessibility checks). Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -398,7 +398,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 35: Sigma renders the project's components
 - [x] Phase 17: Design system use report (Part D)
 - [x] Phase 18: Running the system (Part D)
-- [ ] Phase 19: Visual change review (Part D)
+- [x] Phase 19: Visual change review (Part D)
 - [ ] Phase 16: Accessibility checks and annotations (Part D; planned, after Phase 19)
 
 ## Follow-ups
@@ -514,6 +514,20 @@ From Figma's Schema talks ("Taking cues from code": test-driven design and visua
 - **Highlight differences:** an overlay that marks what changed, like a blend-mode diff of the two renders, so small shifts in spacing, color or size stand out.
 - **What it touched:** the number of instances and files affected, linked to them, next to the existing text summary ("changed: button/primary/background").
 - Built on what's there: renders come from `buildSVG`, versions from the version history, and library updates already know which components and tokens changed.
+- **What shipped:** `src/visual-review.js`. Every top-level layer, every component variant (a set's one by one)
+  and every library component is rendered as it is and as it would be, in a copy of the file
+  (`store.withDocument`: swapped in, laid out like an opened file, text measured, then put back; nothing is
+  emitted, saved or undone). Both sides go through the copy, so only the change shows, and renders are taken at
+  the origin, so moving a frame isn't a change. Whatever renders differently is listed (Changed, New, Removed)
+  with Before, After and Differences: a pixel comparison with the changed pixels in magenta over the faded render,
+  a box around them and the share of pixels that changed. Three places: **Compare…** on each card in Review
+  updates (this file with the update accepted: the library's components and the frames that use them, and how
+  many instances), **Compare…** in Publish components (the last publish against now, and the other files with
+  instances of what changed, linked to open them; in a project, its design files), and **Compare with current…**
+  in a version's ⋯ menu in the version history. Layers in the open file can be selected from the review.
+  Verified on `examples/css-app`: a wider Primary button shows the four Primary variants and Card in the library,
+  the four page frames in Acme pages (10 instances), and 12 instances in Acme pages from the library's side; a
+  copy of the file compares as "Nothing looks different".
 
 ## Later
 

@@ -364,7 +364,9 @@ async function moveIntoProjectDialog() {
 
 // ---------- the design system use report (Part D, Phase 17) ----------
 // The design files to measure: the project's (as Sigma opens them), or this browser's.
-async function reportFiles() {
+// The design files (the project's, or this browser's), as { id, name, path?, editedAt, doc }: the report, and the
+// files a library change reaches (visual change review).
+export async function reportFiles() {
   if (projectMode() && project.connected) {
     const texts = {};
     for (const f of project.files.filter((x) => x.kind !== 'invalid')) {
@@ -373,14 +375,14 @@ async function reportFiles() {
     }
     const resolve = (p) => (texts[p] ? { fileId: p, file: texts[p] } : null);
     return project.files.filter((f) => f.kind === 'design' && texts[f.path]).map((f) => ({
-      name: f.name, path: f.path, editedAt: Number(BigInt(f.mtime) / 1000000n),
+      id: f.path, name: f.name, path: f.path, editedAt: Number(BigInt(f.mtime) / 1000000n),
       doc: fromProjectFile(structuredClone(texts[f.path]), { path: f.path, resolve }).doc,
     }));
   }
   const out = [];
   for (const meta of (await listFiles()).filter((f) => fileKind(f) === 'design' && !isSampleFile(f) && !f.project)) {
     const file = await loadFile(meta.id);
-    if (file) out.push({ name: meta.name, editedAt: meta.updatedAt, doc: file.doc });
+    if (file) out.push({ id: meta.id, name: meta.name, editedAt: meta.updatedAt, doc: file.doc });
   }
   return out;
 }

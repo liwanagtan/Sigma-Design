@@ -988,3 +988,20 @@ button.group-caret.open { transform: rotate(90deg); }
 .changelog-entry { padding: 8px 0; border-bottom: 1px solid var(--border); }
 .changelog-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .changelog-entry ul { margin: 4px 0 0; padding-left: 18px; }
+
+/* ---------- visual change review (Phase 19) ---------- */
+.update-actions { display: flex; gap: 8px; }
+.visual-review { width: min(980px, calc(100vw - 32px)); }
+.vr-summary { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
+.vr-touched a { color: var(--accent); }
+.vr-row { padding: 12px 0; border-top: 1px solid var(--border); }
+.vr-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.vr-head .btn { height: 26px; padding: 0 10px; }
+.vr-panes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.vr-panes figure { margin: 0; min-width: 0; }
+.vr-panes figcaption { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.vr-img { background: var(--canvas); border-radius: 6px; padding: 12px; min-height: 64px; display: grid; place-items: center; }
+.vr-img img { max-width: 100%; max-height: 240px; display: block; }
+.vr-overlay { position: relative; display: inline-block; max-width: 100%; }
+.vr-box { position: absolute; outline: 1.5px solid #e91e8c; outline-offset: 2px; border-radius: 2px; pointer-events: none; }
+@media (max-width: 720px) { .vr-panes { grid-template-columns: 1fr; } }
