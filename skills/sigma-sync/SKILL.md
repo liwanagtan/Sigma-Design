@@ -37,7 +37,17 @@ SVG icons. It writes `sigma.config.json`, imports, and runs `check`. Read what i
 
 - If it set everything up and `check` passes, review its choices (the token source, the modes and their
   names, the icon folder) against the code, fix `sigma.config.json` if needed, and go to step 5.
-- What it lists **For your coding agent** is yours: the steps below, for those sources only.
+- What it lists **For your coding agent** is yours: for each source Sigma doesn't read itself (a JS theme,
+  Tailwind, SCSS, icon components), **write an adapter** (`reference/adapters.md`): add the entry to
+  `sigma.config.json` with its `adapter`, write `.sigma/adapters/tokens.mjs` (or `icons.mjs`), run
+  `npx sigma-design adapter test` until it passes, then `tokens import` (or `icons import`) and `check`.
+  Never do a one-off extraction instead: with an adapter, every later sync runs without you.
+
+`init` also wrote the **rules** (a Sigma section in `AGENTS.md` / `CLAUDE.md`…) and the **project skills**
+(`.claude/skills/sigma-*`). After you change the setup (an adapter, components), run `npx sigma-design agents`
+to update them, then fill each skill's **Project notes** with what an agent needs that the config doesn't say
+(naming rules, what the adapter can't do, where components live and how variants map to props). Re-running
+`agents` keeps those notes, and the team's own text around the Sigma section.
 
 The steps below are also how to set a project up by hand.
 
@@ -61,7 +71,7 @@ The steps below are also how to set a project up by hand.
 
    - `format`: `css-variables` (Sigma reads these itself), `dtcg` (a tokens.json Sigma reads itself), or
      what the code is (`scss-variables`, `tailwind-config`, `tailwind-theme`, `js-theme`, `ts-theme`,
-     `other`): for those you extract the tokens (step 2b below).
+     `other`): for those, add `"adapter": ".sigma/adapters/tokens.mjs"` and write it (`reference/adapters.md`).
    - `modes` (CSS): each mode's selector; the first is the default. A token set only in the default block is
      a primitive; tokens that point at others (`var(--x)`) or change by mode are semantic.
    - `naming` and `map`: how token names become code names (`color/blue/500` ↔ `--color-blue-500` with
@@ -70,18 +80,14 @@ The steps below are also how to set a project up by hand.
 
 ## 2. Import tokens (code → Sigma)
 
-**a. CSS variables (and dtcg sources):** Sigma reads them directly.
-
 ```bash
 npx sigma-design tokens import <project>
 ```
 
-**b. Any other stack:** read the token sources yourself and write them as a DTCG tokens.json in a temporary
-file (outside the repo, or delete it after), following `reference/tokens.md`, then:
-
-```bash
-npx sigma-design tokens import <project> --from /tmp/<name>.tokens.json
-```
+Sigma reads CSS variables and DTCG sources itself, and any other stack through the project's adapter
+(`reference/adapters.md`). Without an adapter (a one-time import, or while writing one), read the sources
+yourself, write them as a DTCG tokens.json in a temporary file (outside the repo), following
+`reference/tokens.md`, and pass `--from /tmp/<name>.tokens.json`.
 
 Either way the tool merges into the Sigma Tokens file: values come from the code; ids, descriptions,
 groups and order stay; new tokens get ids from their names; tokens only in Sigma are kept (listed as
@@ -108,10 +114,13 @@ npx sigma-design tokens write <project>     # CSS sources: applies minimal edits
 - **CSS variables:** `tokens write` edits only the values that differ, keeps each value's unit (rem stays
   rem) and color format (hex, rgb(), hsl(), case), adds new tokens next to their closest relative, and
   removes tokens deleted in Sigma. Use `--dry-run` first if the change is large.
-- **Other stacks:** `tokens write` prints the changes with each token's code name (`codeSyntax.web`, like
-  `palette.primary.main`) and its values per mode. Make those edits in the source yourself, in its own
-  style, then re-extract (step 2b) and import with `--dry-run`: it must say **0 added, 0 changed**. If it
-  doesn't, fix the code (or, if the code was right, say so) until it does.
+- **With an adapter:** `tokens write` writes through it and reads the code back; if the code doesn't then
+  hold what Sigma has, it puts the files back and says why (fix the adapter, `adapter test`, write again).
+  A change the adapter refuses (a new token that needs a place in the theme) says what to do by hand.
+- **Other stacks without an adapter:** `tokens write` prints the changes with each token's code name
+  (`codeSyntax.web`, like `palette.primary.main`) and its values per mode. Make those edits in the source
+  yourself, in its own style, then re-extract and import with `--dry-run`: it must say **0 added, 0
+  changed**. Better: write the adapter, so the next change needs no one.
 
 ## 4. Check
 

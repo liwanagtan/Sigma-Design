@@ -39,6 +39,7 @@ import { parseSVGIcon } from '../src/icon-library.js';
 import { applyChanges, summarize, STATUSES, CHANGESET_DIR } from '../src/changesets.js';
 import { buildComponent, buildPage, tokenIndex } from '../src/capture-to-sigma.js';
 import { componentDiff, formatComponentDiff } from '../src/component-diff.js';
+import { loadAdapter, adapterContext, Snapshot, changedLines } from './lib/adapters.mjs';
 import { parseRules, findRule, editRules } from '../src/css-rules.js';
 import { defaultTokenCode } from '../src/code-names.js';
 import { parseVariantName } from '../src/components.js';
@@ -60,7 +61,7 @@ for (let i = 0; i < argv.length; i++) {
   if (a.startsWith('--')) {
     const [k, v] = a.slice(2).split('=');
     if (v !== undefined) flags[k] = v;
-    else if (argv[i + 1] && !argv[i + 1].startsWith('--') && ['from', 'entry', 'base', 'format', 'to', 'pr', 'pr-number', 'ticket', 'tracker', 'branch', 'images-base', 'file', 'layer', 'text', 'author', 'reply-to', 'library'].includes(k)) flags[k] = argv[++i];
+    else if (argv[i + 1] && !argv[i + 1].startsWith('--') && ['from', 'entry', 'base', 'format', 'to', 'pr', 'pr-number', 'ticket', 'tracker', 'branch', 'images-base', 'file', 'layer', 'text', 'author', 'reply-to', 'library', 'kind'].includes(k)) flags[k] = argv[++i];
     else flags[k] = true;
   } else pos.push(a);
 }
@@ -102,37 +103,46 @@ function codeSyntaxIn(dtcg) {
     }
     for (const [k, v] of Object.entries(node)) if (!k.startsWith('$')) visit(v, [...path, k]);
   };
-  for (const [set, tree] of Object.entries(dtcg)) if (!set.startsWith('$')) visit(tree, []);
+  // Like importTokens: top-level keys are token sets only when one is "Collection/Mode" or $metadata lists
+  // them; otherwise they're groups (part of each token's name).
+  const keys = Object.keys(dtcg).filter((k) => !k.startsWith('$'));
+  const sets = !!(dtcg.$metadata?.tokenSetOrder || dtcg.$extensions?.['app.sigma'] || keys.some((k) => k.includes('/')));
+  if (sets) for (const set of keys) visit(dtcg[set], []);
+  else visit(dtcg, []);
   return found;
 }
 
-// The tokens the code has now, as collections (from CSS, or from a tokens.json the agent wrote).
-function importedCollections(root, e) {
-  if (flags.from) {
-    const dtcg = JSON.parse(readFileSync(resolve(flags.from), 'utf8'));
-    const { collections, skipped } = importTokens(dtcg);
-    const cs = codeSyntaxIn(dtcg);
-    for (const c of collections) for (const v of c.variables || []) if (cs[v.name]) v.codeSyntax = cs[v.name];
-    return { collections, skipped: skipped ? [{ why: `${skipped} tokens of types Sigma doesn’t hold` }] : [] };
+// DTCG → collections, with each token's code name from its $extensions.
+function dtcgCollections(dtcg) {
+  const { collections, skipped } = importTokens(dtcg);
+  const cs = codeSyntaxIn(dtcg);
+  for (const c of collections) for (const v of c.variables || []) if (cs[v.name]) v.codeSyntax = cs[v.name];
+  return { collections, skipped: skipped ? [{ why: `${skipped} tokens of types Sigma doesn’t hold` }] : [] };
+}
+
+// The tokens the code has now, as collections: from CSS, a DTCG source, the project's adapter, or a tokens.json
+// the agent wrote (--from).
+async function importedCollections(root, e) {
+  if (flags.from) return dtcgCollections(JSON.parse(readFileSync(resolve(flags.from), 'utf8')));
+  if (e.adapter) {
+    const adapter = await loadAdapter(root, e.adapter);
+    return dtcgCollections(await adapter.read(adapterContext(root, e)));
   }
   const css = cssSources(e);
   const dtcgSources = (e.sources || []).filter((s) => s.format === 'dtcg');
-  if (dtcgSources.length) {
-    const dtcg = JSON.parse(readText(root, dtcgSources[0].path));
-    return { collections: importTokens(dtcg).collections, skipped: [] };
-  }
+  if (dtcgSources.length) return dtcgCollections(JSON.parse(readText(root, dtcgSources[0].path)));
   if (!css.length) {
-    fail(`tokens entry ${e.index} has no css-variables or dtcg source, so Sigma can’t read it by itself. Write the tokens as tokens.json (skills/sigma-sync/reference/tokens.md) and pass --from <file>.`);
+    fail(`tokens entry ${e.index} has no css-variables or dtcg source and no adapter, so Sigma can’t read it by itself. Write an adapter (skills/sigma-sync/reference/adapters.md), or the tokens as tokens.json (reference/tokens.md) and pass --from <file>.`);
   }
   const decls = css.flatMap((s) => parseCSSVariables(readText(root, s.path)));
   return cssToCollections(decls, cssOpts(e));
 }
 
-function tokensImport(dir) {
+async function tokensImport(dir) {
   const { root, config } = project(dir);
   const results = [];
   for (const e of entriesOf(config)) {
-    const { collections, skipped } = importedCollections(root, e);
+    const { collections, skipped } = await importedCollections(root, e);
     const existing = readSigma(root, e.sigma);
     const { collections: merged, report } = mergeTokenCollections(existing?.collections || [], collections, { prune: !!flags.prune });
     const file = existing ? { ...existing, collections: merged } : { format: 1, kind: 'tokens', name: e.name || basename(e.sigma, '.sigma.json'), collections: merged };
@@ -184,12 +194,41 @@ function tokensDiff(dir) {
   }
 }
 
-function tokensWrite(dir) {
+// Write Sigma's changes through the project's adapter, then read back: the code must now hold what Sigma has.
+// If it doesn't, the files the adapter changed are put back. Dry run: write, report, put back.
+async function writeThroughAdapter(root, e, changes, collectionsNow) {
+  const adapter = await loadAdapter(root, e.adapter);
+  const snapshot = new Snapshot(root);
+  const ctx = adapterContext(root, e, snapshot);
+  let problem = null;
+  try {
+    await adapter.write(ctx, changes);
+    const { collections } = dtcgCollections(await adapter.read(adapterContext(root, e)));
+    const { report } = mergeTokenCollections(collectionsNow, collections);
+    if (report.added.length || report.changed.length) problem = `after writing, the code still differs from Sigma: ${[...report.added, ...report.changed].slice(0, 6).join(', ')}`;
+  } catch (err) {
+    problem = `the adapter failed: ${err.message}`;
+  }
+  const files = snapshot.changed().map((f) => ({ path: f.path, lines: changedLines(f.before, f.after) }));
+  if (problem || flags['dry-run']) snapshot.restore();
+  return { files, problem };
+}
+
+async function tokensWrite(dir) {
   const { root, config } = project(dir);
   const results = [];
   for (const e of entriesOf(config)) {
     const sigma = readSigma(root, e.sigma);
     if (!sigma) fail(`${e.sigma} doesn’t exist yet: run tokens import first`);
+    if (e.adapter) {
+      const { changes, base } = changesFor(root, e);
+      if (!changes.length) {
+        results.push({ sigma: e.sigma, adapter: e.adapter, base, changes, files: [] });
+        continue;
+      }
+      results.push({ sigma: e.sigma, adapter: e.adapter, base, changes, ...(await writeThroughAdapter(root, e, changes, sigma.collections)) });
+      continue;
+    }
     const css = cssSources(e);
     if (!css.length) {
       const { changes, base } = changesFor(root, e);
@@ -207,8 +246,26 @@ function tokensWrite(dir) {
       results.push({ sigma: e.sigma, source: s.path, written: text !== before && !flags['dry-run'], edits, missing });
     });
   }
-  if (json) return out(results);
+  if (json) {
+    out(results);
+    if (results.some((r) => r.problem)) process.exit(1);
+    return;
+  }
   for (const r of results) {
+    if (r.adapter) {
+      if (!r.changes.length) {
+        out(`${r.sigma}: no changes since ${r.base}`);
+        continue;
+      }
+      if (r.problem) {
+        out(`${r.sigma}: not written — ${r.problem}. The files were put back. Fix the adapter (${r.adapter}; skills/sigma-sync/reference/adapters.md), then write again.`);
+        process.exitCode = 1;
+        continue;
+      }
+      out(`${r.sigma}: ${r.changes.length} change${r.changes.length === 1 ? '' : 's'} written through ${r.adapter}${flags['dry-run'] ? ' (dry run: put back)' : ''}, and read back the same`);
+      for (const f of r.files) out(`  ~ ${f.path} (${f.lines} line${f.lines === 1 ? '' : 's'})`);
+      continue;
+    }
     if (r.manual) {
       out(`${r.sigma}: its sources aren’t CSS variables, so apply these ${r.changes.length} change${r.changes.length === 1 ? '' : 's'} (since ${r.base}) to the code yourself, then run tokens import --from and check that nothing changes:`);
       for (const c of r.changes) out(`  ${c.change} ${c.name} (${c.code}): ${Object.entries(c.modes).map(([m, x]) => `${m}: ${showChange(x.before, x.after)}`).join('; ')}`);
@@ -233,18 +290,22 @@ function tokensExport(dir) {
 // ---------- icons ----------
 // The icons the code has now: SVG files in the entry's folder (or in --from, a folder of SVGs the agent
 // extracted from icon components).
-function importedIcons(root, e) {
+async function importedIcons(root, e) {
+  if (e.adapter && !flags.from) {
+    const adapter = await loadAdapter(root, e.adapter);
+    return iconsFromFiles(await adapter.read(adapterContext(root, e)));
+  }
   const dir = flags.from ? resolve(flags.from) : join(root, e.source);
   const files = listFilesIn(dir, '.svg').map((p) => ({ path: p, text: readFileSync(join(dir, p), 'utf8') }));
   return iconsFromFiles(files);
 }
 const svgOutput = (e) => (e.output || 'svg') === 'svg' && !flags.from;
 
-function iconsImport(dir) {
+async function iconsImport(dir) {
   const { root, config } = project(dir);
   const results = [];
   for (const e of entriesOf(config, 'icons')) {
-    const { icons, skipped } = importedIcons(root, e);
+    const { icons, skipped } = await importedIcons(root, e);
     const existing = readSigma(root, e.sigma);
     const { icons: merged, report } = mergeIcons(existing?.icons || [], icons, { prune: !!flags.prune });
     const file = existing ? { ...existing, icons: merged } : { format: 1, kind: 'icons', name: e.name || basename(e.sigma, '.sigma.json'), icons: merged };
@@ -281,11 +342,33 @@ function iconsDiff(dir) {
   }
 }
 
-function iconsWrite(dir) {
+async function iconsWrite(dir) {
   const { root, config } = project(dir);
   const results = [];
   for (const e of entriesOf(config, 'icons')) {
     const { now, changes, base } = iconChangesFor(root, e);
+    if (e.adapter) {
+      if (!changes.length) {
+        results.push({ sigma: e.sigma, adapter: e.adapter, base, changes, files: [] });
+        continue;
+      }
+      // Through the project's adapter, then read back: the code must hold Sigma's icons.
+      const adapter = await loadAdapter(root, e.adapter);
+      const snapshot = new Snapshot(root);
+      let problem = null;
+      try {
+        await adapter.write(adapterContext(root, e, snapshot), changes);
+        const { icons } = iconsFromFiles(await adapter.read(adapterContext(root, e)));
+        const { report } = mergeIcons(now.icons, icons);
+        if (report.added.length || report.changed.length) problem = `after writing, the code still differs from Sigma: ${[...report.added, ...report.changed].slice(0, 6).join(', ')}`;
+      } catch (err) {
+        problem = `the adapter failed: ${err.message}`;
+      }
+      const files = snapshot.changed().map((f) => ({ path: f.path, lines: changedLines(f.before, f.after) }));
+      if (problem || flags['dry-run']) snapshot.restore();
+      results.push({ sigma: e.sigma, adapter: e.adapter, base, changes, files, problem });
+      continue;
+    }
     if (!svgOutput(e)) {
       results.push({ sigma: e.sigma, manual: true, base, output: e.output, changes });
       continue;
@@ -323,6 +406,17 @@ function iconsWrite(dir) {
   }
   if (json) return out(results);
   for (const r of results) {
+    if (r.adapter) {
+      if (!r.changes.length) out(`${r.sigma}: no changes since ${r.base}`);
+      else if (r.problem) {
+        out(`${r.sigma}: not written — ${r.problem}. The files were put back. Fix the adapter (${r.adapter}), then write again.`);
+        process.exitCode = 1;
+      } else {
+        out(`${r.sigma}: ${r.changes.length} change${r.changes.length === 1 ? '' : 's'} written through ${r.adapter}${flags['dry-run'] ? ' (dry run: put back)' : ''}, and read back the same`);
+        for (const f of r.files) out(`  ~ ${f.path} (${f.lines} line${f.lines === 1 ? '' : 's'})`);
+      }
+      continue;
+    }
     if (r.manual) {
       out(`${r.sigma}: icons are ${r.output} in this project, so write these ${r.changes.length} change${r.changes.length === 1 ? '' : 's'} (since ${r.base}) the way the project's other icons are written, then extract them again and check that icons import --from changes nothing:`);
       for (const c of r.changes) {
@@ -534,7 +628,7 @@ function changesetTicket(id, dir) {
 // Everything a pull request's branch needs, in DIR (a worktree of the base branch): the changeset applied
 // to the Sigma files, the code written from them (tokens and icons), the changeset and its pictures copied
 // in, and the checks run.
-function changesetPrepare(id, dir) {
+async function changesetPrepare(id, dir) {
   const root = resolve(dir || '.');
   if (!flags.to) fail('say where the branch is checked out: --to <folder> (git worktree add -b <branch> <folder> <base>)');
   const to = resolve(flags.to);
@@ -551,18 +645,18 @@ function changesetPrepare(id, dir) {
   const touched = new Set(c.changes.map((ch) => ch.file));
   const code = [];
   const keep = { ...flags };
-  config.tokens.forEach((e, i) => {
-    if (!touched.has(e.sigma)) return;
+  for (const [i, e] of config.tokens.entries()) {
+    if (!touched.has(e.sigma)) continue;
     Object.assign(flags, { entry: String(i), json: false, 'dry-run': false });
-    tokensWrite(to);
+    await tokensWrite(to);
     code.push(e.sigma);
-  });
-  config.icons.forEach((e, i) => {
-    if (!touched.has(e.sigma)) return;
+  }
+  for (const [i, e] of config.icons.entries()) {
+    if (!touched.has(e.sigma)) continue;
     Object.assign(flags, { entry: String(i), json: false, 'dry-run': false });
-    iconsWrite(to);
+    await iconsWrite(to);
     code.push(e.sigma);
-  });
+  }
   // Components (Phase 30): exact CSS and code edits; what's left is listed for the agent.
   config.components.forEach((e, i) => {
     if (!touched.has(e.sigma) || !c.changes.some((ch) => ch.file === e.sigma && ch.kind === 'component')) return;
@@ -903,6 +997,114 @@ function componentsWrite(dir) {
   if (json) out(report);
 }
 
+// ---------- adapters (Phase 33) ----------
+// Prove a project's adapter: it reads what Sigma has, and a change written through it reads back the same, as a
+// small diff. Every file is put back afterwards.
+async function adapterTest(dir) {
+  const { root, config } = project(dir);
+  const kinds = flags.kind ? [flags.kind] : ['tokens', 'icons'];
+  const entries = kinds.flatMap((k) => (config[k] || []).map((e, index) => ({ kind: k, e: { ...e, index } }))).filter((x) => x.e.adapter);
+  if (!entries.length) fail('no entry in sigma.config.json names an adapter ("adapter": ".sigma/adapters/tokens.mjs")');
+  let failures = 0;
+  for (const { kind, e } of entries) {
+    out(`${e.adapter} (${kind}, ${e.sigma})`);
+    const check = (ok, line) => {
+      out(`  ${ok ? '✓' : '✗'} ${line}`);
+      if (!ok) failures++;
+      return ok;
+    };
+    let adapter;
+    try {
+      adapter = await loadAdapter(root, e.adapter);
+    } catch (err) {
+      check(false, err.message);
+      continue;
+    }
+    const sigmaFile = readSigma(root, e.sigma);
+    if (kind === 'tokens') {
+      let collections;
+      try {
+        ({ collections } = dtcgCollections(await adapter.read(adapterContext(root, e))));
+      } catch (err) {
+        check(false, `read() failed: ${err.message}`);
+        continue;
+      }
+      const count = collections.reduce((n, c) => n + (c.variables || []).length, 0);
+      if (sigmaFile) {
+        const { report } = mergeTokenCollections(sigmaFile.collections, collections);
+        if (!check(!report.added.length && !report.changed.length, `read() gives what Sigma has: ${count} tokens${report.added.length || report.changed.length ? ` (but ${report.added.length} new and ${report.changed.length} different: ${[...report.added, ...report.changed].slice(0, 5).join(', ')})` : ''}`)) continue;
+      } else check(count > 0, `read() gives ${count} tokens (no ${e.sigma} yet: tokens import makes it)`);
+      // A round trip: one color and one number changed, written, read back.
+      const base = sigmaFile ? sigmaFile.collections : collections;
+      const changed = structuredClone(base);
+      const picks = [];
+      const literal = (x) => x !== undefined && x !== null && !(typeof x === 'object');
+      for (const type of ['color', 'number']) {
+        for (const c of changed) {
+          if (picks.some((p) => p.type === type)) break;
+          for (const v of c.variables || []) {
+            if (v.type !== type) continue;
+            const mode = (c.modes || []).find((m) => literal(v.valuesByMode?.[m.id]));
+            if (!mode) continue;
+            const old = v.valuesByMode[mode.id];
+            v.valuesByMode[mode.id] = type === 'color'
+              ? `${old.slice(0, 3)}${((parseInt(old.slice(3, 5), 16) + 0x22) % 256).toString(16).padStart(2, '0').toUpperCase()}${old.slice(5)}`
+              : old + 1;
+            picks.push({ type, name: v.name, mode: mode.name, before: old, after: v.valuesByMode[mode.id] });
+            break;
+          }
+        }
+      }
+      if (!check(picks.length > 0, `a change to write: ${picks.map((p) => `${p.name} (${p.mode}) ${JSON.stringify(p.before)} → ${JSON.stringify(p.after)}`).join('; ') || 'no color or number token with a value'}`)) continue;
+      const snapshot = new Snapshot(root);
+      try {
+        await adapter.write(adapterContext(root, e, snapshot), tokenChanges(base, changed, cssOpts(e)));
+        const { collections: back } = dtcgCollections(await adapter.read(adapterContext(root, e)));
+        const { report } = mergeTokenCollections(changed, back);
+        check(!report.added.length && !report.changed.length, `write() then read() gives the change back${report.changed.length ? ` (but ${report.changed.join(', ')} differ)` : ''}`);
+        const files = snapshot.changed();
+        const lines = files.reduce((n, f) => n + changedLines(f.before, f.after), 0);
+        check(files.length > 0 && lines <= picks.length * 2, `the diff is small: ${files.map((f) => `${f.path} ${changedLines(f.before, f.after)} line(s)`).join(', ') || 'nothing written'}`);
+      } catch (err) {
+        check(false, `write() failed: ${err.message}`);
+      } finally {
+        snapshot.restore();
+      }
+    } else {
+      let icons;
+      try {
+        ({ icons } = iconsFromFiles(await adapter.read(adapterContext(root, e))));
+      } catch (err) {
+        check(false, `read() failed: ${err.message}`);
+        continue;
+      }
+      if (sigmaFile) {
+        const { report } = mergeIcons(sigmaFile.icons, icons);
+        if (!check(!report.added.length && !report.changed.length, `read() gives what Sigma has: ${icons.length} icons${report.added.length || report.changed.length ? ` (but ${report.added.length} new and ${report.changed.length} different)` : ''}`)) continue;
+      } else check(icons.length > 0, `read() gives ${icons.length} icons`);
+      const base = sigmaFile ? sigmaFile.icons : icons;
+      if (!check(base.length > 0, 'an icon to change')) continue;
+      const changed = structuredClone(base);
+      changed[0].body = `${changed[0].body}<circle cx="12" cy="12" r="1"/>`;
+      const snapshot = new Snapshot(root);
+      try {
+        await adapter.write(adapterContext(root, e, snapshot), iconChanges(base, changed));
+        const { icons: back } = iconsFromFiles(await adapter.read(adapterContext(root, e)));
+        const { report } = mergeIcons(changed, back);
+        check(!report.added.length && !report.changed.length, `write() then read() gives the change back (${changed[0].group ? `${changed[0].group}/` : ''}${changed[0].name})`);
+        const files = snapshot.changed();
+        check(files.length === 1, `only that icon's file changed: ${files.map((f) => `${f.path} ${changedLines(f.before, f.after)} line(s)`).join(', ') || 'nothing written'}`);
+      } catch (err) {
+        check(false, `write() failed: ${err.message}`);
+      } finally {
+        snapshot.restore();
+      }
+    }
+  }
+  out(failures ? `${failures} check${failures === 1 ? '' : 's'} failed: fix the adapter (skills/sigma-sync/reference/adapters.md) and test again.` : 'The adapter works: Sigma will use it for import, write and check.');
+  process.exit(failures ? 1 : 0);
+}
+
 // ---------- comments (Phase 27) ----------
 const rid = () => Math.random().toString(36).slice(2, 10);
 // A layer by id, by name path ("Card / Title") or by name: { node, page, path }.
@@ -978,30 +1180,45 @@ function commentResolve(id, dir) {
 }
 
 // validate + every CSS-sourced token file matches its code (an import would change nothing).
-function checkAll(dir) {
+async function checkAll(dir) {
   const { root, config } = project(dir);
   const v = validate([root]);
   const drift = [];
+  const failed = [];
   for (const e of config.tokens) {
-    if (!cssSources(e).length || !exists(root, e.sigma)) continue;
-    const { collections } = importedCollections(root, { ...e, index: config.tokens.indexOf(e) });
+    const readable = cssSources(e).length || e.adapter || (e.sources || []).some((s) => s.format === 'dtcg');
+    if (!readable || !exists(root, e.sigma)) continue;
+    let collections;
+    try {
+      ({ collections } = await importedCollections(root, { ...e, index: config.tokens.indexOf(e) }));
+    } catch (err) {
+      failed.push(`${e.sigma}: ${e.adapter ? `its adapter (${e.adapter})` : 'its source'} couldn’t be read: ${err.message}`);
+      continue;
+    }
     const existing = readSigma(root, e.sigma);
     const { report } = mergeTokenCollections(existing.collections, collections);
     if (report.added.length || report.changed.length) drift.push({ sigma: e.sigma, added: report.added, changed: report.changed });
   }
   for (const e of config.icons) {
-    if ((e.output || 'svg') !== 'svg' || !exists(root, e.sigma)) continue;
-    const { icons } = importedIcons(root, e);
+    if (((e.output || 'svg') !== 'svg' && !e.adapter) || !exists(root, e.sigma)) continue;
+    let icons;
+    try {
+      ({ icons } = await importedIcons(root, e));
+    } catch (err) {
+      failed.push(`${e.sigma}: ${e.adapter ? `its adapter (${e.adapter})` : 'its folder'} couldn’t be read: ${err.message}`);
+      continue;
+    }
     const { report } = mergeIcons(readSigma(root, e.sigma).icons, icons);
     if (report.added.length || report.changed.length) drift.push({ sigma: e.sigma, added: report.added, changed: report.changed });
   }
-  if (json) out({ errors: v.errors, issues: v.issues, drift });
+  if (json) out({ errors: v.errors, issues: v.issues, drift, failed });
   else {
     if (v.issues.length) out(formatIssues(v.issues));
+    for (const f of failed) out(`error  ${f}`);
     for (const d of drift) out(`drift  ${d.sigma}: the code has ${d.added.length} that Sigma doesn’t and ${d.changed.length} that differ (${[...d.added, ...d.changed].slice(0, 6).join(', ')}${d.added.length + d.changed.length > 6 ? '…' : ''}). Run import, or write if Sigma is right.`);
     out(`${Object.keys(v.files).length} files: ${v.errors} errors, ${v.issues.length - v.errors} warnings, ${drift.length ? `${drift.length} file${drift.length === 1 ? '' : 's'} out of step with the code` : 'tokens and icons match the code'}`);
   }
-  process.exit(v.errors || drift.length ? 1 : 0);
+  process.exit(v.errors || drift.length || failed.length ? 1 : 0);
 }
 
 const [cmd, sub, dir] = pos;
@@ -1013,20 +1230,20 @@ if (cmd === 'validate') {
     out(`${Object.keys(files).length} files checked: ${errors} errors, ${issues.length - errors} warnings`);
   }
   process.exit(errors ? 1 : 0);
-} else if (cmd === 'check') checkAll(sub);
-else if (cmd === 'tokens' && sub === 'import') tokensImport(dir);
+} else if (cmd === 'check') await checkAll(sub);
+else if (cmd === 'tokens' && sub === 'import') await tokensImport(dir);
 else if (cmd === 'tokens' && sub === 'diff') tokensDiff(dir);
-else if (cmd === 'tokens' && sub === 'write') tokensWrite(dir);
+else if (cmd === 'tokens' && sub === 'write') await tokensWrite(dir);
 else if (cmd === 'tokens' && sub === 'export') tokensExport(dir);
-else if (cmd === 'icons' && sub === 'import') iconsImport(dir);
+else if (cmd === 'icons' && sub === 'import') await iconsImport(dir);
 else if (cmd === 'icons' && sub === 'diff') iconsDiff(dir);
-else if (cmd === 'icons' && sub === 'write') iconsWrite(dir);
+else if (cmd === 'icons' && sub === 'write') await iconsWrite(dir);
 else if (cmd === 'changeset' && sub === 'list') changesetList(dir);
 else if (cmd === 'changeset' && sub === 'show') changesetShow(dir, pos[3]);
 else if (cmd === 'changeset' && sub === 'apply') changesetApply(dir, pos[3]);
 else if (cmd === 'changeset' && sub === 'status') changesetStatus(dir, pos[3], pos[4]);
 else if (cmd === 'changeset' && sub === 'branch') changesetBranch(dir, pos[3]);
-else if (cmd === 'changeset' && sub === 'prepare') changesetPrepare(dir, pos[3]);
+else if (cmd === 'changeset' && sub === 'prepare') await changesetPrepare(dir, pos[3]);
 else if (cmd === 'changeset' && sub === 'pr-body') changesetPRBody(dir, pos[3]);
 else if (cmd === 'changeset' && sub === 'ticket') changesetTicket(dir, pos[3]);
 else if (cmd === 'changeset' && sub === 'sync') changesetSync(dir);
@@ -1034,6 +1251,7 @@ else if (cmd === 'library' && sub === 'build') libraryBuild(dir);
 else if (cmd === 'pages' && sub === 'build') pagesBuild(dir);
 else if (cmd === 'components' && sub === 'diff') componentsDiff(dir);
 else if (cmd === 'components' && sub === 'write') componentsWrite(dir);
+else if (cmd === 'adapter' && sub === 'test') await adapterTest(dir);
 else if (cmd === 'comment' && sub === 'list') commentList(dir);
 else if (cmd === 'comment' && sub === 'add') commentAdd(dir);
 else if (cmd === 'comment' && sub === 'resolve') commentResolve(dir, pos[3]);
@@ -1061,6 +1279,7 @@ else {
   node tools/sigma.mjs pages build [project] --from DIR [--dry-run]
   node tools/sigma.mjs components diff [project] [--base REV] [--entry N]
   node tools/sigma.mjs components write [project] [--base REV] [--entry N] [--dry-run]
+  node tools/sigma.mjs adapter test [project] [--kind tokens|icons]
   node tools/sigma.mjs comment list [project] [--all]
   node tools/sigma.mjs comment add [project] --file PATH --layer ID|NAME --text TEXT [--author NAME] [--reply-to ID]
   node tools/sigma.mjs comment resolve <id> [project] [--author NAME]

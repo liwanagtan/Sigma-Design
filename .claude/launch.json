@@ -38,6 +38,19 @@
         "--no-open"
       ],
       "port": 5176
+    },
+    {
+      "name": "sigma-mui-app",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "bin/sigma-design.mjs",
+        "dev",
+        "examples/mui-app",
+        "--port",
+        "5177",
+        "--no-open"
+      ],
+      "port": 5177
     }
   ]
 }

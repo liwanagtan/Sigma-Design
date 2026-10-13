@@ -20,10 +20,11 @@
       "modes": {
         "Light": "lightTheme",
         "Dark": "darkTheme"
-      }
+      },
+      "adapter": ".sigma/adapters/tokens.mjs"
     }
   ],
-  "notes": "Tokens are extracted from src/theme.js by the agent (skills/sigma-sync/reference/tokens.md): palette.* \u2192 Semantic (Light/Dark from lightTheme/darkTheme), shared spacing/shape/typography \u2192 Primitives. Code names are theme paths (palette.primary.main).",
+  "notes": "Tokens come from src/theme.js through .sigma/adapters/tokens.mjs (written by the agent at setup): palette.* \u2192 Semantic (Light/Dark from lightTheme/darkTheme), shared spacing/shape/typography \u2192 Primitives. Code names are theme paths (palette.primary.main). Icons are the React components in src/icons, through .sigma/adapters/icons.mjs.",
   "workflow": {
     "git": "github",
     "tracker": "none",
@@ -38,7 +39,8 @@
       "sigma": ".sigma/icons/mui-icons.sigma.json",
       "name": "Acme MUI icons",
       "source": "src/icons",
-      "output": "react"
+      "output": "react",
+      "adapter": ".sigma/adapters/icons.mjs"
     }
   ]
 }

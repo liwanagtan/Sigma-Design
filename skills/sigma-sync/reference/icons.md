@@ -34,6 +34,11 @@ npx sigma-design icons write <project>      # Sigma → files
 
 ## Icon components (`react`, `vue`, `svelte`, `other`)
 
+Write an adapter (`reference/adapters.md`): `.sigma/adapters/icons.mjs` reads each component as an SVG file
+and writes Sigma's changes as components exactly like the project's own (and keeps an index file in step).
+Name it in the entry (`"adapter": ".sigma/adapters/icons.mjs"`), run `npx sigma-design adapter test`, and from
+then on `icons import`, `icons write` and `check` use it. Without an adapter, by hand:
+
 1. **Import:** for each icon component, write its SVG to a temporary folder (outside the repo), in a
    subfolder for its group if the project groups them, named in kebab case (`ArrowRight.jsx` →
    `arrow-right.svg`). Use the component's own markup: same `viewBox`, shapes and stroke width; the

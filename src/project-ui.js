@@ -50,5 +50,6 @@ document.addEventListener('click', (e) => {
 });
 subscribe((kind) => kind === 'doc' && schedule());
 onProjectChange(schedule);
+window.addEventListener('hashchange', schedule); // a file opened (its screen's header is new)
 window.addEventListener('sigma:project-saved', schedule);
 export { esc };

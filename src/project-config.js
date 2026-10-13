@@ -7,6 +7,7 @@
 //                sources: [{ path: 'src/styles/tokens.css', format: 'css-variables' }],
 //                naming: 'kebab', modes: { Light: ':root', Dark: '[data-theme="dark"]' }, map: { tokenName: codeName } }],
 //     icons: [{ sigma: '.sigma/icons/app.sigma.json', source: 'src/assets/icons', output: 'svg' }],
+//     (a tokens or icons entry Sigma doesn't read itself names its adapter: adapter: '.sigma/adapters/tokens.mjs')
 //     components: [{ sigma: '.sigma/design/library.sigma.json', source: 'src/components',
 //                    manifest: '.sigma/captures/manifest.json', styles: ['src/styles/app.css'] }],
 //     workflow: { git: 'github', tracker: 'notion', branch: 'design/{ticket}-{slug}', base: 'main',
@@ -33,6 +34,12 @@ export function validateConfig(config, { files = [] } = {}) {
     if (!p.startsWith(`.sigma/${kindDir}/`)) warn(at, `Sigma keeps these in .sigma/${kindDir}/`);
     if (files.length && !files.includes(p)) error(at, `${p} isn’t in the project`);
   };
+  // An adapter (Phase 33): a module in the project that reads and writes a stack Sigma doesn't read itself.
+  const adapter = (at, a) => {
+    if (a === undefined) return;
+    if (typeof a !== 'string' || !/\.(mjs|js)$/.test(a)) return error(at, 'should be the path of the adapter module (.sigma/adapters/tokens.mjs)');
+    if (!a.startsWith('.sigma/adapters/')) warn(at, 'Sigma keeps adapters in .sigma/adapters/');
+  };
   const list = (key, check) => {
     if (config[key] === undefined) return;
     if (!Array.isArray(config[key])) return error(key, 'should be a list');
@@ -47,11 +54,13 @@ export function validateConfig(config, { files = [] } = {}) {
     });
     if (t.naming !== undefined && !NAMINGS.includes(t.naming)) error(`${at}.naming`, `should be one of ${NAMINGS.join(', ')}`);
     if (t.modes !== undefined && (typeof t.modes !== 'object' || Array.isArray(t.modes))) error(`${at}.modes`, 'should map mode names to where they apply in code, like { "Dark": "[data-theme=\\"dark\\"]" }');
+    adapter(`${at}.adapter`, t.adapter);
   });
   list('icons', (t, at) => {
     sigmaFile(`${at}.sigma`, t.sigma, 'icons');
     if (typeof t.source !== 'string') error(`${at}.source`, 'should be the folder (or package) the icons come from');
     if (t.output !== undefined && !ICON_OUTPUTS.includes(t.output)) error(`${at}.output`, `should be one of ${ICON_OUTPUTS.join(', ')}`);
+    adapter(`${at}.adapter`, t.adapter);
   });
   list('components', (t, at) => {
     sigmaFile(`${at}.sigma`, t.sigma, 'design');
