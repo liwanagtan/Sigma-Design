@@ -65,7 +65,7 @@ test('workflow: the config accepts GitLab, Linear and Jira, and says what they n
   const warnings = (workflow) => validateConfig({ schema: 1, workflow }).map((i) => `${i.at}: ${i.message}`);
   assert.deepEqual(warnings({ git: 'gitlab', tracker: 'jira', jira: { project: 'WEB' } }), []);
   assert.deepEqual(warnings({ tracker: 'linear' }), ['workflow.linear.team: say which Linear team gets the tickets (its key, like "DES")']);
-  assert.match(warnings({ git: 'bitbucket' })[0], /GitHub, GitLab and Azure DevOps/);
+  assert.match(warnings({ git: 'gitea' })[0], /GitHub, GitLab, Azure DevOps \(azure\) and Bitbucket/);
 });
 
 test('workflow: changeset sync reads an Azure DevOps pull request with az', () => {
@@ -83,6 +83,28 @@ test('workflow: changeset sync reads an Azure DevOps pull request with az', () =
     writeFileSync(join(bin, 'pr.json'), JSON.stringify({ pullRequestId: 12, status: 'completed', closedDate: '2026-10-13T11:00:00Z', reviewers: [] }));
     sigma(dir, ['changeset', 'sync', dir], env);
     assert.deepEqual([read(dir).status, read(dir).mergedAt], ['merged', '2026-10-13T11:00:00Z']);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+    rmSync(bin, { recursive: true, force: true });
+  }
+});
+
+test('workflow: changeset sync reads a Bitbucket pull request from its API, with the token on stdin', () => {
+  const dir = project({ git: 'bitbucket', tracker: 'none' });
+  const bin = mkdtempSync(join(tmpdir(), 'sigma-curl-'));
+  try {
+    // A stand-in curl: checks it was asked for the API URL with the token (on stdin, not in its arguments).
+    const fake = join(bin, 'curl');
+    writeFileSync(fake, `#!/bin/sh\nconfig=$(cat)\ncase "$*" in *secret*) echo "token in arguments" >&2; exit 1;; esac\necho "$config" | grep -q 'url = "https://api.bitbucket.org/2.0/repositories/acme/web/pullrequests/5"' || { echo "unexpected: $config" >&2; exit 1; }\necho "$config" | grep -q 'Authorization: Bearer secret' || { echo "no token" >&2; exit 1; }\ncat "${join(bin, 'pr.json')}"\n`);
+    chmodSync(fake, 0o755);
+    const env = { PATH: `${bin}${delimiter}${process.env.PATH}`, BITBUCKET_TOKEN: 'secret' };
+    sigma(dir, ['changeset', 'status', 'cs-1', 'in-review', dir, '--pr', 'https://bitbucket.org/acme/web/pull-requests/5']);
+    assert.equal(read(dir).pr.host, 'bitbucket');
+    writeFileSync(join(bin, 'pr.json'), JSON.stringify({ id: 5, state: 'OPEN', participants: [{ state: 'approved' }, { state: 'changes_requested' }] }));
+    assert.match(sigma(dir, ['changeset', 'sync', dir], env), /In review → Changes requested/);
+    writeFileSync(join(bin, 'pr.json'), JSON.stringify({ id: 5, state: 'MERGED', updated_on: '2026-10-13T12:00:00Z' }));
+    sigma(dir, ['changeset', 'sync', dir], env);
+    assert.deepEqual([read(dir).status, read(dir).mergedAt], ['merged', '2026-10-13T12:00:00Z']);
   } finally {
     rmSync(dir, { recursive: true, force: true });
     rmSync(bin, { recursive: true, force: true });
