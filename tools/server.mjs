@@ -33,9 +33,10 @@ const mtimeOf = (full) => statSync(full, { bigint: true }).mtimeNs.toString();
 
 /**
  * A request handler for Sigma: the editor's files from `root`, and the API for `project` (an absolute path,
- * or null when Sigma runs standalone). `log(line)` gets one line per write.
+ * or null when Sigma runs standalone). `log(line)` gets one line per write. `afterSave(rel, before)` runs after
+ * each write (live sync writes the code); what it returns goes back to the editor as `code`.
  */
-export function sigmaHandler({ root = EDITOR_ROOT, project = null, log = () => {} } = {}) {
+export function sigmaHandler({ root = EDITOR_ROOT, project = null, log = () => {}, afterSave = null } = {}) {
   project = project ? resolve(project) : null;
   const projectReal = project ? realpathSync(project) : null;
   const heads = new Map(); // path → [mtime, kind, name]: what a file is, cached by mtime
@@ -183,6 +184,7 @@ export function sigmaHandler({ root = EDITOR_ROOT, project = null, log = () => {
       } catch {
         return reply(res, 413, { error: 'Too large' });
       }
+      const before = exists ? readFileSync(full, 'utf8') : null;
       mkdirSync(dirname(full), { recursive: true });
       // All or nothing: an agent never reads half a file.
       const tmp = join(dirname(full), `.sigma-${process.pid}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`);
@@ -190,7 +192,15 @@ export function sigmaHandler({ root = EDITOR_ROOT, project = null, log = () => {
       renameSync(tmp, full);
       const mtime = mtimeOf(full);
       log(`wrote ${rel} (${data.length} bytes)`);
-      return reply(res, 200, { path: rel, mtime });
+      let code = null;
+      if (afterSave) {
+        try {
+          code = await afterSave(rel, before);
+        } catch (err) {
+          code = { written: [], problem: err.message };
+        }
+      }
+      return reply(res, 200, code ? { path: rel, mtime, code } : { path: rel, mtime });
     }
     return reply(res, 405, { error: 'Method not allowed' });
   }

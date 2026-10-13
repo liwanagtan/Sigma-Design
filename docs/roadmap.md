@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Phases 1–14 and Part E (Phases 20–30) are done**, except Phase 26's real run (a Notion ticket and CI on a pull request). Part F: Sigma inside your project (Phases 31–35) has begun: Phases 31–33 are done; next is Phase 34. Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **Phases 1–14 and Part E (Phases 20–30) are done**, except Phase 26's real run (a Notion ticket and CI on a pull request). Part F: Sigma inside your project (Phases 31–35) has begun: Phases 31–34 are done; next is Phase 35. Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -394,7 +394,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 31: Project mode in the editor
 - [x] Phase 32: Install like a dev tool (npm package `sigma-design`)
 - [x] Phase 33: Setup by the agent: adapters, rules and project skills
-- [ ] Phase 34: Live sync while Sigma runs
+- [x] Phase 34: Live sync while Sigma runs
 - [ ] Phase 35: Sigma renders the project's components
 
 ## Follow-ups
@@ -811,6 +811,20 @@ the browser.
   the rest for an agent or a proposal.
 - **Done when:** changing a token in Sigma reloads the running app with the new value, and editing the token
   source updates Sigma, with no command run in between, for both a CSS-variables project and an adapter one.
+- **What shipped:** `tools/live-sync.mjs`, started by `sigma-design dev` (`--no-sync` turns it off). Code →
+  Sigma: the sources of every tokens and icons entry are checked every 0.8 s (modification times, so it works
+  the same on every OS and with editors that replace files) and imported when they change; the open file
+  reloads as for any change on disk. Sigma → code: the server's save hook gives live sync the file's previous
+  text, and `tokens write` / `icons write --base-file` write only what that save changed (so a code edit Sigma
+  hasn't read yet is never written over), through the built-in writers or the adapter; the save's reply
+  carries what was written, and the save message says so ("Saved to … · wrote src/styles/tokens.css"), or why
+  not. One operation at a time; Sigma's own writes don't trigger a second import. Node tests (3) cover both
+  directions, icons, and an unread code edit surviving a save. Verified in the browser: on `examples/css-app`,
+  `color/blue/500` changed and saved in the editor became a one-line edit in `tokens.css` and the app's
+  buttons turned `rgb(47, 75, 224)` (a dev server like Vite reloads by itself; the example is static, so its
+  page was reloaded), and editing `--radius-md` in the CSS showed 12 in the open editor a second later; on
+  `examples/mui-app`, a Dark value saved in Sigma became a one-line edit in `src/theme.js` through the
+  adapter, and an edit in `theme.js` reached Sigma through it.
 
 ### Phase 35: Sigma renders the project's components
 

@@ -61,7 +61,7 @@ for (let i = 0; i < argv.length; i++) {
   if (a.startsWith('--')) {
     const [k, v] = a.slice(2).split('=');
     if (v !== undefined) flags[k] = v;
-    else if (argv[i + 1] && !argv[i + 1].startsWith('--') && ['from', 'entry', 'base', 'format', 'to', 'pr', 'pr-number', 'ticket', 'tracker', 'branch', 'images-base', 'file', 'layer', 'text', 'author', 'reply-to', 'library', 'kind'].includes(k)) flags[k] = argv[++i];
+    else if (argv[i + 1] && !argv[i + 1].startsWith('--') && ['from', 'entry', 'base', 'format', 'to', 'pr', 'pr-number', 'ticket', 'tracker', 'branch', 'images-base', 'file', 'layer', 'text', 'author', 'reply-to', 'library', 'kind', 'base-file'].includes(k)) flags[k] = argv[++i];
     else flags[k] = true;
   } else pos.push(a);
 }
@@ -172,11 +172,17 @@ const showChange = (before, after) => {
   return `${show(before)} → ${show(after)}`;
 };
 
+// The Sigma file to compare with: --base-file (the version before one save, from live sync), else git (--base).
+function baseText(root, e) {
+  if (flags['base-file']) return readFileSync(resolve(flags['base-file']), 'utf8');
+  return gitShow(root, flags.base || 'HEAD', e.sigma);
+}
+
 function changesFor(root, e) {
-  const base = flags.base || 'HEAD';
+  const base = flags['base-file'] ? 'the last save' : flags.base || 'HEAD';
   const now = readSigma(root, e.sigma);
   if (!now) fail(`${e.sigma} doesn’t exist yet: run tokens import first`);
-  const then = gitShow(root, base, e.sigma);
+  const then = baseText(root, e);
   return { base, changes: tokenChanges(then ? JSON.parse(then).collections : [], now.collections, cssOpts(e)), now, then };
 }
 
@@ -237,10 +243,14 @@ async function tokensWrite(dir) {
     }
     const { changes } = changesFor(root, e);
     const remove = changes.filter((c) => c.change === 'removed').map((c) => c.code);
+    // One save's changes (live sync): only those tokens are written, so a change in the code that Sigma hasn't
+    // read yet is never written over.
+    const only = flags['base-file'] ? new Set(changes.filter((c) => c.change !== 'removed').map((c) => c.id)) : null;
+    const scoped = only ? sigma.collections.map((c) => ({ ...c, variables: (c.variables || []).filter((v) => only.has(v.id)) })) : sigma.collections;
     css.forEach((s, i) => {
       const before = readText(root, s.path);
       // New declarations go in the first source; the others only get their existing ones updated.
-      const cols = i === 0 ? sigma.collections : sigma.collections.map((c) => ({ ...c, variables: (c.variables || []).filter((v) => parseCSSVariables(before).some((d) => d.name === (v.codeSyntax?.web || codeNameFor(v.name, cssOpts(e))))) }));
+      const cols = i === 0 ? scoped : scoped.map((c) => ({ ...c, variables: (c.variables || []).filter((v) => parseCSSVariables(before).some((d) => d.name === (v.codeSyntax?.web || codeNameFor(v.name, cssOpts(e))))) }));
       const { text, edits, missing } = applyToCSS(before, cols, { ...cssOpts(e), remove });
       if (text !== before && !flags['dry-run']) writeText(root, s.path, text);
       results.push({ sigma: e.sigma, source: s.path, written: text !== before && !flags['dry-run'], edits, missing });
@@ -325,10 +335,10 @@ async function iconsImport(dir) {
 }
 
 function iconChangesFor(root, e) {
-  const base = flags.base || 'HEAD';
+  const base = flags['base-file'] ? 'the last save' : flags.base || 'HEAD';
   const now = readSigma(root, e.sigma);
   if (!now) fail(`${e.sigma} doesn’t exist yet: run icons import first`);
-  const then = gitShow(root, base, e.sigma);
+  const then = baseText(root, e);
   return { base, now, changes: iconChanges(then ? JSON.parse(then).icons : [], now.icons) };
 }
 
@@ -377,7 +387,9 @@ async function iconsWrite(dir) {
     // New files are written like the project's others; a changed file keeps its own style.
     const sample = listFilesIn(join(root, e.source), '.svg')[0];
     const projectStyle = sample ? svgStyleOf(readText(root, `${e.source}/${sample}`)) : null;
+    const only = flags['base-file'] ? new Set(changes.filter((c) => c.change !== 'removed').map((c) => c.id)) : null;
     for (const icon of now.icons) {
+      if (only && !only.has(icon.id)) continue; // live sync: only what this save changed
       const path = `${e.source}/${iconFilePath(icon)}`;
       let style = projectStyle;
       if (exists(root, path)) {

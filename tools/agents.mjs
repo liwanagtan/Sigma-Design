@@ -44,7 +44,7 @@ export function rulesBlock(config, { guide }) {
     'files and `sigma.config.json` says how they map to the code. Designers change tokens, icons and components',
     'in Sigma (`npm run sigma`); the code follows.',
     '',
-    !(tokenSources || iconSources) ? null : `- **Code is the truth for design tokens${iconSources ? ' and icons' : ''}** (${[tokenSources, iconSources].filter(Boolean).join('; ')}). After changing them, run \`npx sigma-design tokens import\`${iconSources ? ' / `icons import`' : ''} and \`npx sigma-design check\` (it must pass).`,
+    !(tokenSources || iconSources) ? null : `- **Code is the truth for design tokens${iconSources ? ' and icons' : ''}** (${[tokenSources, iconSources].filter(Boolean).join('; ')}). While Sigma runs (\`npm run sigma\`) it follows them by itself; otherwise, after changing them, run \`npx sigma-design tokens import\`${iconSources ? ' / `icons import`' : ''}. Either way, \`npx sigma-design check\` must pass.`,
     '- **Never edit `.sigma/**/*.sigma.json` by hand:** use the `sigma-design` commands, which keep ids and diffs small.',
     !adapters.length ? null : `- **Adapters** (${adapters.join(', ')}) are how Sigma reads and writes this project's code. If you change how that code is written, update the adapter and run \`npx sigma-design adapter test\`.`,
     f.components.length
@@ -79,7 +79,8 @@ export function skills(config, { guide, name }) {
         ...(tokenLines.length ? tokenLines : ['- No token source is set up yet: set one up with the guide (section 1).']),
         ...iconLines,
         '',
-        '- **Code → Sigma:** `npx sigma-design tokens import` (and `icons import`), then `npx sigma-design check`.',
+        '- **While Sigma runs** (`npm run sigma`), live sync does both directions: code edits are imported within a second, and a save in Sigma writes the code.',
+        '- **Code → Sigma** (Sigma not running): `npx sigma-design tokens import` (and `icons import`), then `npx sigma-design check`.',
         `- **Sigma → code:** \`npx sigma-design tokens diff\` shows what designers changed; \`npx sigma-design tokens write\` (and \`icons write\`) writes it${[...f.tokens, ...f.icons].some((x) => x.adapter) ? ', through the adapter, checking every write by reading it back' : ''}.`,
         ![...f.tokens, ...f.icons].some((x) => x.adapter) ? null : '- **When an adapter fails** (a write is put back, or `check` can\'t read the code): fix the adapter, run `npx sigma-design adapter test` until it passes, then write again.',
         '',

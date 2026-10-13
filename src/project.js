@@ -239,12 +239,12 @@ export async function saveToProject({ force = false } = {}) {
   if (errors.length) console.warn(`${path} has problems:\n${errors.map((e) => `${e.at}: ${e.message}`).join('\n')}`);
   try {
     const base = force ? (await adapter.read(path).catch(() => null))?.mtime || 'new' : inProject ? meta.project.mtime : 'new';
-    const { mtime } = await adapter.write(path, text, base);
+    const { mtime, code } = await adapter.write(path, text, base);
     await updateFileMeta(id, { project: { name: project.name, path, mtime, hash: textHash(text) } });
     state.doc.project = { path };
     window.dispatchEvent(new CustomEvent('sigma:project-saved'));
     banner(null);
-    toast(`Saved to ${path}${warnings.length ? ` (${warnings.join(' ')})` : ''}${errors.length ? ` · ${errors.length} problem${errors.length === 1 ? '' : 's'} (see the console)` : ''}`);
+    toast(`Saved to ${path}${warnings.length ? ` (${warnings.join(' ')})` : ''}${errors.length ? ` · ${errors.length} problem${errors.length === 1 ? '' : 's'} (see the console)` : ''}${codeNote(code)}`);
     await refresh();
   } catch (err) {
     if (!err.conflict) return toast(`Couldn’t save to the project: ${err.message}`);
@@ -254,6 +254,15 @@ export async function saveToProject({ force = false } = {}) {
       extra: [{ label: 'Save mine over it', action: () => saveToProject({ force: true }) }],
     });
   }
+}
+
+// What live sync did with the code after a save (Phase 34), for the save message.
+function codeNote(code) {
+  if (!code) return '';
+  if (code.problem) return ` · the code wasn’t written: ${code.problem}`;
+  if (code.manual) return ' · the code needs your coding agent (sigma-design tokens diff)';
+  if (code.written?.length) return ` · wrote ${code.written.map((f) => f.path).join(', ')}`;
+  return '';
 }
 
 export async function reloadFromDisk(path) {

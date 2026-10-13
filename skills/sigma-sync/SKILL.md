@@ -102,6 +102,15 @@ references when the code clearly means the same thing (the same hex used as "pri
 Record any judgement call (a renamed token, a value you treated as a primitive) in the token's
 `$description` or in your summary.
 
+## Live sync (while Sigma runs)
+
+`npm run sigma` (`sigma-design dev`) keeps the code and Sigma in step by itself: when a token or icon source
+changes (an edit, a `git pull`), it's imported within a second, and the open file reloads; when a designer
+saves a token or icon file in Sigma, what that save changed is written to the code at once (CSS and SVG by
+Sigma, anything else through the adapter, checked by reading back). Only that save's changes are written, so
+an edit in the code that Sigma hasn't read yet is never overwritten. The commands below are for when Sigma
+isn't running, and for agents; running them while it runs is harmless.
+
 ## 3. Write back (Sigma → code)
 
 When the designer changed tokens in Sigma (the Sigma file differs from the last commit):
