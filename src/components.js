@@ -29,7 +29,7 @@ export const ROOT_FOLLOW = ['w', 'h', 'sizingH', 'sizingV'];
 const CHILD_OVERRIDABLE = new Set([
   'fills', 'strokes', 'strokeWidth', 'strokeAlign', 'strokeSides', 'cap', 'opacity', 'effects', 'visible', 'radius', 'radii', 'name',
   'text', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'textCase', 'truncate', 'maxLines',
-  'componentId', 'propValues', 'variantProps', 'bindings', 'modes',
+  'componentId', 'propValues', 'variantProps', 'bindings', 'modes', 'a11y',
 ]);
 const TEXT_PROPS = ['text', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textCase', 'truncate', 'maxLines'];
 

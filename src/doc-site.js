@@ -7,6 +7,7 @@ import { buildSVG } from './io.js';
 import { resolveValue, collections } from './variables.js';
 import { tokenCode, componentCode, propCode, variantPropCode, variantValueCode } from './code-names.js';
 import { variantDefs } from './components.js';
+import { ROLES } from './a11y.js';
 import { componentRows, statusOf, statusLabel, docsTarget } from './component-docs.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -52,6 +53,7 @@ function componentHTML(node) {
     <div class="variants">${variants.map((v) => `<figure><div class="preview">${preview(v)}</div><figcaption>${esc(t.type === 'componentSet' ? v.name : 'Default')}</figcaption></figure>`).join('')}</div>
     ${d.usage ? `<h4>Usage</h4><p class="usage">${esc(d.usage)}</p>` : ''}
     ${(d.dos || []).length || (d.donts || []).length ? `<div class="examples">${examples(d.dos, 'Do', 'do')}${examples(d.donts, 'Don’t', 'dont')}</div>` : ''}
+    ${d.role || d.keyboard ? `<h4>Accessibility</h4><p class="usage">${d.role ? `<b>Role:</b> ${esc(ROLES[d.role] || d.role)}. ` : ''}${esc(d.keyboard || '')}</p>` : ''}
     <h4>Code</h4><p><code>${esc(componentCode(t))}</code>${d.code ? ` · ${/^https?:/.test(d.code) ? `<a href="${esc(d.code)}">${esc(d.code)}</a>` : `<code>${esc(d.code)}</code>`}` : ''}</p>
     ${axes.length || props.length ? `<table><tr><th>Property</th><th>Code</th><th>Type</th><th>Values or default</th></tr>${
       axes.map(([k, vals]) => `<tr><td>${esc(k)}</td><td><code>${esc(variantPropCode(t, k))}</code></td><td>variant</td><td>${vals.map((x) => `<code>${esc(variantValueCode(x))}</code>`).join(' ')}</td></tr>`).join('')}${

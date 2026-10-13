@@ -8,6 +8,7 @@ import { getSizing, isAutoLayout } from './layout.js';
 import { cornerRadii, strokeSides } from './render.js';
 import { findIcon } from './icon-library.js';
 import { docsHTML } from './component-docs.js';
+import { a11yOf, roleOf, a11yCode, ROLES } from './a11y.js';
 import {
   cssVar, cssVarName, tokenCode, PLATFORMS, componentCode, propCode, variantPropCode, variantValueCode, defaultComponentCode, defaultPropCode,
 } from './code-names.js';
@@ -172,6 +173,34 @@ const block = (title, body, copy) => `<div class="section inspect-section"><div 
   `${copy ? `<button class="icon-btn inspect-copy" data-copy="${esc(copy)}" title="Copy">${COPY_ICON}</button>` : ''}</div>${body}</div>`;
 const COPY_ICON = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><rect x="4.5" y="4.5" width="7" height="7" rx="1"/><path d="M9.5 4.5v-2a1 1 0 0 0-1-1h-5a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h2"/></svg>';
 
+// Accessibility annotations (Phase 16): what the layer is to assistive technology. An instance shows its main
+// component's as placeholders; what's typed here is the instance's own.
+function a11yBlock(n) {
+  const own = n.a11y || {};
+  const all = a11yOf(n);
+  const inherited = (k) => (own[k] === undefined && all[k] !== undefined ? all[k] : '');
+  const field = (label, html) => `<label class="code-name-row a11y-row"><span class="muted">${label}</span>${html}</label>`;
+  const input = (k, ph = '') => `<input class="prop-input" data-a11y="${k}" data-node="${esc(n.id)}" value="${esc(own[k] ?? '')}" placeholder="${esc(inherited(k) || ph)}" spellcheck="${k === 'focus' ? 'false' : 'true'}"${k === 'focus' ? ' inputmode="numeric"' : ''}>`;
+  const role = roleOf(n);
+  const rows = [];
+  if (n.type === 'image' || n.type === 'icon' || own.decorative || all.decorative) {
+    rows.push(field('Decorative', `<input type="checkbox" data-a11y="decorative" data-node="${esc(n.id)}" ${all.decorative ? 'checked' : ''}>`));
+  }
+  if (n.type === 'image' && !all.decorative) rows.push(field('Alt text', input('alt', 'What the image shows')));
+  if (n.type === 'text') {
+    rows.push(field('Heading', `<select class="prop-input" data-a11y="heading" data-node="${esc(n.id)}"><option value="">Not a heading</option>${[1, 2, 3, 4, 5, 6].map((l) => `<option value="${l}" ${all.heading === l ? 'selected' : ''}>Heading ${l} (h${l})</option>`).join('')}</select>`));
+  }
+  if (n.type !== 'text' && n.type !== 'image') {
+    const auto = !own.role && role ? `Automatic: ${ROLES[role] || role}` : 'Automatic';
+    rows.push(field('Role', `<select class="prop-input" data-a11y="role" data-node="${esc(n.id)}"><option value="">${esc(auto)}</option>${Object.entries(ROLES).map(([k, l]) => `<option value="${k}" ${own.role === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`));
+    rows.push(field('Label', input('label', role && role !== 'none' ? 'From its text' : 'Accessible name')));
+  }
+  rows.push(field('Focus order', input('focus', '—')));
+  const code = a11yCode(n);
+  return block('Accessibility', rows.join('') + (code.length ? `<pre class="inspect-code">${esc(code.join('\n'))}</pre>` : '') +
+    '<button class="btn wide" data-a11y-check>Check accessibility…</button>', code.join('\n') || undefined);
+}
+
 function valueText(type, value) {
   if (value === undefined || value === null) return '—';
   if (type === 'color') return color(value);
@@ -204,6 +233,7 @@ export function inspectHTML(nodes) {
     const docs = docsHTML(comp);
     if (docs) html += block('Component docs', docs);
   }
+  html += a11yBlock(n);
   const css = layerCSS(n);
   const cssText = css.map(([k, v]) => `${k}: ${v};`).join('\n');
   html += block(`CSS <span class="muted">${esc(n.name)}</span>`, css.length ? `<pre class="inspect-code">${esc(cssText)}</pre>` : '<div class="muted">Nothing to style.</div>', cssText);

@@ -9,6 +9,7 @@ import { FORMAT } from './project-format.js';
 import { VAR_TYPES, typeForPath, COMPOSITE_FIELDS, parseEasing } from './variables.js';
 import { parseSVGIcon } from './icon-library.js';
 
+const A11Y_KEYS = ['alt', 'decorative', 'label', 'role', 'heading', 'focus'];
 const NODE_TYPES = ['frame', 'group', 'rect', 'ellipse', 'line', 'text', 'image', 'component', 'componentSet', 'instance', 'icon'];
 const CONTAINERS = new Set(['frame', 'group', 'component', 'componentSet']);
 const PROP_TYPES = { boolean: 'visible', text: 'text', instance: 'componentId', slot: 'slot', icon: 'iconId' };
@@ -291,6 +292,17 @@ export function validateFile(file, { path = '(file)', files = {} } = {}) {
         const def = comp.props[pid];
         if (!def) error(`${where}.propRefs.${prop}`, `uses property ${pid}, which “${comp.node.name}” doesn’t define`);
         else if (PROP_TYPES[def.type] !== prop) error(`${where}.propRefs.${prop}`, `property “${def.name}” is ${def.type}, which sets ${PROP_TYPES[def.type]}, not ${prop}`);
+      }
+      if (n.a11y !== undefined) {
+        const a = n.a11y;
+        if (!a || typeof a !== 'object' || Array.isArray(a)) error(`${where}.a11y`, 'should be an object of accessibility annotations');
+        else {
+          for (const k of Object.keys(a)) if (!A11Y_KEYS.includes(k)) error(`${where}.a11y.${k}`, `isn’t an annotation; use ${A11Y_KEYS.join(', ')}`);
+          for (const k of ['alt', 'label', 'role']) if (a[k] !== undefined && typeof a[k] !== 'string') error(`${where}.a11y.${k}`, 'should be text');
+          if (a.decorative !== undefined && typeof a.decorative !== 'boolean') error(`${where}.a11y.decorative`, 'should be true or false');
+          if (a.heading !== undefined && !(Number.isInteger(a.heading) && a.heading >= 1 && a.heading <= 6)) error(`${where}.a11y.heading`, 'should be a heading level from 1 to 6');
+          if (a.focus !== undefined && !(Number.isInteger(a.focus) && a.focus >= 1)) error(`${where}.a11y.focus`, 'should be a whole number from 1 (its place in the focus order)');
+        }
       }
       if (n.type === 'icon') {
         if (!n.iconId) error(`${where}.iconId`, 'is missing');

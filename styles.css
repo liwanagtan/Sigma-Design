@@ -1005,3 +1005,14 @@ button.group-caret.open { transform: rotate(90deg); }
 .vr-overlay { position: relative; display: inline-block; max-width: 100%; }
 .vr-box { position: absolute; outline: 1.5px solid #e91e8c; outline-offset: 2px; border-radius: 2px; pointer-events: none; }
 @media (max-width: 720px) { .vr-panes { grid-template-columns: 1fr; } }
+
+/* ---------- accessibility (Phase 16) ---------- */
+.a11y-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.a11y-bar select { width: auto; height: 26px; }
+.a11y-reason { font-size: 11px; margin: -2px 0 6px; }
+.a11y-what { flex: 1; min-width: 0; line-height: 1.4; }
+.a11y-sev { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 8px; align-self: flex-start; margin-top: 2px; }
+.a11y-sev.error { background: #fdecec; color: #b42318; }
+.a11y-sev.warning { background: #fff4e5; color: #b54708; }
+.a11y-row input[type="checkbox"] { justify-self: start; }
+.a11y-row select { min-width: 0; }
