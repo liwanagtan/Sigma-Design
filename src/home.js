@@ -254,7 +254,7 @@ function renderProjectNav() {
   const el = root.querySelector('#home-project');
   el.hidden = !projectMode();
   if (projectMode()) {
-    el.innerHTML = `<div class="project-chip" title="${project.connected ? 'The Sigma files are in this project’s .sigma/ folder' : 'Sigma’s server for this project stopped: start it again in the project'}">${NAV_PROJECT}<span class="project-name">${esc(project.name)}</span><span class="project-state ${project.connected ? 'ok' : 'off'}">${project.connected ? 'Connected' : 'Offline'}</span></div>`;
+    el.innerHTML = `<div class="project-chip" title="${project.connected ? 'The Sigma files are in this project’s .sigma/ folder' : 'Sigma’s server for this project stopped: run npm run sigma in the project again'}">${NAV_PROJECT}<span class="project-name">${esc(project.name)}</span><span class="project-state ${project.connected ? 'ok' : 'off'}">${project.connected ? 'Connected' : 'Offline'}</span></div>`;
   }
   root.querySelector('#nav-proposals').hidden = !projectMode();
   root.querySelector('#nav-archive').hidden = projectMode(); // git is the history of project files
@@ -550,7 +550,9 @@ export async function renderHome() {
 
   root.querySelector('#home-notice').innerHTML = notice
     ? `<div class="home-notice">${esc(notice)} <button class="icon-btn" data-dismiss>${icons.close}</button></div>`
-    : '';
+    : pm && !project.connected
+      ? `<div class="home-notice"><span>Sigma’s server for ${esc(project.name)} stopped, so its files can’t be opened or saved. Run <code>npm run sigma</code> (or <code>npx sigma-design dev</code>) in the project again.</span></div>`
+      : '';
   root.querySelector('[data-dismiss]')?.addEventListener('click', () => {
     notice = '';
     renderHome();

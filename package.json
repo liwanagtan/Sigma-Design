@@ -1,0 +1,38 @@
+{
+  "name": "sigma-design",
+  "version": "0.1.0",
+  "description": "Sigma, an open design tool for AI-native teams: installed in your project, on your real design system.",
+  "type": "module",
+  "bin": {
+    "sigma-design": "bin/sigma-design.mjs"
+  },
+  "files": [
+    "bin/",
+    "index.html",
+    "styles.css",
+    "src/",
+    "icon-sets/",
+    "tools/",
+    "!tools/test/",
+    "!tools/build-*",
+    "skills/",
+    "docs/schema/",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "node bin/sigma-design.mjs standalone",
+    "test:node": "node --test tools/test/"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "design",
+    "design-tokens",
+    "design-system",
+    "figma-alternative",
+    "ai",
+    "agents"
+  ],
+  "license": "UNLICENSED"
+}

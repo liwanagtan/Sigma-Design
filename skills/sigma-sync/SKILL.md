@@ -14,8 +14,9 @@ exact work: reading CSS variables, merging into Sigma files without disturbing t
 validating. Every decision you make goes in `sigma.config.json`, so the next run follows it instead of
 deciding again.
 
-**Sigma tools:** the commands below are `node <sigma>/tools/sigma.mjs …`, where `<sigma>` is where Sigma
-is installed (its repo). Node 18 or later; nothing to install.
+**Sigma tools:** Sigma is installed in the project as the `sigma-design` package; the commands below are
+`npx sigma-design …`, and `<sigma>` is where it's installed (`node_modules/sigma-design`). Node 18 or later;
+nothing else to install.
 
 **Rules**
 
@@ -28,6 +29,17 @@ is installed (its repo). Node 18 or later; nothing to install.
 - Say what you did and why: list the decisions you made and anything you skipped.
 
 ## 1. Set up (first run: no sigma.config.json yet)
+
+Start with `npx sigma-design init` in the project. It installs nothing by itself (if `sigma-design` isn't a
+dev dependency yet, it adds it to `package.json`, and the person installs), adds the `npm run sigma` script,
+and sets up what Sigma reads by itself: CSS variables (with their modes), a DTCG `tokens.json`, a folder of
+SVG icons. It writes `sigma.config.json`, imports, and runs `check`. Read what it prints:
+
+- If it set everything up and `check` passes, review its choices (the token source, the modes and their
+  names, the icon folder) against the code, fix `sigma.config.json` if needed, and go to step 5.
+- What it lists **For your coding agent** is yours: the steps below, for those sources only.
+
+The steps below are also how to set a project up by hand.
 
 1. **Find the stack.** Look at `package.json`, build config and styles: CSS or Sass variables, Tailwind
    (`tailwind.config.*` or `@theme` in CSS), a JS/TS theme object (MUI, Chakra, styled-components,
@@ -61,14 +73,14 @@ is installed (its repo). Node 18 or later; nothing to install.
 **a. CSS variables (and dtcg sources):** Sigma reads them directly.
 
 ```bash
-node <sigma>/tools/sigma.mjs tokens import <project>
+npx sigma-design tokens import <project>
 ```
 
 **b. Any other stack:** read the token sources yourself and write them as a DTCG tokens.json in a temporary
 file (outside the repo, or delete it after), following `reference/tokens.md`, then:
 
 ```bash
-node <sigma>/tools/sigma.mjs tokens import <project> --from /tmp/<name>.tokens.json
+npx sigma-design tokens import <project> --from /tmp/<name>.tokens.json
 ```
 
 Either way the tool merges into the Sigma Tokens file: values come from the code; ids, descriptions,
@@ -89,8 +101,8 @@ Record any judgement call (a renamed token, a value you treated as a primitive) 
 When the designer changed tokens in Sigma (the Sigma file differs from the last commit):
 
 ```bash
-node <sigma>/tools/sigma.mjs tokens diff <project>      # what changed since HEAD (--base REV to compare with another)
-node <sigma>/tools/sigma.mjs tokens write <project>     # CSS sources: applies minimal edits itself
+npx sigma-design tokens diff <project>      # what changed since HEAD (--base REV to compare with another)
+npx sigma-design tokens write <project>     # CSS sources: applies minimal edits itself
 ```
 
 - **CSS variables:** `tokens write` edits only the values that differ, keeps each value's unit (rem stays
@@ -104,7 +116,7 @@ node <sigma>/tools/sigma.mjs tokens write <project>     # CSS sources: applies m
 ## 4. Check
 
 ```bash
-node <sigma>/tools/sigma.mjs check <project>
+npx sigma-design check <project>
 ```
 
 It validates every Sigma file and, for CSS sources, confirms that importing would change nothing (no drift
@@ -115,7 +127,7 @@ reports; its messages say where and what to do.
 
 Tell the person, briefly: what you set up or changed (files), the decisions you made and recorded, what
 was skipped and why, and the result of `check`. If Sigma is running with the project
-(`python3 <sigma>/serve.py --project <project>`), open files reload by themselves.
+(`npm run sigma`, or `npx sigma-design dev`), open files reload by themselves.
 
 ## Icons
 

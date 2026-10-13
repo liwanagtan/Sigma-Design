@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Phases 1–14 and Part E (Phases 20–30) are done**, except Phase 26's real run (a Notion ticket and CI on a pull request). Part F: Sigma inside your project (Phases 31–35) has begun: Phase 31 is done; next is Phase 32. Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **Phases 1–14 and Part E (Phases 20–30) are done**, except Phase 26's real run (a Notion ticket and CI on a pull request). Part F: Sigma inside your project (Phases 31–35) has begun: Phases 31 and 32 are done; next is Phase 33. Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -392,7 +392,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 29: Page onboarding
 - [x] Phase 30: Design to code for components
 - [x] Phase 31: Project mode in the editor
-- [ ] Phase 32: Install like a dev tool (npm package `sigma-design`)
+- [x] Phase 32: Install like a dev tool (npm package `sigma-design`)
 - [ ] Phase 33: Setup by the agent: adapters, rules and project skills
 - [ ] Phase 34: Live sync while Sigma runs
 - [ ] Phase 35: Sigma renders the project's components
@@ -747,6 +747,26 @@ the browser.
 - **Done when:** in a fresh copy of a real project using CSS variables, `npx sigma-design init` then
   `npm run sigma` opens Sigma on its tokens and icons, with nothing else installed. (Publishing to npm needs
   the owner's account: until then, it's installed from the repo or a packed tarball.)
+- **What shipped:** `package.json` (`sigma-design` 0.1.0, no dependencies, Node 18+; the package holds the
+  editor, `icon-sets/`, the tools, the skill and the schema docs, not tests or examples). `bin/sigma-design.mjs`:
+  `init`, `dev` (Sigma on the project in the current folder, on a free port from 6200, opening the browser),
+  `standalone`, and every sync command (`check`, `tokens …`, `changeset …`). `tools/server.mjs` replaces
+  `serve.py` (deleted): the same API and answers (mtimes in nanoseconds), localhost only, writes only with
+  Sigma's header, never over a file changed since it was read, only `.sigma/` files and `sigma.config.json` and
+  never through a link leading outside the project, atomic writes, every write logged. `tools/init.mjs`: CSS
+  variables on `:root` with their modes (other selectors or media queries that override them; component-scoped
+  variables aren't modes), DTCG `tokens.json`, SVG icon folders, the framework and styling, git's base branch;
+  Tailwind, JS/TS themes, SCSS, Less and icon components are reported for the agent; `package.json` gets the
+  dev dependency and the `sigma` script in its own indentation; nothing that's there is overwritten. In
+  projects Sigma opens on the project's files (not the Welcome guide), says when its server stopped and how to
+  start it again, and its messages name `npm run sigma`. Node tests for the server and `init`
+  (`npm run test:node`, 14). Fixed on the way: `src/store.js` read the browser's storage when loaded, which
+  newer Node versions warn about in every command. Verified with `npm pack`: a copy of `examples/css-app`
+  without its Sigma files, with a `package.json` and git, installed the tarball; `npx sigma-design init`
+  found 27 tokens (Light and Dark) and 7 icons, imported them and passed `check`; `npm run sigma` opened Sigma
+  on the project; a token changed in Sigma and saved became a one-line CSS diff with `sigma-design tokens
+  write`. A copy of `examples/mui-app` was handed to the agent (its theme and icon components). Not published
+  to npm yet (it needs the owner's account).
 
 ### Phase 33: Setup by the agent: adapters, rules and project skills
 

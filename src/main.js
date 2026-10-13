@@ -298,14 +298,15 @@ window.addEventListener('keydown', (e) => {
   if (state.screen !== 'editor' && state.screen !== 'tokens' && state.screen !== 'icons') return;
   e.preventDefault(); // never the browser's "Save page"
   if (project.connected) saveToProject();
-  else window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'Sigma saves as you work. To save to a codebase, start Sigma with python3 serve.py --project PATH.' }));
+  else window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'Sigma saves as you work. To work on a codebase, run Sigma in it: npx sigma-design init, then npm run sigma.' }));
 });
 
 initFiles({ onRemoteChange })
   .then(async () => {
     await connectProject();
-    // A first visit opens "Welcome to Sigma".
-    const welcome = await welcomeOnFirstVisit().catch((err) => console.error('Could not create Welcome to Sigma', err));
+    // A first visit opens "Welcome to Sigma"; in a project, Sigma opens on the project's files instead (the
+    // guide is in the sidebar).
+    const welcome = project.connected ? null : await welcomeOnFirstVisit().catch((err) => console.error('Could not create Welcome to Sigma', err));
     if (welcome && !/^#\/file\//.test(location.hash)) return openFile(welcome);
     return route();
   })

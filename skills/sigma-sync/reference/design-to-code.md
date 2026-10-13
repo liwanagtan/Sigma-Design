@@ -19,7 +19,7 @@ selector of the element to capture on the components page), so captures can be r
 ## 1. See what changed
 
 ```bash
-node <sigma>/tools/sigma.mjs components diff <project> [--base REV]      # since HEAD by default
+npx sigma-design components diff <project> [--base REV]      # since HEAD by default
 ```
 
 For each changed component: the **design diff** (what the designer changed, in CSS terms where it has
@@ -31,7 +31,7 @@ you**. Components that only moved on the canvas aren't listed.
 In a pull request's worktree this runs as part of `changeset prepare` (`workflow.md`); by itself:
 
 ```bash
-node <sigma>/tools/sigma.mjs components write <project> [--base REV] [--dry-run]
+npx sigma-design components write <project> [--base REV] [--dry-run]
 ```
 
 - **Structured changes are written exactly.** A value the component's root is styled with (background,
@@ -59,7 +59,7 @@ What's listed "For you" needs judgement in the code:
 ## 4. Prove it
 
 Render the components page from the branch (with Sigma's server running on that checkout:
-`python3 <checkout>/serve.py <port> --project <checkout>/<project>`), recapture everything:
+`npx sigma-design dev <checkout>/<project> --port <port>`), recapture everything:
 
 ```js
 const manifest = /* .sigma/captures/manifest.json */;

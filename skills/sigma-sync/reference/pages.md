@@ -72,7 +72,7 @@ dashes).
 ## 4. Build
 
 ```bash
-node <sigma>/tools/sigma.mjs pages build <project> --from <project>/.sigma/captures [--dry-run]
+npx sigma-design pages build <project> --from <project>/.sigma/captures [--dry-run]
 ```
 
 It writes the file (rebuilding frames by name, keeping other pages and frames) and lists, per frame, how

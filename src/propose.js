@@ -63,7 +63,7 @@ function renderItem(item, which, files) {
 const describe = (i) => `<span class="kind-badge">${KINDS[i.kind]}</span><span class="propose-name">${esc(i.kind === 'file' ? 'Name, links, collections and modes' : i.name)}</span><span class="propose-change ${i.change}">${i.change}</span>`;
 
 export async function openProposeDialog() {
-  if (!project.connected) return toast('Propose change works on a project: start Sigma with python3 serve.py --project PATH.');
+  if (!project.connected) return toast('Propose change works in a project: run Sigma in one (npx sigma-design init, then npm run sigma).');
   toast('Looking for changes…');
   const [{ current, base, comparedWith }, changesets] = await Promise.all([projectSnapshot(), listChangesets()]);
   const all = projectChanges(base, current);

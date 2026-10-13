@@ -24,7 +24,7 @@ export const state = {
   highlightIds: [], // layers outlined while a component property is hovered in the panel
   showGrids: (() => { // layout grids on the canvas (⌃G); remembered in this browser
     try {
-      return localStorage.getItem('sigma.showGrids') !== '0';
+      return globalThis.window?.localStorage.getItem('sigma.showGrids') !== '0'; // in a browser (not the Node tools)
     } catch {
       return true;
     }

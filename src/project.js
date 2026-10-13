@@ -1,8 +1,8 @@
 // Projects: Sigma files that live in a codebase's .sigma/ folder (docs/schema/README.md), so the repo is the
 // source of truth and git does the versioning.
 //
-// Sigma runs inside a project: it reaches it through the project server it was started with (python3 serve.py
-// --project PATH, until Sigma is installed as a package), never by opening a folder itself. Each project file Sigma opens is
+// Sigma runs inside a project: it reaches it through the project server it was started with (npm run sigma,
+// that is sigma-design dev: tools/server.mjs), never by opening a folder itself. Each project file Sigma opens is
 // kept in the browser like any other file (with meta.project = { name, path, mtime, hash }), so editing,
 // autosave, undo and version history work as usual. Saving to the project (⌘S) writes the project format;
 // when an agent or git changes a file on disk, Sigma reloads it (or asks, if it has changes not saved to
@@ -219,7 +219,7 @@ function freePath(kind, name) {
 // Save the open file to the project (adding it if it isn't there yet). `force`: write over a version that
 // changed on disk.
 export async function saveToProject({ force = false } = {}) {
-  if (!adapter) return toast('No project is open. Start Sigma with python3 serve.py --project PATH, or open a project folder.');
+  if (!adapter) return toast('Sigma isn’t running in a project. Run it in one: npx sigma-design init, then npm run sigma.');
   const id = getCurrentFileId();
   if (!id || !state.doc) return;
   if (state.readOnly) return toast('You’re viewing an older version. Restore it first.');

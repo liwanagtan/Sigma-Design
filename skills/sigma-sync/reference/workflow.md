@@ -16,7 +16,7 @@ haven't asked for: pushing, opening a pull request, creating or moving tickets.
 ## Steps (for one changeset)
 
 ```bash
-S="node <sigma>/tools/sigma.mjs"
+S="npx sigma-design"
 $S changeset list <project>                      # find it (any unique part of its id works)
 $S changeset show <id> <project>                 # read what it changes
 ```
