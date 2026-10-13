@@ -101,6 +101,7 @@ function help() {
   npx sigma-design report [dir] [--days N] [--handoff]  how much of the design comes from the design system
   npx sigma-design changelog [dir] [--file PATH]      what's new in the component libraries, as Markdown
   npx sigma-design check [dir]                       Sigma files are valid, and tokens and icons match the code
+  npx sigma-design mcp [dir]                         the sync tools as an MCP server (stdio), for agents
 
 Sync tools (for people and agents; see skills/sigma-sync/SKILL.md):
   tokens import|diff|write|export, icons import|diff|write, changeset …, library build, pages build,
@@ -112,6 +113,12 @@ Agents: the setup and sync instructions are in ${relative(process.cwd(), join(he
 if (!cmd || cmd === 'help' || cmd === '--help' || cmd === '-h') help();
 else if (cmd === '--version' || cmd === '-v' || cmd === 'version') console.log(pkg.version);
 else if (cmd === 'standalone') await serve({ project: null });
+else if (cmd === 'mcp') {
+  // An MCP server over stdio: nothing else may go to stdout.
+  const dir = resolve(positional()[0] || '.');
+  if (!existsSync(join(dir, 'sigma.config.json'))) fail(`no sigma.config.json in ${dir}: run npx sigma-design init first`);
+  (await import('../tools/mcp.mjs')).serveMCP(dir);
+}
 else if (cmd === 'agents') {
   const dir = resolve(positional()[0] || '.');
   if (!existsSync(join(dir, 'sigma.config.json'))) fail(`no sigma.config.json in ${dir}: run npx sigma-design init first`);
