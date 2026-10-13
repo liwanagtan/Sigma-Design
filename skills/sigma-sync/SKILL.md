@@ -46,6 +46,9 @@ SVG icons. It writes `sigma.config.json`, imports, and runs `check`. Read what i
   `npx sigma-design adapter test` until it passes, then `tokens import` (or `icons import`) and `check`.
   Never do a one-off extraction instead: with an adapter, every later sync runs without you.
 
+If the team works on branches, suggest `npx sigma-design merge-driver install` (it changes `.gitattributes` and
+this clone's git config, so ask first): git then merges Sigma files token by token and component by component.
+
 `init` also wrote the **rules** (a Sigma section in `AGENTS.md` / `CLAUDE.md`…) and the **project skills**
 (`.claude/skills/sigma-*`). After you change the setup (an adapter, components), run `npx sigma-design agents`
 to update them, then fill each skill's **Project notes** with what an agent needs that the config doesn't say

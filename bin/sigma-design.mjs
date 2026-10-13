@@ -102,6 +102,7 @@ function help() {
   npx sigma-design changelog [dir] [--file PATH]      what's new in the component libraries, as Markdown
   npx sigma-design check [dir]                       Sigma files are valid, and tokens and icons match the code
   npx sigma-design mcp [dir]                         the sync tools as an MCP server (stdio), for agents
+  npx sigma-design merge-driver install [dir]        git merges Sigma files token by token, component by component
 
 Sync tools (for people and agents; see skills/sigma-sync/SKILL.md):
   tokens import|diff|write|export, icons import|diff|write, changeset …, library build, pages build,

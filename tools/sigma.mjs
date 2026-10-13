@@ -25,18 +25,20 @@
 //   node tools/sigma.mjs comment list [project] [--all]
 //   node tools/sigma.mjs comment add [project] --file PATH --layer ID|NAME --text TEXT [--author NAME] [--reply-to ID]
 //   node tools/sigma.mjs comment resolve <id> [project] [--author NAME]
+//   node tools/sigma.mjs merge-driver install [project]                                     git: Sigma files merge item by item
+//   node tools/sigma.mjs merge-file <base> <ours> <theirs> [path]                          what git runs to merge one
 //
 // [project] is the folder with sigma.config.json (default: the current folder). Token commands work on
 // the config's "tokens" entries (all of them, or --entry N). --json prints machine-readable output.
 import { resolve, basename } from 'node:path';
-import { readFileSync, copyFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, copyFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { dirname, relative } from 'node:path';
 import { readProject, readText, exists, writeText, gitShow, removeFile, listFilesIn } from './lib/project.mjs';
 import { join } from 'node:path';
 import { iconsFromFiles, mergeIcons, iconChanges, iconFilePath, iconSVG, sameIcon, svgStyleOf } from '../src/icon-sync.js';
 import { parseSVGIcon } from '../src/icon-library.js';
-import { applyChanges, summarize, STATUSES, CHANGESET_DIR } from '../src/changesets.js';
+import { applyChanges, summarize, STATUSES, CHANGESET_DIR, mergeFiles } from '../src/changesets.js';
 import { buildComponent, buildPage, tokenIndex } from '../src/capture-to-sigma.js';
 import { componentDiff, formatComponentDiff } from '../src/component-diff.js';
 import { loadAdapter, adapterContext, Snapshot, changedLines } from './lib/adapters.mjs';
@@ -761,6 +763,55 @@ function readPullRequest(root, ref) {
   return { state, number: pr.number, mergedAt: pr.mergedAt || null };
 }
 
+// ---------- design-aware merging ----------
+// git's merge driver for Sigma files: merge-file %O %A %B %P (base, ours, theirs, path). Writes the merge into
+// ours; exits 1 when both sides changed the same token, icon, component or page (ours is kept for those).
+function mergeFile(basePath, oursPath, theirsPath, path) {
+  const read = (p) => {
+    const text = existsSync(p) ? readFileSync(p, 'utf8') : '';
+    if (!text.trim()) return null;
+    try {
+      return JSON.parse(text);
+    } catch {
+      return undefined; // not JSON (a conflicted file, say): leave it to git
+    }
+  };
+  const [base, ours, theirs] = [read(basePath), read(oursPath), read(theirsPath)];
+  const name = path || oursPath;
+  if (base === undefined || ours === undefined || theirs === undefined) {
+    process.stderr.write(`sigma: ${name} isn’t valid JSON on every side; resolve it by hand.\n`);
+    process.exit(1);
+  }
+  const { file, conflicts } = mergeFiles(name, base, ours, theirs);
+  if (file === null) {
+    process.stderr.write(`sigma: ${name} was deleted on one side and changed on the other; resolve it by hand.\n`);
+    process.exit(1);
+  }
+  writeFileSync(oursPath, formatProjectJSON(file));
+  if (conflicts.length) {
+    process.stderr.write(`sigma: ${name}: both sides changed ${conflicts.length} item${conflicts.length === 1 ? '' : 's'}; kept ours for: ${conflicts.map((c) => `${c.kind} ${c.name}`).join(', ')}. Everything else is merged. Open it in Sigma to check, then git add it.\n`);
+    process.exit(1);
+  }
+  process.exit(0);
+}
+
+// Set the merge driver up in the project's repository: .gitattributes and the repository's git config.
+function mergeDriverInstall(dir) {
+  const root = resolve(dir || '.');
+  const line = '*.sigma.json merge=sigma';
+  const attrs = join(root, '.gitattributes');
+  const text = existsSync(attrs) ? readFileSync(attrs, 'utf8') : '';
+  if (!text.split('\n').some((l) => l.trim() === line)) writeFileSync(attrs, `${text}${text && !text.endsWith('\n') ? '\n' : ''}${line}\n`);
+  const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  try {
+    git('config', 'merge.sigma.name', 'Sigma design-aware merge');
+    git('config', 'merge.sigma.driver', 'npx sigma-design merge-file %O %A %B %P');
+  } catch (err) {
+    fail(`couldn’t set the merge driver in git config (is ${root} in a git repository?): ${String(err.stderr || err.message).trim()}`);
+  }
+  out(`Sigma files now merge token by token, component by component: ${line} in .gitattributes (commit it), and merge.sigma.driver in this clone's git config (each clone runs this once).`);
+}
+
 function changesetSync(dir) {
   const root = resolve(dir || '.');
   const updated = [];
@@ -1362,6 +1413,8 @@ else if (cmd === 'components' && sub === 'write') componentsWrite(dir);
 else if (cmd === 'adapter' && sub === 'test') await adapterTest(dir);
 else if (cmd === 'report') report(sub);
 else if (cmd === 'changelog') changelog(sub);
+else if (cmd === 'merge-file') mergeFile(sub, dir, pos[3], pos[4]);
+else if (cmd === 'merge-driver' && sub === 'install') mergeDriverInstall(dir);
 else if (cmd === 'comment' && sub === 'list') commentList(dir);
 else if (cmd === 'comment' && sub === 'add') commentAdd(dir);
 else if (cmd === 'comment' && sub === 'resolve') commentResolve(dir, pos[3]);
@@ -1395,6 +1448,8 @@ else {
   node tools/sigma.mjs comment list [project] [--all]
   node tools/sigma.mjs comment add [project] --file PATH --layer ID|NAME --text TEXT [--author NAME] [--reply-to ID]
   node tools/sigma.mjs comment resolve <id> [project] [--author NAME]
+  node tools/sigma.mjs merge-driver install [project]
+  node tools/sigma.mjs merge-file <base> <ours> <theirs> [path]
 Add --json for machine-readable output. See skills/sigma-sync/SKILL.md.`);
   process.exit(cmd ? 2 : 0);
 }
