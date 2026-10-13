@@ -1,0 +1,13 @@
+Sigma
+https://github.com/liwanagtan/Sigma-Design
+Copyright 2026 liwanagtan and the Sigma contributors
+
+This product includes Sigma, licensed under the Apache License 2.0 with the "Commons Clause" License
+Condition v1.0 (see LICENSE): free to use, change and build with, but not to be sold as it is.
+
+If you use, change or redistribute Sigma, keep this notice (credit to Sigma) with it, as section 4(d) of
+the Apache License 2.0 requires.
+
+Third-party parts keep their own licenses, which the Commons Clause doesn't change:
+- Lucide icons (https://lucide.dev), ISC License, some derived from Feather (MIT): the full license text is
+  in icon-sets/lucide.json ("licenseText"), and src/sample-icons.js uses icons from the same set.

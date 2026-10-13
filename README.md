@@ -330,3 +330,10 @@ Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.
 | `src/home.js` | The files home page |
 
 Every node stores `x, y, w, h, rotation` relative to its parent and rotates about its center. All transforms go through `setWorldMatrix`, which turns a desired on-canvas matrix back into local properties. This is what lets moving, rotating and reparenting work at any nesting depth.
+
+## License
+
+Free to use, change and build with, as long as you don't sell Sigma itself and you credit it: the Apache
+License 2.0 with the Commons Clause (`LICENSE`). Keep the `NOTICE` file with any copy or derived work. Because
+selling it isn't allowed, Sigma is *source-available* rather than OSI "open source". Third-party parts keep
+their own licenses (Lucide's icons: ISC; see `NOTICE`).

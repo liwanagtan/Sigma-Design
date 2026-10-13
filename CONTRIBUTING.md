@@ -51,5 +51,6 @@ helps for anything visible). Keep one pull request to one piece of work.
 
 ## License
 
-Sigma doesn't have a license yet (`package.json` says `UNLICENSED`). The options are in the roadmap under
-"Open source". Until one is chosen, please ask before contributing anything substantial.
+Sigma is licensed under the Apache License 2.0 with the Commons Clause (`LICENSE`): anyone can use it, change
+it and build with it, but not sell Sigma itself, and copies and derived works keep the `NOTICE` file (credit to
+Sigma). Contributions are made under the same terms (section 5 of the Apache License).
