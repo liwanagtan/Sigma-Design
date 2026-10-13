@@ -191,7 +191,7 @@ function a11yBlock(n) {
     rows.push(field('Heading', `<select class="prop-input" data-a11y="heading" data-node="${esc(n.id)}"><option value="">Not a heading</option>${[1, 2, 3, 4, 5, 6].map((l) => `<option value="${l}" ${all.heading === l ? 'selected' : ''}>Heading ${l} (h${l})</option>`).join('')}</select>`));
   }
   if (n.type !== 'text' && n.type !== 'image') {
-    const auto = !own.role && role ? `Automatic: ${ROLES[role] || role}` : 'Automatic';
+    const auto = !own.role && role ? `${ROLES[role] || role} (auto)` : 'Automatic';
     rows.push(field('Role', `<select class="prop-input" data-a11y="role" data-node="${esc(n.id)}"><option value="">${esc(auto)}</option>${Object.entries(ROLES).map(([k, l]) => `<option value="${k}" ${own.role === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`));
     rows.push(field('Label', input('label', role && role !== 'none' ? 'From its text' : 'Accessible name')));
   }

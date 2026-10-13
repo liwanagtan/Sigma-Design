@@ -177,6 +177,14 @@
           "codeSyntax": { "web": "--color-red-600" },
           "groupId": "g1npxdl0srofay",
           "valuesByMode": { "primitives-default": "#DC2828" }
+        },
+        {
+          "id": "color-red-700",
+          "type": "color",
+          "name": "color/red/700",
+          "codeSyntax": { "web": "--color-red-700" },
+          "groupId": "g1npxdl0srofay",
+          "valuesByMode": { "primitives-default": "#BA1C1C" }
         }
       ]
     },
@@ -265,8 +273,8 @@
           "name": "danger",
           "codeSyntax": { "web": "--danger" },
           "valuesByMode": {
-            "semantic-dark": { "alias": "color-red-500" },
-            "semantic-light": { "alias": "color-red-500" }
+            "semantic-dark": { "alias": "color-red-600" },
+            "semantic-light": { "alias": "color-red-600" }
           }
         },
         {
@@ -276,8 +284,8 @@
           "codeSyntax": { "web": "--danger-hover" },
           "groupId": "g1c4h5341hwsfmo",
           "valuesByMode": {
-            "semantic-dark": { "alias": "color-red-600" },
-            "semantic-light": { "alias": "color-red-600" }
+            "semantic-dark": { "alias": "color-red-700" },
+            "semantic-light": { "alias": "color-red-700" }
           }
         }
       ]

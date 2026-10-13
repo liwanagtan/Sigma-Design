@@ -147,6 +147,7 @@ async function view(v) {
 // What changed between a version and the current state, rendered (visual change review).
 async function compare(v) {
   if (viewing) await backToCurrent();
+  toast('Comparing…');
   const doc = await loadVersionDoc(v.id);
   if (!doc) return toast('That version could not be loaded.');
   (await import('./visual-review.js')).compareVersion(doc, label(v));

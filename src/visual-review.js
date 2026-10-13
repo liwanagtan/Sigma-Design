@@ -5,8 +5,8 @@
 // Every top-level layer and every component variant is rendered as it is and as it would be (the update
 // accepted, or the older version) through store.withDocument, so nothing is opened or saved; whatever renders
 // differently is what changed. Renders are taken at the origin, so moving a frame on the canvas isn't a change.
-import { state, getNode, withDocument, walk, select, emit, pageOf, normalizeDocument } from './store.js';
-import { measureText } from './text.js';
+import { state, getNode, withDocument, walk, select, emit, pageOf } from './store.js';
+import { layOutDocument } from './lay-out.js';
 import { zoomToSelection } from './commands.js';
 import { nodeSVG, strokeOverhang, effectOverhang } from './render.js';
 import { modal } from './libraries.js';
@@ -53,20 +53,12 @@ export function renderAll(doc = state.doc) {
   return out;
 }
 
-// A document swapped in is laid out like an opened one: text measured once its fonts come from tokens (a saved
-// file leaves bound values out), then laid out again.
-function settle() {
-  normalizeDocument();
-  for (const pg of state.doc.pages) walk(pg.children, (n) => void (n.type === 'text' && measureText(n)));
-  normalizeDocument();
-}
-
 // Renders of components that aren't in a document (a publish's snapshot, which may leave out what tokens and
 // layout derive): on a page of a copy of this file, so tokens resolve and layouts apply as they do here.
 export function renderComponents(list, where, kind = 'component') {
   const doc = { ...structuredClone({ ...state.doc, pages: [] }), pages: [{ id: 'visual-review', name: where, children: structuredClone(list || []) }], currentPageId: 'visual-review' };
   return withDocument(doc, () => {
-    settle();
+    layOutDocument();
     return new Map([...renderAll()].filter(([, r]) => r.kind === 'component').map(([id, r]) => [id, { ...r, kind }]));
   });
 }
@@ -88,14 +80,14 @@ export function visualChanges(before, after) {
 export function renderAfter(apply) {
   return withDocument(structuredClone(state.doc), () => {
     apply();
-    settle();
+    layOutDocument();
     return renderAll();
   });
 }
 
 /** The renders of another document (an older version). */
 export const renderOther = (doc) => withDocument(structuredClone(doc), () => {
-  settle();
+  layOutDocument();
   return renderAll();
 });
 

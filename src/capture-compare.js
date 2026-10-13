@@ -1,11 +1,8 @@
 // Check a library built from captures against the captures (Part E, Phase 28): lay each component out in
 // Sigma (text measured, auto layout applied) and compare every layer's size and position with the real
 // render. Runs in the browser, with the project server: tools/capture/compare.html shows the report.
-import { state, reindex, walk, worldBounds, fixGroups } from './store.js';
-import { syncInstances } from './components.js';
-import { resolveVariables, normalizeTokenGroups } from './variables.js';
-import { applyLayouts } from './layout.js';
-import { measureText } from './text.js';
+import { walk, worldBounds, withDocument } from './store.js';
+import { layOutDocument } from './lay-out.js';
 import { fromProjectFile } from './project-format.js';
 import { compareBoxes } from './capture-to-sigma.js';
 import { parseVariantName } from './components.js';
@@ -36,27 +33,10 @@ function boxes(node, origin) {
 async function withLaidOut(path, files, fn) {
   const ids = Object.fromEntries(Object.keys(files).map((p, i) => [p, `cmp-${i}`]));
   const { doc } = fromProjectFile(files[path], { path, resolve: (p) => (files[p] ? { fileId: ids[p], file: files[p] } : null) });
-  const saved = { doc: state.doc, selection: state.selection };
-  try {
-    state.doc = doc;
-    state.selection = [];
-    reindex();
-    for (let i = 0; i < 2; i++) {
-      normalizeTokenGroups();
-      syncInstances();
-      resolveVariables();
-      // Measured once fonts come from their tokens (a saved file leaves bound values out).
-      for (const pg of doc.pages) walk(pg.children, (n) => void (n.type === 'text' && measureText(n)));
-      fixGroups();
-      applyLayouts();
-      fixGroups();
-    }
-    return await fn(doc);
-  } finally {
-    state.doc = saved.doc;
-    state.selection = saved.selection;
-    reindex();
-  }
+  return withDocument(doc, (d) => {
+    layOutDocument();
+    return fn(d);
+  });
 }
 async function projectFiles() {
   const project = await (await fetch('/api/project', { cache: 'no-store' })).json();

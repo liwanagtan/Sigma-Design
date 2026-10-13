@@ -511,19 +511,33 @@ export function loadDocument(doc, views = {}) {
 }
 
 // Run fn against another document without opening it (visual change review renders an update or an older
-// version this way): nothing is emitted, saved or put on the undo stack, and the open document is put back as is.
+// version this way; proposals and capture comparisons lay out project files): nothing is emitted, saved or put
+// on the undo stack, and the open document, its selection and text editing are put back as they were. An
+// async fn keeps the other document until it settles. See lay-out.js to lay the document out first.
 export function withDocument(doc, fn) {
-  const saved = state.doc;
+  const saved = { doc: state.doc, selection: state.selection, editing: state.editingTextId };
+  const restore = () => {
+    state.doc = saved.doc;
+    state.selection = saved.selection;
+    state.editingTextId = saved.editing;
+    reindex();
+    normalizeDocument();
+  };
+  let result;
   try {
     state.doc = migrateDocument(doc);
+    state.selection = [];
+    state.editingTextId = null;
     reindex();
     normalizeDocument();
-    return fn();
-  } finally {
-    state.doc = saved;
-    reindex();
-    normalizeDocument();
+    result = fn(state.doc);
+  } catch (err) {
+    restore();
+    throw err;
   }
+  if (result && typeof result.then === 'function') return result.finally(restore);
+  restore();
+  return result;
 }
 
 export function unloadDocument() {

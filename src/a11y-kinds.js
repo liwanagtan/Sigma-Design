@@ -16,11 +16,13 @@ export function issuesMarkdown(issues, { max = 30 } = {}) {
   const groups = new Map();
   for (const i of issues) {
     const g = groups.get(i.group);
-    if (g) g.count++;
-    else groups.set(i.group, { ...i, count: 1 });
+    if (g) {
+      g.count++;
+      if (!g.frames.includes(i.frame)) g.frames.push(i.frame);
+    } else groups.set(i.group, { ...i, count: 1, frames: [i.frame] });
   }
   const list = [...groups.values()].sort((a, b) => (a.severity === b.severity ? 0 : a.severity === 'error' ? -1 : 1));
-  const lines = list.slice(0, max).map((i) => `- ${i.severity === 'error' ? '❌' : '⚠️'} **${KINDS[i.kind].label}**: _${i.name}_ in ${i.frame}: ${i.message}${i.count > 1 ? ` (×${i.count})` : ''}`);
+  const lines = list.slice(0, max).map((i) => `- ${i.severity === 'error' ? '❌' : '⚠️'} **${KINDS[i.kind].label}**: _${i.name}_ in ${i.frames.length > 2 ? `${i.frames.length} frames` : i.frames.join(' and ')}: ${i.message}${i.count > 1 ? ` (×${i.count})` : ''}`);
   if (list.length > max) lines.push(`- …and ${list.length - max} more`);
   return lines;
 }
