@@ -34,6 +34,8 @@ jobs:
       - run: npm install --no-save playwright@1.64.0
       - run: npx playwright install --with-deps chromium
       - run: node tools/test/run-browser-tests.mjs
+      # Render parity: Sigma lays the example's library and pages out the same as its code renders them.
+      - run: node tools/test/run-render-parity.mjs examples/css-app
 
   sigma:
     name: Sigma files match the code

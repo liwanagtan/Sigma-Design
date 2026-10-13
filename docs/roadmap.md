@@ -711,7 +711,7 @@ Unchanged from Phase 15 above: code names per platform for tokens, components an
 ### Later
 
 - **Responsive breakpoints:** frames that change layout by width. This reaches into `layout.js` and `render.js`, so it waits until sync works end to end.
-- **Render parity:** routine comparison of Sigma's SVG render with the real CSS render, flagging drift.
+- ~~**Render parity:**~~ Done: `tools/capture/parity.html` captures every component library in `sigma.config.json` from its components page and compares Sigma's layout of each (and its pages) with them; `node tools/test/run-render-parity.mjs <project>` runs it headless, and CI runs it on `examples/css-app`, so drift fails the build.
 - ~~**Accessibility checks**~~ Done (Part D, Phase 16), and in the PR: Propose change runs the check, and the pull request body lists what it found.
 - **More integrations:** GitHub Issues, GitLab (merge requests with `glab`, and issues), Linear and Jira are done (`workflow.git`, `workflow.tracker`). Bitbucket and Azure DevOps are left.
 - **CLI and MCP server,** if teams want deterministic sync in CI or agents without a terminal. Built from the steps the skill repeats.

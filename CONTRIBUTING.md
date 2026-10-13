@@ -21,7 +21,9 @@ ES modules need a server.
 - **The examples:** `node bin/sigma-design.mjs check examples/<name>` for each project in `examples/`.
 
 CI (`.github/workflows/ci.yml`) runs all three: Node 20 and 22, the browser tests in headless Chromium, and
-`check` on every example. A pull request needs them green.
+`check` on every example. It also checks render parity: `node tools/test/run-render-parity.mjs examples/css-app`
+captures the example's components as its code renders them and compares Sigma's layout with them. A pull
+request needs them green.
 
 Add tests with your change: browser tests in `tests/*.test.js` (registered in `tests/index.html`), Node tests
 in `tools/test/*.test.mjs`.
