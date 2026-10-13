@@ -44,6 +44,8 @@ export function layerCSS(n) {
   for (const [k, prop] of [['minW', 'min-width'], ['maxW', 'max-width'], ['minH', 'min-height'], ['maxH', 'max-height']]) {
     if (n[k] !== undefined && n[k] !== null) add(prop, tok(k, px(n[k])));
   }
+  // Its own text direction (the layers inside follow it, as in CSS).
+  if (n.dir === 'rtl' || n.dir === 'ltr') add('direction', n.dir);
   // Auto layout
   if (isAutoLayout(n)) {
     const L = n.layout;

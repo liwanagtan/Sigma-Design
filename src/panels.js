@@ -9,7 +9,7 @@ import {
   viewportSize, sortByZ, toggleVisible, toggleLocked, addAutoLayout, removeAutoLayout,
   placeInstance, resetSelectionOverrides,
 } from './commands.js';
-import { isAutoLayout, getSizing } from './layout.js';
+import { isAutoLayout, getSizing, directionOf } from './layout.js';
 import {
   isInsideInstance, owningInstance, canPlaceInside, listComponents, overrideCount, defaultVariant, setInstanceProp, componentMatches,
   isDeprecated, mainComponentOf,
@@ -1192,17 +1192,25 @@ function autoLayoutSection(nodes) {
   const dir = [['vertical', 'alVertical', 'Vertical layout'], ['horizontal', 'alHorizontal', 'Horizontal layout']]
     .map(([m, i, tip]) => `<button class="icon-btn${mode === m ? ' on' : ''}" data-al-mode="${m}" title="${tip}">${icons[i]}</button>`).join('');
   const POS = ['start', 'center', 'end'];
+  // Right to left: start is the right edge, so the grid's columns run from the right.
+  const textDir = common(nodes, directionOf);
+  const rtl = textDir === 'rtl';
+  const side = (c) => (c === 'center' ? 'center' : (c === 'start') !== rtl ? 'left' : 'right');
   let cells = '';
   for (const r of POS) {
-    for (const c of POS) {
+    for (const c of rtl ? [...POS].reverse() : POS) {
       const p = horiz ? c : r, q = horiz ? r : c; // primary / counter position of this cell
       const on = mode !== MIXED && alignC === q && (spacing === 'auto' || alignP === p);
-      cells += `<button class="al-cell${on ? ' on' : ''}" data-al-align="${r},${c}" title="Align ${r === 'center' ? 'middle' : r === 'start' ? 'top' : 'bottom'} ${c === 'start' ? 'left' : c === 'end' ? 'right' : 'center'}"><span></span></button>`;
+      cells += `<button class="al-cell${on ? ' on' : ''}" data-al-align="${r},${c}" title="Align ${r === 'center' ? 'middle' : r === 'start' ? 'top' : 'bottom'} ${side(c)}"><span></span></button>`;
     }
   }
+  const inherited = nodes.every((n) => n.dir !== 'rtl' && n.dir !== 'ltr') && textDir === 'rtl';
+  const dirSeg = [['ltr', 'Left to right'], ['rtl', 'Right to left']]
+    .map(([d, tip]) => `<button class="icon-btn al-dir${textDir === d ? ' on' : ''}" data-al-dir="${d}" title="${tip}${inherited && d === 'rtl' ? ' (from a frame it’s in)' : ''}">${d.toUpperCase()}</button>`).join('');
   const body = `<div class="grid2"><div class="seg">${dir}</div>${numField('gap', '', nodes, { icon: horiz ? icons.gapH : icons.gapV })}</div>` +
     `<div class="al-mid"><div class="al-grid${mode === MIXED ? '' : ` ${mode}`}${spacing === 'auto' ? ' between' : ''}">${cells}</div>` +
-    `<div class="al-fields">${numField('padH', '', nodes, { icon: icons.padH })}${numField('padV', '', nodes, { icon: icons.padV })}</div></div>`;
+    `<div class="al-fields">${numField('padH', '', nodes, { icon: icons.padH })}${numField('padV', '', nodes, { icon: icons.padV })}</div></div>` +
+    `<div class="al-dir-row"><span class="muted">Direction</span><div class="seg">${dirSeg}</div></div>`;
   return section('Auto layout', body, fromMain ? '' : `<button class="icon-btn" data-action="remove-al" title="Remove auto layout  ⌥⇧A">${icons.minus}</button>`);
 }
 
@@ -1582,6 +1590,18 @@ function initProps() {
     if (b.dataset.effectAct === 'toggle') return updateEffect(+b.dataset.effect, (fx) => void (fx.visible = fx.visible === false), { field: 'visible' });
     if (b.dataset.effectAct === 'remove') return removeEffect(+b.dataset.effect);
     if (b.dataset.alMode) return setProps({ 'layout.mode': b.dataset.alMode });
+    if (b.dataset.alDir) {
+      // The same as the frame it's in: no setting of its own, so it follows that frame.
+      for (const n of nodes) {
+        const parent = getParent(n.id);
+        const around = parent ? directionOf(parent) : 'ltr';
+        editNode(n, ['dir'], () => {
+          if (b.dataset.alDir === around) delete n.dir;
+          else n.dir = b.dataset.alDir;
+        });
+      }
+      return commit();
+    }
     if (b.dataset.alAlign) {
       const [r, c] = b.dataset.alAlign.split(',');
       for (const n of nodes) {

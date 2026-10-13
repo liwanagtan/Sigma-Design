@@ -293,6 +293,7 @@ export function validateFile(file, { path = '(file)', files = {} } = {}) {
         if (!def) error(`${where}.propRefs.${prop}`, `uses property ${pid}, which “${comp.node.name}” doesn’t define`);
         else if (PROP_TYPES[def.type] !== prop) error(`${where}.propRefs.${prop}`, `property “${def.name}” is ${def.type}, which sets ${PROP_TYPES[def.type]}, not ${prop}`);
       }
+      if (n.dir !== undefined && n.dir !== 'rtl' && n.dir !== 'ltr') error(`${where}.dir`, 'should be "rtl" or "ltr" (left out: the direction of the frame it’s in)');
       if (n.a11y !== undefined) {
         const a = n.a11y;
         if (!a || typeof a !== 'object' || Array.isArray(a)) error(`${where}.a11y`, 'should be an object of accessibility annotations');
