@@ -2,7 +2,8 @@
 // sigma-design: Sigma, installed in a project (Part F, Phase 32).
 //
 //   npx sigma-design init [dir] [--dry-run]                  set Sigma up in a project (once)
-//   npx sigma-design dev [dir] [--port N] [--no-open]         Sigma on this project (npm run sigma)
+//   npx sigma-design dev [dir] [--port N] [--no-open] [--no-sync]   Sigma on this project (npm run sigma), with
+//                                                             live sync: the code and Sigma follow each other
 //   npx sigma-design standalone [--port N] [--no-open]        Sigma on its own: a design tool, files in the browser
 //   npx sigma-design agents [dir] [--dry-run]                 rules and project skills for the repo's coding agents
 //   npx sigma-design <command> …                              the sync tools: check, tokens, icons, changeset,
@@ -14,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { startServer, EDITOR_ROOT } from '../tools/server.mjs';
 import { runInit, isSetUp } from '../tools/init.mjs';
 import { runAgents } from '../tools/agents.mjs';
+import { startLiveSync } from '../tools/live-sync.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(join(here, '..', 'package.json'), 'utf8'));
@@ -45,11 +47,11 @@ function openBrowser(url) {
 async function serve({ project }) {
   const port = Number(value('port') || 6200);
   if (!Number.isInteger(port) || port <= 0) fail('--port should be a number');
-  const { url } = await startServer({
-    port, strictPort: !!value('port'), project,
-    log: (line) => console.log(`  ${new Date().toLocaleTimeString()}  ${line}`),
-  });
-  console.log(`Sigma ${pkg.version} running at ${url}${project ? `  (project: ${project})` : '  (standalone)'}`);
+  const log = (line) => console.log(`  ${new Date().toLocaleTimeString()}  ${line}`);
+  // In a project, the code and Sigma follow each other while it runs (--no-sync to turn that off).
+  const sync = project && !flag('no-sync') ? startLiveSync({ root: project, log }) : null;
+  const { url } = await startServer({ port, strictPort: !!value('port'), project, log, afterSave: sync?.afterSave });
+  console.log(`Sigma ${pkg.version} running at ${url}${project ? `  (project: ${project}${sync ? ', live sync on' : ''})` : '  (standalone)'}`);
   console.log('Ctrl+C to stop.');
   if (!flag('no-open')) openBrowser(url);
 }

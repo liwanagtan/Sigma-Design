@@ -9,7 +9,8 @@ description: css-app's design tokens and icons in Sigma: where they are, how the
 - **.sigma/tokens/acme.sigma.json**: from `src/styles/tokens.css` (css-variables); modes Light, Dark (read and written by Sigma itself).
 - **.sigma/icons/acme-icons.sigma.json**: from `src/assets/icons` (svg).
 
-- **Code → Sigma:** `npx sigma-design tokens import` (and `icons import`), then `npx sigma-design check`.
+- **While Sigma runs** (`npm run sigma`), live sync does both directions: code edits are imported within a second, and a save in Sigma writes the code.
+- **Code → Sigma** (Sigma not running): `npx sigma-design tokens import` (and `icons import`), then `npx sigma-design check`.
 - **Sigma → code:** `npx sigma-design tokens diff` shows what designers changed; `npx sigma-design tokens write` (and `icons write`) writes it.
 
 Guide: `../../skills/sigma-sync/SKILL.md` (sections 2–4), `../../skills/sigma-sync/reference/tokens.md`, `icons.md`, `adapters.md`.

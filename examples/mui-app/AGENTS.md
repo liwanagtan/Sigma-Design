@@ -7,7 +7,7 @@ This project's design system is also in [Sigma](https://www.npmjs.com/package/si
 files and `sigma.config.json` says how they map to the code. Designers change tokens, icons and components
 in Sigma (`npm run sigma`); the code follows.
 
-- **Code is the truth for design tokens and icons** (`src/theme.js` (js-theme); `src/icons`). After changing them, run `npx sigma-design tokens import` / `icons import` and `npx sigma-design check` (it must pass).
+- **Code is the truth for design tokens and icons** (`src/theme.js` (js-theme); `src/icons`). While Sigma runs (`npm run sigma`) it follows them by itself; otherwise, after changing them, run `npx sigma-design tokens import` / `icons import`. Either way, `npx sigma-design check` must pass.
 - **Never edit `.sigma/**/*.sigma.json` by hand:** use the `sigma-design` commands, which keep ids and diffs small.
 - **Adapters** (`.sigma/adapters/tokens.mjs`, `.sigma/adapters/icons.mjs`) are how Sigma reads and writes this project's code. If you change how that code is written, update the adapter and run `npx sigma-design adapter test`.
 - **Components** aren't in Sigma yet: the `sigma-components` skill says how to bring them in.
