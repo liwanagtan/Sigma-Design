@@ -1,6 +1,14 @@
 # Sigma roadmap
 
-Status: **Phases 1–14, Part E (Phases 20–30) and Part F (Phases 31–35) are done.** Part D's Phases 16–19 are done too (accessibility, the use report, running the system, visual change review; Phase 15, code handoff, was done in Part E). What's left: Part D's "Later" list, "Later (needs a backend)" in Part C, and "Follow-ups" (drawing icons).
+Status: **Every phase is done: Phases 1–14, Part D (15–19), Part E (20–30) and Part F (31–35)**, and the small and medium items from the "Later" and "Follow-ups" lists. Drawing icons is no longer planned (icons come from icon libraries).
+
+**What's next, in order:**
+
+1. **Finalize the project:** what's still open is plugins and automation (Part D, "Later": large, needs an API design first) and what needs a backend (real sharing in Part C; the hosted team service in Part E). Add the license files (see "Open source").
+2. **Publish to npm:** claim `sigma-design` and publish the package (Phase 32 made it ready).
+3. **Pilot teams:** two or three teams, after npm, to shape the workflow around how they actually work.
+
+The repository's settings are done: auto-merge is on, and `main` is protected (the four CI checks must pass to merge a pull request; no force pushes or deleting it).
 
 ## Scope
 
@@ -428,7 +436,6 @@ Things noticed while building, not yet done:
   - **Icon property:** instances choose an icon, optionally from some groups only. Component libraries bring the Sigma Icons files they use.
   - **Lucide:** **+ Sigma Icons ▾ → Lucide** adds the whole set (`tools/build-lucide.py` builds `icon-sets/lucide.json` from a pinned version).
   - **Welcome to Sigma:** a sample Sigma Icons file and a tenth guide page, Sigma Icons.
-- **Drawing icons (later).** A pen tool, vector editing and boolean shapes (union, subtract, intersect, exclude), so icons can be drawn in Sigma. Not needed yet: icons come from free icon libraries for now. Pick this up once the rest of Sigma is set up.
 
 # Part D: Design and development (later)
 
@@ -722,16 +729,17 @@ Unchanged from Phase 15 above: code names per platform for tokens, components an
 
 ## Open source
 
-- **What's open:** the editor, the file schema, the skills and the validator.
-- **License:** a permissive license (MIT or Apache 2.0) for the schema, skills and validator, to make adoption easy. For the editor and any server, consider AGPL if closed hosted forks are a concern; otherwise the same permissive license. Decide before the first public release.
-- **Before going public:** ~~a CONTRIBUTING guide~~ (done: `CONTRIBUTING.md`), ~~the schema docs from Phase 20~~ (done: `docs/schema/README.md`), and ~~a check that the name Sigma and the positioning don't lean on Figma's trademarks~~ (done as a project check, not legal advice: the README's opening line called Sigma "a Figma-style design canvas" and the npm keywords had `figma-alternative`; both now describe Sigma on its own terms. What's left are factual comparisons that help people coming from Figma ("Sigma's name for Figma's variables", "works the way it does in Figma") and code comments. No Figma logos, icons or assets are used. Have a lawyer confirm before the first public release, with the license).
+- **What's open:** the editor, the file schema, the skills and the validator: anyone can read, use and change them.
+- **License (decided):** everyone can use Sigma, change it and build with it, as long as they **don't sell Sigma itself as it is** and they **credit Sigma** (attribution). The fitting license is **Apache 2.0 with the Commons Clause**: Apache 2.0 requires keeping Sigma's `NOTICE` file (the credit) in any copy or derived work, and the Commons Clause forbids selling the software itself. With that restriction it's *source-available* rather than OSI "open source", so say "source-available" (or "free to use") where the difference matters. To do: add `LICENSE` (Apache 2.0 + Commons Clause) and `NOTICE` ("This product includes Sigma, https://github.com/liwanagtan/Sigma-Design"), and set `"license"` in `package.json` (now `UNLICENSED`) before publishing to npm.
+- **Figma:** Sigma is its own design tool, inspired by Figma; it isn't reverse-engineered from Figma and uses none of its code, assets or file format. Comparisons to Figma in the docs only help people who know it.
+- **Before going public:** ~~a CONTRIBUTING guide~~ (done: `CONTRIBUTING.md`), ~~the schema docs from Phase 20~~ (done: `docs/schema/README.md`), and ~~a check that the name Sigma and the positioning don't lean on Figma's trademarks~~ (done as a project check, not legal advice: the README's opening line called Sigma "a Figma-style design canvas" and the npm keywords had `figma-alternative`; both now describe Sigma on its own terms. What's left are factual comparisons that help people coming from Figma ("Sigma's name for Figma's variables", "works the way it does in Figma") and code comments. No Figma logos, icons or assets are used).
 
 ## Risks and open questions
 
 - ~~**Agent consistency:**~~ Addressed: the steps agents repeat are code now (`npx sigma-design` commands, adapters that run without an agent, the MCP server), and CI checks the result (`check`, render parity).
 - ~~**Rendering drift:**~~ Addressed: Check against code (Phase 35) and render parity in CI compare Sigma's layout with the code's render.
 - **Scope:** Phases 28–30 are each larger than any phase so far. Ship Phases 20–23 on a real project before starting them.
-- **Pilot teams:** find two or three before Phase 26, and shape the workflow around how they actually work.
+- **Pilot teams:** find two or three after publishing to npm (see "What's next" at the top), and shape the workflow around how they actually work.
 - ~~**Derived data in files (Phase 20):**~~ Decided (16 and 17 above): files store a lot that Sigma can rebuild: instances' children, the resolved values of token-bound properties, and copies of the libraries a file links (tokens, components, icons). Written to a repo as-is, one token change rewrites thousands of lines across many files. Diff-friendly saving should leave derived data out and rebuild it on load.
 - ~~**Publish vs git (decide before Phase 21):**~~ Decided (16 above): with the repo as the source of truth, a design file could point at `.sigma/tokens/core.sigma.json` by path and use whatever version is checked out, with git doing the versioning. That drops the library copies (most of the point above). Decide what Publish and Accept update mean inside a project.
 - ~~**A validator that runs in Node (Phase 20):**~~ Resolved: `src/validate.js` runs in Node and the browser (`npx sigma-design validate | check`). normalizing measures text with a canvas, icon import uses `DOMParser`, and `files.js` needs IndexedDB and BroadcastChannel. The validator needs a DOM-free core (schema, migrations, token resolution); layout and text measurement stay browser-only or are skipped when validating.
@@ -935,4 +943,4 @@ the browser.
 - **Adapters (Phase 33):** code an agent writes runs on every save. It stays in the repo and is reviewed like
   any code; Sigma runs it only from the project it's in, checks every write by reading back, and never
   writes outside the token and icon sources the config names.
-- **The package name:** `sigma-design` is free on npm today; it should be claimed when Phase 32 is ready.
+- **The package name:** `sigma-design` was free on npm when Phase 32 was planned; claim it when the project is finalized (see "What's next" at the top).
