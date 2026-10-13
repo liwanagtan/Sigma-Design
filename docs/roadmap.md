@@ -1,10 +1,10 @@
 # Sigma roadmap
 
-Status: **Every phase is done: Phases 1–14, Part D (15–19), Part E (20–30), Part F (31–35) and Part G (36, Optics)**, and the small and medium items from the "Later" and "Follow-ups" lists. Drawing icons is no longer planned (icons come from icon libraries).
+Status: **Every phase is done: Phases 1–14, Part D (15–19), Part E (20–30), Part F (31–35) and Part G (36–37, Optics)**, and the small and medium items from the "Later" and "Follow-ups" lists. Drawing icons is no longer planned (icons come from icon libraries).
 
 **What's next, in order:**
 
-1. **Finalize the project:** Optics is in (Phase 36), as files of your own. What's still open: plugins and automation (Part D, "Later": large, needs an API design first) and what needs a backend (real sharing in Part C; the hosted team service in Part E). The license files are in (see "Open source").
+1. **Finalize the project:** Optics is in (Phases 36–37: every Polaris component, a page each), as files of your own. What's still open: plugins and automation (Part D, "Later": large, needs an API design first) and what needs a backend (real sharing in Part C; the hosted team service in Part E). The license files are in (see "Open source").
 2. **Publish to npm:** claim `sigma-design` and publish the package (Phase 32 made it ready).
 3. **Pilot teams:** two or three teams, after npm, to shape the workflow around how they actually work.
 
@@ -409,7 +409,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 19: Visual change review (Part D)
 - [x] Phase 16: Accessibility checks and annotations (Part D; done after Phase 19)
 - [x] Phase 36: Optics, a working design system inspired by Polaris (Part G)
-- [ ] Phase 37: Optics Components: every Polaris component, a page each (Part G)
+- [x] Phase 37: Optics Components: every Polaris component, a page each (Part G)
 
 ## Follow-ups
 
@@ -1040,6 +1040,24 @@ Overview page lists them all by category.
   - Typography and content: Chip, Heading, Number, Paragraph, Text
   - Lists and tables: Listbox, Option list, Resource item, Resource list, Data table, Index table
   - Navigation: Tabs, Pagination, Navigation, Top bar, Fullscreen bar
-  - Utilities: Collapsible, Contextual save bar, Frame, Loading, Toast
+  - Utilities: Collapsible, Contextual save bar, App frame (Polaris's Frame), Loading, Toast
 - **Same bar as Phase 36:** built from Optics Tokens and Optics Icons, documented and Ready, no one-off values, no
   accessibility errors, nothing overlapping; `examples/optics/` rebuilt.
+- **What shipped:** Optics Components has 87 pages: an **Overview** (every component by category, with what it's
+  for) and a page per component. Each page is one sheet: the category, name and purpose; the component (a set
+  with every variant and state, or a single component, and Tabs also has its Tab); its guidelines (usage, what
+  it's not for, keyboard and screen readers); and its usage, a Do and a Don't side by side, picked in its docs.
+  The components are built by `src/optics/`, a module per category (content, actions, feedback, forms, layout,
+  navigation, lists, overlays and utilities) on shared building blocks (`kit.js`: token-bound layers, variant
+  grids, a registry), in dependency order, so the bigger ones are made of the smaller ones' instances: fields
+  share one field set (label, input with what goes before and after the value, help text that turns into the
+  error), Date picker and Pagination use Button (icon only), Index table uses Index filters, Checkbox, Badge and
+  Pagination, and App frame is Top bar, Navigation and Page. Polaris's Frame is **App frame**, since a plain
+  “Frame” reads as an unnamed layer. Checkbox gained a Show label property (hidden in tables, where its label
+  stays the accessible name), Icon an `iconOf` helper, so examples outside components use Icon instances (icon
+  layers belong in main components). The docs editor now offers frames inside an **Examples** frame, and examples
+  already picked wherever they are, as Do and Don't examples. `tests/optics.test.js` checks the pages (87, each with its
+  component, one Do and one Don't), the Overview's categories, docs, readiness, audit, token share, accessibility
+  and that `OPTICS_ICON_NAMES` lists every icon the components use (39). `examples/optics/` was rebuilt (0 errors, 0 warnings);
+  files made by an earlier Sigma keep their 15 components, and Sigma Tokens ▾ → Add Optics design system adds the
+  new set. Verified in the editor: the Overview, Toast, Tooltip, App frame and Index table pages.

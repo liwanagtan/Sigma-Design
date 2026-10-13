@@ -163,11 +163,19 @@ export function openComponentMatrix() {
   render();
 }
 
-// Frames on the file's pages that can be Do / Don't examples (not components).
+// Frames that can be Do / Don't examples (not components): those on the file's pages, those in a frame named
+// Examples (as on Optics' component pages), and any a component's docs already picked.
 function exampleFrames() {
   const out = [];
+  const picked = new Set();
+  for (const pg of state.doc.pages) walk(pg.children, (n) => void (n.docs && [...(n.docs.dos || []), ...(n.docs.donts || [])].forEach((id) => picked.add(id))));
+  const isFrame = (n) => (n.type === 'frame' || n.type === 'group') && n.visible !== false;
   for (const pg of state.doc.pages) {
-    for (const n of pg.children) if ((n.type === 'frame' || n.type === 'group') && n.visible !== false) out.push({ id: n.id, label: `${n.name} (${pg.name})` });
+    for (const n of pg.children) if (isFrame(n)) out.push({ id: n.id, label: `${n.name} (${pg.name})` });
+    walk(pg.children, (n) => {
+      if (pg.children.includes(n) || !isFrame(n)) return;
+      if (picked.has(n.id) || getParent(n.id)?.name === 'Examples') out.push({ id: n.id, label: `${n.name} (${pg.name})` });
+    });
   }
   return out;
 }
