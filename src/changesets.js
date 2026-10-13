@@ -94,6 +94,29 @@ export function projectChanges(base, current) {
   return items.sort((x, y) => x.file.localeCompare(y.file) || order[x.kind] - order[y.kind]);
 }
 
+// ---------- merging ----------
+/**
+ * A three-way merge of one Sigma file (design-aware merging, for git's merge driver): their changes since
+ * `base` are applied onto `ours`, token by token, icon by icon, component by component (a page's own content
+ * is one item). An item both sides changed differently is a conflict: ours is kept, and it's listed.
+ * Returns { file (null: deleted), conflicts: [{ kind, id, name }] }.
+ */
+export function mergeFiles(path, base, ours, theirs) {
+  const mine = projectChanges({ [path]: base }, { [path]: ours });
+  const yours = projectChanges({ [path]: base }, { [path]: theirs });
+  const byKey = new Map(mine.map((i) => [i.key, i]));
+  const conflicts = [];
+  const take = yours.filter((t) => {
+    const m = byKey.get(t.key);
+    if (!m) return true;
+    if (!same(m.after, t.after)) conflicts.push({ kind: t.kind, id: t.id, name: t.name });
+    return false; // the same change on both sides, or a conflict (ours stays)
+  });
+  if (!take.length) return { file: ours, conflicts };
+  const merged = applyChanges({ [path]: ours }, take);
+  return { file: path in merged ? merged[path] : ours, conflicts };
+}
+
 // Changes not already in an open changeset (one that isn't merged or closed) with the same result.
 export function unproposed(items, changesets = []) {
   const open = changesets.filter((c) => c.status !== 'merged' && c.status !== 'closed');

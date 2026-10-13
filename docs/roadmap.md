@@ -716,7 +716,7 @@ Unchanged from Phase 15 above: code names per platform for tokens, components an
 - **More integrations:** GitHub Issues, GitLab (merge requests with `glab`, and issues), Azure DevOps pull requests (`az repos`), Bitbucket pull requests (its API, with a token from `BITBUCKET_TOKEN`), Linear and Jira are done (`workflow.git`, `workflow.tracker`).
 - ~~**CLI and MCP server**~~ Done: the command line (`npx sigma-design …`, Phases 22–35) runs every sync step, CI runs `check` and render parity, and `npx sigma-design mcp` serves the same steps as MCP tools for agents without a terminal (`tools/mcp.mjs`).
 - **Hosted team service:** a GitHub App so designers without git can propose changes, plus sign-in, permissions and audit logs for mature teams.
-- **Design-aware merging** of Sigma files changed on two branches.
+- ~~**Design-aware merging**~~ Done: `npx sigma-design merge-driver install` sets git's merge driver for `*.sigma.json`: their changes go onto ours token by token, icon by icon, component by component (a page's own content is one item); an item both sides changed differently keeps ours, is listed, and stops the merge for a person to check in Sigma.
 - **Monorepos and shared packages:** one design system package used by several apps on different versions.
 - ~~**AI data policy:**~~ Done: `docs/data-and-ai.md`. Sigma calls no model; teams choose their model or provider by choosing their coding agent, and the doc says what the agent reads and what leaves through the workflow.
 
