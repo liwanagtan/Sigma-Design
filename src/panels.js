@@ -204,6 +204,30 @@ function initPages() {
     }
     switchPage(row.dataset.page);
   });
+  // Right-click: rename, mark for handoff (the design system use report can count only those pages), delete.
+  list.addEventListener('contextmenu', (e) => {
+    const row = e.target.closest('[data-page]');
+    if (!row) return;
+    e.preventDefault();
+    const pg = state.doc.pages.find((p) => p.id === row.dataset.page);
+    showContextMenu(e.clientX, e.clientY, [
+      { label: 'Rename', action: () => inlineRename(row.querySelector('.name'), pg.name, (name) => {
+        pg.name = name;
+        commit();
+      }) },
+      { label: pg.handoff ? 'Unmark for handoff' : 'Mark for handoff', action: () => {
+        if (pg.handoff) delete pg.handoff;
+        else pg.handoff = true;
+        commit();
+      } },
+      ...(state.doc.pages.length > 1 ? ['-', { label: 'Delete page', action: () => {
+        if (!confirm(`Delete page “${pg.name}”?`)) return;
+        state.doc.pages = state.doc.pages.filter((p) => p !== pg);
+        if (state.doc.currentPageId === pg.id) switchPage(state.doc.pages[0].id);
+        commit();
+      } }] : []),
+    ]);
+  });
   list.addEventListener('dblclick', (e) => {
     const row = e.target.closest('[data-page]');
     if (!row) return;
@@ -239,6 +263,7 @@ export function renderPages() {
   list.innerHTML = state.doc.pages.map((p) =>
     `<div class="page-row${p.id === page().id ? ' active' : ''}" data-page="${p.id}">` +
     `<span class="check">${p.id === page().id ? '✓' : ''}</span><span class="name">${esc(p.name)}</span>` +
+    (p.handoff ? '<span class="kind-badge handoff-badge" title="Marked for handoff">Handoff</span>' : '') +
     (many ? `<button class="icon-btn row-btn" data-del title="Delete page">${icons.close}</button>` : '') + '</div>').join('');
 }
 

@@ -14,6 +14,8 @@ import {
 } from './project.js';
 import { openProposeDialog, changesetListing } from './propose.js';
 import { buildLibraryFromCode } from './code-check.js';
+import { useReport, REPORT_KINDS, formatShare } from './use-report.js';
+import { fromProjectFile } from './project-format.js';
 import { showContextMenu } from './menu.js';
 import { modal } from './libraries.js';
 import { icons } from './icons.js';
@@ -38,7 +40,7 @@ try {
   if (prefs.section === 'project') prefs.section = 'recents'; // the Project section's files are in the kind sections now
 } catch {}
 
-const SECTIONS = { proposals: 'Proposals', recents: 'Recents', design: 'Sigma Design', tokens: 'Sigma Tokens', icons: 'Sigma Icons', welcome: 'Welcome to Sigma', archive: 'Archive' };
+const SECTIONS = { report: 'Design system report', proposals: 'Proposals', recents: 'Recents', design: 'Sigma Design', tokens: 'Sigma Tokens', icons: 'Sigma Icons', welcome: 'Welcome to Sigma', archive: 'Archive' };
 
 // Open the files home on a section (e.g. the Archive, when an archived file's link is opened).
 export function showHomeSection(section) {
@@ -80,6 +82,7 @@ export function initHome(el) {
         <button class="nav-item" data-section="tokens">${NAV_TOKENS} Sigma Tokens</button>
         <button class="nav-item" data-section="icons">${NAV_ICONS} Sigma Icons</button>
         <button class="nav-item" data-section="proposals" id="nav-proposals" title="Changes proposed from Sigma, and their pull requests" hidden>${NAV_PROPOSALS} Proposals</button>
+        <button class="nav-item" data-section="report" title="How much of the design files comes from the design system">${NAV_REPORT} Report</button>
         <div class="nav-spacer"></div>
         <button class="nav-item nav-welcome" data-section="welcome" title="The guide to Sigma and its sample tokens">${NAV_WELCOME} Welcome to Sigma</button>
         <button class="nav-item" data-section="archive" id="nav-archive" title="Deleted files, until you delete them forever">${NAV_ARCHIVE} Archive</button>
@@ -359,6 +362,78 @@ async function moveIntoProjectDialog() {
   });
 }
 
+// ---------- the design system use report (Part D, Phase 17) ----------
+// The design files to measure: the project's (as Sigma opens them), or this browser's.
+async function reportFiles() {
+  if (projectMode() && project.connected) {
+    const texts = {};
+    for (const f of project.files.filter((x) => x.kind !== 'invalid')) {
+      const r = await fetch(`/api/project/file?path=${encodeURIComponent(f.path)}`, { cache: 'no-store' });
+      if (r.ok) texts[f.path] = await r.json();
+    }
+    const resolve = (p) => (texts[p] ? { fileId: p, file: texts[p] } : null);
+    return project.files.filter((f) => f.kind === 'design' && texts[f.path]).map((f) => ({
+      name: f.name, path: f.path, editedAt: Number(BigInt(f.mtime) / 1000000n),
+      doc: fromProjectFile(structuredClone(texts[f.path]), { path: f.path, resolve }).doc,
+    }));
+  }
+  const out = [];
+  for (const meta of (await listFiles()).filter((f) => fileKind(f) === 'design' && !isSampleFile(f) && !f.project)) {
+    const file = await loadFile(meta.id);
+    if (file) out.push({ name: meta.name, editedAt: meta.updatedAt, doc: file.doc });
+  }
+  return out;
+}
+
+let reportRun = 0;
+async function renderReport(list) {
+  const mine = ++reportRun;
+  list.innerHTML = '<div class="home-empty"><p class="muted">Measuring…</p></div>';
+  const files = await reportFiles();
+  if (mine !== reportRun || prefs.section !== 'report') return; // a newer report (or another section) is showing
+  const days = Number(prefs.reportDays || 0);
+  const r = useReport(files, { since: days ? Date.now() - days * 86400000 : null, handoff: !!prefs.reportHandoff });
+  const bar = (x) => `<span class="report-bar"><span style="width:${x === null ? 0 : Math.round(x * 100)}%"></span></span>`;
+  const kinds = Object.entries(r.overall.kinds).filter(([, x]) => x.total);
+  const filters = `<div class="report-filters">
+      <label>Edited <select class="select" data-report-days>${[[0, 'any time'], [7, 'in the last 7 days'], [30, 'in the last 30 days'], [90, 'in the last 90 days']].map(([v, l]) => `<option value="${v}"${v === days ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+      <label><input type="checkbox" data-report-handoff${prefs.reportHandoff ? ' checked' : ''}> Only pages marked for handoff</label>
+    </div>`;
+  if (!files.length) {
+    list.innerHTML = `<div class="report">${filters}<div class="home-empty"><p>No Sigma Design files to measure${projectMode() ? ' in this project' : ' in this browser'} yet.</p></div></div>`;
+    return;
+  }
+  const rows = (items, cols) => items.map((it) => `<tr>${cols.map((c) => `<td${c.num ? ' class="num"' : ''}>${c.get(it)}</td>`).join('')}</tr>`).join('');
+  list.innerHTML = `<div class="report">
+    <p class="muted">How much of the design comes from the design system${projectMode() ? ` in ${esc(project.name)}` : ' in this browser'}: ${files.length} design file${files.length === 1 ? '' : 's'}. The same report on the command line: <code>npx sigma-design report</code>.</p>
+    ${filters}
+    <div class="report-cards">
+      <div class="report-card"><div class="report-big">${formatShare(r.overall.componentShare)}</div><div>of layers are library components</div><div class="muted">${r.overall.instances} instances of ${r.overall.layers} layers on pages</div></div>
+      <div class="report-card"><div class="report-big">${formatShare(r.overall.tokenShare)}</div><div>of values use tokens</div>
+        <div class="report-kinds">${kinds.map(([k, x]) => `<div><span>${REPORT_KINDS[k]}</span>${bar(x.total ? x.bound / x.total : null)}<span class="num">${formatShare(x.total ? x.bound / x.total : null)}</span></div>`).join('')}</div></div>
+    </div>
+    <h3>Files</h3>
+    <table class="report-table"><tr><th>File</th><th class="num">Library components</th><th class="num">Tokens</th><th class="num">Layers</th></tr>
+      ${rows(r.files, [{ get: (f) => `${esc(f.name)}${f.path ? ` <span class="muted">${esc(f.path.replace(/^\.sigma\//, ''))}</span>` : ''}` }, { num: true, get: (f) => formatShare(f.componentShare) }, { num: true, get: (f) => formatShare(f.tokenShare) }, { num: true, get: (f) => f.layers }])}</table>
+    <div class="report-columns">
+      <div><h3>Most-used components</h3>${r.components.length ? `<table class="report-table">${rows(r.components.slice(0, 12), [{ get: (c) => esc(c.name) }, { num: true, get: (c) => c.uses }])}</table>` : '<p class="muted">None used yet.</p>'}
+        <h3>Components nobody uses</h3>${r.unusedComponents.length ? `<table class="report-table">${rows(r.unusedComponents, [{ get: (c) => `${esc(c.name)} <span class="muted">${esc(c.library)}</span>` }])}</table>` : '<p class="muted">Every component is used.</p>'}</div>
+      <div><h3>Most-used tokens</h3>${r.tokens.length ? `<table class="report-table">${rows(r.tokens.slice(0, 12), [{ get: (t) => esc(t.name) }, { num: true, get: (t) => t.uses }])}</table>` : '<p class="muted">None used yet.</p>'}
+        <h3>Tokens nobody uses</h3>${r.unusedTokens.length ? `<table class="report-table">${rows(r.unusedTokens.slice(0, 40), [{ get: (t) => `${esc(t.name)} <span class="muted">${esc(t.file)}</span>` }])}</table>${r.unusedTokens.length > 40 ? `<p class="muted">…and ${r.unusedTokens.length - 40} more</p>` : ''}` : '<p class="muted">Every token is used (directly, or by another token).</p>'}</div>
+    </div>
+  </div>`;
+  list.querySelector('[data-report-days]').addEventListener('change', (e) => {
+    prefs.reportDays = Number(e.target.value);
+    savePrefs();
+    renderHome();
+  });
+  list.querySelector('[data-report-handoff]').addEventListener('change', (e) => {
+    prefs.reportHandoff = e.target.checked;
+    savePrefs();
+    renderHome();
+  });
+}
+
 // The Proposals section: changes proposed from Sigma, with their status, pull request and ticket.
 async function renderProposals(list, q) {
   const all = project.connected ? await changesetListing() : [];
@@ -525,10 +600,11 @@ export async function renderHome() {
   const total = files.length;
   const welcome = section === 'welcome';
   const proposals = section === 'proposals';
-  const projectFiles = pm && !welcome && !proposals; // Recents and the kind sections list the project's files
+  const report = section === 'report';
+  const projectFiles = pm && !welcome && !proposals && !report; // Recents and the kind sections list the project's files
   if (archive) files = await listArchivedFiles();
   else if (welcome) files = files.filter(isSampleFile);
-  else if (projectFiles || proposals) files = [];
+  else if (projectFiles || proposals || report) files = [];
   else if (section !== 'recents') files = files.filter((f) => fileKind(f) === section && !isSampleFile(f) && !f.project); // samples have their own section
   renderProjectNav();
   const inSection = files.length;
@@ -539,7 +615,8 @@ export async function renderHome() {
   root.querySelector('#home-title').textContent = SECTIONS[section];
   root.querySelector('#home-search').placeholder = proposals ? 'Search proposals' : 'Search files';
   root.querySelector('#home-import').hidden = pm; // imports land in the browser; a project's files come from the project
-  root.querySelector('.home-layout').hidden = proposals;
+  root.querySelector('.home-layout').hidden = proposals || report;
+  root.querySelector('#home-search').hidden = report;
   // The primary "New" button matches the section you're in.
   root.querySelector('#home-new').classList.toggle('primary', section !== 'tokens' && section !== 'icons');
   root.querySelector('#home-new-icons').classList.toggle('primary', section === 'icons');
@@ -547,7 +624,7 @@ export async function renderHome() {
   root.querySelector('#home-new-tokens').classList.toggle('primary', section === 'tokens');
   root.querySelector('#home-new-tokens-more').classList.toggle('primary', section === 'tokens');
   const sortSel = root.querySelector('#home-sort');
-  sortSel.hidden = recents || archive || proposals || welcome;
+  sortSel.hidden = recents || archive || proposals || welcome || report;
   sortSel.value = prefs.sort;
 
   const q = query.trim().toLowerCase();
@@ -573,7 +650,9 @@ export async function renderHome() {
   const list = root.querySelector('#home-files');
   list.className = `home-files ${prefs.layout}`;
 
-  if (proposals) {
+  if (report) {
+    await renderReport(list);
+  } else if (proposals) {
     await renderProposals(list, q);
   } else if (projectFiles) {
     await renderProjectFiles(list, section, q);
@@ -669,6 +748,7 @@ function card(f, { describe = false } = {}) {
 
 const NAV_DESIGN = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4.5 1.5v11M9.5 1.5v11M1.5 4.5h11M1.5 9.5h11"/></svg>';
 const NAV_WELCOME = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><circle cx="7" cy="7" r="5.5"/><path d="M5.6 5.4a1.5 1.5 0 1 1 2 1.4c-.4.2-.6.5-.6.9v.4M7 10v.1"/></svg>';
+const NAV_REPORT = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M2 12.5h10M3.5 10V7M7 10V3.5M10.5 10V5.5"/></svg>';
 const NAV_PROPOSALS = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><circle cx="3.5" cy="3" r="1.5"/><circle cx="3.5" cy="11" r="1.5"/><circle cx="10.5" cy="11" r="1.5"/><path d="M3.5 4.5v5M10.5 9.5V6a2 2 0 0 0-2-2H6.5M8 2.5 6.5 4 8 5.5"/></svg>';
 const NAV_ARCHIVE = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><rect x="1.5" y="2" width="11" height="3" rx=".5"/><path d="M2.5 5v6.5h9V5M5.5 7.5h3"/></svg>';
 const kindBadge = (kind) => (kind === 'tokens' ? '<span class="kind-badge">Tokens</span>' : kind === 'icons' ? '<span class="kind-badge">Icons</span>' : '');

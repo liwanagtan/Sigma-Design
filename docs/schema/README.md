@@ -158,6 +158,8 @@ they change, by token id and their own mode ids:
 }
 ```
 
+A page marked for handoff has `"handoff": true` (the design system use report can count only those).
+
 A design file can also have `collections` (local tokens, like a tokens file's), but tokens belong in a
 Sigma Tokens file.
 

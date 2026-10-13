@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Phases 1–14, Part E (Phases 20–30) and Part F (Phases 31–35) are done.** Next: **Part D's Phases 17–19** (the design system use report, running the system, visual change review), then Phase 16 (accessibility checks). Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **Phases 1–14, Part E (Phases 20–30) and Part F (Phases 31–35) are done.** Part D's Phase 17 is done; next are Phases 18 and 19 (running the system, visual change review), then Phase 16 (accessibility checks). Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -396,7 +396,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 33: Setup by the agent: adapters, rules and project skills
 - [x] Phase 34: Live sync while Sigma runs
 - [x] Phase 35: Sigma renders the project's components
-- [ ] Phase 17: Design system use report (Part D)
+- [x] Phase 17: Design system use report (Part D)
 - [ ] Phase 18: Running the system (Part D)
 - [ ] Phase 19: Visual change review (Part D)
 - [ ] Phase 16: Accessibility checks and annotations (Part D; planned, after Phase 19)
@@ -467,6 +467,19 @@ Like Pinterest's FigStats, measured across every design file in this browser (in
 - the share of colors, type and spacing that use tokens rather than one-off values
 - the most-used components and tokens, and those nobody uses
 - per file and overall, with a way to limit it to recently edited files or pages marked as handoff
+- **What shipped:** `src/use-report.js` (pure: it measures documents as Sigma opens them, so the files home and the
+  command line agree). Component share: instances against all layers on pages outside component definitions (an
+  instance counts once). Token share: every color (fills, strokes), type, spacing (padding, and a gap between two
+  or more layers), radius and shadow value bound to a token against all of them, in components and on pages,
+  leaving out layers inside instances; a value bound to a token counts even though project files leave its number
+  out. Most-used components (by set) and tokens; components with no instance anywhere; tokens nobody binds and no
+  token points at. In the GUI, a **Report** section on the files home (the project's design files, or this
+  browser's), with filters for files edited in the last 7, 30 or 90 days and for pages marked for handoff (a new
+  **Mark for handoff** in a page's right-click menu; `"handoff": true` in the file format). On the command line,
+  `sigma-design report [--days N] [--handoff] [--json]`. Verified on `examples/css-app`: 29% of the pages' layers are
+  library components (18 instances of 62 layers) and 85% of values use tokens (the library 74%: the Input's padding
+  includes its border), Button, Card and Input are used, and the two motion tokens aren't; with the Projects page
+  marked for handoff, 37% and 100%, the same in the GUI and on the command line.
 
 ## Phase 18: Running the system
 
