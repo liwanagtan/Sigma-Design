@@ -74,7 +74,6 @@ async function setUpWelcomeFolder() {
         await nameSampleTokens(l.fileId);
       }
       for (const l of doc?.iconLibraries || []) keep.add(l.fileId);
-      for (const m of await listFiles()) if (m.optics === WELCOME_VERSION) keep.add(m.id); // this guide's Optics files
       await archiveSamples(keep);
     }
   }
@@ -510,17 +509,40 @@ export async function welcomeFile() {
     }];
   }
   const id = await createFile(doc, {}, { welcome: WELCOME_VERSION });
-  const optics = await opticsFiles(icons);
+  await opticsOnce(icons);
   // The new guide replaces the old one: older sample files go to the Archive.
-  const moved = await archiveSamples(new Set([id, lib.id, ...(icons ? [icons.id] : []), ...optics]));
+  const moved = await archiveSamples(new Set([id, lib.id, ...(icons ? [icons.id] : [])]));
   if (moved) toast(`Moved ${moved === 1 ? 'the previous sample file' : `${moved} older sample files`} to the Archive`);
   return id;
 }
 
-// Optics (Phase 36), in the Welcome to Sigma folder with the guide: Optics Tokens, Optics Components (published,
-// so other files can link it) and Optics Foundations, using the sample Sigma Icons. Returns their ids.
+// Optics (Phase 36): a working design system as your own files (saved like any other): Optics Tokens,
+// Optics Components (published, so other files can link it) and Optics Foundations, using the sample Sigma
+// Icons. Made once with Welcome to Sigma; the files home's Sigma Tokens menu adds them again. Returns their ids.
+const OPTICS_KEY = 'sigma.optics';
+export async function addOptics() {
+  const ids = await opticsFiles(await sampleIconFile());
+  try {
+    localStorage.setItem(OPTICS_KEY, '1');
+  } catch {}
+  return ids;
+}
+// With the first Welcome to Sigma in this browser (not again if you've deleted them: add them from the menu).
+async function opticsOnce(icons) {
+  try {
+    if (localStorage.getItem(OPTICS_KEY)) return [];
+  } catch {
+    return []; // no storage to remember it in: don't make them every time
+  }
+  if ((await listFiles()).some((m) => m.optics && !isSampleFile(m))) return [];
+  const ids = await opticsFiles(icons);
+  try {
+    localStorage.setItem(OPTICS_KEY, '1');
+  } catch {}
+  return ids;
+}
 async function opticsFiles(icons) {
-  const meta = { sample: true, optics: WELCOME_VERSION };
+  const meta = { optics: 1 };
   const { name, collections } = opticsTokenDocument();
   const tokens = await createTokenFileWith(name, collections, 'Optics v1', { meta });
   const link = (doc) => {
