@@ -20,6 +20,12 @@
           "clip": false,
           "codeName": "Button",
           "codeNames": { "State": "state", "Variant": "variant" },
+          "docs": {
+            "code": "src/components/button.js",
+            "notFor": "Navigation (use a link) or toggles (use a switch).",
+            "purpose": "The main action in a section: one primary button per view.",
+            "usage": "Label with a verb (\"Save\", \"Continue\"). Secondary for the less important action next to a primary one; Danger for actions that delete."
+          },
           "h": 180,
           "props": {
             "button-label": {
@@ -511,6 +517,7 @@
             "layout.pt": "space-4",
             "radius": "radius-md"
           },
+          "checks": { "variants": true },
           "clip": false,
           "codeName": "Card",
           "effects": [{ "type": "drop-shadow" }],

@@ -965,3 +965,26 @@ button.group-caret.open { transform: rotate(90deg); }
 .report-table .num { text-align: right; white-space: nowrap; }
 .report-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
 .handoff-badge { margin-left: 6px; }
+
+/* Component status and docs (Phase 18) */
+.comp-status { margin-left: 6px; font-size: 10px; padding: 1px 6px; }
+.comp-docs { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; font-size: 12px; }
+.comp-docs-usage { white-space: pre-wrap; }
+.matrix-modal { width: min(1100px, calc(100vw - 32px)); }
+.matrix-wrap { overflow: auto; max-height: 60vh; }
+.matrix { border-collapse: collapse; width: 100%; font-size: 12px; }
+.matrix th, .matrix td { padding: 5px 6px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; }
+.matrix th { color: var(--muted); font-weight: normal; font-size: 11px; }
+.matrix-check { text-align: center !important; width: 58px; }
+.matrix-check.ok { color: #0f7a40; }
+.matrix-check.no { color: #b54708; }
+.matrix-tick { border: 0; background: none; cursor: pointer; font: inherit; color: inherit; }
+.matrix-next { min-width: 180px; }
+.matrix-summary { margin-bottom: 8px; }
+.docs-modal { width: min(560px, calc(100vw - 32px)); }
+.docs-frames { max-height: 120px; overflow: auto; border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; }
+
+.changelog-modal { width: min(640px, calc(100vw - 32px)); }
+.changelog-entry { padding: 8px 0; border-bottom: 1px solid var(--border); }
+.changelog-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.changelog-entry ul { margin: 4px 0 0; padding-left: 18px; }

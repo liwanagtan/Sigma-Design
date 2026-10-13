@@ -30,6 +30,7 @@ import {
   addVariant, goToMainComponent, resetSelectionOverrides, detachSelection, duplicateSelection, makeComponentSet,
 } from './commands.js';
 import { showContextMenu } from './menu.js';
+import { openDocsEditor, docsHTML, statusOf, statusLabel, STATUSES, docsTarget } from './component-docs.js';
 import { icons } from './icons.js';
 import { openIconPicker, availableIcons } from './icon-ui.js';
 import { iconLibraries, loadIconLibraries } from './libraries.js';
@@ -91,7 +92,8 @@ function headActions(node) {
 }
 
 // A "Deprecated" tag after a component's name, and the note under it.
-const deprecatedTag = (node) => (isDeprecated(node) ? '<span class="deprecated-tag" title="Hidden from Assets and the swap picker; existing instances keep working">Deprecated</span>' : '');
+const deprecatedTag = (node) => (isDeprecated(node) ? '<span class="deprecated-tag" title="Hidden from Assets and the swap picker; existing instances keep working">Deprecated</span>'
+  : `<span class="status-chip comp-status ${statusOf(node) === 'ready' ? 'ok' : ''}" title="Its status in the component matrix (main menu → Component status…)">${statusLabel(statusOf(node))}</span>`);
 const deprecatedNote = (node) => (isDeprecated(node)
   ? '<div class="warn">Deprecated: it’s hidden from Assets and the swap picker so nothing new uses it. Instances keep working. Say what to use instead in the description.</div>' : '');
 
@@ -99,7 +101,7 @@ function description(node) {
   if (editingDescription === node.id) {
     return `<textarea class="desc comp-desc-edit" data-desc rows="3" placeholder="Describe this component…" spellcheck="false">${esc(node.description || '')}</textarea>`;
   }
-  return node.description ? `<div class="comp-desc">${esc(node.description)}</div>` : '';
+  return (node.description ? `<div class="comp-desc">${esc(node.description)}</div>` : '') + docsHTML(node, { status: false }); // the status is the chip by the name
 }
 let editingDescription = null;
 
@@ -1224,6 +1226,13 @@ function compMenu(btn, node) {
     ...(node.type !== 'componentSet' ? [{ label: 'Create instance', action: () => duplicateSelection() }] : []),
     { label: 'Add variant', action: () => (set ? addVariant(set) : addVariantProp(node, r)) },
     { label: 'Edit description', action: () => { editingDescription = node.id; window.dispatchEvent(new CustomEvent('sigma:refresh-panel')); setTimeout(() => document.querySelector('.comp-desc-edit')?.focus(), 0); } },
+    { label: 'Docs…', action: () => openDocsEditor(node) },
+    '-',
+    ...Object.entries(STATUSES).map(([k, l]) => ({ label: `${statusOf(node) === k ? '✓ ' : ''}${l}`, action: () => {
+      const t = docsTarget(node);
+      editNode(t, ['status'], () => (k === 'draft' ? delete t.status : (t.status = k)));
+      commit();
+    } })),
     '-',
     isDeprecated(node)
       ? { label: 'Mark as not deprecated', action: () => { setDeprecated(node, false); commit(); } }
@@ -1329,7 +1338,7 @@ export function openPlayground(componentId) {
     el.querySelector('.playground').innerHTML =
       `<div class="modal-head"><span class="comp-icon">${set ? SET_ICON : COMPONENT_ICON}</span> ${esc(host.name)}<button class="icon-btn" data-pg-close>${icons.close}</button></div>` +
       `<div class="pg-body"><div class="pg-preview">${previewSVG(play.mainId, play.values)}</div>` +
-      `<div class="pg-side">${host.description ? `<div class="comp-desc">${esc(host.description)}</div>` : ''}` +
+      `<div class="pg-side">${docsHTML(host) || (host.description ? `<div class="comp-desc">${esc(host.description)}</div>` : '')}` +
       `<div class="prop-sub">Properties</div>${rows.join('') || '<div class="muted">This component has no properties.</div>'}</div></div>` +
       '<div class="lib-footer"><button class="btn" data-pg-reset>Reset</button><span class="spacer"></span><button class="btn primary" data-pg-insert>Insert instance</button></div>';
   };

@@ -99,6 +99,7 @@ function help() {
   npx sigma-design agents [dir] [--dry-run]          rules and project skills for the repo's coding agents
   npx sigma-design adapter test [dir]                prove the project's adapters (reference/adapters.md)
   npx sigma-design report [dir] [--days N] [--handoff]  how much of the design comes from the design system
+  npx sigma-design changelog [dir] [--file PATH]      what's new in the component libraries, as Markdown
   npx sigma-design check [dir]                       Sigma files are valid, and tokens and icons match the code
 
 Sync tools (for people and agents; see skills/sigma-sync/SKILL.md):
