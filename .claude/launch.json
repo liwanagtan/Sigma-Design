@@ -75,6 +75,19 @@
         "--no-open"
       ],
       "port": 5178
+    },
+    {
+      "name": "sigma-optics",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "bin/sigma-design.mjs",
+        "dev",
+        "examples/optics",
+        "--port",
+        "5179",
+        "--no-open"
+      ],
+      "port": 5179
     }
   ]
 }

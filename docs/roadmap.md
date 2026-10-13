@@ -991,6 +991,9 @@ made from **Sigma Icons**, the main sample icon file (the whole Lucide set, outl
   file can link Optics Tokens and Optics Components to build with them.
 - **Tests:** browser tests build the three files and run the checks above on them, so a change to Sigma that
   breaks Optics fails CI.
+- **Ships with Sigma:** `examples/optics/` holds the four files as a project (`node tools/build-optics.mjs` writes
+  them from the same code), so they're in Sigma's repository and npm package, CI checks them like the other
+  examples, and `npx sigma-design dev examples/optics` opens them.
 - **Done when:** the four files are in your files and open, a new design file can link Optics Tokens and Optics
   Components and build a screen from them, and the checks above pass in CI.
 - **What shipped:** `src/optics-tokens.js` builds **Optics Tokens** (242 tokens: Primitives on numbered steps,
@@ -1004,8 +1007,10 @@ made from **Sigma Icons**, the main sample icon file (the whole Lucide set, outl
   Sigma Tokens ▾ → Add Optics design system adds a fresh set; Optics Components is published as v1 so other files
   can link it, and the guide's first page says where Optics is. Icons are **Optics Icons**: `opticsIconsDocument` copies Sigma Icons' 1,895 icons (all 1,877 Lucide outline icons and 18 filled shapes) with Optics ids (`optics-plus`) and Lucide's license, published as v1; both Optics design files link it, and Optics Foundations' Icons page shows up to 12 per group with the group's size. Sigma Icons, the Welcome to Sigma sample, is now the whole Lucide set too (the guide's icons keep its groups, Actions, Arrows, Status…, and the rest keep Lucide's categories; the guide is at version 8, and the old 90-icon sample goes to the Archive). `tests/optics.test.js` builds the
   files and checks them: valid in the file format, no one-off values, 99% or more of values from tokens, every
-  component Ready, and no accessibility errors in either mode. Also: the arranger stacks rows as well as columns
-  (Do and Don't side by side), and publishing ignores an instance's record of its main's size, so a freshly opened
+  component Ready, and no accessibility errors in either mode. Also: layouts are placed when the files are built (component sets have fixed
+  sizes; the rest are measured, with room to spare, and a test checks nothing overlaps), so they look the same in
+  the browser and as project files; `examples/optics/` (built by `tools/build-optics.mjs`) ships them with Sigma and
+  passes `check` in CI, and the sample project was rebuilt with the whole Lucide set; and publishing ignores an instance's record of its main's size, so a freshly opened
   Optics Components doesn't show unpublished changes. Verified in the editor: the four files under Sigma Tokens, Sigma Icons and Sigma Design (saved when edited, no sample banner; every icon in both design files resolves from Optics Icons), a new
   file linking Optics Tokens and Optics Components builds a Banner, a Card and a Button that resolve every token
   and icon, and Export documentation page makes a page with all 15 components.

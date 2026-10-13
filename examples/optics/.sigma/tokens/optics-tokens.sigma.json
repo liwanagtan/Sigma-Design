@@ -1,0 +1,2540 @@
+{
+  "format": 1,
+  "kind": "tokens",
+  "name": "Optics Tokens",
+  "collections": [
+    {
+      "id": "s8mqlp8z",
+      "name": "Primitives",
+      "defaultModeId": "6job5wvb",
+      "groups": [
+        {
+          "id": "7cr8z96p",
+          "name": "color",
+          "description": "The raw palette, in steps from light (50) to dark (900). Designs use Semantic tokens, which point here.",
+          "parentId": null
+        },
+        {
+          "id": "pcmxom0w",
+          "name": "gray",
+          "description": "Neutrals: text, surfaces and borders.",
+          "parentId": "7cr8z96p"
+        },
+        {
+          "id": "jv2u4525",
+          "name": "brand",
+          "description": "Optics indigo: primary actions, selection and focus.",
+          "parentId": "7cr8z96p"
+        },
+        {
+          "id": "n2shcua0",
+          "name": "red",
+          "description": "Critical: errors and destructive actions.",
+          "parentId": "7cr8z96p"
+        },
+        { "id": "6al28b6c", "name": "green", "description": "Success.", "parentId": "7cr8z96p" },
+        {
+          "id": "ubgdvcsm",
+          "name": "orange",
+          "description": "Warning: something needs attention soon.",
+          "parentId": "7cr8z96p"
+        },
+        {
+          "id": "3a5kbtmn",
+          "name": "yellow",
+          "description": "Caution: worth knowing, not urgent.",
+          "parentId": "7cr8z96p"
+        },
+        { "id": "7t01fx1f", "name": "azure", "description": "Info.", "parentId": "7cr8z96p" },
+        {
+          "id": "z5apjlnx",
+          "name": "purple",
+          "description": "Magic: suggestions and AI.",
+          "parentId": "7cr8z96p"
+        },
+        {
+          "id": "7fp5f1xb",
+          "name": "alpha",
+          "description": "Colors with opacity: overlays, hover washes and shadows.",
+          "parentId": "7cr8z96p"
+        },
+        {
+          "id": "rfz6pjhw",
+          "name": "space",
+          "description": "Spacing on a 4px grid: the step is in hundredths of 4px (100 = 4px, 400 = 16px).",
+          "parentId": null
+        },
+        {
+          "id": "f89n0epm",
+          "name": "font",
+          "description": "Type primitives. The Typography collection combines them into text styles.",
+          "parentId": null
+        },
+        { "id": "sq3gmw20", "name": "family", "parentId": "f89n0epm" },
+        {
+          "id": "j4pzlqfg",
+          "name": "size",
+          "description": "Font sizes in px; the step is in hundredths of 4px (350 = 14px).",
+          "parentId": "f89n0epm"
+        },
+        { "id": "0vm8dxuw", "name": "weight", "parentId": "f89n0epm" },
+        {
+          "id": "v8vu69v4",
+          "name": "line-height",
+          "description": "Line heights in percent of the font size.",
+          "parentId": "f89n0epm"
+        },
+        { "id": "in2em1al", "name": "letter-spacing", "parentId": "f89n0epm" },
+        {
+          "id": "od194imj",
+          "name": "radius",
+          "description": "Corner radii; the step is in hundredths of 4px (200 = 8px).",
+          "parentId": null
+        },
+        { "id": "84oxy66n", "name": "border-width", "parentId": null },
+        {
+          "id": "zrj4z2aw",
+          "name": "motion",
+          "description": "How things move: durations and easing curves.",
+          "parentId": null
+        },
+        {
+          "id": "rq5k0jgc",
+          "name": "duration",
+          "description": "Short for small changes (hover), longer for big ones (a dialog opening).",
+          "parentId": "zrj4z2aw"
+        },
+        { "id": "q4hku2dg", "name": "easing", "parentId": "zrj4z2aw" }
+      ],
+      "modes": [{ "id": "6job5wvb", "name": "Value" }],
+      "variables": [
+        {
+          "id": "c2r699t4",
+          "type": "color",
+          "name": "color/gray/0",
+          "codeSyntax": { "web": "--optics-color-gray-0" },
+          "groupId": "pcmxom0w",
+          "valuesByMode": { "6job5wvb": "#FFFFFF" }
+        },
+        {
+          "id": "2mq0sni2",
+          "type": "color",
+          "name": "color/gray/50",
+          "codeSyntax": { "web": "--optics-color-gray-50" },
+          "groupId": "pcmxom0w",
+          "valuesByMode": { "6job5wvb": "#F7F7F7" }
+        },
+        {
+          "id": "ovapiktm",
+          "type": "color",
+          "name": "color/gray/100",
+          "codeSyntax": { "web": "--optics-color-gray-100" },
+          "groupId": "pcmxom0w",
+          "valuesByMode": { "6job5wvb": "#F1F1F1" }
+        },
+        {
+          "id": "0arnetpm",
+          "type": "color",
+          "name": "color/gray/200",
+          "codeSyntax": { "web": "--optics-color-gray-200" },
+          "groupId": "pcmxom0w",
+          "valuesByMode": { "6job5wvb": "#E3E3E3" }
+        },
+        {
+          "id": "7ilkrr5r",
+          "type": "color",
+          "name": "color/gray/300",
+          "codeSyntax": { "web": "--optics-color-gray-300" },
+          "groupId": "pcmxom0w",
+          "valuesByMode": { "6job5wvb": "#D4D4D4" }
+        },
+        {
+          "id": "vp1nhgsp",
+          "type": "color",
+          "name": "color/gray/400",
+          "codeSyntax": { "web": "--optics-color-gray-400" },
+          "groupId": "pcmxom0w",
+          "valuesByMode": { "6job5wvb": "#B5B5B5" }
+        },
+        {
+          "id": "34zwvocb",
+          "type": "color",
+          "name": "color/gray/500",
+          "codeSyntax": { "web": "--optics-color-gray-500" },
+          "groupId": "pcmxom0w",
+          "valuesByMode": { "6job5wvb": "#8A8A8A" }
+        },
+        {
+          "id": "qte98yll",
+          "type": "color",
+          "name": "color/gray/600",
+          "codeSyntax": { "web": "--optics-color-gray-600" },
+          "groupId": "pcmxom0w",
+          "valuesByMode": { "6job5wvb": "#616161" }
+        },
+        {
+          "id": "ngnx2j6l",
+          "type": "color",
+          "name": "color/gray/700",
+          "codeSyntax": { "web": "--optics-color-gray-700" },
+          "groupId": "pcmxom0w",
+          "valuesByMode": { "6job5wvb": "#4A4A4A" }
+        },
+        {
+          "id": "h7581n0e",
+          "type": "color",
+          "name": "color/gray/800",
+          "codeSyntax": { "web": "--optics-color-gray-800" },
+          "groupId": "pcmxom0w",
+          "valuesByMode": { "6job5wvb": "#303030" }
+        },
+        {
+          "id": "rnoou76f",
+          "type": "color",
+          "name": "color/gray/900",
+          "codeSyntax": { "web": "--optics-color-gray-900" },
+          "groupId": "pcmxom0w",
+          "valuesByMode": { "6job5wvb": "#1F1F1F" }
+        },
+        {
+          "id": "axtxhejm",
+          "type": "color",
+          "name": "color/gray/950",
+          "codeSyntax": { "web": "--optics-color-gray-950" },
+          "groupId": "pcmxom0w",
+          "valuesByMode": { "6job5wvb": "#171717" }
+        },
+        {
+          "id": "1u834gq5",
+          "type": "color",
+          "name": "color/gray/1000",
+          "codeSyntax": { "web": "--optics-color-gray-1000" },
+          "groupId": "pcmxom0w",
+          "valuesByMode": { "6job5wvb": "#0C0C0C" }
+        },
+        {
+          "id": "n4swwbj0",
+          "type": "color",
+          "name": "color/brand/50",
+          "codeSyntax": { "web": "--optics-color-brand-50" },
+          "groupId": "jv2u4525",
+          "valuesByMode": { "6job5wvb": "#EEF0FF" }
+        },
+        {
+          "id": "fd2ii2i4",
+          "type": "color",
+          "name": "color/brand/100",
+          "codeSyntax": { "web": "--optics-color-brand-100" },
+          "groupId": "jv2u4525",
+          "valuesByMode": { "6job5wvb": "#E0E4FF" }
+        },
+        {
+          "id": "rqo96qvy",
+          "type": "color",
+          "name": "color/brand/200",
+          "codeSyntax": { "web": "--optics-color-brand-200" },
+          "groupId": "jv2u4525",
+          "valuesByMode": { "6job5wvb": "#C4CBFF" }
+        },
+        {
+          "id": "yi3wjruz",
+          "type": "color",
+          "name": "color/brand/300",
+          "codeSyntax": { "web": "--optics-color-brand-300" },
+          "groupId": "jv2u4525",
+          "valuesByMode": { "6job5wvb": "#9DA8FF" }
+        },
+        {
+          "id": "7z942hmc",
+          "type": "color",
+          "name": "color/brand/400",
+          "codeSyntax": { "web": "--optics-color-brand-400" },
+          "groupId": "jv2u4525",
+          "valuesByMode": { "6job5wvb": "#7383F8" }
+        },
+        {
+          "id": "vuctqhzj",
+          "type": "color",
+          "name": "color/brand/500",
+          "codeSyntax": { "web": "--optics-color-brand-500" },
+          "groupId": "jv2u4525",
+          "valuesByMode": { "6job5wvb": "#4F63EC" }
+        },
+        {
+          "id": "9vrwrkqz",
+          "type": "color",
+          "name": "color/brand/600",
+          "codeSyntax": { "web": "--optics-color-brand-600" },
+          "groupId": "jv2u4525",
+          "valuesByMode": { "6job5wvb": "#3549D6" }
+        },
+        {
+          "id": "vgps0hzo",
+          "type": "color",
+          "name": "color/brand/700",
+          "codeSyntax": { "web": "--optics-color-brand-700" },
+          "groupId": "jv2u4525",
+          "valuesByMode": { "6job5wvb": "#2A3AB0" }
+        },
+        {
+          "id": "pdczgpn0",
+          "type": "color",
+          "name": "color/brand/800",
+          "codeSyntax": { "web": "--optics-color-brand-800" },
+          "groupId": "jv2u4525",
+          "valuesByMode": { "6job5wvb": "#212E8A" }
+        },
+        {
+          "id": "e5atz01i",
+          "type": "color",
+          "name": "color/brand/900",
+          "codeSyntax": { "web": "--optics-color-brand-900" },
+          "groupId": "jv2u4525",
+          "valuesByMode": { "6job5wvb": "#18205E" }
+        },
+        {
+          "id": "j0qpjtom",
+          "type": "color",
+          "name": "color/red/50",
+          "codeSyntax": { "web": "--optics-color-red-50" },
+          "groupId": "n2shcua0",
+          "valuesByMode": { "6job5wvb": "#FFF1EF" }
+        },
+        {
+          "id": "xyql3lk3",
+          "type": "color",
+          "name": "color/red/100",
+          "codeSyntax": { "web": "--optics-color-red-100" },
+          "groupId": "n2shcua0",
+          "valuesByMode": { "6job5wvb": "#FFE2DE" }
+        },
+        {
+          "id": "ykvwe6y8",
+          "type": "color",
+          "name": "color/red/200",
+          "codeSyntax": { "web": "--optics-color-red-200" },
+          "groupId": "n2shcua0",
+          "valuesByMode": { "6job5wvb": "#FFC5BD" }
+        },
+        {
+          "id": "6so4dqn1",
+          "type": "color",
+          "name": "color/red/300",
+          "codeSyntax": { "web": "--optics-color-red-300" },
+          "groupId": "n2shcua0",
+          "valuesByMode": { "6job5wvb": "#FF9C8F" }
+        },
+        {
+          "id": "6lvgowjw",
+          "type": "color",
+          "name": "color/red/400",
+          "codeSyntax": { "web": "--optics-color-red-400" },
+          "groupId": "n2shcua0",
+          "valuesByMode": { "6job5wvb": "#F86A57" }
+        },
+        {
+          "id": "pi3s5fke",
+          "type": "color",
+          "name": "color/red/500",
+          "codeSyntax": { "web": "--optics-color-red-500" },
+          "groupId": "n2shcua0",
+          "valuesByMode": { "6job5wvb": "#E5432E" }
+        },
+        {
+          "id": "1ixx2c03",
+          "type": "color",
+          "name": "color/red/600",
+          "codeSyntax": { "web": "--optics-color-red-600" },
+          "groupId": "n2shcua0",
+          "valuesByMode": { "6job5wvb": "#C4291B" }
+        },
+        {
+          "id": "5c7qxggf",
+          "type": "color",
+          "name": "color/red/700",
+          "codeSyntax": { "web": "--optics-color-red-700" },
+          "groupId": "n2shcua0",
+          "valuesByMode": { "6job5wvb": "#A01F13" }
+        },
+        {
+          "id": "979li1n5",
+          "type": "color",
+          "name": "color/red/800",
+          "codeSyntax": { "web": "--optics-color-red-800" },
+          "groupId": "n2shcua0",
+          "valuesByMode": { "6job5wvb": "#7A180F" }
+        },
+        {
+          "id": "k08wia27",
+          "type": "color",
+          "name": "color/red/900",
+          "codeSyntax": { "web": "--optics-color-red-900" },
+          "groupId": "n2shcua0",
+          "valuesByMode": { "6job5wvb": "#4D0F09" }
+        },
+        {
+          "id": "f169waqv",
+          "type": "color",
+          "name": "color/green/50",
+          "codeSyntax": { "web": "--optics-color-green-50" },
+          "groupId": "6al28b6c",
+          "valuesByMode": { "6job5wvb": "#EDFAF2" }
+        },
+        {
+          "id": "1s6r5tw5",
+          "type": "color",
+          "name": "color/green/100",
+          "codeSyntax": { "web": "--optics-color-green-100" },
+          "groupId": "6al28b6c",
+          "valuesByMode": { "6job5wvb": "#D6F5E2" }
+        },
+        {
+          "id": "fdi9b86h",
+          "type": "color",
+          "name": "color/green/200",
+          "codeSyntax": { "web": "--optics-color-green-200" },
+          "groupId": "6al28b6c",
+          "valuesByMode": { "6job5wvb": "#A9EAC3" }
+        },
+        {
+          "id": "ihvvki6b",
+          "type": "color",
+          "name": "color/green/300",
+          "codeSyntax": { "web": "--optics-color-green-300" },
+          "groupId": "6al28b6c",
+          "valuesByMode": { "6job5wvb": "#6FD89D" }
+        },
+        {
+          "id": "8sluruzg",
+          "type": "color",
+          "name": "color/green/400",
+          "codeSyntax": { "web": "--optics-color-green-400" },
+          "groupId": "6al28b6c",
+          "valuesByMode": { "6job5wvb": "#36BF76" }
+        },
+        {
+          "id": "fvvualuj",
+          "type": "color",
+          "name": "color/green/500",
+          "codeSyntax": { "web": "--optics-color-green-500" },
+          "groupId": "6al28b6c",
+          "valuesByMode": { "6job5wvb": "#17A05C" }
+        },
+        {
+          "id": "o0l03d3t",
+          "type": "color",
+          "name": "color/green/600",
+          "codeSyntax": { "web": "--optics-color-green-600" },
+          "groupId": "6al28b6c",
+          "valuesByMode": { "6job5wvb": "#0D8049" }
+        },
+        {
+          "id": "qfdvd9gb",
+          "type": "color",
+          "name": "color/green/700",
+          "codeSyntax": { "web": "--optics-color-green-700" },
+          "groupId": "6al28b6c",
+          "valuesByMode": { "6job5wvb": "#0B6B3C" }
+        },
+        {
+          "id": "yrmlqx87",
+          "type": "color",
+          "name": "color/green/800",
+          "codeSyntax": { "web": "--optics-color-green-800" },
+          "groupId": "6al28b6c",
+          "valuesByMode": { "6job5wvb": "#0A4F2E" }
+        },
+        {
+          "id": "i5o90y1g",
+          "type": "color",
+          "name": "color/green/900",
+          "codeSyntax": { "web": "--optics-color-green-900" },
+          "groupId": "6al28b6c",
+          "valuesByMode": { "6job5wvb": "#07331E" }
+        },
+        {
+          "id": "ndvd2oc6",
+          "type": "color",
+          "name": "color/orange/50",
+          "codeSyntax": { "web": "--optics-color-orange-50" },
+          "groupId": "ubgdvcsm",
+          "valuesByMode": { "6job5wvb": "#FFF4EB" }
+        },
+        {
+          "id": "x9jnb61t",
+          "type": "color",
+          "name": "color/orange/100",
+          "codeSyntax": { "web": "--optics-color-orange-100" },
+          "groupId": "ubgdvcsm",
+          "valuesByMode": { "6job5wvb": "#FFE6D1" }
+        },
+        {
+          "id": "279ghn49",
+          "type": "color",
+          "name": "color/orange/200",
+          "codeSyntax": { "web": "--optics-color-orange-200" },
+          "groupId": "ubgdvcsm",
+          "valuesByMode": { "6job5wvb": "#FFC9A0" }
+        },
+        {
+          "id": "rwvfivrt",
+          "type": "color",
+          "name": "color/orange/300",
+          "codeSyntax": { "web": "--optics-color-orange-300" },
+          "groupId": "ubgdvcsm",
+          "valuesByMode": { "6job5wvb": "#FFA666" }
+        },
+        {
+          "id": "klkicfya",
+          "type": "color",
+          "name": "color/orange/400",
+          "codeSyntax": { "web": "--optics-color-orange-400" },
+          "groupId": "ubgdvcsm",
+          "valuesByMode": { "6job5wvb": "#FA8231" }
+        },
+        {
+          "id": "0vx3tdqe",
+          "type": "color",
+          "name": "color/orange/500",
+          "codeSyntax": { "web": "--optics-color-orange-500" },
+          "groupId": "ubgdvcsm",
+          "valuesByMode": { "6job5wvb": "#E5680F" }
+        },
+        {
+          "id": "197xz6y5",
+          "type": "color",
+          "name": "color/orange/600",
+          "codeSyntax": { "web": "--optics-color-orange-600" },
+          "groupId": "ubgdvcsm",
+          "valuesByMode": { "6job5wvb": "#BF5208" }
+        },
+        {
+          "id": "4ij2scm0",
+          "type": "color",
+          "name": "color/orange/700",
+          "codeSyntax": { "web": "--optics-color-orange-700" },
+          "groupId": "ubgdvcsm",
+          "valuesByMode": { "6job5wvb": "#8F3E06" }
+        },
+        {
+          "id": "a54k6ep8",
+          "type": "color",
+          "name": "color/orange/800",
+          "codeSyntax": { "web": "--optics-color-orange-800" },
+          "groupId": "ubgdvcsm",
+          "valuesByMode": { "6job5wvb": "#6B2E05" }
+        },
+        {
+          "id": "ngcowxxp",
+          "type": "color",
+          "name": "color/orange/900",
+          "codeSyntax": { "web": "--optics-color-orange-900" },
+          "groupId": "ubgdvcsm",
+          "valuesByMode": { "6job5wvb": "#451D03" }
+        },
+        {
+          "id": "wuo218cq",
+          "type": "color",
+          "name": "color/yellow/50",
+          "codeSyntax": { "web": "--optics-color-yellow-50" },
+          "groupId": "3a5kbtmn",
+          "valuesByMode": { "6job5wvb": "#FFFAE6" }
+        },
+        {
+          "id": "nvtl9tb2",
+          "type": "color",
+          "name": "color/yellow/100",
+          "codeSyntax": { "web": "--optics-color-yellow-100" },
+          "groupId": "3a5kbtmn",
+          "valuesByMode": { "6job5wvb": "#FFF2C2" }
+        },
+        {
+          "id": "forunf83",
+          "type": "color",
+          "name": "color/yellow/200",
+          "codeSyntax": { "web": "--optics-color-yellow-200" },
+          "groupId": "3a5kbtmn",
+          "valuesByMode": { "6job5wvb": "#FFE38A" }
+        },
+        {
+          "id": "okqat5cv",
+          "type": "color",
+          "name": "color/yellow/300",
+          "codeSyntax": { "web": "--optics-color-yellow-300" },
+          "groupId": "3a5kbtmn",
+          "valuesByMode": { "6job5wvb": "#FFD04D" }
+        },
+        {
+          "id": "xbv77qhl",
+          "type": "color",
+          "name": "color/yellow/400",
+          "codeSyntax": { "web": "--optics-color-yellow-400" },
+          "groupId": "3a5kbtmn",
+          "valuesByMode": { "6job5wvb": "#F5B915" }
+        },
+        {
+          "id": "619a5u1i",
+          "type": "color",
+          "name": "color/yellow/500",
+          "codeSyntax": { "web": "--optics-color-yellow-500" },
+          "groupId": "3a5kbtmn",
+          "valuesByMode": { "6job5wvb": "#D99E00" }
+        },
+        {
+          "id": "249bmwtt",
+          "type": "color",
+          "name": "color/yellow/600",
+          "codeSyntax": { "web": "--optics-color-yellow-600" },
+          "groupId": "3a5kbtmn",
+          "valuesByMode": { "6job5wvb": "#A87A00" }
+        },
+        {
+          "id": "u3vsdmpz",
+          "type": "color",
+          "name": "color/yellow/700",
+          "codeSyntax": { "web": "--optics-color-yellow-700" },
+          "groupId": "3a5kbtmn",
+          "valuesByMode": { "6job5wvb": "#7A5800" }
+        },
+        {
+          "id": "wh6kwi1x",
+          "type": "color",
+          "name": "color/yellow/800",
+          "codeSyntax": { "web": "--optics-color-yellow-800" },
+          "groupId": "3a5kbtmn",
+          "valuesByMode": { "6job5wvb": "#5C4200" }
+        },
+        {
+          "id": "j3vzvhdl",
+          "type": "color",
+          "name": "color/yellow/900",
+          "codeSyntax": { "web": "--optics-color-yellow-900" },
+          "groupId": "3a5kbtmn",
+          "valuesByMode": { "6job5wvb": "#3D2C00" }
+        },
+        {
+          "id": "g08sz33v",
+          "type": "color",
+          "name": "color/azure/50",
+          "codeSyntax": { "web": "--optics-color-azure-50" },
+          "groupId": "7t01fx1f",
+          "valuesByMode": { "6job5wvb": "#EBF6FF" }
+        },
+        {
+          "id": "dvebexej",
+          "type": "color",
+          "name": "color/azure/100",
+          "codeSyntax": { "web": "--optics-color-azure-100" },
+          "groupId": "7t01fx1f",
+          "valuesByMode": { "6job5wvb": "#D4ECFF" }
+        },
+        {
+          "id": "ks3mg3ib",
+          "type": "color",
+          "name": "color/azure/200",
+          "codeSyntax": { "web": "--optics-color-azure-200" },
+          "groupId": "7t01fx1f",
+          "valuesByMode": { "6job5wvb": "#A8D8FF" }
+        },
+        {
+          "id": "r54s7r8n",
+          "type": "color",
+          "name": "color/azure/300",
+          "codeSyntax": { "web": "--optics-color-azure-300" },
+          "groupId": "7t01fx1f",
+          "valuesByMode": { "6job5wvb": "#6DBDFF" }
+        },
+        {
+          "id": "iope56nr",
+          "type": "color",
+          "name": "color/azure/400",
+          "codeSyntax": { "web": "--optics-color-azure-400" },
+          "groupId": "7t01fx1f",
+          "valuesByMode": { "6job5wvb": "#2E9CF5" }
+        },
+        {
+          "id": "0nz7ees5",
+          "type": "color",
+          "name": "color/azure/500",
+          "codeSyntax": { "web": "--optics-color-azure-500" },
+          "groupId": "7t01fx1f",
+          "valuesByMode": { "6job5wvb": "#0A80DB" }
+        },
+        {
+          "id": "ardc9zfa",
+          "type": "color",
+          "name": "color/azure/600",
+          "codeSyntax": { "web": "--optics-color-azure-600" },
+          "groupId": "7t01fx1f",
+          "valuesByMode": { "6job5wvb": "#0066B3" }
+        },
+        {
+          "id": "7s3otjw3",
+          "type": "color",
+          "name": "color/azure/700",
+          "codeSyntax": { "web": "--optics-color-azure-700" },
+          "groupId": "7t01fx1f",
+          "valuesByMode": { "6job5wvb": "#00528F" }
+        },
+        {
+          "id": "kw1i8l4w",
+          "type": "color",
+          "name": "color/azure/800",
+          "codeSyntax": { "web": "--optics-color-azure-800" },
+          "groupId": "7t01fx1f",
+          "valuesByMode": { "6job5wvb": "#003D6B" }
+        },
+        {
+          "id": "pa37rv22",
+          "type": "color",
+          "name": "color/azure/900",
+          "codeSyntax": { "web": "--optics-color-azure-900" },
+          "groupId": "7t01fx1f",
+          "valuesByMode": { "6job5wvb": "#002847" }
+        },
+        {
+          "id": "hckbhynw",
+          "type": "color",
+          "name": "color/purple/50",
+          "codeSyntax": { "web": "--optics-color-purple-50" },
+          "groupId": "z5apjlnx",
+          "valuesByMode": { "6job5wvb": "#F6F1FF" }
+        },
+        {
+          "id": "fe35xo9q",
+          "type": "color",
+          "name": "color/purple/100",
+          "codeSyntax": { "web": "--optics-color-purple-100" },
+          "groupId": "z5apjlnx",
+          "valuesByMode": { "6job5wvb": "#ECE2FF" }
+        },
+        {
+          "id": "djtie7d8",
+          "type": "color",
+          "name": "color/purple/200",
+          "codeSyntax": { "web": "--optics-color-purple-200" },
+          "groupId": "z5apjlnx",
+          "valuesByMode": { "6job5wvb": "#D8C4FF" }
+        },
+        {
+          "id": "5clo39ly",
+          "type": "color",
+          "name": "color/purple/300",
+          "codeSyntax": { "web": "--optics-color-purple-300" },
+          "groupId": "z5apjlnx",
+          "valuesByMode": { "6job5wvb": "#BC9BFF" }
+        },
+        {
+          "id": "odlu04al",
+          "type": "color",
+          "name": "color/purple/400",
+          "codeSyntax": { "web": "--optics-color-purple-400" },
+          "groupId": "z5apjlnx",
+          "valuesByMode": { "6job5wvb": "#9D6DFC" }
+        },
+        {
+          "id": "ksgf9648",
+          "type": "color",
+          "name": "color/purple/500",
+          "codeSyntax": { "web": "--optics-color-purple-500" },
+          "groupId": "z5apjlnx",
+          "valuesByMode": { "6job5wvb": "#8048EB" }
+        },
+        {
+          "id": "0pwk8omv",
+          "type": "color",
+          "name": "color/purple/600",
+          "codeSyntax": { "web": "--optics-color-purple-600" },
+          "groupId": "z5apjlnx",
+          "valuesByMode": { "6job5wvb": "#6A31D1" }
+        },
+        {
+          "id": "5kn8cdqv",
+          "type": "color",
+          "name": "color/purple/700",
+          "codeSyntax": { "web": "--optics-color-purple-700" },
+          "groupId": "z5apjlnx",
+          "valuesByMode": { "6job5wvb": "#5524AB" }
+        },
+        {
+          "id": "d5jy1r8v",
+          "type": "color",
+          "name": "color/purple/800",
+          "codeSyntax": { "web": "--optics-color-purple-800" },
+          "groupId": "z5apjlnx",
+          "valuesByMode": { "6job5wvb": "#401B80" }
+        },
+        {
+          "id": "6l5yh693",
+          "type": "color",
+          "name": "color/purple/900",
+          "codeSyntax": { "web": "--optics-color-purple-900" },
+          "groupId": "z5apjlnx",
+          "valuesByMode": { "6job5wvb": "#2A1255" }
+        },
+        {
+          "id": "dd2eb3qb",
+          "type": "color",
+          "name": "color/alpha/transparent",
+          "codeSyntax": { "web": "--optics-color-alpha-transparent" },
+          "groupId": "7fp5f1xb",
+          "valuesByMode": { "6job5wvb": "#00000000" }
+        },
+        {
+          "id": "x8sunec1",
+          "type": "color",
+          "name": "color/alpha/black-5",
+          "codeSyntax": { "web": "--optics-color-alpha-black-5" },
+          "groupId": "7fp5f1xb",
+          "valuesByMode": { "6job5wvb": "#0000000D" }
+        },
+        {
+          "id": "ijjw6bfe",
+          "type": "color",
+          "name": "color/alpha/black-10",
+          "codeSyntax": { "web": "--optics-color-alpha-black-10" },
+          "groupId": "7fp5f1xb",
+          "valuesByMode": { "6job5wvb": "#0000001A" }
+        },
+        {
+          "id": "jl6de4ul",
+          "type": "color",
+          "name": "color/alpha/black-15",
+          "codeSyntax": { "web": "--optics-color-alpha-black-15" },
+          "groupId": "7fp5f1xb",
+          "valuesByMode": { "6job5wvb": "#00000026" }
+        },
+        {
+          "id": "yz207hdu",
+          "type": "color",
+          "name": "color/alpha/black-20",
+          "codeSyntax": { "web": "--optics-color-alpha-black-20" },
+          "groupId": "7fp5f1xb",
+          "valuesByMode": { "6job5wvb": "#00000033" }
+        },
+        {
+          "id": "dljid04v",
+          "type": "color",
+          "name": "color/alpha/black-30",
+          "codeSyntax": { "web": "--optics-color-alpha-black-30" },
+          "groupId": "7fp5f1xb",
+          "valuesByMode": { "6job5wvb": "#0000004D" }
+        },
+        {
+          "id": "fiegmoy6",
+          "type": "color",
+          "name": "color/alpha/black-50",
+          "codeSyntax": { "web": "--optics-color-alpha-black-50" },
+          "groupId": "7fp5f1xb",
+          "valuesByMode": { "6job5wvb": "#00000080" }
+        },
+        {
+          "id": "cm3apul0",
+          "type": "color",
+          "name": "color/alpha/white-10",
+          "codeSyntax": { "web": "--optics-color-alpha-white-10" },
+          "groupId": "7fp5f1xb",
+          "valuesByMode": { "6job5wvb": "#FFFFFF1A" }
+        },
+        {
+          "id": "dnibrcvn",
+          "type": "color",
+          "name": "color/alpha/white-20",
+          "codeSyntax": { "web": "--optics-color-alpha-white-20" },
+          "groupId": "7fp5f1xb",
+          "valuesByMode": { "6job5wvb": "#FFFFFF33" }
+        },
+        {
+          "id": "fn5ydwpn",
+          "type": "number",
+          "name": "space/0",
+          "codeSyntax": { "web": "--optics-space-0" },
+          "groupId": "rfz6pjhw",
+          "valuesByMode": { "6job5wvb": 0 }
+        },
+        {
+          "id": "3bv9scre",
+          "type": "number",
+          "name": "space/025",
+          "codeSyntax": { "web": "--optics-space-025" },
+          "groupId": "rfz6pjhw",
+          "valuesByMode": { "6job5wvb": 1 }
+        },
+        {
+          "id": "7g3tm49u",
+          "type": "number",
+          "name": "space/050",
+          "codeSyntax": { "web": "--optics-space-050" },
+          "groupId": "rfz6pjhw",
+          "valuesByMode": { "6job5wvb": 2 }
+        },
+        {
+          "id": "2d571zjs",
+          "type": "number",
+          "name": "space/100",
+          "codeSyntax": { "web": "--optics-space-100" },
+          "groupId": "rfz6pjhw",
+          "valuesByMode": { "6job5wvb": 4 }
+        },
+        {
+          "id": "bi4yhyhe",
+          "type": "number",
+          "name": "space/150",
+          "codeSyntax": { "web": "--optics-space-150" },
+          "groupId": "rfz6pjhw",
+          "valuesByMode": { "6job5wvb": 6 }
+        },
+        {
+          "id": "giys2hll",
+          "type": "number",
+          "name": "space/200",
+          "codeSyntax": { "web": "--optics-space-200" },
+          "groupId": "rfz6pjhw",
+          "valuesByMode": { "6job5wvb": 8 }
+        },
+        {
+          "id": "c70hrb70",
+          "type": "number",
+          "name": "space/300",
+          "codeSyntax": { "web": "--optics-space-300" },
+          "groupId": "rfz6pjhw",
+          "valuesByMode": { "6job5wvb": 12 }
+        },
+        {
+          "id": "nt82dutu",
+          "type": "number",
+          "name": "space/400",
+          "codeSyntax": { "web": "--optics-space-400" },
+          "groupId": "rfz6pjhw",
+          "valuesByMode": { "6job5wvb": 16 }
+        },
+        {
+          "id": "o6tljsbh",
+          "type": "number",
+          "name": "space/500",
+          "codeSyntax": { "web": "--optics-space-500" },
+          "groupId": "rfz6pjhw",
+          "valuesByMode": { "6job5wvb": 20 }
+        },
+        {
+          "id": "tzejbwlu",
+          "type": "number",
+          "name": "space/600",
+          "codeSyntax": { "web": "--optics-space-600" },
+          "groupId": "rfz6pjhw",
+          "valuesByMode": { "6job5wvb": 24 }
+        },
+        {
+          "id": "gzal2346",
+          "type": "number",
+          "name": "space/800",
+          "codeSyntax": { "web": "--optics-space-800" },
+          "groupId": "rfz6pjhw",
+          "valuesByMode": { "6job5wvb": 32 }
+        },
+        {
+          "id": "bbbh2gj4",
+          "type": "number",
+          "name": "space/1000",
+          "codeSyntax": { "web": "--optics-space-1000" },
+          "groupId": "rfz6pjhw",
+          "valuesByMode": { "6job5wvb": 40 }
+        },
+        {
+          "id": "poh30adv",
+          "type": "number",
+          "name": "space/1200",
+          "codeSyntax": { "web": "--optics-space-1200" },
+          "groupId": "rfz6pjhw",
+          "valuesByMode": { "6job5wvb": 48 }
+        },
+        {
+          "id": "5snp0l93",
+          "type": "number",
+          "name": "space/1600",
+          "codeSyntax": { "web": "--optics-space-1600" },
+          "groupId": "rfz6pjhw",
+          "valuesByMode": { "6job5wvb": 64 }
+        },
+        {
+          "id": "e180pq25",
+          "type": "string",
+          "name": "font/family/sans",
+          "codeSyntax": { "web": "--optics-font-family-sans" },
+          "groupId": "sq3gmw20",
+          "valuesByMode": { "6job5wvb": "Inter" }
+        },
+        {
+          "id": "kfi7pdpf",
+          "type": "string",
+          "name": "font/family/mono",
+          "codeSyntax": { "web": "--optics-font-family-mono" },
+          "groupId": "sq3gmw20",
+          "valuesByMode": { "6job5wvb": "JetBrains Mono" }
+        },
+        {
+          "id": "ccam5utq",
+          "type": "number",
+          "name": "font/size/300",
+          "codeSyntax": { "web": "--optics-font-size-300" },
+          "groupId": "j4pzlqfg",
+          "valuesByMode": { "6job5wvb": 12 }
+        },
+        {
+          "id": "oh097gog",
+          "type": "number",
+          "name": "font/size/350",
+          "codeSyntax": { "web": "--optics-font-size-350" },
+          "groupId": "j4pzlqfg",
+          "valuesByMode": { "6job5wvb": 14 }
+        },
+        {
+          "id": "9bfkvcsi",
+          "type": "number",
+          "name": "font/size/400",
+          "codeSyntax": { "web": "--optics-font-size-400" },
+          "groupId": "j4pzlqfg",
+          "valuesByMode": { "6job5wvb": 16 }
+        },
+        {
+          "id": "78iayudx",
+          "type": "number",
+          "name": "font/size/500",
+          "codeSyntax": { "web": "--optics-font-size-500" },
+          "groupId": "j4pzlqfg",
+          "valuesByMode": { "6job5wvb": 20 }
+        },
+        {
+          "id": "cfuw33l3",
+          "type": "number",
+          "name": "font/size/600",
+          "codeSyntax": { "web": "--optics-font-size-600" },
+          "groupId": "j4pzlqfg",
+          "valuesByMode": { "6job5wvb": 24 }
+        },
+        {
+          "id": "idm3ykr3",
+          "type": "number",
+          "name": "font/size/750",
+          "codeSyntax": { "web": "--optics-font-size-750" },
+          "groupId": "j4pzlqfg",
+          "valuesByMode": { "6job5wvb": 30 }
+        },
+        {
+          "id": "gmtr6isg",
+          "type": "number",
+          "name": "font/size/900",
+          "codeSyntax": { "web": "--optics-font-size-900" },
+          "groupId": "j4pzlqfg",
+          "valuesByMode": { "6job5wvb": 36 }
+        },
+        {
+          "id": "w60b7ome",
+          "type": "number",
+          "name": "font/weight/regular",
+          "codeSyntax": { "web": "--optics-font-weight-regular" },
+          "groupId": "0vm8dxuw",
+          "valuesByMode": { "6job5wvb": 400 }
+        },
+        {
+          "id": "fpazfonu",
+          "type": "number",
+          "name": "font/weight/medium",
+          "codeSyntax": { "web": "--optics-font-weight-medium" },
+          "groupId": "0vm8dxuw",
+          "valuesByMode": { "6job5wvb": 500 }
+        },
+        {
+          "id": "pvgd9t55",
+          "type": "number",
+          "name": "font/weight/semibold",
+          "codeSyntax": { "web": "--optics-font-weight-semibold" },
+          "groupId": "0vm8dxuw",
+          "valuesByMode": { "6job5wvb": 600 }
+        },
+        {
+          "id": "36t6sam4",
+          "type": "number",
+          "name": "font/weight/bold",
+          "codeSyntax": { "web": "--optics-font-weight-bold" },
+          "groupId": "0vm8dxuw",
+          "valuesByMode": { "6job5wvb": 700 }
+        },
+        {
+          "id": "inh99nmd",
+          "type": "number",
+          "name": "font/line-height/120",
+          "codeSyntax": { "web": "--optics-font-line-height-120" },
+          "groupId": "v8vu69v4",
+          "valuesByMode": { "6job5wvb": 120 }
+        },
+        {
+          "id": "oneoyfkt",
+          "type": "number",
+          "name": "font/line-height/125",
+          "codeSyntax": { "web": "--optics-font-line-height-125" },
+          "groupId": "v8vu69v4",
+          "valuesByMode": { "6job5wvb": 125 }
+        },
+        {
+          "id": "ahdsemyc",
+          "type": "number",
+          "name": "font/line-height/133",
+          "codeSyntax": { "web": "--optics-font-line-height-133" },
+          "groupId": "v8vu69v4",
+          "valuesByMode": { "6job5wvb": 133 }
+        },
+        {
+          "id": "3lzvio3o",
+          "type": "number",
+          "name": "font/line-height/143",
+          "codeSyntax": { "web": "--optics-font-line-height-143" },
+          "groupId": "v8vu69v4",
+          "valuesByMode": { "6job5wvb": 143 }
+        },
+        {
+          "id": "0qvgtp4t",
+          "type": "number",
+          "name": "font/line-height/150",
+          "codeSyntax": { "web": "--optics-font-line-height-150" },
+          "groupId": "v8vu69v4",
+          "valuesByMode": { "6job5wvb": 150 }
+        },
+        {
+          "id": "js9fx7v3",
+          "type": "number",
+          "name": "font/letter-spacing/dense",
+          "codeSyntax": { "web": "--optics-font-letter-spacing-dense" },
+          "groupId": "in2em1al",
+          "valuesByMode": { "6job5wvb": -0.2 }
+        },
+        {
+          "id": "s78nget6",
+          "type": "number",
+          "name": "font/letter-spacing/normal",
+          "codeSyntax": { "web": "--optics-font-letter-spacing-normal" },
+          "groupId": "in2em1al",
+          "valuesByMode": { "6job5wvb": 0 }
+        },
+        {
+          "id": "gnh66tok",
+          "type": "number",
+          "name": "radius/0",
+          "codeSyntax": { "web": "--optics-radius-0" },
+          "groupId": "od194imj",
+          "valuesByMode": { "6job5wvb": 0 }
+        },
+        {
+          "id": "tcc5uyf5",
+          "type": "number",
+          "name": "radius/100",
+          "codeSyntax": { "web": "--optics-radius-100" },
+          "groupId": "od194imj",
+          "valuesByMode": { "6job5wvb": 4 }
+        },
+        {
+          "id": "l1z578la",
+          "type": "number",
+          "name": "radius/150",
+          "codeSyntax": { "web": "--optics-radius-150" },
+          "groupId": "od194imj",
+          "valuesByMode": { "6job5wvb": 6 }
+        },
+        {
+          "id": "ikd17q1i",
+          "type": "number",
+          "name": "radius/200",
+          "codeSyntax": { "web": "--optics-radius-200" },
+          "groupId": "od194imj",
+          "valuesByMode": { "6job5wvb": 8 }
+        },
+        {
+          "id": "dzwzp3ro",
+          "type": "number",
+          "name": "radius/300",
+          "codeSyntax": { "web": "--optics-radius-300" },
+          "groupId": "od194imj",
+          "valuesByMode": { "6job5wvb": 12 }
+        },
+        {
+          "id": "5eoactkn",
+          "type": "number",
+          "name": "radius/400",
+          "codeSyntax": { "web": "--optics-radius-400" },
+          "groupId": "od194imj",
+          "valuesByMode": { "6job5wvb": 16 }
+        },
+        {
+          "id": "4kyzesgk",
+          "type": "number",
+          "name": "radius/500",
+          "codeSyntax": { "web": "--optics-radius-500" },
+          "groupId": "od194imj",
+          "valuesByMode": { "6job5wvb": 20 }
+        },
+        {
+          "id": "x3a8jpgf",
+          "type": "number",
+          "name": "radius/full",
+          "codeSyntax": { "web": "--optics-radius-full" },
+          "groupId": "od194imj",
+          "valuesByMode": { "6job5wvb": 9999 }
+        },
+        {
+          "id": "aza5sm8i",
+          "type": "number",
+          "name": "border-width/025",
+          "codeSyntax": { "web": "--optics-border-width-025" },
+          "groupId": "84oxy66n",
+          "valuesByMode": { "6job5wvb": 1 }
+        },
+        {
+          "id": "wybabulp",
+          "type": "number",
+          "name": "border-width/050",
+          "codeSyntax": { "web": "--optics-border-width-050" },
+          "groupId": "84oxy66n",
+          "valuesByMode": { "6job5wvb": 2 }
+        },
+        {
+          "id": "9qosoj0e",
+          "type": "number",
+          "name": "border-width/100",
+          "codeSyntax": { "web": "--optics-border-width-100" },
+          "groupId": "84oxy66n",
+          "valuesByMode": { "6job5wvb": 4 }
+        },
+        {
+          "id": "s4oj2dkf",
+          "type": "duration",
+          "name": "motion/duration/0",
+          "codeSyntax": { "web": "--optics-motion-duration-0" },
+          "groupId": "rq5k0jgc",
+          "valuesByMode": { "6job5wvb": 0 }
+        },
+        {
+          "id": "g02951et",
+          "type": "duration",
+          "name": "motion/duration/50",
+          "codeSyntax": { "web": "--optics-motion-duration-50" },
+          "groupId": "rq5k0jgc",
+          "valuesByMode": { "6job5wvb": 50 }
+        },
+        {
+          "id": "2r3wd4l2",
+          "type": "duration",
+          "name": "motion/duration/100",
+          "codeSyntax": { "web": "--optics-motion-duration-100" },
+          "groupId": "rq5k0jgc",
+          "valuesByMode": { "6job5wvb": 100 }
+        },
+        {
+          "id": "mfmij7ek",
+          "type": "duration",
+          "name": "motion/duration/150",
+          "codeSyntax": { "web": "--optics-motion-duration-150" },
+          "groupId": "rq5k0jgc",
+          "valuesByMode": { "6job5wvb": 150 }
+        },
+        {
+          "id": "19jb9c9s",
+          "type": "duration",
+          "name": "motion/duration/200",
+          "codeSyntax": { "web": "--optics-motion-duration-200" },
+          "groupId": "rq5k0jgc",
+          "valuesByMode": { "6job5wvb": 200 }
+        },
+        {
+          "id": "fiw8y97u",
+          "type": "duration",
+          "name": "motion/duration/250",
+          "codeSyntax": { "web": "--optics-motion-duration-250" },
+          "groupId": "rq5k0jgc",
+          "valuesByMode": { "6job5wvb": 250 }
+        },
+        {
+          "id": "2k7wjhry",
+          "type": "duration",
+          "name": "motion/duration/300",
+          "codeSyntax": { "web": "--optics-motion-duration-300" },
+          "groupId": "rq5k0jgc",
+          "valuesByMode": { "6job5wvb": 300 }
+        },
+        {
+          "id": "0o75aphr",
+          "type": "duration",
+          "name": "motion/duration/400",
+          "codeSyntax": { "web": "--optics-motion-duration-400" },
+          "groupId": "rq5k0jgc",
+          "valuesByMode": { "6job5wvb": 400 }
+        },
+        {
+          "id": "88u91kih",
+          "type": "duration",
+          "name": "motion/duration/500",
+          "codeSyntax": { "web": "--optics-motion-duration-500" },
+          "groupId": "rq5k0jgc",
+          "valuesByMode": { "6job5wvb": 500 }
+        },
+        {
+          "id": "14p4zvm6",
+          "type": "easing",
+          "name": "motion/easing/ease",
+          "description": "Most transitions.",
+          "codeSyntax": { "web": "--optics-motion-easing-ease" },
+          "groupId": "q4hku2dg",
+          "valuesByMode": { "6job5wvb": [0.25, 0.1, 0.25, 1] }
+        },
+        {
+          "id": "vz0iysyo",
+          "type": "easing",
+          "name": "motion/easing/ease-in",
+          "description": "Elements leaving the view.",
+          "codeSyntax": { "web": "--optics-motion-easing-ease-in" },
+          "groupId": "q4hku2dg",
+          "valuesByMode": { "6job5wvb": [0.42, 0, 1, 1] }
+        },
+        {
+          "id": "ix5mlmqx",
+          "type": "easing",
+          "name": "motion/easing/ease-out",
+          "description": "Elements coming into view.",
+          "codeSyntax": { "web": "--optics-motion-easing-ease-out" },
+          "groupId": "q4hku2dg",
+          "valuesByMode": { "6job5wvb": [0, 0, 0.58, 1] }
+        },
+        {
+          "id": "9uyeqhxh",
+          "type": "easing",
+          "name": "motion/easing/ease-in-out",
+          "description": "Elements moving within the view.",
+          "codeSyntax": { "web": "--optics-motion-easing-ease-in-out" },
+          "groupId": "q4hku2dg",
+          "valuesByMode": { "6job5wvb": [0.42, 0, 0.58, 1] }
+        },
+        {
+          "id": "w28a9ak0",
+          "type": "easing",
+          "name": "motion/easing/linear",
+          "description": "Spinners and progress.",
+          "codeSyntax": { "web": "--optics-motion-easing-linear" },
+          "groupId": "q4hku2dg",
+          "valuesByMode": { "6job5wvb": [0, 0, 1, 1] }
+        }
+      ]
+    },
+    {
+      "id": "bqr10tg2",
+      "name": "Semantic",
+      "defaultModeId": "rqoh13ch",
+      "groups": [
+        {
+          "id": "4w4mztq4",
+          "name": "bg",
+          "description": "Backgrounds: the page, surfaces on it, and fills for controls.",
+          "parentId": null
+        },
+        {
+          "id": "m53qxlqv",
+          "name": "surface",
+          "description": "Cards, panels and inputs: what content sits on.",
+          "parentId": "4w4mztq4"
+        },
+        {
+          "id": "4k80rbg9",
+          "name": "fill",
+          "description": "Fills for controls: buttons, badges, checkboxes.",
+          "parentId": "4w4mztq4"
+        },
+        { "id": "shvxkldk", "name": "text", "description": "Text, by role.", "parentId": null },
+        {
+          "id": "copmz66n",
+          "name": "border",
+          "description": "Borders and dividers.",
+          "parentId": null
+        },
+        { "id": "4occpbi1", "name": "icon", "description": "Icons, by role.", "parentId": null },
+        {
+          "id": "krwrlmkb",
+          "name": "shadow",
+          "description": "Elevation: 100 sits on the page, 600 floats above everything. Darker in Dark mode, where light shadows don’t show.",
+          "parentId": null
+        }
+      ],
+      "modes": [{ "id": "rqoh13ch", "name": "Light" }, { "id": "h6gi7niy", "name": "Dark" }],
+      "variables": [
+        {
+          "id": "w8xxf6dm",
+          "type": "color",
+          "name": "bg/page",
+          "description": "The page behind everything.",
+          "codeSyntax": { "web": "--optics-bg-page" },
+          "groupId": "4w4mztq4",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "axtxhejm" },
+            "rqoh13ch": { "alias": "ovapiktm" }
+          }
+        },
+        {
+          "id": "hb60nie3",
+          "type": "color",
+          "name": "bg/surface/default",
+          "codeSyntax": { "web": "--optics-bg-surface-default" },
+          "groupId": "m53qxlqv",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "rnoou76f" },
+            "rqoh13ch": { "alias": "c2r699t4" }
+          }
+        },
+        {
+          "id": "fmmi38dp",
+          "type": "color",
+          "name": "bg/surface/hover",
+          "codeSyntax": { "web": "--optics-bg-surface-hover" },
+          "groupId": "m53qxlqv",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "h7581n0e" },
+            "rqoh13ch": { "alias": "2mq0sni2" }
+          }
+        },
+        {
+          "id": "5cnylzf2",
+          "type": "color",
+          "name": "bg/surface/active",
+          "codeSyntax": { "web": "--optics-bg-surface-active" },
+          "groupId": "m53qxlqv",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "ngnx2j6l" },
+            "rqoh13ch": { "alias": "ovapiktm" }
+          }
+        },
+        {
+          "id": "sz94dezs",
+          "type": "color",
+          "name": "bg/surface/secondary",
+          "description": "A surface set back from the default one.",
+          "codeSyntax": { "web": "--optics-bg-surface-secondary" },
+          "groupId": "m53qxlqv",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "h7581n0e" },
+            "rqoh13ch": { "alias": "2mq0sni2" }
+          }
+        },
+        {
+          "id": "53jm6tk2",
+          "type": "color",
+          "name": "bg/surface/tertiary",
+          "codeSyntax": { "web": "--optics-bg-surface-tertiary" },
+          "groupId": "m53qxlqv",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "ngnx2j6l" },
+            "rqoh13ch": { "alias": "ovapiktm" }
+          }
+        },
+        {
+          "id": "o7qtm9pn",
+          "type": "color",
+          "name": "bg/surface/disabled",
+          "codeSyntax": { "web": "--optics-bg-surface-disabled" },
+          "groupId": "m53qxlqv",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "cm3apul0" },
+            "rqoh13ch": { "alias": "x8sunec1" }
+          }
+        },
+        {
+          "id": "0qixvbxz",
+          "type": "color",
+          "name": "bg/surface/selected",
+          "codeSyntax": { "web": "--optics-bg-surface-selected" },
+          "groupId": "m53qxlqv",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "e5atz01i" },
+            "rqoh13ch": { "alias": "n4swwbj0" }
+          }
+        },
+        {
+          "id": "5npjszkh",
+          "type": "color",
+          "name": "bg/surface/inverse",
+          "description": "Tooltips and toasts: the opposite of the page.",
+          "codeSyntax": { "web": "--optics-bg-surface-inverse" },
+          "groupId": "m53qxlqv",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "2mq0sni2" },
+            "rqoh13ch": { "alias": "rnoou76f" }
+          }
+        },
+        {
+          "id": "i5kyfpkv",
+          "type": "color",
+          "name": "bg/surface/critical",
+          "description": "Tinted surface for critical messages.",
+          "codeSyntax": { "web": "--optics-bg-surface-critical" },
+          "groupId": "m53qxlqv",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "k08wia27" },
+            "rqoh13ch": { "alias": "j0qpjtom" }
+          }
+        },
+        {
+          "id": "nwjheuy9",
+          "type": "color",
+          "name": "bg/surface/success",
+          "description": "Tinted surface for success messages.",
+          "codeSyntax": { "web": "--optics-bg-surface-success" },
+          "groupId": "m53qxlqv",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "i5o90y1g" },
+            "rqoh13ch": { "alias": "f169waqv" }
+          }
+        },
+        {
+          "id": "mj0j0vih",
+          "type": "color",
+          "name": "bg/surface/warning",
+          "description": "Tinted surface for warning messages.",
+          "codeSyntax": { "web": "--optics-bg-surface-warning" },
+          "groupId": "m53qxlqv",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "ngcowxxp" },
+            "rqoh13ch": { "alias": "ndvd2oc6" }
+          }
+        },
+        {
+          "id": "thhr0zmv",
+          "type": "color",
+          "name": "bg/surface/caution",
+          "description": "Tinted surface for caution messages.",
+          "codeSyntax": { "web": "--optics-bg-surface-caution" },
+          "groupId": "m53qxlqv",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "j3vzvhdl" },
+            "rqoh13ch": { "alias": "wuo218cq" }
+          }
+        },
+        {
+          "id": "ghq1sg62",
+          "type": "color",
+          "name": "bg/surface/info",
+          "description": "Tinted surface for info messages.",
+          "codeSyntax": { "web": "--optics-bg-surface-info" },
+          "groupId": "m53qxlqv",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "pa37rv22" },
+            "rqoh13ch": { "alias": "g08sz33v" }
+          }
+        },
+        {
+          "id": "cmyzvyzh",
+          "type": "color",
+          "name": "bg/surface/magic",
+          "description": "Tinted surface for magic messages.",
+          "codeSyntax": { "web": "--optics-bg-surface-magic" },
+          "groupId": "m53qxlqv",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "6l5yh693" },
+            "rqoh13ch": { "alias": "hckbhynw" }
+          }
+        },
+        {
+          "id": "5ji4hsin",
+          "type": "color",
+          "name": "bg/fill/default",
+          "description": "Secondary buttons.",
+          "codeSyntax": { "web": "--optics-bg-fill-default" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "h7581n0e" },
+            "rqoh13ch": { "alias": "c2r699t4" }
+          }
+        },
+        {
+          "id": "smijbnnc",
+          "type": "color",
+          "name": "bg/fill/hover",
+          "codeSyntax": { "web": "--optics-bg-fill-hover" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "ngnx2j6l" },
+            "rqoh13ch": { "alias": "2mq0sni2" }
+          }
+        },
+        {
+          "id": "tjm0ua4f",
+          "type": "color",
+          "name": "bg/fill/active",
+          "codeSyntax": { "web": "--optics-bg-fill-active" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "qte98yll" },
+            "rqoh13ch": { "alias": "ovapiktm" }
+          }
+        },
+        {
+          "id": "btxs9r35",
+          "type": "color",
+          "name": "bg/fill/disabled",
+          "codeSyntax": { "web": "--optics-bg-fill-disabled" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "h7581n0e" },
+            "rqoh13ch": { "alias": "ovapiktm" }
+          }
+        },
+        {
+          "id": "hlr3z8ks",
+          "type": "color",
+          "name": "bg/fill/transparent",
+          "description": "Tertiary and plain buttons: no fill until hovered.",
+          "codeSyntax": { "web": "--optics-bg-fill-transparent" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "dd2eb3qb" },
+            "rqoh13ch": { "alias": "dd2eb3qb" }
+          }
+        },
+        {
+          "id": "edge5cu4",
+          "type": "color",
+          "name": "bg/fill/transparent-hover",
+          "codeSyntax": { "web": "--optics-bg-fill-transparent-hover" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "cm3apul0" },
+            "rqoh13ch": { "alias": "x8sunec1" }
+          }
+        },
+        {
+          "id": "0f7o9qbz",
+          "type": "color",
+          "name": "bg/fill/transparent-active",
+          "codeSyntax": { "web": "--optics-bg-fill-transparent-active" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "dnibrcvn" },
+            "rqoh13ch": { "alias": "ijjw6bfe" }
+          }
+        },
+        {
+          "id": "95diqh8t",
+          "type": "color",
+          "name": "bg/fill/brand",
+          "description": "Primary buttons and selected controls.",
+          "codeSyntax": { "web": "--optics-bg-fill-brand" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "vuctqhzj" },
+            "rqoh13ch": { "alias": "9vrwrkqz" }
+          }
+        },
+        {
+          "id": "qvvtomi5",
+          "type": "color",
+          "name": "bg/fill/brand-hover",
+          "codeSyntax": { "web": "--optics-bg-fill-brand-hover" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "9vrwrkqz" },
+            "rqoh13ch": { "alias": "vgps0hzo" }
+          }
+        },
+        {
+          "id": "fwp7qoep",
+          "type": "color",
+          "name": "bg/fill/brand-active",
+          "codeSyntax": { "web": "--optics-bg-fill-brand-active" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "vgps0hzo" },
+            "rqoh13ch": { "alias": "pdczgpn0" }
+          }
+        },
+        {
+          "id": "ihp04dc3",
+          "type": "color",
+          "name": "bg/fill/critical",
+          "description": "Destructive buttons.",
+          "codeSyntax": { "web": "--optics-bg-fill-critical" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "1ixx2c03" },
+            "rqoh13ch": { "alias": "1ixx2c03" }
+          }
+        },
+        {
+          "id": "6chydh76",
+          "type": "color",
+          "name": "bg/fill/critical-hover",
+          "codeSyntax": { "web": "--optics-bg-fill-critical-hover" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "5c7qxggf" },
+            "rqoh13ch": { "alias": "5c7qxggf" }
+          }
+        },
+        {
+          "id": "6xsime3d",
+          "type": "color",
+          "name": "bg/fill/critical-active",
+          "codeSyntax": { "web": "--optics-bg-fill-critical-active" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "979li1n5" },
+            "rqoh13ch": { "alias": "979li1n5" }
+          }
+        },
+        {
+          "id": "x139ias4",
+          "type": "color",
+          "name": "bg/fill/neutral",
+          "description": "Neutral badges.",
+          "codeSyntax": { "web": "--optics-bg-fill-neutral" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "h7581n0e" },
+            "rqoh13ch": { "alias": "ovapiktm" }
+          }
+        },
+        {
+          "id": "awymnmrs",
+          "type": "color",
+          "name": "bg/fill/success",
+          "description": "Badges for success.",
+          "codeSyntax": { "web": "--optics-bg-fill-success" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "yrmlqx87" },
+            "rqoh13ch": { "alias": "1s6r5tw5" }
+          }
+        },
+        {
+          "id": "oqf5prdj",
+          "type": "color",
+          "name": "bg/fill/warning",
+          "description": "Badges for warning.",
+          "codeSyntax": { "web": "--optics-bg-fill-warning" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "a54k6ep8" },
+            "rqoh13ch": { "alias": "x9jnb61t" }
+          }
+        },
+        {
+          "id": "60nap43y",
+          "type": "color",
+          "name": "bg/fill/caution",
+          "description": "Badges for caution.",
+          "codeSyntax": { "web": "--optics-bg-fill-caution" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "wh6kwi1x" },
+            "rqoh13ch": { "alias": "nvtl9tb2" }
+          }
+        },
+        {
+          "id": "c0or37nk",
+          "type": "color",
+          "name": "bg/fill/info",
+          "description": "Badges for info.",
+          "codeSyntax": { "web": "--optics-bg-fill-info" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "kw1i8l4w" },
+            "rqoh13ch": { "alias": "dvebexej" }
+          }
+        },
+        {
+          "id": "gyruy2kp",
+          "type": "color",
+          "name": "bg/fill/magic",
+          "description": "Badges for magic.",
+          "codeSyntax": { "web": "--optics-bg-fill-magic" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "d5jy1r8v" },
+            "rqoh13ch": { "alias": "fe35xo9q" }
+          }
+        },
+        {
+          "id": "7n33glul",
+          "type": "color",
+          "name": "bg/fill/critical-subtle",
+          "description": "Badges for critical.",
+          "codeSyntax": { "web": "--optics-bg-fill-critical-subtle" },
+          "groupId": "4k80rbg9",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "979li1n5" },
+            "rqoh13ch": { "alias": "xyql3lk3" }
+          }
+        },
+        {
+          "id": "6w37wsao",
+          "type": "color",
+          "name": "text/default",
+          "codeSyntax": { "web": "--optics-text-default" },
+          "groupId": "shvxkldk",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "2mq0sni2" },
+            "rqoh13ch": { "alias": "rnoou76f" }
+          }
+        },
+        {
+          "id": "k7bfuuyo",
+          "type": "color",
+          "name": "text/secondary",
+          "description": "Help text and supporting copy.",
+          "codeSyntax": { "web": "--optics-text-secondary" },
+          "groupId": "shvxkldk",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "vp1nhgsp" },
+            "rqoh13ch": { "alias": "qte98yll" }
+          }
+        },
+        {
+          "id": "smii1omk",
+          "type": "color",
+          "name": "text/disabled",
+          "codeSyntax": { "web": "--optics-text-disabled" },
+          "groupId": "shvxkldk",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "qte98yll" },
+            "rqoh13ch": { "alias": "vp1nhgsp" }
+          }
+        },
+        {
+          "id": "kr1g6ssh",
+          "type": "color",
+          "name": "text/link",
+          "codeSyntax": { "web": "--optics-text-link" },
+          "groupId": "shvxkldk",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "yi3wjruz" },
+            "rqoh13ch": { "alias": "vgps0hzo" }
+          }
+        },
+        {
+          "id": "z3xlgweq",
+          "type": "color",
+          "name": "text/link-hover",
+          "codeSyntax": { "web": "--optics-text-link-hover" },
+          "groupId": "shvxkldk",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "rqo96qvy" },
+            "rqoh13ch": { "alias": "pdczgpn0" }
+          }
+        },
+        {
+          "id": "7tmg3h6o",
+          "type": "color",
+          "name": "text/on-fill",
+          "description": "Text on brand and critical fills.",
+          "codeSyntax": { "web": "--optics-text-on-fill" },
+          "groupId": "shvxkldk",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "c2r699t4" },
+            "rqoh13ch": { "alias": "c2r699t4" }
+          }
+        },
+        {
+          "id": "kss2j6pr",
+          "type": "color",
+          "name": "text/inverse",
+          "description": "Text on inverse surfaces.",
+          "codeSyntax": { "web": "--optics-text-inverse" },
+          "groupId": "shvxkldk",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "rnoou76f" },
+            "rqoh13ch": { "alias": "2mq0sni2" }
+          }
+        },
+        {
+          "id": "qu7w11lp",
+          "type": "color",
+          "name": "text/critical",
+          "description": "Text for critical messages, on their tinted surface or the default one.",
+          "codeSyntax": { "web": "--optics-text-critical" },
+          "groupId": "shvxkldk",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "6so4dqn1" },
+            "rqoh13ch": { "alias": "5c7qxggf" }
+          }
+        },
+        {
+          "id": "d9f8bjzk",
+          "type": "color",
+          "name": "text/success",
+          "description": "Text for success messages, on their tinted surface or the default one.",
+          "codeSyntax": { "web": "--optics-text-success" },
+          "groupId": "shvxkldk",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "ihvvki6b" },
+            "rqoh13ch": { "alias": "qfdvd9gb" }
+          }
+        },
+        {
+          "id": "wizhludj",
+          "type": "color",
+          "name": "text/warning",
+          "description": "Text for warning messages, on their tinted surface or the default one.",
+          "codeSyntax": { "web": "--optics-text-warning" },
+          "groupId": "shvxkldk",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "rwvfivrt" },
+            "rqoh13ch": { "alias": "4ij2scm0" }
+          }
+        },
+        {
+          "id": "bo6du8fo",
+          "type": "color",
+          "name": "text/caution",
+          "description": "Text for caution messages, on their tinted surface or the default one.",
+          "codeSyntax": { "web": "--optics-text-caution" },
+          "groupId": "shvxkldk",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "okqat5cv" },
+            "rqoh13ch": { "alias": "u3vsdmpz" }
+          }
+        },
+        {
+          "id": "jh19eare",
+          "type": "color",
+          "name": "text/info",
+          "description": "Text for info messages, on their tinted surface or the default one.",
+          "codeSyntax": { "web": "--optics-text-info" },
+          "groupId": "shvxkldk",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "r54s7r8n" },
+            "rqoh13ch": { "alias": "7s3otjw3" }
+          }
+        },
+        {
+          "id": "pbw68hhl",
+          "type": "color",
+          "name": "text/magic",
+          "description": "Text for magic messages, on their tinted surface or the default one.",
+          "codeSyntax": { "web": "--optics-text-magic" },
+          "groupId": "shvxkldk",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "5clo39ly" },
+            "rqoh13ch": { "alias": "5kn8cdqv" }
+          }
+        },
+        {
+          "id": "wlc156so",
+          "type": "color",
+          "name": "border/default",
+          "description": "Cards and dividers.",
+          "codeSyntax": { "web": "--optics-border-default" },
+          "groupId": "copmz66n",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "h7581n0e" },
+            "rqoh13ch": { "alias": "0arnetpm" }
+          }
+        },
+        {
+          "id": "m95fvkgu",
+          "type": "color",
+          "name": "border/strong",
+          "description": "Inputs and checkboxes: 3:1 against the surface.",
+          "codeSyntax": { "web": "--optics-border-strong" },
+          "groupId": "copmz66n",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "34zwvocb" },
+            "rqoh13ch": { "alias": "34zwvocb" }
+          }
+        },
+        {
+          "id": "jahisip7",
+          "type": "color",
+          "name": "border/hover",
+          "codeSyntax": { "web": "--optics-border-hover" },
+          "groupId": "copmz66n",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "vp1nhgsp" },
+            "rqoh13ch": { "alias": "qte98yll" }
+          }
+        },
+        {
+          "id": "6rxpi57u",
+          "type": "color",
+          "name": "border/disabled",
+          "codeSyntax": { "web": "--optics-border-disabled" },
+          "groupId": "copmz66n",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "h7581n0e" },
+            "rqoh13ch": { "alias": "0arnetpm" }
+          }
+        },
+        {
+          "id": "4qsyz25v",
+          "type": "color",
+          "name": "border/focus",
+          "description": "The focus ring of every control.",
+          "codeSyntax": { "web": "--optics-border-focus" },
+          "groupId": "copmz66n",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "yi3wjruz" },
+            "rqoh13ch": { "alias": "vuctqhzj" }
+          }
+        },
+        {
+          "id": "f6r1hvof",
+          "type": "color",
+          "name": "border/brand",
+          "codeSyntax": { "web": "--optics-border-brand" },
+          "groupId": "copmz66n",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "7z942hmc" },
+            "rqoh13ch": { "alias": "9vrwrkqz" }
+          }
+        },
+        {
+          "id": "fbzt7hk8",
+          "type": "color",
+          "name": "border/critical",
+          "codeSyntax": { "web": "--optics-border-critical" },
+          "groupId": "copmz66n",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "6lvgowjw" },
+            "rqoh13ch": { "alias": "pi3s5fke" }
+          }
+        },
+        {
+          "id": "wf6sb3gb",
+          "type": "color",
+          "name": "border/success",
+          "codeSyntax": { "web": "--optics-border-success" },
+          "groupId": "copmz66n",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "8sluruzg" },
+            "rqoh13ch": { "alias": "fvvualuj" }
+          }
+        },
+        {
+          "id": "jfflslj8",
+          "type": "color",
+          "name": "border/warning",
+          "codeSyntax": { "web": "--optics-border-warning" },
+          "groupId": "copmz66n",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "klkicfya" },
+            "rqoh13ch": { "alias": "0vx3tdqe" }
+          }
+        },
+        {
+          "id": "0lirzebt",
+          "type": "color",
+          "name": "border/caution",
+          "codeSyntax": { "web": "--optics-border-caution" },
+          "groupId": "copmz66n",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "xbv77qhl" },
+            "rqoh13ch": { "alias": "619a5u1i" }
+          }
+        },
+        {
+          "id": "yz4r7kgd",
+          "type": "color",
+          "name": "border/info",
+          "codeSyntax": { "web": "--optics-border-info" },
+          "groupId": "copmz66n",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "iope56nr" },
+            "rqoh13ch": { "alias": "0nz7ees5" }
+          }
+        },
+        {
+          "id": "71smj3ik",
+          "type": "color",
+          "name": "border/magic",
+          "codeSyntax": { "web": "--optics-border-magic" },
+          "groupId": "copmz66n",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "odlu04al" },
+            "rqoh13ch": { "alias": "ksgf9648" }
+          }
+        },
+        {
+          "id": "fz25a78r",
+          "type": "color",
+          "name": "icon/default",
+          "codeSyntax": { "web": "--optics-icon-default" },
+          "groupId": "4occpbi1",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "7ilkrr5r" },
+            "rqoh13ch": { "alias": "ngnx2j6l" }
+          }
+        },
+        {
+          "id": "xuj26m6r",
+          "type": "color",
+          "name": "icon/secondary",
+          "codeSyntax": { "web": "--optics-icon-secondary" },
+          "groupId": "4occpbi1",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "vp1nhgsp" },
+            "rqoh13ch": { "alias": "34zwvocb" }
+          }
+        },
+        {
+          "id": "nzvpark1",
+          "type": "color",
+          "name": "icon/disabled",
+          "codeSyntax": { "web": "--optics-icon-disabled" },
+          "groupId": "4occpbi1",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "qte98yll" },
+            "rqoh13ch": { "alias": "vp1nhgsp" }
+          }
+        },
+        {
+          "id": "eg83rp54",
+          "type": "color",
+          "name": "icon/on-fill",
+          "codeSyntax": { "web": "--optics-icon-on-fill" },
+          "groupId": "4occpbi1",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "c2r699t4" },
+            "rqoh13ch": { "alias": "c2r699t4" }
+          }
+        },
+        {
+          "id": "4v0h3nju",
+          "type": "color",
+          "name": "icon/inverse",
+          "codeSyntax": { "web": "--optics-icon-inverse" },
+          "groupId": "4occpbi1",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "rnoou76f" },
+            "rqoh13ch": { "alias": "2mq0sni2" }
+          }
+        },
+        {
+          "id": "i1vypduw",
+          "type": "color",
+          "name": "icon/brand",
+          "codeSyntax": { "web": "--optics-icon-brand" },
+          "groupId": "4occpbi1",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "yi3wjruz" },
+            "rqoh13ch": { "alias": "9vrwrkqz" }
+          }
+        },
+        {
+          "id": "kw0fle29",
+          "type": "color",
+          "name": "icon/critical",
+          "codeSyntax": { "web": "--optics-icon-critical" },
+          "groupId": "4occpbi1",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "6lvgowjw" },
+            "rqoh13ch": { "alias": "1ixx2c03" }
+          }
+        },
+        {
+          "id": "x73garc7",
+          "type": "color",
+          "name": "icon/success",
+          "codeSyntax": { "web": "--optics-icon-success" },
+          "groupId": "4occpbi1",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "8sluruzg" },
+            "rqoh13ch": { "alias": "o0l03d3t" }
+          }
+        },
+        {
+          "id": "guks853s",
+          "type": "color",
+          "name": "icon/warning",
+          "codeSyntax": { "web": "--optics-icon-warning" },
+          "groupId": "4occpbi1",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "klkicfya" },
+            "rqoh13ch": { "alias": "197xz6y5" }
+          }
+        },
+        {
+          "id": "8iotqgn3",
+          "type": "color",
+          "name": "icon/caution",
+          "codeSyntax": { "web": "--optics-icon-caution" },
+          "groupId": "4occpbi1",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "xbv77qhl" },
+            "rqoh13ch": { "alias": "249bmwtt" }
+          }
+        },
+        {
+          "id": "xjtrcnjt",
+          "type": "color",
+          "name": "icon/info",
+          "codeSyntax": { "web": "--optics-icon-info" },
+          "groupId": "4occpbi1",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "iope56nr" },
+            "rqoh13ch": { "alias": "ardc9zfa" }
+          }
+        },
+        {
+          "id": "gz7agl2b",
+          "type": "color",
+          "name": "icon/magic",
+          "codeSyntax": { "web": "--optics-icon-magic" },
+          "groupId": "4occpbi1",
+          "valuesByMode": {
+            "h6gi7niy": { "alias": "odlu04al" },
+            "rqoh13ch": { "alias": "0pwk8omv" }
+          }
+        },
+        {
+          "id": "vrkusn8c",
+          "type": "shadow",
+          "name": "shadow/100",
+          "codeSyntax": { "web": "--optics-shadow-100" },
+          "groupId": "krwrlmkb",
+          "valuesByMode": {
+            "h6gi7niy": { "blur": 0, "color": { "alias": "dljid04v" }, "spread": 0, "x": 0, "y": 1 },
+            "rqoh13ch": { "blur": 0, "color": { "alias": "x8sunec1" }, "spread": 0, "x": 0, "y": 1 }
+          }
+        },
+        {
+          "id": "ip6xdo8w",
+          "type": "shadow",
+          "name": "shadow/200",
+          "codeSyntax": { "web": "--optics-shadow-200" },
+          "groupId": "krwrlmkb",
+          "valuesByMode": {
+            "h6gi7niy": { "blur": 2, "color": { "alias": "dljid04v" }, "spread": 0, "x": 0, "y": 1 },
+            "rqoh13ch": { "blur": 2, "color": { "alias": "ijjw6bfe" }, "spread": 0, "x": 0, "y": 1 }
+          }
+        },
+        {
+          "id": "vgnmokcc",
+          "type": "shadow",
+          "name": "shadow/300",
+          "codeSyntax": { "web": "--optics-shadow-300" },
+          "groupId": "krwrlmkb",
+          "valuesByMode": {
+            "h6gi7niy": {
+              "blur": 6,
+              "color": { "alias": "fiegmoy6" },
+              "spread": -2,
+              "x": 0,
+              "y": 4
+            },
+            "rqoh13ch": {
+              "blur": 6,
+              "color": { "alias": "jl6de4ul" },
+              "spread": -2,
+              "x": 0,
+              "y": 4
+            }
+          }
+        },
+        {
+          "id": "yxmrjkpv",
+          "type": "shadow",
+          "name": "shadow/400",
+          "codeSyntax": { "web": "--optics-shadow-400" },
+          "groupId": "krwrlmkb",
+          "valuesByMode": {
+            "h6gi7niy": {
+              "blur": 16,
+              "color": { "alias": "fiegmoy6" },
+              "spread": -4,
+              "x": 0,
+              "y": 8
+            },
+            "rqoh13ch": {
+              "blur": 16,
+              "color": { "alias": "jl6de4ul" },
+              "spread": -4,
+              "x": 0,
+              "y": 8
+            }
+          }
+        },
+        {
+          "id": "49uje42h",
+          "type": "shadow",
+          "name": "shadow/500",
+          "codeSyntax": { "web": "--optics-shadow-500" },
+          "groupId": "krwrlmkb",
+          "valuesByMode": {
+            "h6gi7niy": {
+              "blur": 20,
+              "color": { "alias": "fiegmoy6" },
+              "spread": -8,
+              "x": 0,
+              "y": 12
+            },
+            "rqoh13ch": {
+              "blur": 20,
+              "color": { "alias": "yz207hdu" },
+              "spread": -8,
+              "x": 0,
+              "y": 12
+            }
+          }
+        },
+        {
+          "id": "i7geqb3z",
+          "type": "shadow",
+          "name": "shadow/600",
+          "codeSyntax": { "web": "--optics-shadow-600" },
+          "groupId": "krwrlmkb",
+          "valuesByMode": {
+            "h6gi7niy": {
+              "blur": 20,
+              "color": { "alias": "fiegmoy6" },
+              "spread": -8,
+              "x": 0,
+              "y": 20
+            },
+            "rqoh13ch": {
+              "blur": 20,
+              "color": { "alias": "dljid04v" },
+              "spread": -8,
+              "x": 0,
+              "y": 20
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "af2y9hii",
+      "name": "Typography",
+      "defaultModeId": "994qde8u",
+      "groups": [
+        {
+          "id": "noafjhiu",
+          "name": "heading",
+          "description": "Titles, from page titles (2xl) to card titles (sm).",
+          "parentId": null
+        },
+        {
+          "id": "gto4exn1",
+          "name": "body",
+          "description": "Running text and controls.",
+          "parentId": null
+        }
+      ],
+      "modes": [{ "id": "994qde8u", "name": "Default" }],
+      "variables": [
+        {
+          "id": "kipy8s1o",
+          "type": "typography",
+          "name": "heading/2xl",
+          "codeSyntax": { "web": "--optics-heading-2xl" },
+          "groupId": "noafjhiu",
+          "valuesByMode": {
+            "994qde8u": {
+              "fontFamily": { "alias": "e180pq25" },
+              "fontSize": { "alias": "gmtr6isg" },
+              "fontWeight": { "alias": "36t6sam4" },
+              "letterSpacing": { "alias": "js9fx7v3" },
+              "lineHeight": { "alias": "inh99nmd" }
+            }
+          }
+        },
+        {
+          "id": "1zl15t50",
+          "type": "typography",
+          "name": "heading/xl",
+          "codeSyntax": { "web": "--optics-heading-xl" },
+          "groupId": "noafjhiu",
+          "valuesByMode": {
+            "994qde8u": {
+              "fontFamily": { "alias": "e180pq25" },
+              "fontSize": { "alias": "idm3ykr3" },
+              "fontWeight": { "alias": "36t6sam4" },
+              "letterSpacing": { "alias": "js9fx7v3" },
+              "lineHeight": { "alias": "ahdsemyc" }
+            }
+          }
+        },
+        {
+          "id": "dbp9zxvj",
+          "type": "typography",
+          "name": "heading/lg",
+          "codeSyntax": { "web": "--optics-heading-lg" },
+          "groupId": "noafjhiu",
+          "valuesByMode": {
+            "994qde8u": {
+              "fontFamily": { "alias": "e180pq25" },
+              "fontSize": { "alias": "cfuw33l3" },
+              "fontWeight": { "alias": "pvgd9t55" },
+              "letterSpacing": { "alias": "js9fx7v3" },
+              "lineHeight": { "alias": "ahdsemyc" }
+            }
+          }
+        },
+        {
+          "id": "clq57vxd",
+          "type": "typography",
+          "name": "heading/md",
+          "codeSyntax": { "web": "--optics-heading-md" },
+          "groupId": "noafjhiu",
+          "valuesByMode": {
+            "994qde8u": {
+              "fontFamily": { "alias": "e180pq25" },
+              "fontSize": { "alias": "78iayudx" },
+              "fontWeight": { "alias": "pvgd9t55" },
+              "letterSpacing": { "alias": "s78nget6" },
+              "lineHeight": { "alias": "inh99nmd" }
+            }
+          }
+        },
+        {
+          "id": "xfhn53pf",
+          "type": "typography",
+          "name": "heading/sm",
+          "codeSyntax": { "web": "--optics-heading-sm" },
+          "groupId": "noafjhiu",
+          "valuesByMode": {
+            "994qde8u": {
+              "fontFamily": { "alias": "e180pq25" },
+              "fontSize": { "alias": "9bfkvcsi" },
+              "fontWeight": { "alias": "pvgd9t55" },
+              "letterSpacing": { "alias": "s78nget6" },
+              "lineHeight": { "alias": "0qvgtp4t" }
+            }
+          }
+        },
+        {
+          "id": "u5hl5tdf",
+          "type": "typography",
+          "name": "heading/xs",
+          "codeSyntax": { "web": "--optics-heading-xs" },
+          "groupId": "noafjhiu",
+          "valuesByMode": {
+            "994qde8u": {
+              "fontFamily": { "alias": "e180pq25" },
+              "fontSize": { "alias": "oh097gog" },
+              "fontWeight": { "alias": "pvgd9t55" },
+              "letterSpacing": { "alias": "s78nget6" },
+              "lineHeight": { "alias": "3lzvio3o" }
+            }
+          }
+        },
+        {
+          "id": "ivu3qsti",
+          "type": "typography",
+          "name": "body/lg",
+          "codeSyntax": { "web": "--optics-body-lg" },
+          "groupId": "gto4exn1",
+          "valuesByMode": {
+            "994qde8u": {
+              "fontFamily": { "alias": "e180pq25" },
+              "fontSize": { "alias": "9bfkvcsi" },
+              "fontWeight": { "alias": "w60b7ome" },
+              "letterSpacing": { "alias": "s78nget6" },
+              "lineHeight": { "alias": "0qvgtp4t" }
+            }
+          }
+        },
+        {
+          "id": "9olwij4z",
+          "type": "typography",
+          "name": "body/md",
+          "description": "The default: most text and controls.",
+          "codeSyntax": { "web": "--optics-body-md" },
+          "groupId": "gto4exn1",
+          "valuesByMode": {
+            "994qde8u": {
+              "fontFamily": { "alias": "e180pq25" },
+              "fontSize": { "alias": "oh097gog" },
+              "fontWeight": { "alias": "w60b7ome" },
+              "letterSpacing": { "alias": "s78nget6" },
+              "lineHeight": { "alias": "3lzvio3o" }
+            }
+          }
+        },
+        {
+          "id": "9a01bbgc",
+          "type": "typography",
+          "name": "body/md-medium",
+          "description": "Button labels and emphasis.",
+          "codeSyntax": { "web": "--optics-body-md-medium" },
+          "groupId": "gto4exn1",
+          "valuesByMode": {
+            "994qde8u": {
+              "fontFamily": { "alias": "e180pq25" },
+              "fontSize": { "alias": "oh097gog" },
+              "fontWeight": { "alias": "fpazfonu" },
+              "letterSpacing": { "alias": "s78nget6" },
+              "lineHeight": { "alias": "3lzvio3o" }
+            }
+          }
+        },
+        {
+          "id": "1tujfu9q",
+          "type": "typography",
+          "name": "body/md-semibold",
+          "codeSyntax": { "web": "--optics-body-md-semibold" },
+          "groupId": "gto4exn1",
+          "valuesByMode": {
+            "994qde8u": {
+              "fontFamily": { "alias": "e180pq25" },
+              "fontSize": { "alias": "oh097gog" },
+              "fontWeight": { "alias": "pvgd9t55" },
+              "letterSpacing": { "alias": "s78nget6" },
+              "lineHeight": { "alias": "3lzvio3o" }
+            }
+          }
+        },
+        {
+          "id": "hnqsr13m",
+          "type": "typography",
+          "name": "body/sm",
+          "description": "Captions and help text.",
+          "codeSyntax": { "web": "--optics-body-sm" },
+          "groupId": "gto4exn1",
+          "valuesByMode": {
+            "994qde8u": {
+              "fontFamily": { "alias": "e180pq25" },
+              "fontSize": { "alias": "ccam5utq" },
+              "fontWeight": { "alias": "w60b7ome" },
+              "letterSpacing": { "alias": "s78nget6" },
+              "lineHeight": { "alias": "ahdsemyc" }
+            }
+          }
+        },
+        {
+          "id": "gz52bsn4",
+          "type": "typography",
+          "name": "body/sm-medium",
+          "description": "Badges.",
+          "codeSyntax": { "web": "--optics-body-sm-medium" },
+          "groupId": "gto4exn1",
+          "valuesByMode": {
+            "994qde8u": {
+              "fontFamily": { "alias": "e180pq25" },
+              "fontSize": { "alias": "ccam5utq" },
+              "fontWeight": { "alias": "fpazfonu" },
+              "letterSpacing": { "alias": "s78nget6" },
+              "lineHeight": { "alias": "ahdsemyc" }
+            }
+          }
+        },
+        {
+          "id": "w4m6fv4o",
+          "type": "typography",
+          "name": "code",
+          "codeSyntax": { "web": "--optics-code" },
+          "valuesByMode": {
+            "994qde8u": {
+              "fontFamily": { "alias": "kfi7pdpf" },
+              "fontSize": { "alias": "oh097gog" },
+              "fontWeight": { "alias": "w60b7ome" },
+              "letterSpacing": { "alias": "s78nget6" },
+              "lineHeight": { "alias": "3lzvio3o" }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

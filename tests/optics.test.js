@@ -65,11 +65,7 @@ test('optics: Optics Components validate, use tokens for every value, and every 
   const paths = { 'optics-tokens': '.sigma/tokens/optics.sigma.json', 'optics-icons': '.sigma/icons/optics.sigma.json' };
   const files = { [paths['optics-tokens']]: toProjectFile(tokenDoc).file, [paths['optics-icons']]: toProjectFile(iconDoc).file };
   const file = toProjectFile(doc, { pathOf: (id) => paths[id] || null }).file;
-  for (const pg of file.pages) {
-    delete pg.welcomeColumns; // arranged when the editor opens it
-    delete pg.welcomeRows;
-  }
-  const errors = validateFile(file, { path: '.sigma/design/optics-components.sigma.json', files }).filter((i) => i.level === 'error');
+    const errors = validateFile(file, { path: '.sigma/design/optics-components.sigma.json', files }).filter((i) => i.level === 'error');
   eq(errors.map((e) => `${e.at}: ${e.message}`).slice(0, 5), []);
   const audit = auditDocument(doc);
   eq(audit.groups.map((g) => `${g.kind} ${JSON.stringify(g.value)} ×${g.layers.length} (${g.layers.slice(0, 3).map((l) => l.name).join(', ')})`), [], 'no one-off values');
@@ -77,6 +73,16 @@ test('optics: Optics Components validate, use tokens for every value, and every 
   eq(rows.length, 15);
   const notReady = rows.flatMap(({ node }) => readiness(node).filter((c) => !c.ok).map((c) => `${node.name}: ${c.label} (${c.hint})`));
   eq(notReady, [], 'every component Ready');
+  // Laid out, nothing on a page overlaps (layouts are placed when the file is built, not when it opens).
+  const overlaps = [];
+  for (const pg of doc.pages) {
+    const boxes = pg.children.map((n) => ({ name: n.name, x0: n.x, y0: n.y, x1: n.x + n.w, y1: n.y + n.h }));
+    for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+      const a = boxes[i], b = boxes[j];
+      if (a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1) overlaps.push(`${pg.name}: ${a.name} / ${b.name}`);
+    }
+  }
+  eq(overlaps, [], 'nothing overlaps');
   const report = useReport([{ name: 'Optics Components', doc }]).files[0];
   ok(report.tokenShare >= 0.99, `token share ${report.tokenShare}`);
 });

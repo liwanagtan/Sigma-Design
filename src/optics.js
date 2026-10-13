@@ -368,10 +368,7 @@ export function opticsComponentsDocument(collections) {
   const example = (comp, kindOf, caption, children) => {
     const doIt = kindOf === 'Do';
     const f = frame(`${comp} · ${kindOf}`, { dir: 'vertical', gap: '300', pad: '600', fill: 'bg/surface/default', stroke: 'border/default', radius: '300', props: { minW: 360 } }, [
-      box('frame', 'Verdict', { dir: 'horizontal', gap: '100', alignC: 'center' }, [
-        icon('Icon', I(doIt ? 'circle-check' : 'circle-alert'), doIt ? 'icon/success' : 'icon/critical', 20),
-        text('Verdict', doIt ? 'Do' : 'Don’t', doIt ? 'text/success' : 'text/critical', 'heading/xs'),
-      ]),
+      text('Verdict', doIt ? 'Do' : 'Don’t', doIt ? 'text/success' : 'text/critical', 'heading/xs'),
       para('Caption', caption, 'text/secondary', 'body/md', { w: 320 }),
       box('frame', 'Example', { dir: 'horizontal', gap: '200', alignC: 'center' }, children),
     ]);
@@ -434,18 +431,32 @@ export function opticsComponentsDocument(collections) {
   ready(spinner, { codeName: 'Spinner', a11y: { role: 'img', label: 'Loading' }, docs: { purpose: 'Shows that something is loading.', notFor: 'Progress you can measure (use a progress bar).', usage: 'One spinner for the area that’s loading, with text saying what.', code: 'components/Spinner', role: 'img', keyboard: 'Not focusable; announced as “Loading”.', ...pairs.Spinner } });
 
   // ---------- pages ----------
+  // Placed here, not when the file opens, so it's laid out the same in the browser and as a project file.
+  // Component sets have fixed sizes; the other heights are as laid out (measured), with room to spare.
   const sets = [button, iconButton, textField, select, checkbox, radio, badge, banner, card, avatar, tab, tabs, modal, tooltip, spinner];
-  const at = (nodes, x) => nodes.forEach((n) => Object.assign(n, { x, y: 0 }));
-  const actions = [button, iconButton, tab, tabs, modal, tooltip, spinner];
-  const forms = [textField, select, checkbox, radio, badge, banner, card, avatar];
-  at(actions, 0);
-  at(forms, 920);
-  const dos = usage.filter((_, i) => i % 2 === 0), donts = usage.filter((_, i) => i % 2 === 1);
-  at(dos, 0);
-  at(donts, 600);
+  const LAID_OUT = { Card: 166, Tabs: 45, Modal: 218, Tooltip: 24 };
+  const heightOf = (n) => (n.type === 'componentSet' ? n.h : LAID_OUT[n.name] + 24);
+  const column = (nodes, x) => nodes.reduce((y, n) => {
+    Object.assign(n, { x, y });
+    return y + heightOf(n) + 96;
+  }, 0);
+  column([button, iconButton, tab, tabs, modal, tooltip, spinner], 0);
+  column([textField, select, checkbox, radio, badge, banner, card, avatar], 920);
+  // Do and Don't side by side, a row per component, each row as tall as its taller example (measured) and more.
+  const EXAMPLE_H = {
+    Button: 179, 'Icon button': 178, 'Text field': 224, Select: 224, Checkbox: 226, 'Radio button': 226, Badge: 155, Banner: 212,
+    Card: 418, Avatar: 162, Tabs: 179, Modal: 332, Tooltip: 186, Spinner: 154,
+  };
+  let y = 0;
+  for (let i = 0; i < usage.length; i += 2) {
+    const comp = usage[i].name.split(' · ')[0];
+    Object.assign(usage[i], { x: 0, y });
+    Object.assign(usage[i + 1], { x: 600, y });
+    y += (EXAMPLE_H[comp] || 240) + 24 + 64;
+  }
   const pages = [
-    { id: 'optics-components', name: 'Components', background: '#F1F1F1', children: sets, welcomeColumns: [actions.map((n) => n.id), forms.map((n) => n.id)] },
-    { id: 'optics-usage', name: 'Usage', background: '#F1F1F1', children: usage, welcomeRows: dos.map((n, i) => [n.id, donts[i].id]) },
+    { id: 'optics-components', name: 'Components', background: '#F1F1F1', children: sets },
+    { id: 'optics-usage', name: 'Usage', background: '#F1F1F1', children: usage },
   ];
   return { name: OPTICS_COMPONENTS_NAME, pages, currentPageId: pages[0].id };
 }
@@ -503,9 +514,7 @@ export function opticsFoundationsDocument(collections, { icons = [] } = {}) {
     };
     const textRow = (v) => box('frame', v.name, { dir: 'horizontal', gap: '200', alignC: 'center' }, [
       box('frame', 'Sample', { dir: 'horizontal', px: '200', py: '100', radius: '200', fill: surfaceFor(v.name), stroke: 'border/default' }, [
-        v.name.startsWith('icon/')
-          ? Object.assign(icon('Icon', I('star'), 'icon/default', 16), { bindings: { 'fills.0.color': v.id } })
-          : Object.assign(text('Aa', 'Aa', 'text/default', 'body/md-semibold'), { bindings: { 'fills.0.color': v.id, typography: K.T('body/md-semibold') } }),
+        Object.assign(text('Aa', 'Aa', 'text/default', 'body/md-semibold'), { bindings: { 'fills.0.color': v.id, typography: K.T('body/md-semibold') } }),
       ]),
       text('Name', v.name, 'text/default', 'body/sm'),
     ]);
@@ -516,7 +525,7 @@ export function opticsFoundationsDocument(collections, { icons = [] } = {}) {
         column('Backgrounds', of('bg/').map(swatchRow)),
         column('Text', of('text/').map(textRow)),
         column('Borders', of('border/').map(swatchRow)),
-        column('Icons', of('icon/').map(textRow)),
+        column('Icons', of('icon/').map(swatchRow)),
       ]),
     ]);
   };
@@ -574,18 +583,27 @@ export function opticsFoundationsDocument(collections, { icons = [] } = {}) {
   // ---------- Icons ----------
   const groups = {};
   for (const ic of icons.filter((x) => x.style === 'outline')) (groups[ic.group] ||= []).push(ic);
-  // A row of examples per group (the whole set is in Optics Icons, with search).
+  // A row of examples per group (the whole set is in Optics Icons, with search). Each is an instance of an Icon
+  // tile component (icons go inside main components), choosing its icon and name.
   const SHOWN = 12;
+  const tileIcon = 'optics-tile-icon', tileName = 'optics-tile-name';
+  const first = icons.find((x) => x.style === 'outline');
+  const tile = first && box('component', 'Icon tile', { dir: 'vertical', gap: '100', w: 112, pad: '200', alignC: 'center', radius: '200', stroke: 'border/default' }, [
+    icon('Icon', first.id, 'icon/default', 24, { propRefs: { iconId: tileIcon } }),
+    text('Name', first.name, 'text/secondary', 'body/sm', { propRefs: { text: tileName } }),
+  ]);
+  if (tile) {
+    tile.props = { [tileIcon]: { name: 'Icon', type: 'icon', default: first.id }, [tileName]: { name: 'Name', type: 'text', default: first.name } };
+    tile.description = 'One icon and its name, for the Icons page.';
+  }
+  const tileOf = (ic) => createNode('instance', { name: ic.name, componentId: tile.id, w: tile.w, h: tile.h, overrides: {}, children: [], propValues: { [tileIcon]: ic.id, [tileName]: ic.name } });
   const iconRows = Object.entries(groups).map(([g, list]) => box('frame', g, { dir: 'vertical', gap: '200' }, [
     text('Group', list.length > SHOWN ? `${g} · ${list.length} icons` : g, 'text/default', 'heading/xs'),
-    box('frame', 'Icons', { dir: 'horizontal', gap: '200' }, list.slice(0, SHOWN).map((ic) => box('frame', ic.name, { dir: 'vertical', gap: '100', w: 112, pad: '200', alignC: 'center', radius: '200', stroke: 'border/default' }, [
-      icon('Icon', ic.id, 'icon/default', 24),
-      text('Name', ic.name, 'text/secondary', 'body/sm'),
-    ]))),
+    box('frame', 'Icons', { dir: 'horizontal', gap: '200' }, list.slice(0, SHOWN).map(tileOf)),
   ]));
   const total = icons.filter((x) => x.style === 'outline').length;
   const iconSheet = sheet('Icons', `Optics Icons is the whole Lucide set from Sigma Icons: ${total.toLocaleString()} outline icons, 24px with a 2px stroke, colored with the icon tokens. Here are some from each group; open Optics Icons to see and search them all. Pick icons people already know, and name icon-only controls for screen readers.`,
-    iconRows.length ? [section('Optics Icons', iconRows)] : [para('None', 'Optics Icons couldn’t be made, so this page has no icons.', 'text/secondary', 'body/md')]);
+    iconRows.length ? [section('Icon tile', [tile]), section('Optics Icons', iconRows)] : [para('None', 'Optics Icons couldn’t be made, so this page has no icons.', 'text/secondary', 'body/md')]);
 
   const pages = [
     page('optics-color', 'Color', color), page('optics-typography', 'Typography', type), page('optics-spacing', 'Spacing', spacing),
