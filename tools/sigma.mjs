@@ -18,7 +18,7 @@
 //   node tools/sigma.mjs changeset prepare <id> [project] --to DIR  apply it, write the code, copy it in, check
 //   node tools/sigma.mjs changeset pr-body <id> [project] [--images-base URL]
 //   node tools/sigma.mjs changeset ticket <id> [project]
-//   node tools/sigma.mjs changeset sync [project]                 statuses from GitHub (gh), GitLab (glab) or Azure DevOps (az)
+//   node tools/sigma.mjs changeset sync [project]                 statuses from GitHub (gh), GitLab (glab), Azure DevOps (az) or Bitbucket (its API)
 //   node tools/sigma.mjs library build [project] --from DIR [--library PATH] [--dry-run]   components from captures
 //   node tools/sigma.mjs pages build [project] --from DIR [--dry-run]                       pages from captures, as library instances
 //   node tools/sigma.mjs components diff|write [project] [--base REV] [--dry-run]           library changes → code
@@ -535,7 +535,7 @@ function changesetStatus(id, status, dir) {
 // ---------- team workflow (Phase 26) ----------
 // Where a pull (merge) request lives: GitLab by its URL or the project's workflow.git, else GitHub.
 const hostOf = (url, workflow = {}) => (/gitlab/i.test(url) ? 'gitlab' : /github\.com/i.test(url) ? 'github'
-  : /dev\.azure\.com|visualstudio\.com/i.test(url) ? 'azure' : workflow.git || 'github');
+  : /dev\.azure\.com|visualstudio\.com/i.test(url) ? 'azure' : /bitbucket\.org/i.test(url) ? 'bitbucket' : workflow.git || 'github');
 // A ticket's short id for branch names: a Linear or Jira key (DES-12), a GitHub or GitLab issue number, or
 // the start of a Notion page id.
 function ticketId(t) {
@@ -709,8 +709,8 @@ async function changesetPrepare(id, dir) {
 }
 
 // Statuses from GitHub for proposals with a pull request.
-// A pull request's state with gh (GitHub), glab (a GitLab merge request) or az (Azure DevOps): { state (a
-// changeset status), number, mergedAt }.
+// A pull request's state with gh (GitHub), glab (a GitLab merge request), az (Azure DevOps) or Bitbucket's API:
+// { state (a changeset status), number, mergedAt }.
 function readPullRequest(root, ref) {
   const run = (cmd, args) => {
     try {
@@ -737,6 +737,24 @@ function readPullRequest(root, ref) {
     const state = pr.status === 'completed' ? 'merged' : pr.status === 'abandoned' ? 'closed'
       : (pr.reviewers || []).some((r) => r.vote < 0) ? 'changes-requested' : 'in-review';
     return { state, number: pr.pullRequestId ?? Number(m[2]), mergedAt: pr.closedDate && pr.status === 'completed' ? pr.closedDate : null };
+  }
+  if ((ref.host || hostOf(ref.url)) === 'bitbucket') {
+    // https://bitbucket.org/<workspace>/<repo>/pull-requests/12, read with Bitbucket's API through curl. A token
+    // comes from the environment (BITBUCKET_TOKEN), never from Sigma's files; public repositories need none.
+    // It goes to curl on stdin, so it isn't in the process list.
+    const m = ref.url.match(/^https?:\/\/bitbucket\.org\/([^/]+)\/([^/]+)\/pull-requests\/(\d+)/i);
+    if (!m) fail(`${ref.url} isn’t a Bitbucket pull request URL`);
+    const api = `https://api.bitbucket.org/2.0/repositories/${m[1]}/${m[2]}/pullrequests/${m[3]}`;
+    const config = [`url = "${api}"`, 'header = "Accept: application/json"', ...(process.env.BITBUCKET_TOKEN ? [`header = "Authorization: Bearer ${process.env.BITBUCKET_TOKEN}"`] : [])].join('\n');
+    let pr;
+    try {
+      pr = JSON.parse(execFileSync('curl', ['-sfS', '-K', '-'], { cwd: root, encoding: 'utf8', input: config, stdio: ['pipe', 'pipe', 'pipe'] }));
+    } catch (err) {
+      fail(`couldn’t read ${ref.url} from Bitbucket (a private repository needs BITBUCKET_TOKEN): ${String(err.stderr || err.message).trim()}`);
+    }
+    const state = pr.state === 'MERGED' ? 'merged' : pr.state === 'DECLINED' || pr.state === 'SUPERSEDED' ? 'closed'
+      : (pr.participants || []).some((p) => p.state === 'changes_requested') ? 'changes-requested' : 'in-review';
+    return { state, number: pr.id ?? Number(m[3]), mergedAt: pr.state === 'MERGED' ? pr.updated_on || null : null };
   }
   const pr = run('gh', ['pr', 'view', ref.url, '--json', 'state,isDraft,reviewDecision,mergedAt,number']);
   const state = pr.state === 'MERGED' ? 'merged' : pr.state === 'CLOSED' ? 'closed' : pr.reviewDecision === 'CHANGES_REQUESTED' ? 'changes-requested' : 'in-review';

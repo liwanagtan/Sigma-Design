@@ -29,7 +29,7 @@ skills are plain Markdown, and every step they describe is a command you can als
 
 When you send a proposal (`skills/sigma-sync/reference/workflow.md`), the agent uses your own tools to:
 
-- push a branch to your Git host (GitHub or GitLab) and open a draft pull request;
+- push a branch to your Git host (GitHub, GitLab, Azure DevOps or Bitbucket) and open a draft pull request;
 - create a ticket in your tracker (Notion, GitHub or GitLab issues, Linear or Jira).
 
 The pull request and ticket hold the proposal's title, note, what changed, the accessibility check's results

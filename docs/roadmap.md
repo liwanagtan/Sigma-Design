@@ -713,7 +713,7 @@ Unchanged from Phase 15 above: code names per platform for tokens, components an
 - **Responsive breakpoints:** frames that change layout by width. This reaches into `layout.js` and `render.js`, so it waits until sync works end to end.
 - ~~**Render parity:**~~ Done: `tools/capture/parity.html` captures every component library in `sigma.config.json` from its components page and compares Sigma's layout of each (and its pages) with them; `node tools/test/run-render-parity.mjs <project>` runs it headless, and CI runs it on `examples/css-app`, so drift fails the build.
 - ~~**Accessibility checks**~~ Done (Part D, Phase 16), and in the PR: Propose change runs the check, and the pull request body lists what it found.
-- **More integrations:** GitHub Issues, GitLab (merge requests with `glab`, and issues), Azure DevOps pull requests (`az repos`), Linear and Jira are done (`workflow.git`, `workflow.tracker`). Bitbucket is left: it has no official command line, so syncing statuses needs API credentials stored for Sigma.
+- **More integrations:** GitHub Issues, GitLab (merge requests with `glab`, and issues), Azure DevOps pull requests (`az repos`), Bitbucket pull requests (its API, with a token from `BITBUCKET_TOKEN`), Linear and Jira are done (`workflow.git`, `workflow.tracker`).
 - **CLI and MCP server,** if teams want deterministic sync in CI or agents without a terminal. Built from the steps the skill repeats.
 - **Hosted team service:** a GitHub App so designers without git can propose changes, plus sign-in, permissions and audit logs for mature teams.
 - **Design-aware merging** of Sigma files changed on two branches.
