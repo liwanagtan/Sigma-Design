@@ -76,8 +76,10 @@ export function validateConfig(config, { files = [] } = {}) {
   if (w !== undefined) {
     if (typeof w !== 'object') error('workflow', 'should be an object');
     else {
-      if (w.git !== undefined && !['github'].includes(w.git)) warn('workflow.git', 'Sigma works with GitHub so far');
-      if (w.tracker !== undefined && !['notion', 'github', 'none'].includes(w.tracker)) warn('workflow.tracker', 'Sigma works with Notion and GitHub Issues so far');
+      if (w.git !== undefined && !['github', 'gitlab'].includes(w.git)) warn('workflow.git', 'Sigma works with GitHub and GitLab so far');
+      if (w.tracker !== undefined && !TRACKERS.includes(w.tracker)) warn('workflow.tracker', `Sigma works with ${TRACKERS.filter((t) => t !== 'none').join(', ')} so far (or none)`);
+      if (w.tracker === 'linear' && !w.linear?.team) warn('workflow.linear.team', 'say which Linear team gets the tickets (its key, like "DES")');
+      if (w.tracker === 'jira' && !w.jira?.project) warn('workflow.jira.project', 'say which Jira project gets the tickets (its key, like "DES")');
       if (w.branch !== undefined && (typeof w.branch !== 'string' || !w.branch.includes('{slug}'))) warn('workflow.branch', 'should include {slug} (and usually {ticket}), like "design/{ticket}-{slug}"');
       if (w.labels !== undefined && !Array.isArray(w.labels)) error('workflow.labels', 'should be a list');
       if (w.reviewers !== undefined && !Array.isArray(w.reviewers)) error('workflow.reviewers', 'should be a list');
@@ -85,6 +87,8 @@ export function validateConfig(config, { files = [] } = {}) {
   }
   return issues;
 }
+
+const TRACKERS = ['notion', 'github', 'gitlab', 'linear', 'jira', 'none'];
 
 // A project's config, with defaults for what isn't set.
 export function withDefaults(config = {}) {

@@ -370,6 +370,11 @@ What the sync skill decided about the project, so later runs follow it (people c
 - `components[].manifest`: the captures' manifest the library was built from (default
   `.sigma/captures/manifest.json`; `skills/sigma-sync/reference/components.md`); `components[].styles`: the CSS
   files its components' styles are in, where `components write` edits them (default: every `.css` file).
+- `workflow` (how a proposal becomes a ticket and a pull request; `skills/sigma-sync/reference/workflow.md`):
+  `git` is `github` or `gitlab`; `tracker` is `notion`, `github`, `gitlab`, `linear`, `jira` or `none`, with
+  `notion: { database, status, done }`, `linear: { team, done }` or `jira: { project, issueType, done }`;
+  `branch` is a pattern with `{slug}`, `{ticket}` (a Linear or Jira key, an issue number, or the start of a
+  Notion page id) and `{id}`.
 
 ## Versions
 

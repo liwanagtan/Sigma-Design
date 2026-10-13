@@ -18,7 +18,7 @@
 //   node tools/sigma.mjs changeset prepare <id> [project] --to DIR  apply it, write the code, copy it in, check
 //   node tools/sigma.mjs changeset pr-body <id> [project] [--images-base URL]
 //   node tools/sigma.mjs changeset ticket <id> [project]
-//   node tools/sigma.mjs changeset sync [project]                 statuses from GitHub (gh pr view)
+//   node tools/sigma.mjs changeset sync [project]                 statuses from GitHub (gh) or GitLab (glab)
 //   node tools/sigma.mjs library build [project] --from DIR [--library PATH] [--dry-run]   components from captures
 //   node tools/sigma.mjs pages build [project] --from DIR [--dry-run]                       pages from captures, as library instances
 //   node tools/sigma.mjs components diff|write [project] [--base REV] [--dry-run]           library changes → code
@@ -523,8 +523,9 @@ function changesetStatus(id, status, dir) {
   const c = changeset(root, id);
   const { path, ...data } = c;
   data.status = status;
-  if (flags.pr) data.pr = { ...(data.pr || {}), host: 'github', url: flags.pr, ...(flags['pr-number'] ? { number: Number(flags['pr-number']) } : {}) };
-  if (flags.ticket) data.ticket = { ...(data.ticket || {}), tracker: flags.tracker || 'notion', url: flags.ticket };
+  const workflow = readProject(root).config?.workflow || {};
+  if (flags.pr) data.pr = { ...(data.pr || {}), host: hostOf(flags.pr, workflow), url: flags.pr, ...(flags['pr-number'] ? { number: Number(flags['pr-number']) } : {}) };
+  if (flags.ticket) data.ticket = { ...(data.ticket || {}), tracker: flags.tracker || (workflow.tracker && workflow.tracker !== 'none' ? workflow.tracker : 'notion'), url: flags.ticket };
   if (flags.branch) data.branch = flags.branch;
   data.updatedAt = new Date().toISOString();
   writeText(root, path, formatProjectJSON(data));
@@ -532,10 +533,20 @@ function changesetStatus(id, status, dir) {
 }
 
 // ---------- team workflow (Phase 26) ----------
+// Where a pull (merge) request lives: GitLab by its URL or the project's workflow.git, else GitHub.
+const hostOf = (url, workflow = {}) => (/gitlab/i.test(url) ? 'gitlab' : /github\.com/i.test(url) ? 'github' : workflow.git || 'github');
+// A ticket's short id for branch names: a Linear or Jira key (DES-12), a GitHub or GitLab issue number, or
+// the start of a Notion page id.
+function ticketId(t) {
+  if (t?.id) return String(t.id);
+  const url = t?.url || '';
+  if (/notion\.(so|site)/i.test(url)) return url.match(/([0-9a-f]{32})\/?(\?.*)?$/i)?.[1]?.slice(0, 8) || '';
+  return url.match(/\b([A-Z][A-Z0-9]+-\d+)\b/)?.[1] || url.match(/\/(?:issues|work_items)\/(\d+)/)?.[1] || url.match(/([0-9a-f]{32})\/?$/i)?.[1]?.slice(0, 8) || '';
+}
 const slugOf = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'change';
 function branchName(config, c) {
   const pattern = config.workflow?.branch || 'design/{slug}';
-  const ticket = c.ticket?.id || c.ticket?.url?.match(/([0-9a-f]{32}|[A-Z]+-\d+)\/?$/i)?.[1]?.slice(0, 8) || '';
+  const ticket = ticketId(c.ticket);
   return pattern.replace('{slug}', slugOf(c.title)).replace('{id}', c.id).replace('{ticket}', ticket).replace(/\/-|-\/|--+/g, (m) => (m.includes('/') ? '/' : '-')).replace(/-$/, '');
 }
 
@@ -697,18 +708,37 @@ async function changesetPrepare(id, dir) {
 }
 
 // Statuses from GitHub for proposals with a pull request.
+// A pull request's state with gh, or a GitLab merge request's with glab: { state (a changeset status),
+// number, mergedAt }.
+function readPullRequest(root, ref) {
+  const run = (cmd, args) => {
+    try {
+      return JSON.parse(execFileSync(cmd, args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
+    } catch (err) {
+      fail(`couldn’t read ${ref.url} with ${cmd} (is ${cmd} installed and signed in?): ${String(err.stderr || err.message).trim()}`);
+    }
+  };
+  if ((ref.host || hostOf(ref.url)) === 'gitlab') {
+    // https://gitlab.example.com/group/project/-/merge_requests/12
+    const m = ref.url.match(/^https?:\/\/([^/]+)\/(.+?)\/-\/merge_requests\/(\d+)/);
+    if (!m) fail(`${ref.url} isn’t a GitLab merge request URL`);
+    const mr = run('glab', ['mr', 'view', m[3], '-R', `${m[1]}/${m[2]}`, '--output', 'json']);
+    const state = mr.state === 'merged' ? 'merged' : mr.state === 'closed' ? 'closed'
+      : mr.detailed_merge_status === 'requested_changes' ? 'changes-requested' : 'in-review';
+    return { state, number: mr.iid ?? Number(m[3]), mergedAt: mr.merged_at || null };
+  }
+  const pr = run('gh', ['pr', 'view', ref.url, '--json', 'state,isDraft,reviewDecision,mergedAt,number']);
+  const state = pr.state === 'MERGED' ? 'merged' : pr.state === 'CLOSED' ? 'closed' : pr.reviewDecision === 'CHANGES_REQUESTED' ? 'changes-requested' : 'in-review';
+  return { state, number: pr.number, mergedAt: pr.mergedAt || null };
+}
+
 function changesetSync(dir) {
   const root = resolve(dir || '.');
   const updated = [];
   for (const c of changesets(root)) {
     if (!c.pr?.url || c.status === 'merged' || c.status === 'closed') continue;
-    let pr;
-    try {
-      pr = JSON.parse(execFileSync('gh', ['pr', 'view', c.pr.url, '--json', 'state,isDraft,reviewDecision,mergedAt,number'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
-    } catch (err) {
-      fail(`couldn’t read ${c.pr.url} with gh (is gh installed and signed in?): ${String(err.stderr || err.message).trim()}`);
-    }
-    const status = pr.state === 'MERGED' ? 'merged' : pr.state === 'CLOSED' ? 'closed' : pr.reviewDecision === 'CHANGES_REQUESTED' ? 'changes-requested' : 'in-review';
+    const pr = readPullRequest(root, c.pr);
+    const status = pr.state;
     if (status !== c.status) {
       const { path, ...data } = c;
       writeText(root, path, formatProjectJSON({ ...data, status, pr: { ...c.pr, number: pr.number }, updatedAt: new Date().toISOString(), ...(pr.mergedAt ? { mergedAt: pr.mergedAt } : {}) }));

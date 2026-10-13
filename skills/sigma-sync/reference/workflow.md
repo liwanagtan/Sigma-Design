@@ -10,6 +10,10 @@ process exactly like a developer's would. Read `sigma.config.json` → `workflow
               "notion": { "database": "<database id or URL>", "status": "Status", "done": "Done" } }
 ```
 
+`git` is `github` (with `gh`) or `gitlab` (with `glab`). `tracker` is `notion`, `github` (GitHub Issues),
+`gitlab` (GitLab issues), `linear`, `jira` or `none`; Linear and Jira say where tickets go:
+`"linear": { "team": "DES", "done": "Done" }`, `"jira": { "project": "DES", "issueType": "Task", "done": "Done" }`.
+
 Only do this when the person asks you to send a proposal (or all open ones). Ask before anything they
 haven't asked for: pushing, opening a pull request, creating or moving tickets.
 
@@ -26,6 +30,11 @@ $S changeset show <id> <project>                 # read what it changes
      `$S changeset ticket <id> <project> --json` (title, body, status "To do"), using the Notion tools you
      have (an MCP server or the API). Attach or link the before/after pictures.
    - `github`: `gh issue create --title … --body-file …` with the same text.
+   - `gitlab`: `glab issue create --title … --description "$(cat body.md)" --label design`.
+   - `linear`: create an issue in team `workflow.linear.team` with the Linear tools you have (an MCP server or
+     the GraphQL API), title and body as above.
+   - `jira`: create an issue of type `workflow.jira.issueType` (default Task) in project `workflow.jira.project`
+     with the Jira tools you have (an MCP server, `acli`, or the REST API).
    - `none`: skip.
 
    Record it: `$S changeset status <id> proposed <project> --ticket <url>`.
@@ -52,7 +61,11 @@ $S changeset show <id> <project>                 # read what it changes
 
    ```bash
    gh pr create --draft --base <base> --head "$B" --title "<title>" --body-file /tmp/pr-body.md --label design
+   # GitLab (workflow.git "gitlab"): a draft merge request
+   glab mr create --draft --target-branch <base> --source-branch "$B" --title "<title>" --description "$(cat /tmp/pr-body.md)" --label design
    ```
+
+   On GitLab, `--images-base` is `https://<gitlab host>/<group>/<project>/-/raw/<branch>/<project path>`.
 
    Then: `$S changeset status <id> in-review <project> --pr <url> --pr-number <n> --branch "$B"`, and add the
    pull request's link to the ticket.
@@ -64,9 +77,10 @@ $S changeset show <id> <project>                 # read what it changes
 $S changeset sync <project>
 ```
 
-reads each open proposal's pull request with `gh` and sets its status: **In review**, **Changes requested**
+reads each open proposal's pull request with `gh` (or merge request with `glab`) and sets its status: **In review**, **Changes requested**
 (a reviewer asked for changes: tell the designer what they said), **Merged** or **Closed**. Sigma's Project
-section shows them. When one is merged, move its ticket to Done (`workflow.notion.done`), and tell the person
+section shows them. When one is merged, move its ticket to Done (`workflow.notion.done`, `workflow.linear.done` or
+`workflow.jira.done`; GitHub and GitLab issues close from the pull request with "Closes #12"), and tell the person
 to pull: Sigma reloads the files, and the merged edits stop showing as changes.
 
 ## When review asks for changes
