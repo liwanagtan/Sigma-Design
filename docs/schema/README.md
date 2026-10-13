@@ -250,6 +250,28 @@ for agents mapping Sigma to the code library: `codeName` on a component (or its 
 `codeName` on a property (`"label"`), and `codeNames` on a component set for its variant properties
 (`{ "Style": "variant" }`). Without them, names come from Sigma's (`Show icon` → `showIcon`).
 
+**Status and docs** (optional, Part D) are on a component, or on its component set for its variants:
+`"status"` is `"review"` or `"ready"` (left out: draft); `"docs"` holds `purpose`, `notFor`, `usage`, `dos` and
+`donts` (ids of example frames in the file), `code` (a path or link), and for accessibility `role` (as in
+`a11y.role` below) and `keyboard` (how it works with a keyboard and screen readers); `"checks"` records what a
+person confirmed for its readiness: `{ "variants": true, "breakpoints": true, "accessibility": true }`.
+
+**Accessibility annotations** (optional) on any layer, in `"a11y"`:
+
+```json
+{ "a11y": { "alt": "A team around a whiteboard", "label": "Close", "role": "button", "heading": 2, "focus": 3, "decorative": true } }
+```
+
+- `alt`: an image's text alternative. `decorative: true`: an image or icon screen readers skip.
+- `label`: an accessible name, for a control with no text (an icon-only button).
+- `role`: `button`, `link`, `checkbox`, `radio`, `switch`, `tab`, `textbox`, `combobox`, `slider`, `menuitem`,
+  `img`, `heading`, `navigation`, `dialog`, `list` or `none`. Left out, an instance takes its component's
+  `docs.role`, or one from the component's name ("Icon button" is a button).
+- `heading`: a text layer's heading level, 1 to 6. `focus`: its place in its frame's focus order, from 1.
+
+An instance uses its main component's annotations unless it sets its own; layers inside an instance can be
+annotated per instance through `overrides` (`"overrides": { "Photo": { "a11y": { "alt": "…" } } }`).
+
 An **instance** stores only what it changes from its main component:
 
 ```json
@@ -311,6 +333,10 @@ ticket and a pull request (the sync skill does that; Sigma doesn't touch git).
 - A change (`kind`) is one token, icon, component (or component set), a page's own content (its layers other
   than components, which appear as `{ "$component": "<id>" }`), or a file's other settings (`file`: name,
   links, collections and modes). `before` / `after` are in the project format; `null` when added / removed.
+- `accessibility` (optional): Sigma's accessibility check on the changed components and pages, as proposed:
+  `{ "checked": ["page Projects"], "issues": [{ "kind": "contrast", "severity": "error", "name": "Label in Button",
+  "frame": "Projects — Mobile", "message": "2.8:1 against #FFFFFF; needs 4.5:1", "group": "…" }] }`. The pull
+  request body lists them.
 - `status`: `draft`, `proposed` (saved by Sigma), `in-review` (pull request open), `changes-requested`,
   `merged` or `closed`.
 - `node tools/sigma.mjs changeset apply <id> --to <folder>` writes the files of the pull request: the base

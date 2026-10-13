@@ -70,7 +70,7 @@ function body(report) {
 }
 
 // Show the layers: go to the page with most of them and select them there.
-function selectLayers(ids) {
+export function selectLayers(ids) {
   const byPage = new Map();
   for (const id of ids) {
     const pg = pagesOf([{ id }])[0];

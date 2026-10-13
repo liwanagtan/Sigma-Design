@@ -12,7 +12,7 @@ import {
 import { isAutoLayout, getSizing } from './layout.js';
 import {
   isInsideInstance, owningInstance, canPlaceInside, listComponents, overrideCount, defaultVariant, setInstanceProp, componentMatches,
-  isDeprecated,
+  isDeprecated, mainComponentOf,
 } from './components.js';
 import { exportNodes, saveFile, pickImages } from './io.js';
 import { createFile, openFile, goHome, pickFilesToImport, welcomeFile } from './files.js';
@@ -126,6 +126,7 @@ function initFileHeader() {
       { label: 'Design tokens…', action: () => openDesignTokensDialog() },
       { label: 'Browse design tokens…', action: () => openVariablesEditor() },
       { label: 'Audit design tokens…', action: () => openAuditDialog() },
+      { label: 'Check accessibility…', action: () => import('./a11y-ui.js').then((m) => m.openAccessibilityCheck()) },
       '-',
       { label: 'Component libraries…', action: () => openLibrariesDialog() },
       { label: 'Icon libraries…', action: () => openIconLibrariesDialog() },
@@ -1398,6 +1399,7 @@ function initProps() {
   });
   // Inspect: copy a block; edit a component's code names.
   panel.addEventListener('click', (e) => {
+    if (e.target.closest('[data-a11y-check]')) return import('./a11y-ui.js').then((m) => m.openAccessibilityCheck());
     const copy = e.target.closest('[data-copy]');
     if (!copy) return;
     navigator.clipboard?.writeText(copy.dataset.copy).then(() => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'Copied' })));
@@ -1412,6 +1414,21 @@ function initProps() {
       const host = getNode(t.dataset.host);
       const def = host?.props?.[t.dataset.codeProp];
       if (def) editNode(host, ['props'], () => (value ? (def.codeName = value) : delete def.codeName));
+    } else if (t.dataset.a11y) {
+      // Accessibility annotations: an empty value goes back to automatic (or the main component's).
+      const node = getNode(t.dataset.node);
+      const k = t.dataset.a11y;
+      if (!node) return;
+      const fromMain = node.type === 'instance' && mainComponentOf(node)?.a11y?.[k];
+      let v = t.type === 'checkbox' ? (t.checked || (fromMain ? false : undefined)) : value || undefined;
+      if (v !== undefined && (k === 'heading' || k === 'focus')) v = Math.max(1, Math.round(Number(v))) || undefined;
+      editNode(node, ['a11y'], () => {
+        const a = { ...(node.a11y || {}) };
+        if (v === undefined) delete a[k];
+        else a[k] = v;
+        if (Object.keys(a).length) node.a11y = a;
+        else delete node.a11y;
+      });
     } else if (t.dataset.codeVariant) {
       const host = getNode(t.dataset.host);
       if (host) editNode(host, ['codeNames'], () => {

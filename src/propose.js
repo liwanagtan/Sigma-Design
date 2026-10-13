@@ -10,14 +10,15 @@ import { fromProjectFile, formatProjectJSON } from './project-format.js';
 import { projectChanges, unproposed, newChangeset, summarize, CHANGESET_DIR, STATUSES } from './changesets.js';
 import { project, projectSnapshot, listChangesets, writeProjectFile } from './project.js';
 import { iconMarkup } from './icon-library.js';
+import { checkAccessibility } from './a11y.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const toast = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
 const KINDS = { file: 'File', token: 'Token', icon: 'Icon', component: 'Component', page: 'Page', comment: 'Comment' };
 
-// Render layers of a project file version (another document than the open one): load it into the editor's
-// state for a moment, rebuild its derived data, draw, and put the open document back.
-function renderVersion(files, path, pick) {
+// Use a project file version (another document than the open one): load it into the editor's state for a
+// moment, rebuild its derived data, run `fn`, and put the open document back.
+function withVersion(files, path, fn) {
   const file = files[path];
   if (!file) return null;
   const ids = Object.fromEntries(Object.keys(files).map((p, i) => [p, `render-${i}`]));
@@ -31,11 +32,9 @@ function renderVersion(files, path, pick) {
     for (const pg of doc.pages) walk(pg.children, (n) => void (n.type === 'text' && measureText(n)));
     normalizeDocument();
     normalizeDocument(); // instances size from their laid-out main components
-    const nodes = pick(doc);
-    if (!nodes?.length) return null;
-    return buildSVG(nodes, { ordered: true }).svg;
+    return fn(doc);
   } catch (err) {
-    console.warn(`Couldn’t render ${path}`, err);
+    console.warn(`Couldn’t read ${path}`, err);
     return null;
   } finally {
     state.doc = saved.doc;
@@ -43,6 +42,31 @@ function renderVersion(files, path, pick) {
     state.editingTextId = saved.editing;
     reindex();
   }
+}
+
+// Render layers of a project file version.
+function renderVersion(files, path, pick) {
+  return withVersion(files, path, (doc) => {
+    const nodes = pick(doc);
+    return nodes?.length ? buildSVG(nodes, { ordered: true }).svg : null;
+  });
+}
+
+// The accessibility check (Phase 16) on the changed components and pages, as they'll be: for the pull request.
+export function accessibilityOf(changes, files) {
+  const issues = [];
+  const checked = [];
+  for (const it of changes) {
+    if (!it.after || (it.kind !== 'component' && it.kind !== 'page')) continue;
+    const found = withVersion(files, it.file, (doc) => {
+      const roots = it.kind === 'page' ? doc.pages.find((p) => p.id === it.id)?.children.filter((n) => n.visible) : [nodeById(doc, it.id)].filter(Boolean);
+      return roots?.length ? checkAccessibility(roots) : null;
+    });
+    if (!found) continue;
+    checked.push(`${it.kind} ${it.name}`);
+    issues.push(...found.map(({ kind, severity, name, frame, message, group }) => ({ kind, severity, name, frame, message, group })));
+  }
+  return checked.length ? { checked, issues } : null;
 }
 
 const nodeById = (doc, id) => {
@@ -110,6 +134,8 @@ export async function openProposeDialog() {
       }
       if (Object.keys(r).length) cs.renders[it.key] = r;
     }
+    const a11y = accessibilityOf(changes, current);
+    if (a11y) cs.accessibility = a11y;
     await writeProjectFile(`${CHANGESET_DIR}/${cs.id}.json`, formatProjectJSON(cs));
     wrap.querySelector('[data-close]').click();
     toast(`Proposed “${title}”: ${summarize(changes)} (${CHANGESET_DIR}/${cs.id}.json)`);

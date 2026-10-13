@@ -8,6 +8,7 @@
 import { state, walk, getNode, getParent, editNode, commit, select, emit } from './store.js';
 import { zoomToSelection } from './commands.js';
 import { isDeprecated } from './components.js';
+import { ROLES, checkAccessibility } from './a11y.js';
 import { slots } from './use-report.js';
 import { modal } from './libraries.js';
 
@@ -41,6 +42,12 @@ function tokenShare(node) {
   return total ? bound / total : 1;
 }
 
+// Its role and keyboard behavior are written down, and the accessibility check finds no errors in it.
+function a11yReady(t, docs) {
+  if (!docs.role || !docs.keyboard || !getNode(t.id)) return false;
+  return !checkAccessibility([t]).some((i) => i.severity === 'error');
+}
+
 const DEFAULT_NAME = /^(component|frame|variant|property|group|rectangle)\s*\d*$/i;
 
 /**
@@ -60,7 +67,7 @@ export function readiness(node) {
     { key: 'tokens', label: 'Tokens applied', ok: share >= 0.9, hint: `${Math.round(share * 100)}% of its values use tokens (90% or more is ready).` },
     { key: 'breakpoints', label: 'Breakpoint behavior', ok: !!checks.breakpoints, manual: true, hint: 'Confirm how it behaves at each width (fill, hug, wrapping).' },
     { key: 'documented', label: 'Documented', ok: !!docs.usage && !!((docs.dos || []).length || (docs.donts || []).length), hint: 'Write usage guidance and link a Do or Don’t example.' },
-    { key: 'accessibility', label: 'Accessibility checked', ok: !!checks.accessibility, manual: true, hint: 'Confirm labels, contrast, focus and keyboard behavior.' },
+    { key: 'accessibility', label: 'Accessibility checked', ok: !!checks.accessibility || a11yReady(t, docs), manual: true, hint: 'Write its role and keyboard behavior in its docs: then Sigma checks its contrast and labels. Or confirm it by hand.' },
     { key: 'code', label: 'Code linked', ok: !!(t.codeName || docs.code), hint: 'Give it its code name (Inspect) or link its code in its docs.' },
   ];
 }
@@ -179,13 +186,15 @@ export function openDocsEditor(node) {
     <label class="inspector-label">Usage</label><textarea class="desc" data-f="usage" rows="4" placeholder="How to use it well: content, placement, combinations">${esc(d.usage || '')}</textarea>
     <label class="inspector-label">Do</label>${picker('do', d.dos)}
     <label class="inspector-label">Don’t</label>${picker('dont', d.donts)}
-    <label class="inspector-label">Code</label><input class="prop-input" data-f="code" placeholder="src/components/Button.jsx, or a link" value="${esc(d.code || '')}" spellcheck="false">`;
+    <label class="inspector-label">Code</label><input class="prop-input" data-f="code" placeholder="src/components/Button.jsx, or a link" value="${esc(d.code || '')}" spellcheck="false">
+    <label class="inspector-label">Accessibility: role</label><select class="prop-input" data-f="role"><option value="">Not set</option>${Object.entries(ROLES).map(([k, l]) => `<option value="${k}" ${d.role === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
+    <label class="inspector-label">Accessibility: keyboard and screen readers</label><textarea class="desc" data-f="keyboard" rows="3" placeholder="Tab focuses it; Enter and Space activate it. Announced as its label and role.">${esc(d.keyboard || '')}</textarea>`;
   const wrap = modal(`Docs: ${esc(t.name)}`, body, '<span class="spacer"></span><button class="btn" data-close>Cancel</button><button class="btn primary" data-save>Save</button>');
   wrap.querySelector('.modal').classList.add('docs-modal');
   wrap.querySelector('[data-save]').addEventListener('click', () => {
     const val = (k) => wrap.querySelector(`[data-f="${k}"]`).value.trim();
     const docs = {
-      purpose: val('purpose'), notFor: val('notFor'), usage: val('usage'), code: val('code'),
+      purpose: val('purpose'), notFor: val('notFor'), usage: val('usage'), code: val('code'), role: val('role'), keyboard: val('keyboard'),
       dos: [...wrap.querySelectorAll('[data-do]:checked')].map((i) => i.dataset.do),
       donts: [...wrap.querySelectorAll('[data-dont]:checked')].map((i) => i.dataset.dont),
     };
@@ -204,11 +213,12 @@ export function docsHTML(node, { compact = false, status = true } = {}) {
   const t = docsTarget(node);
   const d = t?.docs || {};
   const purpose = d.purpose || t?.description;
-  if (!purpose && !d.usage && !d.notFor && !d.code) return '';
+  if (!purpose && !d.usage && !d.notFor && !d.code && !d.role && !d.keyboard) return '';
   const name = (id) => getNode(id)?.name;
   const examples = (ids, label) => ((ids || []).map(name).filter(Boolean).length ? `<div><b>${label}:</b> ${(ids || []).map(name).filter(Boolean).map(esc).join(', ')}</div>` : '');
   return `<div class="comp-docs">${purpose ? `<div>${esc(purpose)}</div>` : ''}` +
-    (compact ? '' : `${d.notFor ? `<div><b>Not for:</b> ${esc(d.notFor)}</div>` : ''}${d.usage ? `<div class="comp-docs-usage">${esc(d.usage)}</div>` : ''}${examples(d.dos, 'Do')}${examples(d.donts, 'Don’t')}`) +
+    (compact ? '' : `${d.notFor ? `<div><b>Not for:</b> ${esc(d.notFor)}</div>` : ''}${d.usage ? `<div class="comp-docs-usage">${esc(d.usage)}</div>` : ''}${examples(d.dos, 'Do')}${examples(d.donts, 'Don’t')}` +
+      `${d.role || d.keyboard ? `<div><b>Accessibility:</b> ${d.role ? `${esc(ROLES[d.role] || d.role)} role. ` : ''}${esc(d.keyboard || '')}</div>` : ''}`) +
     `${d.code ? `<div class="muted">Code: ${/^https?:/.test(d.code) ? `<a href="${esc(d.code)}" target="_blank" rel="noopener">${esc(d.code)}</a>` : `<code>${esc(d.code)}</code>`}</div>` : ''}` +
     `${status ? `<div class="muted">${statusLabel(statusOf(t))}</div>` : ''}</div>`;
 }

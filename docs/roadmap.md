@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Phases 1–14, Part E (Phases 20–30) and Part F (Phases 31–35) are done.** Part D's Phases 17, 18 and 19 are done; next is Phase 16 (accessibility checks). Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **Phases 1–14, Part E (Phases 20–30) and Part F (Phases 31–35) are done.** Part D's Phases 16–19 are done too (accessibility, the use report, running the system, visual change review; Phase 15, code handoff, was done in Part E). What's left: Part D's "Later" list, "Later (needs a backend)" in Part C, and "Follow-ups" (drawing icons).
 
 ## Scope
 
@@ -399,7 +399,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 17: Design system use report (Part D)
 - [x] Phase 18: Running the system (Part D)
 - [x] Phase 19: Visual change review (Part D)
-- [ ] Phase 16: Accessibility checks and annotations (Part D; planned, after Phase 19)
+- [x] Phase 16: Accessibility checks and annotations (Part D; done after Phase 19)
 
 ## Follow-ups
 
@@ -456,6 +456,31 @@ Planned after Phases 17–19. In a project, its results also go into design pull
 - **Annotations** on layers: alt text for images, accessible labels for icon-only buttons, heading levels, and focus order. They show in the Inspect panel.
 - **Check accessibility** for a frame, like eBay's Include plugin: a list of issues with the reason for each, such as text contrast below AA (using `contrast.js`), tap targets under 44×44 or 48×48, very small text, or images with no alt text.
 - Component-level guidance (keyboard behavior, roles) in the component's description or a new field.
+- **What shipped:** annotations in `node.a11y` (`src/a11y.js`): alt text or decorative for images and icons, an
+  accessible label, a role, a heading level for text, and a place in the focus order. They're edited in a new
+  **Accessibility** block in the Inspect panel, which also shows what they mean in HTML (`alt`, `aria-label`,
+  `<h2>`, `role`). An instance uses its main component's annotations unless it sets its own, and the layers
+  inside an instance can be annotated per instance (an override). A layer's role is its own, else its
+  component's docs, else a guess from the component's name ("Icon button" is a button). **Check
+  accessibility…** (main menu, or the Inspect block) checks the selected frames or the whole page:
+  - text contrast below AA (disabled states are exempt, as WCAG says);
+  - controls under 24×24 (an error) or under 44×44 / 48×48 (a warning; iOS or Material);
+  - text under 12px;
+  - images without alt text that aren't decorative;
+  - controls with no text and no label;
+  - headings that skip a level;
+  - focus order numbers used twice.
+
+  Each kind gives its WCAG reason. Copies of one component layer show once, with a count, and can be selected
+  or annotated. Component docs gain a **role** and **keyboard and screen readers** guidance, shown in Assets,
+  Inspect and the documentation page. A component's "Accessibility checked" readiness passes when both are
+  written and the check finds no errors in it, or when someone confirms it by hand. In a project, **Propose
+  change** runs the check on the changed components and pages, saves the result in the changeset, and the pull
+  request body gets an **Accessibility** section. Verified on `examples/css-app`: the Danger button's white label
+  on `#EF4343` is 3.78:1 (an error, on both Settings frames and on the library's Danger Default and Focus
+  variants; its darker Hover passes), and the 32px buttons and 42px inputs are under 44×44. Annotating a Button
+  instance with a label and a focus order shows `aria-label` in Inspect, and the same focus number on two buttons
+  is reported. Writing Button's role and keyboard docs doesn't make it ready, because of the Danger contrast.
 
 ## Phase 17: Design system use report
 

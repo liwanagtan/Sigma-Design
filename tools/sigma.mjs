@@ -44,6 +44,7 @@ import { parseRules, findRule, editRules } from '../src/css-rules.js';
 import { useReport, formatUseReport } from '../src/use-report.js';
 import { changelogFromChangesets, changelogMarkdown } from '../src/changelog.js';
 import { defaultTokenCode } from '../src/code-names.js';
+import { issuesMarkdown } from '../src/a11y-kinds.js';
 import { parseVariantName } from '../src/components.js';
 import { validateProject } from '../src/validate.js';
 import { check as validate } from './validate.js';
@@ -612,6 +613,15 @@ function changesetPRBody(id, dir) {
       lines.push(`| ${ch.kind} ${ch.name} | ${r.before ? `<img src="${img(r.before)}" width="280">` : '—'} | ${r.after ? `<img src="${img(r.after)}" width="280">` : '—'} |`);
     }
     lines.push('');
+  }
+  // The accessibility check on the changed components and pages, as Sigma ran it when proposing (Phase 16).
+  if (c.accessibility) {
+    const { checked, issues } = c.accessibility;
+    const errors = issues.filter((i) => i.severity === 'error').length;
+    lines.push('### Accessibility', '', issues.length
+      ? `Sigma's check found ${errors} error${errors === 1 ? '' : 's'} and ${issues.length - errors} warning${issues.length - errors === 1 ? '' : 's'} in ${checked.join(', ')}:`
+      : `Sigma's check found no issues in ${checked.join(', ')} (contrast, tap targets, text size, alt text, labels, headings, focus order).`, '');
+    if (issues.length) lines.push(...issuesMarkdown(issues), '');
   }
   // Comments on the design (made in Sigma), with the layer each is on.
   const notes = c.changes.filter((ch) => ch.kind === 'comment' && ch.after);
