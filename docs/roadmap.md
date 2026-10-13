@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Phases 1–14, Part E (Phases 20–30) and Part F (Phases 31–35) are done.** Next: accessibility checks (Part E's Later list), on a branch of their own. Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **Phases 1–14, Part E (Phases 20–30) and Part F (Phases 31–35) are done.** Next: **Part D's Phases 17–19** (the design system use report, running the system, visual change review), then Phase 16 (accessibility checks). Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -396,6 +396,10 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 33: Setup by the agent: adapters, rules and project skills
 - [x] Phase 34: Live sync while Sigma runs
 - [x] Phase 35: Sigma renders the project's components
+- [ ] Phase 17: Design system use report (Part D)
+- [ ] Phase 18: Running the system (Part D)
+- [ ] Phase 19: Visual change review (Part D)
+- [ ] Phase 16: Accessibility checks and annotations (Part D; planned, after Phase 19)
 
 ## Follow-ups
 
@@ -447,6 +451,8 @@ Close the gap between design and code: a developer selects a layer and gets code
 
 ## Phase 16: Accessibility checks and annotations
 
+Planned after Phases 17–19. In a project, its results also go into design pull requests (Part E's "Later" list).
+
 - **Annotations** on layers: alt text for images, accessible labels for icon-only buttons, heading levels, and focus order. They show in the Inspect panel.
 - **Check accessibility** for a frame, like eBay's Include plugin: a list of issues with the reason for each, such as text contrast below AA (using `contrast.js`), tap targets under 44×44 or 48×48, very small text, or images with no alt text.
 - Component-level guidance (keyboard behavior, roles) in the component's description or a new field.
@@ -455,7 +461,7 @@ Close the gap between design and code: a developer selects a layer and gets code
 
 The **token audit** (done, `audit.js`) already finds one-off values and deprecated uses in the open file; this phase measures across files.
 
-Like Pinterest's FigStats, measured across every design file in this browser:
+Like Pinterest's FigStats, measured across every design file in this browser (in a project, the project's design files):
 
 - the share of layers that come from library components
 - the share of colors, type and spacing that use tokens rather than one-off values
