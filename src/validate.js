@@ -9,6 +9,7 @@ import { FORMAT } from './project-format.js';
 import { VAR_TYPES, typeForPath, COMPOSITE_FIELDS, parseEasing } from './variables.js';
 import { parseSVGIcon } from './icon-library.js';
 
+const BREAKPOINT_KEYS = ['mode', 'gap', 'spacing', 'pt', 'pr', 'pb', 'pl', 'alignP', 'alignC'];
 const A11Y_KEYS = ['alt', 'decorative', 'label', 'role', 'heading', 'focus'];
 const NODE_TYPES = ['frame', 'group', 'rect', 'ellipse', 'line', 'text', 'image', 'component', 'componentSet', 'instance', 'icon'];
 const CONTAINERS = new Set(['frame', 'group', 'component', 'componentSet']);
@@ -293,6 +294,14 @@ export function validateFile(file, { path = '(file)', files = {} } = {}) {
         if (!def) error(`${where}.propRefs.${prop}`, `uses property ${pid}, which “${comp.node.name}” doesn’t define`);
         else if (PROP_TYPES[def.type] !== prop) error(`${where}.propRefs.${prop}`, `property “${def.name}” is ${def.type}, which sets ${PROP_TYPES[def.type]}, not ${prop}`);
       }
+      (n.layout?.breakpoints || []).forEach((bp, i) => {
+        const at = `${where}.layout.breakpoints[${i}]`;
+        if (!bp || typeof bp !== 'object') return error(at, 'should be an object like { "maxW": 600, "mode": "vertical" }');
+        if (!(num(bp.maxW) && bp.maxW > 0)) error(`${at}.maxW`, 'should be a width in px (it applies at that width or narrower)');
+        for (const k of Object.keys(bp)) if (!['maxW', ...BREAKPOINT_KEYS].includes(k)) error(`${at}.${k}`, `isn’t a layout value a breakpoint can change; use ${BREAKPOINT_KEYS.join(', ')}`);
+        if (bp.mode !== undefined && !['horizontal', 'vertical'].includes(bp.mode)) error(`${at}.mode`, 'should be "horizontal" or "vertical"');
+        for (const k of ['gap', 'pt', 'pr', 'pb', 'pl']) if (bp[k] !== undefined && !num(bp[k])) error(`${at}.${k}`, 'should be a number');
+      });
       if (n.dir !== undefined && n.dir !== 'rtl' && n.dir !== 'ltr') error(`${where}.dir`, 'should be "rtl" or "ltr" (left out: the direction of the frame it’s in)');
       if (n.a11y !== undefined) {
         const a = n.a11y;

@@ -1020,3 +1020,11 @@ button.group-caret.open { transform: rotate(90deg); }
 .al-dir-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding-right: 24px; }
 .al-dir-row .seg { margin-left: auto; }
 .al-dir { width: auto; padding: 0 8px; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; }
+.bp-head { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-right: 0; }
+.bp-row { display: flex; align-items: center; gap: 4px; margin-top: 4px; padding: 2px 4px; border-radius: 6px; }
+.bp-row.active { background: var(--accent-softer); }
+.bp-row .bp-num { width: 34px; min-width: 0; flex: 0 0 auto; padding: 0 2px; text-align: center; }
+.bp-row .bp-num[data-bp-field$=":maxW"] { width: 42px; }
+.bp-row .seg { flex: 0 0 auto; }
+.bp-row .seg .icon-btn { width: 22px; }
+.bp-row > .icon-btn { margin-left: auto; }

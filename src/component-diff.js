@@ -85,7 +85,7 @@ function shape(node, { root = false } = {}) {
     for (const k of ROOT_COVERED) delete rest[k];
     delete rest.x; // where it sits on the canvas isn't part of the code
     delete rest.y;
-    if (node.layout) rest.layout = { mode: node.layout.mode, alignP: node.layout.alignP, alignC: node.layout.alignC, spacing: node.layout.spacing };
+    if (node.layout) rest.layout = { mode: node.layout.mode, alignP: node.layout.alignP, alignC: node.layout.alignC, spacing: node.layout.spacing, ...(node.layout.breakpoints ? { breakpoints: node.layout.breakpoints } : {}) };
   } else if (node.type === 'text' || node.type === 'icon') {
     delete rest.fills;
     delete rest.fontSize;

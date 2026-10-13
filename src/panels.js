@@ -9,7 +9,7 @@ import {
   viewportSize, sortByZ, toggleVisible, toggleLocked, addAutoLayout, removeAutoLayout,
   placeInstance, resetSelectionOverrides,
 } from './commands.js';
-import { isAutoLayout, getSizing, directionOf } from './layout.js';
+import { isAutoLayout, getSizing, directionOf, activeBreakpoint } from './layout.js';
 import {
   isInsideInstance, owningInstance, canPlaceInside, listComponents, overrideCount, defaultVariant, setInstanceProp, componentMatches,
   isDeprecated, mainComponentOf,
@@ -1210,8 +1210,25 @@ function autoLayoutSection(nodes) {
   const body = `<div class="grid2"><div class="seg">${dir}</div>${numField('gap', '', nodes, { icon: horiz ? icons.gapH : icons.gapV })}</div>` +
     `<div class="al-mid"><div class="al-grid${mode === MIXED ? '' : ` ${mode}`}${spacing === 'auto' ? ' between' : ''}">${cells}</div>` +
     `<div class="al-fields">${numField('padH', '', nodes, { icon: icons.padH })}${numField('padV', '', nodes, { icon: icons.padV })}</div></div>` +
-    `<div class="al-dir-row"><span class="muted">Direction</span><div class="seg">${dirSeg}</div></div>`;
+    `<div class="al-dir-row"><span class="muted">Direction</span><div class="seg">${dirSeg}</div></div>` +
+    (nodes.length === 1 ? breakpointsHTML(nodes[0]) : '');
   return section('Auto layout', body, fromMain ? '' : `<button class="icon-btn" data-action="remove-al" title="Remove auto layout  ⌥⇧A">${icons.minus}</button>`);
+}
+
+// Breakpoints: the frame lays out differently at a width or narrower (layout.breakpoints).
+function breakpointsHTML(n) {
+  const list = n.layout.breakpoints || [];
+  const active = activeBreakpoint(n);
+  const num = (i, k, v, title) => `<input class="prop-input bp-num" data-bp-field="${i}:${k}" value="${v ?? ''}" placeholder="—" title="${title}" inputmode="numeric">`;
+  const rows = list.map((b, i) => {
+    const mode = b.mode || n.layout.mode;
+    const pad = (a, z) => (b[a] !== undefined && b[a] === b[z] ? b[a] : '');
+    return `<div class="bp-row${b === active ? ' active' : ''}"><span class="muted">≤</span>${num(i, 'maxW', b.maxW, 'At this width (px) or narrower')}` +
+      `<div class="seg">${[['vertical', 'alVertical'], ['horizontal', 'alHorizontal']].map(([m, ic]) => `<button class="icon-btn${mode === m ? ' on' : ''}" data-bp-mode="${i}:${m}" title="${m === 'vertical' ? 'Vertical' : 'Horizontal'} at this width">${icons[ic]}</button>`).join('')}</div>` +
+      `${num(i, 'gap', b.gap, 'Gap at this width')}${num(i, 'padH', pad('pl', 'pr'), 'Left and right padding at this width')}` +
+      `<button class="icon-btn" data-bp-del="${i}" title="Remove this breakpoint">${icons.minus}</button></div>`;
+  }).join('');
+  return `<div class="bp-head"><span class="muted">Breakpoints${active ? ` · ≤ ${active.maxW} applies at ${Math.round(n.w)}px` : ''}</span><button class="icon-btn" data-bp-add title="Lay out differently at a narrower width">${icons.plus}</button></div>${rows}`;
 }
 
 // ---------- components ----------
@@ -1422,6 +1439,22 @@ function initProps() {
       const host = getNode(t.dataset.host);
       const def = host?.props?.[t.dataset.codeProp];
       if (def) editNode(host, ['props'], () => (value ? (def.codeName = value) : delete def.codeName));
+    } else if (t.dataset.bpField) {
+      // A breakpoint's width, gap or side padding; empty: the frame's own value.
+      const [i, k] = t.dataset.bpField.split(':');
+      const node = selectedNodes()[0];
+      if (!node?.layout?.breakpoints?.[+i]) return;
+      const v = value === '' ? undefined : Math.max(k === 'maxW' ? 1 : 0, Math.round(Number(value)));
+      if (Number.isNaN(v)) return emit('selection');
+      editNode(node, ['layout'], () => {
+        const list = node.layout.breakpoints.map((x) => ({ ...x }));
+        const keys = k === 'padH' ? ['pl', 'pr'] : [k];
+        for (const key of keys) {
+          if (v === undefined && key !== 'maxW') delete list[+i][key];
+          else if (v !== undefined) list[+i][key] = v;
+        }
+        node.layout = { ...node.layout, breakpoints: list };
+      });
     } else if (t.dataset.a11y) {
       // Accessibility annotations: an empty value goes back to automatic (or the main component's).
       const node = getNode(t.dataset.node);
@@ -1590,6 +1623,24 @@ function initProps() {
     if (b.dataset.effectAct === 'toggle') return updateEffect(+b.dataset.effect, (fx) => void (fx.visible = fx.visible === false), { field: 'visible' });
     if (b.dataset.effectAct === 'remove') return removeEffect(+b.dataset.effect);
     if (b.dataset.alMode) return setProps({ 'layout.mode': b.dataset.alMode });
+    if (b.dataset.bpAdd !== undefined || b.dataset.bpDel !== undefined || b.dataset.bpMode) {
+      const n = nodes[0];
+      editNode(n, ['layout'], () => {
+        const list = [...(n.layout.breakpoints || [])].map((x) => ({ ...x }));
+        if (b.dataset.bpAdd !== undefined) {
+          // A narrower width than the narrowest so far, stacked: a phone-sized column.
+          const narrowest = Math.min(Math.round(n.w), ...list.map((x) => x.maxW));
+          list.push({ maxW: Math.max(1, narrowest > 600 ? 600 : narrowest - 1), mode: 'vertical' });
+        } else if (b.dataset.bpDel !== undefined) list.splice(+b.dataset.bpDel, 1);
+        else {
+          const [i, m] = b.dataset.bpMode.split(':');
+          list[+i].mode = m;
+        }
+        n.layout = { ...n.layout, breakpoints: list };
+        if (!list.length) delete n.layout.breakpoints;
+      });
+      return commit();
+    }
     if (b.dataset.alDir) {
       // The same as the frame it's in: no setting of its own, so it follows that frame.
       for (const n of nodes) {

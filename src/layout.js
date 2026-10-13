@@ -15,6 +15,22 @@ export const DEFAULT_LAYOUT = {
 
 export const isAutoLayout = (n) => !!(isFrameLike(n) && n.layout && n.layout.mode);
 
+// Breakpoints: an auto layout frame can lay out differently by its width. layout.breakpoints is
+// [{ maxW, ...layout values }]: at that width or narrower, its values replace the frame's (the narrowest that
+// fits wins, like max-width media queries). Instances copy them, so a component reflows when it's resized.
+export const LAYOUT_KEYS = ['mode', 'gap', 'spacing', 'pt', 'pr', 'pb', 'pl', 'alignP', 'alignC'];
+export function activeBreakpoint(f) {
+  const fits = (f.layout?.breakpoints || []).filter((b) => Number.isFinite(b.maxW) && f.w <= b.maxW);
+  return fits.length ? fits.reduce((a, b) => (b.maxW < a.maxW ? b : a)) : null;
+}
+export function layoutOf(f) {
+  const b = activeBreakpoint(f);
+  if (!b) return f.layout;
+  const out = { ...f.layout };
+  for (const k of LAYOUT_KEYS) if (b[k] !== undefined) out[k] = b[k];
+  return out;
+}
+
 // Right to left (like HTML's dir): a frame's `dir` ('rtl' | 'ltr') applies to everything inside it, unless a
 // frame inside sets its own. Auto layout then runs rows from the right, and its counter-axis start is the
 // right edge. Padding stays where it is (pl is the left padding), as in CSS.
@@ -75,7 +91,7 @@ function childSize(k, axis) {
 }
 
 export function hugSize(f) {
-  const L = f.layout;
+  const L = layoutOf(f);
   const kids = f.children.filter(inFlow);
   const P = L.mode === 'horizontal' ? 'w' : 'h';
   const C = P === 'w' ? 'h' : 'w';
@@ -102,7 +118,7 @@ function normalize(n, parentIsAL) {
 }
 
 function layoutChildren(f, dir = 'ltr') {
-  const L = f.layout;
+  const L = layoutOf(f);
   dir = f.dir === 'rtl' || f.dir === 'ltr' ? f.dir : dir;
   const rtl = dir === 'rtl';
   const horiz = L.mode === 'horizontal';
@@ -217,7 +233,7 @@ export function applyLayouts() {
 
 // Index (into f.children minus `exclude`) where a point should insert into an auto layout frame.
 export function flowInsertBefore(f, localPt, exclude) {
-  const horiz = f.layout.mode === 'horizontal';
+  const horiz = layoutOf(f).mode === 'horizontal';
   const rtl = horiz && directionOf(f) === 'rtl'; // a row that runs from the right
   const others = f.children.filter((c) => !exclude.has(c.id));
   const v = horiz ? localPt.x : localPt.y;

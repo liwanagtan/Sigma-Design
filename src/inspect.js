@@ -175,6 +175,24 @@ const block = (title, body, copy) => `<div class="section inspect-section"><div 
   `${copy ? `<button class="icon-btn inspect-copy" data-copy="${esc(copy)}" title="Copy">${COPY_ICON}</button>` : ''}</div>${body}</div>`;
 const COPY_ICON = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><rect x="4.5" y="4.5" width="7" height="7" rx="1"/><path d="M9.5 4.5v-2a1 1 0 0 0-1-1h-5a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h2"/></svg>';
 
+// Breakpoints as CSS: a frame on the page is a screen (media queries); one inside another reflows with its own
+// width (container queries: its parent needs container-type: inline-size).
+export function breakpointCSS(n) {
+  const list = isAutoLayout(n) ? [...(n.layout.breakpoints || [])].sort((a, b) => b.maxW - a.maxW) : [];
+  if (!list.length) return '';
+  const rule = getParent(n.id) ? '@container' : '@media';
+  return list.map((b) => {
+    const lines = [];
+    if (b.mode) lines.push(`flex-direction: ${b.mode === 'horizontal' ? 'row' : 'column'};`);
+    if (b.gap !== undefined) lines.push(`gap: ${px(b.gap)};`);
+    for (const [k, prop] of [['pt', 'padding-top'], ['pr', 'padding-right'], ['pb', 'padding-bottom'], ['pl', 'padding-left']]) if (b[k] !== undefined) lines.push(`${prop}: ${px(b[k])};`);
+    const align = { start: 'flex-start', center: 'center', end: 'flex-end' };
+    if (b.alignP) lines.push(`justify-content: ${align[b.alignP]};`);
+    if (b.alignC) lines.push(`align-items: ${align[b.alignC]};`);
+    return `${rule} (max-width: ${b.maxW}px) {\n${lines.map((l) => `  ${l}`).join('\n') || '  /* same as above */'}\n}`;
+  }).join('\n');
+}
+
 // Accessibility annotations (Phase 16): what the layer is to assistive technology. An instance shows its main
 // component's as placeholders; what's typed here is the instance's own.
 function a11yBlock(n) {
@@ -239,6 +257,8 @@ export function inspectHTML(nodes) {
   const css = layerCSS(n);
   const cssText = css.map(([k, v]) => `${k}: ${v};`).join('\n');
   html += block(`CSS <span class="muted">${esc(n.name)}</span>`, css.length ? `<pre class="inspect-code">${esc(cssText)}</pre>` : '<div class="muted">Nothing to style.</div>', cssText);
+  const bp = breakpointCSS(n);
+  if (bp) html += block('Breakpoints', `<pre class="inspect-code">${esc(bp)}</pre>`, bp);
   const tokens = layerTokens(n);
   if (tokens.length) {
     const seen = new Set();
