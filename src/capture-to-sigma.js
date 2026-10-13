@@ -445,7 +445,8 @@ function findParent(root, name) {
 
 // ---------- checking against the capture ----------
 // Compare a laid-out Sigma component (layers with world boxes: { name, box, children }) with its capture:
-// [{ layer, what, code, sigma }] for sizes and positions more than `tolerance` px apart.
+// [{ layer, what, code, sigma }] for sizes and positions more than `tolerance` px apart (plus a layer's
+// `slack.w` / `slack.x`: what Sigma's rounding of text widths adds up to, when the Sigma side says).
 export function compareBoxes(sigma, captureTree, { tolerance = 1.5 } = {}) {
   const out = [];
   const visit = (s, c, path) => {
@@ -453,7 +454,7 @@ export function compareBoxes(sigma, captureTree, { tolerance = 1.5 } = {}) {
     for (const [k, label] of [['w', 'width'], ['h', 'height'], ['x', 'x'], ['y', 'y']]) {
       if (path.length === 1 && (k === 'x' || k === 'y')) continue;
       const d = Math.abs((s.box[k] || 0) - (c.box[k] || 0));
-      if (d > tolerance) out.push({ layer: path.join(' / '), what: label, code: c.box[k], sigma: Math.round(s.box[k] * 10) / 10 });
+      if (d > tolerance + (s.slack?.[k] || 0)) out.push({ layer: path.join(' / '), what: label, code: c.box[k], sigma: Math.round(s.box[k] * 10) / 10 });
     }
     // Colors: a text's color, a box's background (when the Sigma side says what it paints).
     const six = (v) => (v ? String(v).slice(0, 7).toUpperCase() : null);

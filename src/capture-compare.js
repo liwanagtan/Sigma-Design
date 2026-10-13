@@ -13,14 +13,19 @@ const get = async (path) => {
   return r.json();
 };
 
-// A laid-out layer as { name, box (relative to the component), children }.
+// A laid-out layer as { name, box (relative to the component), children, slack }.
 // Its paint, to compare colors: a text's color, else a box's background (null when it has none).
-function boxes(node, origin) {
+// Slack: Sigma rounds an auto-width text's width up to a whole pixel (so it never wraps), so a layer can be up
+// to a pixel wider for each such text in it, and up to a pixel further for each one laid out before it.
+function boxes(node, origin, seen = { texts: 0 }) {
   const b = worldBounds(node);
   const fill = (node.fills || []).find((f) => f.visible !== false && (f.opacity ?? 1) > 0 && f.color);
+  const before = seen.texts;
+  if (node.type === 'text' && node.autoResize === 'width') seen.texts++;
+  const children = (node.children || []).filter((c) => c.visible !== false).map((c) => boxes(c, origin, seen));
   const out = {
-    name: node.name, box: { x: b.x - origin.x, y: b.y - origin.y, w: b.w, h: b.h },
-    children: (node.children || []).filter((c) => c.visible !== false).map((c) => boxes(c, origin)),
+    name: node.name, box: { x: b.x - origin.x, y: b.y - origin.y, w: b.w, h: b.h }, children,
+    slack: { w: seen.texts - before, x: before },
   };
   if (node.type === 'text') out.color = fill?.color || null;
   else if (node.type !== 'icon' && node.type !== 'group') out.background = fill?.color || null;

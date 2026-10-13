@@ -114,6 +114,11 @@ test('capture: comparing finds layers whose size or place differ, also inside gr
   ] };
   eq(compareBoxes(sigma, capture), [{ layer: 'Card / Body', what: 'y', code: 40, sigma: 44 }], 'within 1.5px counts as the same');
   eq(compareBoxes(sigma, capture, { tolerance: 0.5 }).length, 2);
+  // A row of three auto-width texts: Sigma rounds each up, so it may be up to 3px wider than the code.
+  const row = (w, slack) => ({ name: 'Nav', box: { x: 0, y: 0, w, h: 20 }, ...(slack ? { slack } : {}), children: [] });
+  eq(compareBoxes(row(244, { w: 3, x: 0 }), row(242.45)), [], 'within its texts’ rounding');
+  eq(compareBoxes(row(244, { w: 0, x: 0 }), row(242.45)).map((d) => d.what), ['width'], 'without texts, 1.55px is a difference');
+  eq(compareBoxes(row(250, { w: 3, x: 0 }), row(242.45)).map((d) => d.what), ['width'], 'more than the rounding is still caught');
 });
 
 test('pages: matched elements become instances of the library, with their variant and property values', () => {
