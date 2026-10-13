@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Phases 1–14 and Part E (Phases 20–30) are done**, except the ticket half of Phase 26 (its pull request and CI parts have run for real). Part F: Sigma inside your project (Phases 31–35) is done. Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **Phases 1–14, Part E (Phases 20–30) and Part F (Phases 31–35) are done.** Next: accessibility checks (Part E's Later list), on a branch of their own. Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -386,7 +386,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 23: Icons sync
 - [x] Phase 24: Code handoff (Part D, Phase 15)
 - [x] Phase 25: Propose change
-- [ ] Phase 26: Team workflow (GitHub and Notion)
+- [x] Phase 26: Team workflow (GitHub; Notion when connected)
 - [x] Phase 27: Comments
 - [x] Phase 28: Component library onboarding
 - [x] Phase 29: Page onboarding
@@ -605,7 +605,7 @@ Unchanged from Phase 15 above: code names per platform for tokens, components an
 - **Branch and PR:** the skill creates a branch named by `workflow.branch`, writes the code changes (tokens and icons from Phases 22–23; components from Phase 30) and the Sigma files, and opens a draft PR using the repo's template, linked to the ticket.
 - **Status in Sigma:** each changeset shows Proposed, In review, Changes requested or Merged. On merge the ticket moves to Done.
 - **Done when:** on a real repo, a proposed token change becomes a Notion ticket and a GitHub PR that passes the team's CI, and Sigma shows it as merged after merge.
-- **What shipped (not yet run for real):** `skills/sigma-sync/reference/workflow.md` and `tools/sigma.mjs changeset branch | prepare | pr-body | ticket | sync`; statuses in the Project section. Dry run on `examples/css-app` (local only): `prepare` into a worktree on `design/darker-hover-for-buttons` gave the token change in the Sigma file and in `tokens.css` (`#2741d9`, plus the dark theme keeping its reference) and passed `check`; the PR body and ticket text read well. **Run for real since:** a design proposal became a GitHub pull request ([#1](https://github.com/liwanagtan/Sigma-Design/pull/1): tighter buttons and a Secondary variant, from `changeset prepare` in a worktree), was merged, and `changeset sync` set it to Merged in Sigma. The repository now has CI (`.github/workflows/ci.yml`: Node tests on Node 20 and 22, the in-browser tests headlessly in Chromium, `sigma-design check` on every example project), and pull requests pass it ([#3](https://github.com/liwanagtan/Sigma-Design/pull/3)). **Still to do:** the ticket: a Notion ticket from `changeset ticket` (needs a Notion connection), or GitHub Issues as the tracker (`workflow.tracker: "github"`, which works through `gh`); and a design proposal's own PR passing CI (#1 was opened before CI existed).
+- **What shipped (not yet run for real):** `skills/sigma-sync/reference/workflow.md` and `tools/sigma.mjs changeset branch | prepare | pr-body | ticket | sync`; statuses in the Project section. Dry run on `examples/css-app` (local only): `prepare` into a worktree on `design/darker-hover-for-buttons` gave the token change in the Sigma file and in `tokens.css` (`#2741d9`, plus the dark theme keeping its reference) and passed `check`; the PR body and ticket text read well. **Run for real since:** a design proposal became a GitHub pull request ([#1](https://github.com/liwanagtan/Sigma-Design/pull/1): tighter buttons and a Secondary variant, from `changeset prepare` in a worktree), was merged, and `changeset sync` set it to Merged in Sigma. The repository now has CI (`.github/workflows/ci.yml`: Node tests on Node 20 and 22, the in-browser tests headlessly in Chromium, `sigma-design check` on every example project), and pull requests pass it ([#3](https://github.com/liwanagtan/Sigma-Design/pull/3)). Then the whole flow with GitHub Issues as the tracker: the waiting proposal "Darker hover for buttons" got its ticket ([#4](https://github.com/liwanagtan/Sigma-Design/issues/4), from `changeset ticket --tracker github`), a branch prepared in a worktree (`--accent-hover` `#2741d9` in the light theme; Sigma added the dark theme's own `var(--color-blue-600)`, since the code had relied on the light value), and a draft pull request ([#5](https://github.com/liwanagtan/Sigma-Design/pull/5)) that passed CI, was merged and closed the ticket; `changeset sync` set the proposal to Merged. A Notion ticket works the same way through `changeset ticket` once a Notion connection is available.
 
 ### Phase 27: Comments
 

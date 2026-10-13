@@ -2,6 +2,7 @@
   "id": "2026-10-12-darker-hover-for-buttons-tmu6zq",
   "author": "",
   "base": "HEAD",
+  "branch": "design/darker-hover-for-buttons",
   "changes": [
     {
       "kind": "token",
@@ -37,10 +38,16 @@
     }
   ],
   "createdAt": "2026-10-12T18:23:57.887Z",
+  "mergedAt": "2026-10-13T06:12:39Z",
   "note": "The hover state was too close to the default.",
+  "pr": {
+    "host": "github",
+    "number": 5,
+    "url": "https://github.com/liwanagtan/Sigma-Design/pull/5"
+  },
   "renders": {},
-  "status": "proposed",
+  "status": "merged",
   "ticket": { "tracker": "notion", "url": "https://github.com/liwanagtan/Sigma-Design/issues/4" },
   "title": "Darker hover for buttons",
-  "updatedAt": "2026-10-13T06:10:08.568Z"
+  "updatedAt": "2026-10-13T06:12:51.648Z"
 }
