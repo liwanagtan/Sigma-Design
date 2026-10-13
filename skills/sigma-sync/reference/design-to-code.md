@@ -58,6 +58,10 @@ What's listed "For you" needs judgement in the code:
 
 ## 4. Prove it
 
+**With Sigma running in the project** (live sync): saving a library writes the exact part of its code at once
+(the save message says what, and how many things are left for you), and the library's **Check against code…**
+recaptures from the components page and compares; when every component matches, you're done. Without it:
+
 Render the components page from the branch (with Sigma's server running on that checkout:
 `npx sigma-design dev <checkout>/<project> --port <port>`), recapture everything:
 

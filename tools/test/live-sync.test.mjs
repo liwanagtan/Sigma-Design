@@ -116,3 +116,29 @@ test('live sync: saving an icon writes its SVG file', async () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('live sync: saving a library writes the exact part of its components’ code', async () => {
+  const example = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'examples', 'css-app');
+  const dir = mkdtempSync(join(tmpdir(), 'sigma-live-lib-'));
+  execFileSync('cp', ['-R', `${example}/.`, dir]);
+  const sync = startLiveSync({ root: dir, interval: 60000 });
+  await sync.ready;
+  try {
+    const rel = '.sigma/design/acme-library.sigma.json';
+    const before = readFileSync(join(dir, rel), 'utf8');
+    const lib = JSON.parse(before);
+    const set = lib.pages[0].children.find((n) => n.name === 'Button');
+    for (const v of set.children) {
+      delete v.bindings['layout.pl'];
+      delete v.bindings['layout.pr'];
+      v.layout = { ...v.layout, pl: 24, pr: 24 };
+    }
+    writeFileSync(join(dir, rel), JSON.stringify(lib, null, 2));
+    const report = await sync.afterSave(rel, before);
+    assert.deepEqual(report.written.map((f) => f.path), ['src/styles/app.css']);
+    assert.match(readFileSync(join(dir, 'src/styles/app.css'), 'utf8'), /\.button \{[^}]*padding: var\(--space-2\) 24px;/);
+  } finally {
+    sync.stop();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

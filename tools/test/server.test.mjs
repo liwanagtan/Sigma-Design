@@ -131,3 +131,14 @@ test('standalone (no project): the project API says so', async () => {
   assert.equal(res.status, 404);
   s.close();
 });
+
+test('actions: only named ones, only with Sigma’s header', async () => {
+  const { server: s, url } = await startServer({ port: 0, strictPort: true, project: dir, actions: { hello: async () => ({ ok: true, said: 'hi' }) } });
+  try {
+    assert.equal((await fetch(`${url}/api/project/action?name=hello`, { method: 'POST' })).status, 403, 'no header');
+    assert.equal((await fetch(`${url}/api/project/action?name=rm`, { method: 'POST', headers: { 'X-Sigma': '1' } })).status, 404, 'not an action');
+    assert.deepEqual(await (await fetch(`${url}/api/project/action?name=hello`, { method: 'POST', headers: { 'X-Sigma': '1' } })).json(), { ok: true, said: 'hi' });
+  } finally {
+    s.close();
+  }
+});

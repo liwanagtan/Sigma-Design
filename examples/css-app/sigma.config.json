@@ -47,7 +47,8 @@
       "manifest": ".sigma/captures/manifest.json",
       "styles": [
         "src/styles/app.css"
-      ]
+      ],
+      "page": "/examples/css-app/components.html"
     }
   ],
   "pages": [

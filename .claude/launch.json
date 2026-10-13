@@ -51,6 +51,30 @@
         "--no-open"
       ],
       "port": 5177
+    },
+    {
+      "name": "react-app-vite",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "examples/react-app",
+        "run",
+        "dev"
+      ],
+      "port": 5190
+    },
+    {
+      "name": "sigma-react-app",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "bin/sigma-design.mjs",
+        "dev",
+        "examples/react-app",
+        "--port",
+        "5178",
+        "--no-open"
+      ],
+      "port": 5178
     }
   ]
 }

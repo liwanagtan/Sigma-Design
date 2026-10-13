@@ -16,6 +16,24 @@ way `examples/css-app/components.html` does. Give layers useful names where the 
 `data-sigma-name="Label"` on an element (otherwise its `aria-label`, its first class or its tag is used).
 Names matter: properties and nested components find their layers by name.
 
+## 1b. Let Sigma capture them itself (recommended)
+
+Make the components page part of the app, built with its own tooling (a route, or a page like `sigma.html` for
+Vite), and load the capture bridge on it: `import 'sigma-design/bridge'` (or a module script pointing at
+`<sigma>/tools/capture/bridge.js`). Give each rendered variant an `id` and name it in the manifest's `element`
+(step 3). Then record the page in `sigma.config.json`:
+
+```json
+"components": [{ "sigma": ".sigma/design/app-library.sigma.json", "source": "src/components",
+                 "manifest": ".sigma/captures/manifest.json", "styles": ["src/styles/components.css"],
+                 "page": "http://localhost:5173/sigma.html" }]
+```
+
+With the app's dev server running and Sigma running in the project, Sigma does steps 2, 4 and 5 itself: the
+home screen offers **Build from code…** for a library that isn't built yet, and a library's menu has **Check
+against code…** (it captures every component, compares, and offers **Update the library from code**). The
+steps below are what it does, and how to do it without the GUI.
+
 ## 2. Capture
 
 Open the page in a browser you can script (Playwright, a browser tool) and load

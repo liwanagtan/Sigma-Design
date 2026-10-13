@@ -1,0 +1,40 @@
+/* Acme design tokens. */
+
+:root {
+  --color-blue-500: #2563eb;
+  --color-blue-600: #1d4ed8;
+  --color-gray-0: #ffffff;
+  --color-gray-100: #f1f5f9;
+  --color-gray-500: #64748b;
+  --color-gray-900: #0f172a;
+  --color-green-100: #dcfce7;
+  --color-green-700: #15803d;
+  --color-amber-100: #fef3c7;
+  --color-amber-700: #b45309;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-full: 999px;
+  --font-family-base: "Inter", system-ui, sans-serif;
+  --font-size-sm: 12px;
+  --font-size-body: 14px;
+  --font-weight-medium: 500;
+  --font-weight-bold: 600;
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.12);
+
+  --surface: var(--color-gray-0);
+  --surface-muted: var(--color-gray-100);
+  --text-primary: var(--color-gray-900);
+  --text-secondary: var(--color-gray-500);
+  --accent: var(--color-blue-500);
+  --accent-hover: var(--color-blue-600);
+  --danger: var(--color-red-500);
+  --danger-hover: var(--color-red-600);
+}

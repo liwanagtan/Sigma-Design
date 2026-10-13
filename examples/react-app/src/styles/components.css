@@ -1,0 +1,89 @@
+@import "./tokens.css";
+
+body {
+  margin: 0;
+  background: var(--surface-muted);
+  color: var(--text-primary);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--color-gray-0);
+  font: inherit;
+  font-weight: var(--font-weight-bold);
+}
+
+.button:hover {
+  background: var(--accent-hover);
+}
+
+.button--secondary {
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.button--secondary:hover {
+  background: var(--surface-muted);
+}
+
+.button--danger {
+  background: var(--danger);
+}
+
+.button--danger:hover {
+  background: var(--danger-hover);
+}
+
+.button:disabled {
+  opacity: 0.5;
+}
+
+.badge {
+  display: inline-flex;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.badge--success {
+  background: var(--color-green-100);
+  color: var(--color-green-700);
+}
+
+.badge--warning {
+  background: var(--color-amber-100);
+  color: var(--color-amber-700);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 280px;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.card__title {
+  margin: 0;
+  font-size: 16px;
+}
+
+.card__body {
+  margin: 0;
+  color: var(--text-secondary);
+}

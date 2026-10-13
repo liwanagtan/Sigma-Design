@@ -95,11 +95,13 @@ export function skills(config, { guide, name }) {
         `# Components in Sigma (${name})`,
         '',
         f.components.length
-          ? list(f.components.map((c) => `- **${c.sigma}**: from \`${c.source}\`; captures described in \`${c.manifest || '.sigma/captures/manifest.json'}\`${c.styles ? `; styles in ${c.styles.map((s) => `\`${s}\``).join(', ')}` : ''}.`))
+          ? list(f.components.map((c) => `- **${c.sigma}**: from \`${c.source}\`; captures described in \`${c.manifest || '.sigma/captures/manifest.json'}\`${c.styles ? `; styles in ${c.styles.map((s) => `\`${s}\``).join(', ')}` : ''}${c.page ? `; components page \`${c.page}\` (it loads \`sigma-design/bridge\`)` : ''}.`))
           : '- Not set up yet: bring the components in with the guide (`reference/components.md`), then run `npx sigma-design agents` to update this skill.',
         '',
-        '**Adding or changing a component:** render it on the components page (every variant and state), add it to the',
-        'manifest (with its `match` rule), capture, `npx sigma-design library build`, and compare until it matches.',
+        '**Adding or changing a component:** render it on the components page (every variant and state, each with the',
+        'id its manifest entry names as `element`), add it to the manifest (with its `match` rule), then in Sigma open the',
+        'library and use **Check against code…** (it captures, compares, and can update the library from the code).',
+        'Saving a library in Sigma writes the exact part of the code itself; finish what it lists, then check again.',
         '',
         `Guide: \`${guide}/reference/components.md\`, \`pages.md\`.`,
       ]),

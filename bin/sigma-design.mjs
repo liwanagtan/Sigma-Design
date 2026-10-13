@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { startServer, EDITOR_ROOT } from '../tools/server.mjs';
 import { runInit, isSetUp } from '../tools/init.mjs';
 import { runAgents } from '../tools/agents.mjs';
-import { startLiveSync } from '../tools/live-sync.mjs';
+import { startLiveSync, tools as runTools } from '../tools/live-sync.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(join(here, '..', 'package.json'), 'utf8'));
@@ -50,10 +50,30 @@ async function serve({ project }) {
   const log = (line) => console.log(`  ${new Date().toLocaleTimeString()}  ${line}`);
   // In a project, the code and Sigma follow each other while it runs (--no-sync to turn that off).
   const sync = project && !flag('no-sync') ? startLiveSync({ root: project, log }) : null;
-  const { url } = await startServer({ port, strictPort: !!value('port'), project, log, afterSave: sync?.afterSave });
+  const { url } = await startServer({ port, strictPort: !!value('port'), project, log, afterSave: sync?.afterSave, actions: project ? projectActions(project) : {} });
   console.log(`Sigma ${pkg.version} running at ${url}${project ? `  (project: ${project}${sync ? ', live sync on' : ''})` : '  (standalone)'}`);
   console.log('Ctrl+C to stop.');
   if (!flag('no-open')) openBrowser(url);
+}
+
+// What Sigma's GUI can run in the project (POST /api/project/action): building from the captures it made.
+function projectActions(project) {
+  const capturesDir = () => {
+    let c = null;
+    try {
+      c = JSON.parse(readFileSync(join(project, 'sigma.config.json'), 'utf8'));
+    } catch {}
+    const manifest = c?.components?.[0]?.manifest || '.sigma/captures/manifest.json';
+    return dirname(join(project, manifest));
+  };
+  const run = async (args) => {
+    const r = await runTools(args, project);
+    return { ok: r.status === 0, result: r.result, output: r.result ? undefined : r.output };
+  };
+  return {
+    'library-build': () => run(['library', 'build', project, '--from', capturesDir()]),
+    'pages-build': () => run(['pages', 'build', project, '--from', capturesDir()]),
+  };
 }
 
 // Write (or show) the rules and project skills; prints what it did.

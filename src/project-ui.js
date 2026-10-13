@@ -3,6 +3,7 @@
 import { state, subscribe } from './store.js';
 import { project, onProjectChange, saveToProject, projectStatus } from './project.js';
 import { openProposeDialog } from './propose.js';
+import { openCodeCheck, libraryEntry } from './code-check.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -12,6 +13,7 @@ export function projectMenuItems() {
   return [
     { label: inIt ? 'Save to project' : `Add to project “${project.name}”`, shortcut: '⌘S', action: () => saveToProject() },
     { label: 'Propose change…', action: () => openProposeDialog() },
+    ...(libraryEntry() ? [{ label: 'Check against code…', action: () => openCodeCheck() }] : []),
     '-',
   ];
 }

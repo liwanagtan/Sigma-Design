@@ -6,10 +6,12 @@ description: css-app's components in Sigma: how they're rendered for capture, ho
 <!-- sigma-design:start -->
 # Components in Sigma (css-app)
 
-- **.sigma/design/acme-library.sigma.json**: from `src/components`; captures described in `.sigma/captures/manifest.json`; styles in `src/styles/app.css`.
+- **.sigma/design/acme-library.sigma.json**: from `src/components`; captures described in `.sigma/captures/manifest.json`; styles in `src/styles/app.css`; components page `/examples/css-app/components.html` (it loads `sigma-design/bridge`).
 
-**Adding or changing a component:** render it on the components page (every variant and state), add it to the
-manifest (with its `match` rule), capture, `npx sigma-design library build`, and compare until it matches.
+**Adding or changing a component:** render it on the components page (every variant and state, each with the
+id its manifest entry names as `element`), add it to the manifest (with its `match` rule), then in Sigma open the
+library and use **Check against code…** (it captures, compares, and can update the library from the code).
+Saving a library in Sigma writes the exact part of the code itself; finish what it lists, then check again.
 
 Guide: `../../skills/sigma-sync/reference/components.md`, `pages.md`.
 <!-- sigma-design:end -->

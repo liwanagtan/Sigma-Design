@@ -261,8 +261,9 @@ function codeNote(code) {
   if (!code) return '';
   if (code.problem) return ` · the code wasn’t written: ${code.problem}`;
   if (code.manual) return ' · the code needs your coding agent (sigma-design tokens diff)';
-  if (code.written?.length) return ` · wrote ${code.written.map((f) => f.path).join(', ')}`;
-  return '';
+  const agent = code.agent?.length ? ` · ${code.agent.length} change${code.agent.length === 1 ? '' : 's'} for your coding agent (sigma-design components diff)` : '';
+  if (code.written?.length) return ` · wrote ${code.written.map((f) => f.path).join(', ')}${agent}`;
+  return agent;
 }
 
 export async function reloadFromDisk(path) {

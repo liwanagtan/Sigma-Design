@@ -1030,10 +1030,6 @@ function onKeyDown(e) {
         e.preventDefault();
         if (state.selection.length === 1) window.dispatchEvent(new CustomEvent('sigma:rename', { detail: state.selection[0] }));
         return;
-      case k === 's':
-        e.preventDefault();
-        window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'Autosaved to this browser. Use the menu → Save file… to download a copy.' }));
-        return;
       case k === 'e' && e.shiftKey:
         e.preventDefault();
         return exportNodes(selectedNodes().length ? selectedNodes() : page().children, { format: 'png', scale: 2 });

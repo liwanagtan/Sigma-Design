@@ -7,6 +7,7 @@
 //                                        409 if it changed on disk since (someone else wrote it)
 //   GET  /api/project/base?path=P&rev=R  a file as committed in git (R defaults to HEAD), to compare with
 //   GET  /api/project/changesets         the proposed changes in .sigma/changesets/
+//   POST /api/project/action?name=N      run one of the actions Sigma was started with (library build…)
 //
 // Only .sigma/**/*.json, .sigma/**/*.svg and sigma.config.json can be read or written. The server listens on
 // 127.0.0.1 only, answers only requests addressed to localhost, and writes only for requests that carry the
@@ -36,7 +37,7 @@ const mtimeOf = (full) => statSync(full, { bigint: true }).mtimeNs.toString();
  * or null when Sigma runs standalone). `log(line)` gets one line per write. `afterSave(rel, before)` runs after
  * each write (live sync writes the code); what it returns goes back to the editor as `code`.
  */
-export function sigmaHandler({ root = EDITOR_ROOT, project = null, log = () => {}, afterSave = null } = {}) {
+export function sigmaHandler({ root = EDITOR_ROOT, project = null, log = () => {}, afterSave = null, actions = {} } = {}) {
   project = project ? resolve(project) : null;
   const projectReal = project ? realpathSync(project) : null;
   const heads = new Map(); // path → [mtime, kind, name]: what a file is, cached by mtime
@@ -162,6 +163,14 @@ export function sigmaHandler({ root = EDITOR_ROOT, project = null, log = () => {
         }
       }
       return reply(res, 200, out);
+    }
+    if (url.pathname === '/api/project/action' && method === 'POST') {
+      // Named actions only (the GUI's "Update the library from code"…), with Sigma's header like writes.
+      if (req.headers['x-sigma'] !== '1') return reply(res, 403, { error: 'Actions need the X-Sigma header' });
+      const action = actions[q.get('name')];
+      if (!action) return reply(res, 404, { error: `No action ${JSON.stringify(q.get('name'))}` });
+      log(`action ${q.get('name')}`);
+      return reply(res, 200, await action());
     }
     if (url.pathname !== '/api/project/file') return reply(res, 404, { error: 'Unknown API' });
     const rel = q.get('path') || '';

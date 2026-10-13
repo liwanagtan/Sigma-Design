@@ -6,6 +6,11 @@
   "bin": {
     "sigma-design": "bin/sigma-design.mjs"
   },
+  "exports": {
+    "./bridge": "./tools/capture/bridge.js",
+    "./capture": "./tools/capture/capture.js",
+    "./package.json": "./package.json"
+  },
   "files": [
     "bin/",
     "index.html",
