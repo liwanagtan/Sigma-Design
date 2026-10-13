@@ -46,6 +46,11 @@ SVG icons. It writes `sigma.config.json`, imports, and runs `check`. Read what i
   `npx sigma-design adapter test` until it passes, then `tokens import` (or `icons import`) and `check`.
   Never do a one-off extraction instead: with an adapter, every later sync runs without you.
 
+In a monorepo (or with a shared design system package), the design system's tokens, icons and component
+library live in the package's own `.sigma/`: set Sigma up there, and in each app add the package to
+`packages` in `sigma.config.json` and link its files by path (`node_modules/<package>/.sigma/…`). Never edit
+them from an app: they're read-only there.
+
 If the team works on branches, suggest `npx sigma-design merge-driver install` (it changes `.gitattributes` and
 this clone's git config, so ask first): git then merges Sigma files token by token and component by component.
 

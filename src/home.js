@@ -280,7 +280,7 @@ function projectCard(f) {
   return `<a class="file-card${plain ? ' tokens' : ''}" href="#" data-project-path="${esc(f.path)}" draggable="false" title="${esc(f.path)}">
     <div class="file-thumb" style="background:${plain ? '#FFFFFF' : esc(f.meta?.background || '#F5F5F5')}">${thumb}</div>
     <div class="file-info"><div class="card-name" title="${esc(f.name)}">${esc(f.name)}</div>
-    <div class="file-time">${kindBadge(f.kind)}${f.kind === 'invalid' ? '<span class="kind-badge sample">Not readable</span>' : ''}${when || `<span>${esc(f.path.replace(/^\.sigma\//, ''))}</span>`}</div></div>
+    <div class="file-time">${kindBadge(f.kind)}${f.package ? `<span class="kind-badge sample" title="From the design system package ${esc(f.package)}: read-only here; change it in the package">${esc(f.package)}${f.version ? ` ${esc(f.version)}` : ''}</span>` : ''}${f.kind === 'invalid' ? '<span class="kind-badge sample">Not readable</span>' : ''}${when || `<span>${esc(f.path.replace(/^\.sigma\//, ''))}</span>`}</div></div>
     <div class="file-created muted">${esc(f.path.replace(/^\.sigma\//, ''))}</div>
   </a>`;
 }

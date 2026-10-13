@@ -34,6 +34,13 @@ async function update() {
     el.hidden = !status;
     if (!status) continue;
     const { path, unsaved, connected } = status;
+    const pkg = project.files.find((f) => f.path === path && f.package);
+    if (pkg) {
+      el.className = 'project-status';
+      el.title = `${path}: from the package ${pkg.package}${pkg.version ? ` ${pkg.version}` : ''}, read-only here`;
+      el.innerHTML = `<span class="dot"></span>From ${pkg.package}`;
+      continue;
+    }
     el.className = `project-status${unsaved ? ' unsaved' : ''}${connected ? '' : ' offline'}`;
     el.title = `${path} in ${project.name || 'the project'}${connected ? (unsaved ? ': changes not saved to the project. ⌘S saves them.' : ': saved') : ': the project isn’t connected'}`;
     el.innerHTML = `<span class="dot"></span>${!connected ? 'Project offline' : unsaved ? 'Save to project' : 'In project'}`;

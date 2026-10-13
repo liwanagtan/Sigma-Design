@@ -30,12 +30,33 @@ export function readProject(root) {
       configError = e.message;
     }
   }
-  return { files, config, configError };
+  // The design system packages it uses (config.packages): their .sigma/ files, read-only, under
+  // node_modules/<package>/.sigma/ (a workspace link may lead outside the project; that's fine to read).
+  const packages = packagesOf(root, config);
+  for (const p of packages) for (const f of walk(join(p.dir, '.sigma'))) files[toPosix(relative(root, f))] = readFileSync(f, 'utf8');
+  return { files, config, configError, packages };
 }
+
+/** The packages in config.packages that are installed and have Sigma files: [{ name, version, dir }]. */
+export function packagesOf(root, config) {
+  return (Array.isArray(config?.packages) ? config.packages : []).map((name) => {
+    const dir = join(root, 'node_modules', ...String(name).split('/'));
+    if (!existsSync(join(dir, '.sigma'))) return null;
+    let version = null;
+    try {
+      version = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).version || null;
+    } catch {}
+    return { name, version, dir };
+  }).filter(Boolean);
+}
+
+/** Whether a project path is a package's file (read-only). */
+export const isPackagePath = (path) => String(path).startsWith('node_modules/');
 
 export const readText = (root, path) => readFileSync(join(root, path), 'utf8');
 export const exists = (root, path) => existsSync(join(root, path));
 export function writeText(root, path, text) {
+  if (isPackagePath(path)) throw new Error(`${path} comes from a design system package: change it in that package`);
   mkdirSync(dirname(join(root, path)), { recursive: true });
   writeFileSync(join(root, path), text);
 }

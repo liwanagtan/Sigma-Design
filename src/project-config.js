@@ -27,7 +27,10 @@ export function validateConfig(config, { files = [] } = {}) {
     return issues;
   }
   if (config.schema !== CONFIG_SCHEMA) error('schema', `should be ${CONFIG_SCHEMA}`);
-  const known = new Set(['$schema', 'schema', 'stack', 'tokens', 'icons', 'components', 'pages', 'workflow', 'notes']);
+  const known = new Set(['$schema', 'schema', 'stack', 'tokens', 'icons', 'components', 'pages', 'workflow', 'notes', 'packages']);
+  if (config.packages !== undefined && (!Array.isArray(config.packages) || config.packages.some((n) => typeof n !== 'string' || !/^(@[\w.-]+\/)?[\w.-]+$/.test(n)))) {
+    error('packages', 'should be a list of npm package names (design system packages whose .sigma/ files this project uses), like ["@acme/design-system"]');
+  }
   for (const k of Object.keys(config)) if (!known.has(k)) warn(k, 'isn’t a setting Sigma knows');
   const sigmaFile = (at, p, kindDir) => {
     if (typeof p !== 'string' || !p.endsWith('.sigma.json')) return error(at, 'should be the path of a .sigma.json file');
