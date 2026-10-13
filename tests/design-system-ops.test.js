@@ -107,6 +107,9 @@ test('visual review: a copy renders what an update would change; the open file i
   ok(d.ratio > 0.9 && d.box && d.box.w === 40, 'every pixel of the red frame changed');
   const same = await pixelDiff(renderSnapshot(blue), renderSnapshot({ ...blue, x: 999 }));
   eq([same.ratio, same.box], [0, null]);
+  const turned = renderSnapshot({ ...blue, rotation: 90 });
+  eq([turned.w, turned.h], [20, 40], 'turning a frame is a change, and its render fits it');
+  ok(renderSnapshot(blue).svg !== turned.svg);
   const doc = { pages: [{ children: [{ type: 'instance', componentId: 'a' }, { type: 'frame', children: [{ type: 'instance', componentId: 'b', children: [{ type: 'instance', componentId: 'a' }] }] }] }] };
   eq(countInstances(doc, new Set(['a'])), 1, 'instances inside instances are the component’s');
 });

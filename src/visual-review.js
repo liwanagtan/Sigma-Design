@@ -5,7 +5,8 @@
 // Every top-level layer and every component variant is rendered as it is and as it would be (the update
 // accepted, or the older version) through store.withDocument, so nothing is opened or saved; whatever renders
 // differently is what changed. Renders are taken at the origin, so moving a frame on the canvas isn't a change.
-import { state, getNode, withDocument, walk, select, emit, pageOf } from './store.js';
+import { state, getNode, withDocument, walk, select, emit, pageOf, localMatrix } from './store.js';
+import { apply } from './geom.js';
 import { layOutDocument } from './lay-out.js';
 import { zoomToSelection } from './commands.js';
 import { nodeSVG, strokeOverhang, effectOverhang } from './render.js';
@@ -16,20 +17,25 @@ const toast = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { det
 
 /** A layer rendered on its own at the origin: { svg, w, h }. Works for layers outside the document too. */
 export function renderSnapshot(node) {
-  const n = { ...node, x: 0, y: 0, rotation: 0, visible: true };
+  // Placed at the origin (moving isn't a change), keeping its rotation (turning it is).
+  const n = { ...node, x: 0, y: 0, visible: true };
   let pad = 0;
   walk([n], (k) => {
     pad = Math.max(pad, strokeOverhang(k) + (k.visible ? effectOverhang(k) : 0));
   });
   pad = Math.ceil(pad);
-  const w = Math.max(1, Math.ceil(n.w + pad * 2)), h = Math.max(1, Math.ceil(n.h + pad * 2));
+  const m = localMatrix(n);
+  const round = (v) => Math.round(v * 1000) / 1000; // cos(90°) isn't quite 0
+  const corners = [[0, 0], [n.w, 0], [n.w, n.h], [0, n.h]].map(([x, y]) => apply(m, { x, y })).map((c) => ({ x: round(c.x), y: round(c.y) }));
+  const x0 = Math.floor(Math.min(...corners.map((c) => c.x))) - pad, y0 = Math.floor(Math.min(...corners.map((c) => c.y))) - pad;
+  const w = Math.max(1, Math.ceil(Math.max(...corners.map((c) => c.x))) + pad - x0), h = Math.max(1, Math.ceil(Math.max(...corners.map((c) => c.y))) + pad - y0);
   let body = '';
   try {
     body = nodeSVG(n, { export: true });
   } catch {
     body = '';
   }
-  return { svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${-pad} ${-pad} ${w} ${h}">${body}</svg>`, w, h };
+  return { svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${x0} ${y0} ${w} ${h}">${body}</svg>`, w, h };
 }
 
 // What a document shows: its top-level layers and component variants (a set's variants one by one), and the
