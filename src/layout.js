@@ -219,6 +219,7 @@ function layoutPlain(nodes, dir = 'ltr') {
       if (getSizing(n, 'h') === 'hug') n.h = round(clampSize(n, 'h', hugSize(n).h));
       layoutChildren(n, own);
     } else if (n.children) {
+      for (const k of n.children) hiddenByWidth.delete(k); // no auto layout, no breakpoints: nothing hidden by width
       layoutPlain(n.children, own);
     }
   }
