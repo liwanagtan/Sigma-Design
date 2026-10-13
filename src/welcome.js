@@ -178,7 +178,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'When a Sigma Tokens or Sigma Icons file publishes a new version, the Sigma Design files that use it are offered the update.',
     ] },
     { h: 'A complete design system: Optics', p: [
-      'Your files also have Optics, a design system made in Sigma and inspired by Shopify’s Polaris: Optics Tokens (in Sigma Tokens), and Optics Foundations and Optics Components (in Sigma Design), with color, type, spacing, elevation, motion, icons and documented, ready components. They’re yours to change. Link Optics Tokens and Optics Components from your own files to design with them; Sigma Tokens ▾ → Add Optics design system adds them again.',
+      'Your files also have Optics, a design system made in Sigma and inspired by Shopify’s Polaris: Optics Tokens (in Sigma Tokens), Optics Icons (in Sigma Icons), and Optics Foundations and Optics Components (in Sigma Design), with color, type, spacing, elevation, motion, icons and documented, ready components. They’re yours to change. Link Optics Tokens and Optics Components from your own files to design with them; Sigma Tokens ▾ → Add Optics design system adds them again.',
     ] },
     { h: 'Find your way', bullets: [
       'Layers and Assets are on the left. The right panel shows what you’ve selected, or this file’s tokens and libraries when nothing is.',

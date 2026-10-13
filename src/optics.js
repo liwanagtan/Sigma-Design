@@ -4,17 +4,29 @@
 //   Optics Components   Button, Icon button, Text field, Select, Checkbox, Radio button, Badge, Banner, Card,
 //                       Avatar, Tab and Tabs, Modal, Tooltip and Spinner: component sets with variants, states
 //                       and properties, documented and Ready, with Do and Don't examples on a Usage page
-// Every value comes from Optics Tokens (optics-tokens.js) and every icon from the Sigma Icons sample, so the
+// Every value comes from Optics Tokens (optics-tokens.js) and every icon from Optics Icons, so the
 // files pass Sigma's own checks: the token audit, the use report, the accessibility check and readiness.
 import { createNode, makePaint } from './store.js';
 import { DEFAULT_LAYOUT } from './layout.js';
-import { sampleIconId } from './sample-icons.js';
+import { newIconsDocument } from './icon-library.js';
 
 export const OPTICS_FOUNDATIONS_NAME = 'Optics Foundations';
 export const OPTICS_COMPONENTS_NAME = 'Optics Components';
-const I = (name) => sampleIconId(name);
-// The Sigma Icons Optics uses (all in the sample set).
-export const OPTICS_ICONS = ['plus', 'search', 'x', 'check', 'minus', 'chevron-down', 'info', 'circle-check', 'circle-alert', 'triangle-alert', 'loader', 'zap', 'pencil', 'trash'].map(I);
+export const OPTICS_ICONS_NAME = 'Optics Icons';
+// Optics' own icons, made from the Sigma Icons sample: the same icons, with Optics ids.
+const I = (name, filled = false) => `optics-${name}${filled ? '-filled' : ''}`;
+// The icons Optics' components use (all in Sigma Icons, so in Optics Icons).
+export const OPTICS_ICON_NAMES = ['plus', 'search', 'x', 'check', 'minus', 'chevron-down', 'info', 'circle-check', 'circle-alert', 'triangle-alert', 'loader', 'zap', 'pencil', 'trash', 'star'];
+export const OPTICS_ICONS = OPTICS_ICON_NAMES.map((n) => I(n));
+
+/** Optics Icons: a Sigma Icons file made from the Sigma Icons sample's icons (outline and filled), published v1. */
+export function opticsIconsDocument(sampleIcons, source = null) {
+  const doc = newIconsDocument(OPTICS_ICONS_NAME);
+  doc.icons = sampleIcons.map((icon) => ({ ...structuredClone(icon), id: I(icon.name, icon.style === 'filled') }));
+  if (source) doc.source = { ...structuredClone(source), note: 'Optics’ icons: the Sigma Icons selection of Lucide icons, outline and filled.' };
+  doc.published = { version: 1, publishedAt: Date.now(), notes: 'Optics Icons v1', icons: structuredClone(doc.icons) };
+  return doc;
+}
 
 // The building blocks both files use, bound to the Optics tokens in `collections` (throws if one is missing).
 function kit(collections) {
@@ -569,8 +581,8 @@ export function opticsFoundationsDocument(collections, { icons = [] } = {}) {
       text('Name', ic.name, 'text/secondary', 'body/sm'),
     ]))),
   ]));
-  const iconSheet = sheet('Icons', 'Optics uses the Sigma Icons set (Lucide icons): 24px outlines with a 2px stroke, colored with the icon tokens. Pick icons people already know, and name icon-only controls for screen readers.',
-    iconRows.length ? [section('Sigma Icons', iconRows)] : [para('None', 'The Sigma Icons sample couldn’t be made, so this page has no icons.', 'text/secondary', 'body/md')]);
+  const iconSheet = sheet('Icons', 'Optics Icons are Lucide icons (from Sigma Icons): 24px outlines with a 2px stroke, colored with the icon tokens. Pick icons people already know, and name icon-only controls for screen readers.',
+    iconRows.length ? [section('Optics Icons', iconRows)] : [para('None', 'Optics Icons couldn’t be made, so this page has no icons.', 'text/secondary', 'body/md')]);
 
   const pages = [
     page('optics-color', 'Color', color), page('optics-typography', 'Typography', type), page('optics-spacing', 'Spacing', spacing),

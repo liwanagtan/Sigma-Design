@@ -948,16 +948,16 @@ the browser.
 
 # Part G: A working design system
 
-**Optics**: a real design system made in Sigma, to start from and to show what Sigma does. Three working files
-of your own (not samples): **Optics Tokens**, **Optics Foundations** and **Optics Components**. They're working files, not pictures of one: every component is built from the tokens, has its
+**Optics**: a real design system made in Sigma, to start from and to show what Sigma does. Four working files
+of your own (not samples): **Optics Tokens**, **Optics Icons**, **Optics Foundations** and **Optics Components**. They're working files, not pictures of one: every component is built from the tokens, has its
 variants, states and properties, and passes Sigma's own checks.
 
 ## Phase 36: Optics, a working design system inspired by Polaris
 
 Inspiration: Shopify's Polaris (https://polaris.shopify.com), a mature, well-documented system for admin
 interfaces. Its structure and good ideas, not its brand: Optics has its own name and values, and uses no Polaris
-assets (Polaris icons are licensed for use in Shopify apps only). Its icons come from the **Sigma Icons** sample
-file (Lucide icons), adding any Optics needs to that set.
+assets (Polaris icons are licensed for use in Shopify apps only). Its icons are **Optics Icons**, a Sigma Icons file
+made from the Sigma Icons sample (Lucide icons, outline and filled), so Optics doesn't depend on the sample.
 
 - **Optics Tokens** (a Sigma Tokens file), in the shape Polaris uses:
   - primitives: color scales (gray, plus brand, success, critical, warning, caution, info and magic hues, in
@@ -970,10 +970,12 @@ file (Lucide icons), adding any Optics needs to that set.
   - modes: Light and Dark on the semantic collection;
   - typography tokens for the text styles (heading lg/md/sm, body md/sm, caption), and every token with a code
     name (CSS variables) and a description.
-- **Optics Foundations** (a Sigma Design file using Optics Tokens and Sigma Icons): color (each scale and the
+- **Optics Icons** (a Sigma Icons file): every icon of the Sigma Icons sample, with Optics' own ids and Lucide's
+  license and credit, published so the Optics design files use it.
+- **Optics Foundations** (a Sigma Design file using Optics Tokens and Optics Icons): color (each scale and the
   semantic roles, in both modes, with their contrast), typography (every text style), spacing, radius, elevation,
   motion and icons, each as labelled specimens built from the tokens themselves.
-- **Optics Components** (a Sigma Design file using Optics Tokens and Sigma Icons, published as a component
+- **Optics Components** (a Sigma Design file using Optics Tokens and Optics Icons, published as a component
   library so other files can link it): Button (primary, secondary, tertiary, critical, plain; sizes; with an
   icon; loading), Text field (with label, help text and error), Select, Checkbox, Radio button, Badge (tones),
   Banner (tones), Card, Avatar, Tabs, Modal, Tooltip and Spinner, as component sets with variants, interactive
@@ -984,12 +986,12 @@ file (Lucide icons), adding any Optics needs to that set.
   component has docs (purpose, usage, Do and Don't, role and keyboard behavior) and is Ready in Component
   status; and Export documentation page makes a complete docs site from Optics Components.
 - **Your own files:** made once with Welcome to Sigma, and listed with your other files (Optics Tokens under
-  Sigma Tokens; Optics Foundations and Optics Components under Sigma Design). They're saved like any file, so you
+  Sigma Tokens, Optics Icons under Sigma Icons, Optics Foundations and Optics Components under Sigma Design). They're saved like any file, so you
   can change them and build on them; **Sigma Tokens ▾ → Add Optics design system** adds a fresh set. A design
   file can link Optics Tokens and Optics Components to build with them.
 - **Tests:** browser tests build the three files and run the checks above on them, so a change to Sigma that
   breaks Optics fails CI.
-- **Done when:** the three files are in your files and open, a new design file can link Optics Tokens and Optics
+- **Done when:** the four files are in your files and open, a new design file can link Optics Tokens and Optics
   Components and build a screen from them, and the checks above pass in CI.
 - **What shipped:** `src/optics-tokens.js` builds **Optics Tokens** (242 tokens: Primitives on numbered steps,
   Semantic roles in Light and Dark, 13 text styles; every token named `--optics-…` in CSS) and `src/optics.js`
@@ -1000,10 +1002,10 @@ file (Lucide icons), adding any Optics needs to that set.
   with a Do and a Don't for each). Welcome to Sigma (version 7) makes them once per browser as your own files
   (saved like any other, so they're yours to change), and
   Sigma Tokens ▾ → Add Optics design system adds a fresh set; Optics Components is published as v1 so other files
-  can link it, and the guide's first page says where Optics is. Icons come from Sigma Icons (no new ones were needed). `tests/optics.test.js` builds the
+  can link it, and the guide's first page says where Optics is. Icons are **Optics Icons**: `opticsIconsDocument` copies the Sigma Icons sample's 90 icons (72 outline, 18 filled) with Optics ids (`optics-plus`) and Lucide's license, published as v1; both Optics design files link it (no new icons were needed). `tests/optics.test.js` builds the
   files and checks them: valid in the file format, no one-off values, 99% or more of values from tokens, every
   component Ready, and no accessibility errors in either mode. Also: the arranger stacks rows as well as columns
   (Do and Don't side by side), and publishing ignores an instance's record of its main's size, so a freshly opened
-  Optics Components doesn't show unpublished changes. Verified in the editor: the three files under Sigma Tokens and Sigma Design (saved when edited, no sample banner), a new
+  Optics Components doesn't show unpublished changes. Verified in the editor: the four files under Sigma Tokens, Sigma Icons and Sigma Design (saved when edited, no sample banner; every icon in both design files resolves from Optics Icons), a new
   file linking Optics Tokens and Optics Components builds a Banner, a Card and a Button that resolve every token
   and icon, and Export documentation page makes a page with all 15 components.
