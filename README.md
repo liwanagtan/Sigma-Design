@@ -1,6 +1,6 @@
 # Sigma
 
-A Figma-style design canvas that runs in the browser. It has no dependencies and no build step: plain ES modules render the document to SVG.
+An open design tool for AI-native teams: a design canvas installed in your project, working on your real design system. It runs in the browser, with no dependencies and no build step: plain ES modules render the document to SVG.
 
 ## Install in a project
 
