@@ -1,5 +1,5 @@
 import {
-  state, page, view, emit, commit, select, selectedNodes, getNode, getParent, ancestors, isAncestor, isSlotArea,
+  state, page, view, emit, commit, select, selectedNodes, getNode, getParent, ancestors, isAncestor, isSlotArea, hiddenByWidth,
   uid, detach, insertNode, worldMatrix, setWorldMatrix, createNode, undo, redo, makePaint, isFrameLike, editNode, worldBounds, setShowGrids,
 } from './store.js';
 import { translate } from './geom.js';
@@ -438,13 +438,13 @@ export function renderLayers(force = false) {
       if (n.type === 'component' || n.type === 'instance' || n.type === 'componentSet') cls.push('componentish');
       if (sel.has(n.id)) cls.push('selected');
       else if (inSelected) cls.push('in-selected');
-      if (!n.visible) cls.push('is-hidden');
+      if (!n.visible || hiddenByWidth.has(n)) cls.push('is-hidden'); // hidden, or by a breakpoint at this width
       if (n.locked) cls.push('is-locked');
       if (state.hoverId === n.id) cls.push('hover');
       rows.push(
         `<div class="${cls.join(' ')}" data-id="${n.id}" draggable="true" style="--depth:${depth}">` +
         `<span class="chev">${kids ? (open ? icons.chevronDown : icons.chevronRight) : ''}</span>` +
-        `<span class="licon">${layerIcon(n)}</span><span class="name">${esc(n.name)}</span>` +
+        `<span class="licon">${layerIcon(n)}</span><span class="name"${n.visible && hiddenByWidth.has(n) ? ' title="Hidden at this width by a breakpoint of the frame it’s in"' : ''}>${esc(n.name)}</span>` +
         `<span class="row-actions"><button class="icon-btn" data-act="lock" title="Lock">${n.locked ? icons.lock : icons.unlock}</button>` +
         `<button class="icon-btn" data-act="vis" title="Show/hide">${n.visible ? icons.eye : icons.eyeOff}</button></span></div>`,
       );
@@ -1229,6 +1229,7 @@ function breakpointsHTML(n) {
     return `<div class="bp-row${b === active ? ' active' : ''}"><span class="muted">≤</span>${num(i, 'maxW', b.maxW, 'At this width (px) or narrower')}` +
       `<div class="seg">${[['vertical', 'alVertical'], ['horizontal', 'alHorizontal']].map(([m, ic]) => `<button class="icon-btn${mode === m ? ' on' : ''}" data-bp-mode="${i}:${m}" title="${m === 'vertical' ? 'Vertical' : 'Horizontal'} at this width">${icons[ic]}</button>`).join('')}</div>` +
       `${num(i, 'gap', b.gap, 'Gap at this width')}${num(i, 'padH', pad('pl', 'pr'), 'Left and right padding at this width')}` +
+      `<button class="icon-btn bp-hide${(b.hide || []).length ? ' on' : ''}" data-bp-hide="${i}" title="Layers hidden at this width${(b.hide || []).length ? `: ${(b.hide || []).length}` : ''}">${icons.eyeOff}</button>` +
       `<button class="icon-btn" data-bp-del="${i}" title="Remove this breakpoint">${icons.minus}</button></div>`;
   }).join('');
   return `<div class="bp-head"><span class="muted">Breakpoints${active ? ` · ≤ ${active.maxW} applies at ${Math.round(n.w)}px` : ''}</span><button class="icon-btn" data-bp-add title="Lay out differently at a narrower width">${icons.plus}</button></div>${rows}`;
@@ -1626,6 +1627,31 @@ function initProps() {
     if (b.dataset.effectAct === 'toggle') return updateEffect(+b.dataset.effect, (fx) => void (fx.visible = fx.visible === false), { field: 'visible' });
     if (b.dataset.effectAct === 'remove') return removeEffect(+b.dataset.effect);
     if (b.dataset.alMode) return setProps({ 'layout.mode': b.dataset.alMode });
+    if (b.dataset.bpHide !== undefined) {
+      // Which of the frame's layers this breakpoint hides (by their id; an instance's by its main's).
+      const n = nodes[0];
+      const i = +b.dataset.bpHide;
+      const r = b.getBoundingClientRect();
+      const hide = new Set(n.layout.breakpoints?.[i]?.hide || []);
+      const items = (n.children || []).map((k) => {
+        const id = k.sourceId || k.id;
+        return {
+          label: k.name, checked: hide.has(id), action: () => {
+            editNode(n, ['layout'], () => {
+              const list = n.layout.breakpoints.map((x) => ({ ...x }));
+              const set = new Set(list[i].hide || []);
+              if (set.has(id)) set.delete(id);
+              else set.add(id);
+              if (set.size) list[i].hide = [...set];
+              else delete list[i].hide;
+              n.layout = { ...n.layout, breakpoints: list };
+            });
+            commit();
+          },
+        };
+      });
+      return showContextMenu(r.left, r.bottom + 4, items.length ? [{ label: `Hidden at ≤ ${n.layout.breakpoints[i].maxW}px`, disabled: true, action: () => {} }, '-', ...items] : [{ label: 'This frame has no layers', disabled: true, action: () => {} }]);
+    }
     if (b.dataset.bpAdd !== undefined || b.dataset.bpDel !== undefined || b.dataset.bpMode) {
       const n = nodes[0];
       editNode(n, ['layout'], () => {

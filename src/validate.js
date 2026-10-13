@@ -298,7 +298,8 @@ export function validateFile(file, { path = '(file)', files = {} } = {}) {
         const at = `${where}.layout.breakpoints[${i}]`;
         if (!bp || typeof bp !== 'object') return error(at, 'should be an object like { "maxW": 600, "mode": "vertical" }');
         if (!(num(bp.maxW) && bp.maxW > 0)) error(`${at}.maxW`, 'should be a width in px (it applies at that width or narrower)');
-        for (const k of Object.keys(bp)) if (!['maxW', ...BREAKPOINT_KEYS].includes(k)) error(`${at}.${k}`, `isn’t a layout value a breakpoint can change; use ${BREAKPOINT_KEYS.join(', ')}`);
+        if (bp.hide !== undefined && !(Array.isArray(bp.hide) && bp.hide.every((x) => typeof x === 'string'))) error(`${at}.hide`, 'should be a list of the ids of the frame’s layers it hides');
+        for (const k of Object.keys(bp)) if (!['maxW', 'hide', ...BREAKPOINT_KEYS].includes(k)) error(`${at}.${k}`, `isn’t a layout value a breakpoint can change; use ${BREAKPOINT_KEYS.join(', ')}`);
         if (bp.mode !== undefined && !['horizontal', 'vertical'].includes(bp.mode)) error(`${at}.mode`, 'should be "horizontal" or "vertical"');
         for (const k of ['gap', 'pt', 'pr', 'pb', 'pl']) if (bp[k] !== undefined && !num(bp[k])) error(`${at}.${k}`, 'should be a number');
       });

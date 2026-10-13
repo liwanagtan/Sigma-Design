@@ -1,6 +1,6 @@
 import {
   state, page, view, getNode, getParent, selectedNodes, localMatrix, worldMatrix, worldCorners, worldBounds, isFrameLike, walk,
-  ancestors,
+  ancestors, hiddenByWidth,
 } from './store.js';
 import { css, mul, apply, unionBoxes, cornersOf } from './geom.js';
 import { textStyle, caseText, wrapsAtMax, truncateStyle } from './text.js';
@@ -150,7 +150,7 @@ function effectsFilter(n, id) {
 
 // Renders a node in its parent's coordinate space.
 export function nodeSVG(n, opts = {}) {
-  if (!n.visible) return '';
+  if (!n.visible || hiddenByWidth.has(n)) return '';
   let inner = '';
   switch (n.type) {
     case 'frame':

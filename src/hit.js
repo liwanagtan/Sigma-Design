@@ -1,4 +1,4 @@
-import { page, worldMatrix, getParent, selectedNodes, isFrameLike, isSlotArea } from './store.js';
+import { page, worldMatrix, getParent, selectedNodes, isFrameLike, isSlotArea, hiddenByWidth } from './store.js';
 import { apply, inv } from './geom.js';
 import { view } from './store.js';
 
@@ -7,7 +7,7 @@ function localPoint(n, pt) {
 }
 
 function hitNode(n, pt, exclude) {
-  if (!n.visible || n.locked || exclude.has(n.id)) return null;
+  if (!n.visible || hiddenByWidth.has(n) || n.locked || exclude.has(n.id)) return null;
   const L = localPoint(n, pt);
   const inside = L.x >= 0 && L.y >= 0 && L.x <= n.w && L.y <= n.h;
   if (n.children) {
@@ -66,7 +66,7 @@ export function frameAt(pt, exclude = new Set()) {
   const search = (nodes, locked) => {
     for (let i = nodes.length - 1; i >= 0; i--) {
       const n = nodes[i];
-      if (!n.visible || n.locked || exclude.has(n.id) || !n.children) continue;
+      if (!n.visible || hiddenByWidth.has(n) || n.locked || exclude.has(n.id) || !n.children) continue;
       const inInstance = (locked || n.type === 'instance') && !isSlotArea(n);
       const L = localPoint(n, pt);
       const inside = L.x >= 0 && L.y >= 0 && L.x <= n.w && L.y <= n.h;
