@@ -1,10 +1,10 @@
 # Sigma roadmap
 
-Status: **Every phase is done: Phases 1–14, Part D (15–19), Part E (20–30) and Part F (31–35)**, and the small and medium items from the "Later" and "Follow-ups" lists. Drawing icons is no longer planned (icons come from icon libraries).
+Status: **Phases 1–35 are done: Phases 1–14, Part D (15–19), Part E (20–30) and Part F (31–35)**, Phase 36 (a working design system, Part G) is planned next, and the small and medium items from the "Later" and "Follow-ups" lists. Drawing icons is no longer planned (icons come from icon libraries).
 
 **What's next, in order:**
 
-1. **Finalize the project:** what's still open is plugins and automation (Part D, "Later": large, needs an API design first) and what needs a backend (real sharing in Part C; the hosted team service in Part E). The license files are in (see "Open source").
+1. **Finalize the project:** Phase 36, a working sample design system inspired by Shopify's Polaris (Part G), then what's still open: plugins and automation (Part D, "Later": large, needs an API design first) and what needs a backend (real sharing in Part C; the hosted team service in Part E). The license files are in (see "Open source").
 2. **Publish to npm:** claim `sigma-design` and publish the package (Phase 32 made it ready).
 3. **Pilot teams:** two or three teams, after npm, to shape the workflow around how they actually work.
 
@@ -408,6 +408,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 18: Running the system (Part D)
 - [x] Phase 19: Visual change review (Part D)
 - [x] Phase 16: Accessibility checks and annotations (Part D; done after Phase 19)
+- [ ] Phase 36: A working design system, inspired by Polaris (Part G)
 
 ## Follow-ups
 
@@ -944,3 +945,47 @@ the browser.
   any code; Sigma runs it only from the project it's in, checks every write by reading back, and never
   writes outside the token and icon sources the config names.
 - **The package name:** `sigma-design` was free on npm when Phase 32 was planned; claim it when the project is finalized (see "What's next" at the top).
+
+# Part G: A working design system
+
+A real design system made in Sigma, to start from and to show what Sigma does: a Sigma Tokens file and a
+Sigma Design file with Foundations and Components pages. They're working files, not pictures of one: every
+component is built from tokens, has its variants, states and properties, and passes Sigma's own checks.
+
+## Phase 36: A working design system, inspired by Polaris
+
+Inspiration: Shopify's Polaris (https://polaris.shopify.com), a mature, well-documented system for admin
+interfaces. Its structure and good ideas, not its brand: Sigma's own name for the system, its own values,
+and no Polaris assets (Polaris icons are licensed for use in Shopify apps only; Sigma's icons come from Lucide).
+
+- **The Sigma Tokens file**, in the shape Polaris uses:
+  - primitives: color scales (gray, plus brand, success, critical, warning, caution, info and magic hues, in
+    steps from light to dark), spacing on a 4px grid with Polaris-style step names (`space/100` = 4px,
+    `space/400` = 16px), font families, sizes, weights and line heights, border radius and width, shadows
+    (elevation 100–600), and motion (durations and easings);
+  - semantic tokens that point at them, by role and state: backgrounds and surfaces (`bg/surface`,
+    `bg/surface/hover`, `bg/fill/brand`, `bg/fill/critical`…), text (`text`, `text/secondary`, `text/disabled`,
+    `text/critical`…), borders, icons, and focus;
+  - modes: Light and Dark on the semantic collection;
+  - typography tokens for the text styles (heading lg/md/sm, body md/sm, caption), and every token with a code
+    name (CSS variables) and a description.
+- **The Sigma Design file**, linked to the tokens and the Lucide icons:
+  - a **Foundations** page: color (each scale and the semantic roles, in both modes, with contrast), typography
+    (every text style), spacing, radius, elevation, motion and icons, each as labelled specimens built from the
+    tokens themselves;
+  - a **Components** page: Button (primary, secondary, tertiary, critical, plain; sizes; with an icon; loading),
+    Text field (with label, help text and error), Select, Checkbox, Radio button, Badge (tones), Banner (tones),
+    Card, Avatar, Tabs, Modal, Tooltip and Spinner, as component sets with variants, interactive states (hover,
+    focus, pressed, disabled) and properties, using auto layout throughout.
+- **Working means it passes Sigma's checks:** `sigma-design check` (valid, and every reference resolves); the
+  token audit finds no one-off values; the use report shows tokens on (nearly) every value; the accessibility
+  check finds no errors (contrast AA in both modes, 44px targets, labels); each component has docs (purpose,
+  usage, Do and Don't, role and keyboard behavior) and is Ready in Component status; and Export documentation
+  page makes a complete docs site from it.
+- **Where it lives:** as a project (`examples/sigma-system/.sigma/`, so the command line, CI and render parity
+  check it like the other examples), and on the files home as a sample to start from, next to Welcome to Sigma.
+- **To settle first:** the system's name, and whether it's a sample to copy (like Welcome to Sigma) or a library
+  files link and get updates from.
+- **Done when:** both files open in Sigma, a new design file can link them and build a screen from their
+  components, `check` passes in CI, and every component is Ready with no accessibility errors.
+
