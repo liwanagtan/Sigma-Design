@@ -76,7 +76,7 @@ export function validateConfig(config, { files = [] } = {}) {
   if (w !== undefined) {
     if (typeof w !== 'object') error('workflow', 'should be an object');
     else {
-      if (w.git !== undefined && !['github', 'gitlab'].includes(w.git)) warn('workflow.git', 'Sigma works with GitHub and GitLab so far');
+      if (w.git !== undefined && !['github', 'gitlab', 'azure'].includes(w.git)) warn('workflow.git', 'Sigma works with GitHub, GitLab and Azure DevOps (azure) so far');
       if (w.tracker !== undefined && !TRACKERS.includes(w.tracker)) warn('workflow.tracker', `Sigma works with ${TRACKERS.filter((t) => t !== 'none').join(', ')} so far (or none)`);
       if (w.tracker === 'linear' && !w.linear?.team) warn('workflow.linear.team', 'say which Linear team gets the tickets (its key, like "DES")');
       if (w.tracker === 'jira' && !w.jira?.project) warn('workflow.jira.project', 'say which Jira project gets the tickets (its key, like "DES")');

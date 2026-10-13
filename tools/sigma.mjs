@@ -18,7 +18,7 @@
 //   node tools/sigma.mjs changeset prepare <id> [project] --to DIR  apply it, write the code, copy it in, check
 //   node tools/sigma.mjs changeset pr-body <id> [project] [--images-base URL]
 //   node tools/sigma.mjs changeset ticket <id> [project]
-//   node tools/sigma.mjs changeset sync [project]                 statuses from GitHub (gh) or GitLab (glab)
+//   node tools/sigma.mjs changeset sync [project]                 statuses from GitHub (gh), GitLab (glab) or Azure DevOps (az)
 //   node tools/sigma.mjs library build [project] --from DIR [--library PATH] [--dry-run]   components from captures
 //   node tools/sigma.mjs pages build [project] --from DIR [--dry-run]                       pages from captures, as library instances
 //   node tools/sigma.mjs components diff|write [project] [--base REV] [--dry-run]           library changes → code
@@ -534,7 +534,8 @@ function changesetStatus(id, status, dir) {
 
 // ---------- team workflow (Phase 26) ----------
 // Where a pull (merge) request lives: GitLab by its URL or the project's workflow.git, else GitHub.
-const hostOf = (url, workflow = {}) => (/gitlab/i.test(url) ? 'gitlab' : /github\.com/i.test(url) ? 'github' : workflow.git || 'github');
+const hostOf = (url, workflow = {}) => (/gitlab/i.test(url) ? 'gitlab' : /github\.com/i.test(url) ? 'github'
+  : /dev\.azure\.com|visualstudio\.com/i.test(url) ? 'azure' : workflow.git || 'github');
 // A ticket's short id for branch names: a Linear or Jira key (DES-12), a GitHub or GitLab issue number, or
 // the start of a Notion page id.
 function ticketId(t) {
@@ -708,8 +709,8 @@ async function changesetPrepare(id, dir) {
 }
 
 // Statuses from GitHub for proposals with a pull request.
-// A pull request's state with gh, or a GitLab merge request's with glab: { state (a changeset status),
-// number, mergedAt }.
+// A pull request's state with gh (GitHub), glab (a GitLab merge request) or az (Azure DevOps): { state (a
+// changeset status), number, mergedAt }.
 function readPullRequest(root, ref) {
   const run = (cmd, args) => {
     try {
@@ -726,6 +727,16 @@ function readPullRequest(root, ref) {
     const state = mr.state === 'merged' ? 'merged' : mr.state === 'closed' ? 'closed'
       : mr.detailed_merge_status === 'requested_changes' ? 'changes-requested' : 'in-review';
     return { state, number: mr.iid ?? Number(m[3]), mergedAt: mr.merged_at || null };
+  }
+  if ((ref.host || hostOf(ref.url)) === 'azure') {
+    // https://dev.azure.com/<org>/<project>/_git/<repo>/pullrequest/12 (or <org>.visualstudio.com/…)
+    const m = ref.url.match(/^(https?:\/\/(?:dev\.azure\.com\/[^/]+|[^/]+\.visualstudio\.com))\/.+\/pullrequest\/(\d+)/i);
+    if (!m) fail(`${ref.url} isn’t an Azure DevOps pull request URL`);
+    const pr = run('az', ['repos', 'pr', 'show', '--id', m[2], '--org', m[1], '--output', 'json']);
+    // A reviewer's vote of -5 is "waiting for author", -10 "rejected": changes requested.
+    const state = pr.status === 'completed' ? 'merged' : pr.status === 'abandoned' ? 'closed'
+      : (pr.reviewers || []).some((r) => r.vote < 0) ? 'changes-requested' : 'in-review';
+    return { state, number: pr.pullRequestId ?? Number(m[2]), mergedAt: pr.closedDate && pr.status === 'completed' ? pr.closedDate : null };
   }
   const pr = run('gh', ['pr', 'view', ref.url, '--json', 'state,isDraft,reviewDecision,mergedAt,number']);
   const state = pr.state === 'MERGED' ? 'merged' : pr.state === 'CLOSED' ? 'closed' : pr.reviewDecision === 'CHANGES_REQUESTED' ? 'changes-requested' : 'in-review';

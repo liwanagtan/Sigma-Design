@@ -65,5 +65,26 @@ test('workflow: the config accepts GitLab, Linear and Jira, and says what they n
   const warnings = (workflow) => validateConfig({ schema: 1, workflow }).map((i) => `${i.at}: ${i.message}`);
   assert.deepEqual(warnings({ git: 'gitlab', tracker: 'jira', jira: { project: 'WEB' } }), []);
   assert.deepEqual(warnings({ tracker: 'linear' }), ['workflow.linear.team: say which Linear team gets the tickets (its key, like "DES")']);
-  assert.match(warnings({ git: 'bitbucket' })[0], /GitHub and GitLab/);
+  assert.match(warnings({ git: 'bitbucket' })[0], /GitHub, GitLab and Azure DevOps/);
+});
+
+test('workflow: changeset sync reads an Azure DevOps pull request with az', () => {
+  const dir = project({ git: 'azure', tracker: 'none' });
+  const bin = mkdtempSync(join(tmpdir(), 'sigma-az-'));
+  try {
+    const fake = join(bin, 'az');
+    writeFileSync(fake, `#!/bin/sh\nif [ "$*" = "repos pr show --id 12 --org https://dev.azure.com/acme --output json" ]; then cat "${join(bin, 'pr.json')}"; else echo "unexpected: $*" >&2; exit 1; fi\n`);
+    chmodSync(fake, 0o755);
+    const env = { PATH: `${bin}${delimiter}${process.env.PATH}` };
+    sigma(dir, ['changeset', 'status', 'cs-1', 'in-review', dir, '--pr', 'https://dev.azure.com/acme/web/_git/web/pullrequest/12']);
+    assert.equal(read(dir).pr.host, 'azure');
+    writeFileSync(join(bin, 'pr.json'), JSON.stringify({ pullRequestId: 12, status: 'active', reviewers: [{ vote: 10 }, { vote: -5 }] }));
+    assert.match(sigma(dir, ['changeset', 'sync', dir], env), /In review → Changes requested/);
+    writeFileSync(join(bin, 'pr.json'), JSON.stringify({ pullRequestId: 12, status: 'completed', closedDate: '2026-10-13T11:00:00Z', reviewers: [] }));
+    sigma(dir, ['changeset', 'sync', dir], env);
+    assert.deepEqual([read(dir).status, read(dir).mergedAt], ['merged', '2026-10-13T11:00:00Z']);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+    rmSync(bin, { recursive: true, force: true });
+  }
 });
