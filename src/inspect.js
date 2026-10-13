@@ -189,6 +189,8 @@ export function breakpointCSS(n) {
     const align = { start: 'flex-start', center: 'center', end: 'flex-end' };
     if (b.alignP) lines.push(`justify-content: ${align[b.alignP]};`);
     if (b.alignC) lines.push(`align-items: ${align[b.alignC]};`);
+    const hidden = (n.children || []).filter((k) => (b.hide || []).includes(k.sourceId || k.id)).map((k) => k.name);
+    if (hidden.length) lines.push(`/* hidden (display: none): ${hidden.join(', ')} */`);
     return `${rule} (max-width: ${b.maxW}px) {\n${lines.map((l) => `  ${l}`).join('\n') || '  /* same as above */'}\n}`;
   }).join('\n');
 }

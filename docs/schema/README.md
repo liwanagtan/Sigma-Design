@@ -259,7 +259,9 @@ person confirmed for its readiness: `{ "variants": true, "breakpoints": true, "a
 **Breakpoints** (optional): an auto layout frame can lay out differently by its width.
 `"layout": { "mode": "horizontal", "gap": 24, "breakpoints": [{ "maxW": 600, "mode": "vertical", "gap": 12 }] }`:
 at 600px wide or narrower, the breakpoint's values (`mode`, `gap`, `spacing`, `pt`, `pr`, `pb`, `pl`, `alignP`,
-`alignC`) replace the frame's; the narrowest that fits wins, like `max-width` media queries. They make sense on
+`alignC`) replace the frame's, and `hide` lists the ids of the frame's layers to hide at that width (in a
+component, its layers' ids, which its instances follow); the narrowest that fits wins, like `max-width` media
+queries. Hiding by width doesn't change a layer's own `visible`. They make sense on
 frames with a fixed or fill width. Instances copy them, so a component reflows when an instance is resized.
 
 **Direction** (optional): `"dir": "rtl"` on a frame lays out right to left, like HTML's `dir`: auto layout

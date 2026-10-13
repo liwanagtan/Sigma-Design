@@ -8,7 +8,7 @@
 // The check lists issues with the reason for each: text contrast below WCAG AA (contrast.js), tap targets
 // below 24×24 (WCAG 2.5.8) or the platform size (44 iOS, 48 Material), very small text, images without alt
 // text, controls without an accessible name, headings that skip a level and focus order numbers used twice.
-import { state, walk, getParent, pageOf } from './store.js';
+import { state, walk, getParent, pageOf, isShown } from './store.js';
 import { textContrast, formatRatio } from './contrast.js';
 import { mainComponentOf, owningInstance, containingComponent } from './components.js';
 import { KINDS } from './a11y-kinds.js';
@@ -116,7 +116,7 @@ export function checkAccessibility(roots, { target = 44, minText = 12 } = {}) {
       const headings = [];
       const focus = new Map();
       walk([root], (n) => {
-        if (n.visible === false) return false;
+        if (!isShown(n)) return false; // hidden, or hidden at this width
         const a = a11yOf(n);
         if (a.decorative || a.role === 'none') return n.type === 'image' || n.type === 'icon' ? false : undefined;
         if (n.type === 'text' && String(n.text || '').trim()) {

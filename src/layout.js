@@ -1,6 +1,6 @@
 // Auto layout engine (Figma-style): frames with `layout` arrange their children in a row or column,
 // and every layer can be Fixed / Hug contents / Fill container on each axis.
-import { state, isFrameLike, getParent } from './store.js';
+import { state, isFrameLike, getParent, hiddenByWidth } from './store.js';
 import { round } from './geom.js';
 import { measureText } from './text.js';
 
@@ -23,6 +23,16 @@ export function activeBreakpoint(f) {
   const fits = (f.layout?.breakpoints || []).filter((b) => Number.isFinite(b.maxW) && f.w <= b.maxW);
   return fits.length ? fits.reduce((a, b) => (b.maxW < a.maxW ? b : a)) : null;
 }
+// Which of the frame's layers its breakpoint hides at this width (by id; in an instance, by the main
+// component's layer id).
+function applyHidden(f) {
+  const hide = new Set(activeBreakpoint(f)?.hide || []);
+  for (const k of f.children || []) {
+    if (hide.has(k.sourceId || k.id)) hiddenByWidth.add(k);
+    else hiddenByWidth.delete(k);
+  }
+}
+
 export function layoutOf(f) {
   const b = activeBreakpoint(f);
   if (!b) return f.layout;
@@ -39,7 +49,7 @@ export function directionOf(n) {
   return 'ltr';
 }
 
-export const inFlow = (n) => n.visible !== false && !n.absolute;
+export const inFlow = (n) => n.visible !== false && !n.absolute && !hiddenByWidth.has(n);
 
 // Effective sizing of a node on an axis ('w' | 'h'): 'fixed' | 'hug' | 'fill'.
 // Text hugging is driven by its autoResize mode.
@@ -91,6 +101,7 @@ function childSize(k, axis) {
 }
 
 export function hugSize(f) {
+  applyHidden(f);
   const L = layoutOf(f);
   const kids = f.children.filter(inFlow);
   const P = L.mode === 'horizontal' ? 'w' : 'h';
@@ -118,6 +129,7 @@ function normalize(n, parentIsAL) {
 }
 
 function layoutChildren(f, dir = 'ltr') {
+  applyHidden(f);
   const L = layoutOf(f);
   dir = f.dir === 'rtl' || f.dir === 'ltr' ? f.dir : dir;
   const rtl = dir === 'rtl';

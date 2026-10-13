@@ -167,6 +167,11 @@ export function walk(nodes, fn, parent = null) {
 }
 
 // ---------- transforms ----------
+// Layers a breakpoint hides at the frame's current width (layout.js fills it as it lays out). It's derived, so
+// it's never saved: the layer's own `visible` stays as it is.
+export const hiddenByWidth = new WeakSet();
+export const isShown = (n) => !!n && n.visible !== false && !hiddenByWidth.has(n);
+
 export function localMatrix(n) {
   const cx = n.w / 2, cy = n.h / 2;
   return mul(translate(n.x + cx, n.y + cy), mul(rotate(n.rotation || 0), translate(-cx, -cy)));

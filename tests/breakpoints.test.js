@@ -59,3 +59,36 @@ test('breakpoints: as CSS, in project files, and checked', () => {
   eq(errors, ['breakpoints[0].maxW', 'breakpoints[0].color', 'breakpoints[0].mode']);
   ok(true);
 });
+
+test('breakpoints: hide layers at a width; drawn and laid out without them, never saved as hidden', async () => {
+  const { nodeSVG } = await import('../src/render.js');
+  const { isShown } = await import('../src/store.js');
+  const side = box('Sidebar', 200);
+  const f = createNode('frame', {
+    name: 'Page', w: 800, h: 200,
+    layout: { ...DEFAULT_LAYOUT, mode: 'horizontal', gap: 10, breakpoints: [{ maxW: 600, hide: [side.id] }] },
+    children: [side, box('Main', 300)],
+  });
+  const doc = useDoc([f]);
+  applyLayouts();
+  eq([isShown(side), f.children[1].x], [true, 210]);
+  f.w = 500;
+  applyLayouts();
+  eq([isShown(side), side.visible, f.children[1].x], [false, true, 0], 'hidden at 500px; Main moves up');
+  eq(nodeSVG(side), '', 'and not drawn');
+  ok(breakpointCSS(f).includes('/* hidden (display: none): Sidebar */'));
+  eq(toProjectFile(doc).file.pages[0].children[0].children[0].visible, undefined, 'its own visibility is unchanged in the file');
+  f.w = 800;
+  applyLayouts();
+  ok(isShown(side), 'wide again: shown');
+  // In a component: its instances hide their copy when resized.
+  const badge = box('Badge', 30, 20);
+  const card = createNode('component', { name: 'Card', w: 300, h: 40, layout: { ...DEFAULT_LAYOUT, mode: 'horizontal', breakpoints: [{ maxW: 200, hide: [badge.id] }] }, children: [box('Title', 100, 20), badge] });
+  useDoc([card]);
+  const inst = createInstance(card, { x: 0, y: 100 });
+  syncInstances();
+  inst.w = 150;
+  syncInstances();
+  applyLayouts();
+  eq([isShown(inst.children[1]), isShown(badge)], [false, true]);
+});
