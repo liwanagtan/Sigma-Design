@@ -1018,7 +1018,7 @@ made from **Sigma Icons**, the main sample icon file (the whole Lucide set, outl
 
 ## Phase 37: Optics Components: every Polaris component, a page each
 
-Optics Components grows to every Polaris component: the 59 web components Polaris has today (shopify.dev, App
+Optics Components grows to every Polaris component: the 50 web components Polaris has today (shopify.dev, App
 Home) and the components of the older Polaris React library that aren't web components. Each component gets a
 page with the component (every variant and state), its name and purpose, and its usage (a Do and a Don't); an
 Overview page lists them all by category.
@@ -1027,7 +1027,7 @@ Overview page lists them all by category.
   Legacy card into Section, Tag into Chip (removable), Action list into Menu, Progress bar into Progress, Block,
   Inline and Legacy stack into Stack, Inline grid into Grid, the five Skeletons into one Skeleton.
 - **Left out:** App provider and Scrollable (code only: nothing to draw).
-- **The 95 components:**
+- **The 86 components** (the 50 web components, and 36 from the older library):
   - Actions: Button, Button group, Clickable, Clickable chip, Link, Menu, Account connection, Page actions
   - Feedback and status: Badge, Banner, Empty state, Progress, Spinner, Skeleton, Exception list, Inline error
   - Forms: Checkbox, Choice list, Color field, Color picker, Date field, Date picker, Drop zone, Email field,
