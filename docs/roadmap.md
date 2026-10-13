@@ -998,7 +998,7 @@ file (Lucide icons), adding any Optics needs to that set.
   Button and Icon button in five states, Text field, Select, Checkbox, Radio button, Badge, Banner, Card, Avatar,
   Tab and Tabs, Modal, Tooltip and Spinner, with properties, nested instances and docs, all Ready; a Usage page
   with a Do and a Don't for each). Welcome to Sigma (version 7) makes them once per browser as your own files
-  (saved like any other: first made as samples in its folder, then moved out so they're yours to change), and
+  (saved like any other, so they're yours to change), and
   Sigma Tokens ▾ → Add Optics design system adds a fresh set; Optics Components is published as v1 so other files
   can link it, and the guide's first page says where Optics is. Icons come from Sigma Icons (no new ones were needed). `tests/optics.test.js` builds the
   files and checks them: valid in the file format, no one-off values, 99% or more of values from tokens, every
