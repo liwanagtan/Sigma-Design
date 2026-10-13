@@ -17,6 +17,9 @@ deciding again.
 **Sigma tools:** Sigma is installed in the project as the `sigma-design` package; the commands below are
 `npx sigma-design …`, and `<sigma>` is where it's installed (`node_modules/sigma-design`). Node 18 or later;
 nothing else to install.
+Without a terminal, the same steps are tools of Sigma's MCP server, `npx sigma-design mcp <project>`
+(`sigma_check`, `sigma_tokens_import`, `sigma_tokens_write`, `sigma_changeset_pr_body`, …): each runs the
+command of the same name, so everything below applies.
 
 **Rules**
 
