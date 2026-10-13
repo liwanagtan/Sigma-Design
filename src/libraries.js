@@ -416,6 +416,7 @@ const componentSnapshot = () => structuredClone(publishableComponents());
 function signature(node) {
   const strip = (n, flow) => {
     const out = { ...n };
+    delete out.synced; // an instance's record of its main component's size, kept by syncing
     if (flow && !n.absolute) {
       delete out.x;
       delete out.y;
@@ -451,6 +452,15 @@ export function componentPublishStatus() {
   return { pub, count: now.length, dirty };
 }
 
+/** What publishing the open file's components records (also for files made published, like Optics). */
+export function publishRecord(version, notes = '') {
+  const components = componentSnapshot();
+  return {
+    version, publishedAt: Date.now(), notes, components,
+    tokens: componentTokens(components).tokens, icons: componentIcons(components), iconFiles: componentIconFiles(components),
+  };
+}
+
 export function openPublishComponentsDialog() {
   const { pub, count } = componentPublishStatus();
   if (!count) return toast('This file has no components to publish yet. Select layers and press ⌥⌘K to create one.');
@@ -468,11 +478,7 @@ export function openPublishComponentsDialog() {
   wrap.addEventListener('click', (e) => {
     if (e.target.closest('[data-compare]')) return import('./visual-review.js').then((m) => m.comparePublish(pub, componentSnapshot(), state.doc.project?.path || getCurrentFileId()));
     if (!e.target.closest('[data-confirm]')) return;
-    const components = componentSnapshot();
-    state.doc.publishedComponents = {
-      version, publishedAt: Date.now(), notes: wrap.querySelector('.publish-notes').value.trim(), components,
-      tokens: componentTokens(components).tokens, icons: componentIcons(components), iconFiles: componentIconFiles(components),
-    };
+    state.doc.publishedComponents = publishRecord(version, wrap.querySelector('.publish-notes').value.trim());
     commit();
     wrap.remove();
     toast(`Published components v${version}`);

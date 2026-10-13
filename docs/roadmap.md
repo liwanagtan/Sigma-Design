@@ -1,10 +1,10 @@
 # Sigma roadmap
 
-Status: **Phases 1–35 are done: Phases 1–14, Part D (15–19), Part E (20–30) and Part F (31–35)**, Phase 36 (Optics, a working design system, Part G) is planned next, and the small and medium items from the "Later" and "Follow-ups" lists. Drawing icons is no longer planned (icons come from icon libraries).
+Status: **Every phase is done: Phases 1–14, Part D (15–19), Part E (20–30), Part F (31–35) and Part G (36, Optics)**, and the small and medium items from the "Later" and "Follow-ups" lists. Drawing icons is no longer planned (icons come from icon libraries).
 
 **What's next, in order:**
 
-1. **Finalize the project:** Phase 36, Optics (Optics Tokens, Optics Foundations and Optics Components in Welcome to Sigma), a working design system inspired by Shopify's Polaris (Part G), then what's still open: plugins and automation (Part D, "Later": large, needs an API design first) and what needs a backend (real sharing in Part C; the hosted team service in Part E). The license files are in (see "Open source").
+1. **Finalize the project:** Optics is in (Phase 36). What's still open: plugins and automation (Part D, "Later": large, needs an API design first) and what needs a backend (real sharing in Part C; the hosted team service in Part E). The license files are in (see "Open source").
 2. **Publish to npm:** claim `sigma-design` and publish the package (Phase 32 made it ready).
 3. **Pilot teams:** two or three teams, after npm, to shape the workflow around how they actually work.
 
@@ -408,7 +408,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 18: Running the system (Part D)
 - [x] Phase 19: Visual change review (Part D)
 - [x] Phase 16: Accessibility checks and annotations (Part D; done after Phase 19)
-- [ ] Phase 36: Optics, a working design system inspired by Polaris (Part G)
+- [x] Phase 36: Optics, a working design system inspired by Polaris (Part G)
 
 ## Follow-ups
 
@@ -991,3 +991,18 @@ file (Lucide icons), adding any Optics needs to that set.
   breaks Optics fails CI.
 - **Done when:** the three files open from Welcome to Sigma, a new design file can link Optics Tokens and Optics
   Components and build a screen from them, and the checks above pass in CI.
+- **What shipped:** `src/optics-tokens.js` builds **Optics Tokens** (242 tokens: Primitives on numbered steps,
+  Semantic roles in Light and Dark, 13 text styles; every token named `--optics-…` in CSS) and `src/optics.js`
+  builds **Optics Foundations** (pages Color, Typography, Spacing, Radius, Elevation, Motion and Icons, each a
+  sheet of specimens made from the tokens, with Light and Dark panels) and **Optics Components** (15 components:
+  Button and Icon button in five states, Text field, Select, Checkbox, Radio button, Badge, Banner, Card, Avatar,
+  Tab and Tabs, Modal, Tooltip and Spinner, with properties, nested instances and docs, all Ready; a Usage page
+  with a Do and a Don't for each). Welcome to Sigma (version 6) makes them with the guide, in its folder after the
+  guide's files; Optics Components is published as v1 so other files can link it, and the guide's first page
+  introduces Optics. Icons come from Sigma Icons (no new ones were needed). `tests/optics.test.js` builds the
+  files and checks them: valid in the file format, no one-off values, 99% or more of values from tokens, every
+  component Ready, and no accessibility errors in either mode. Also: the arranger stacks rows as well as columns
+  (Do and Don't side by side), and publishing ignores an instance's record of its main's size, so a freshly opened
+  Optics Components doesn't show unpublished changes. Verified in the editor: the six files in the folder, a new
+  file linking Optics Tokens and Optics Components builds a Banner, a Card and a Button that resolve every token
+  and icon, and Export documentation page makes a page with all 15 components.
