@@ -957,7 +957,7 @@ variants, states and properties, and passes Sigma's own checks.
 Inspiration: Shopify's Polaris (https://polaris.shopify.com), a mature, well-documented system for admin
 interfaces. Its structure and good ideas, not its brand: Optics has its own name and values, and uses no Polaris
 assets (Polaris icons are licensed for use in Shopify apps only). Its icons are **Optics Icons**, a Sigma Icons file
-made from the Sigma Icons sample (Lucide icons, outline and filled), so Optics doesn't depend on the sample.
+made from **Sigma Icons**, the main sample icon file (the whole Lucide set, outline and filled), so Optics doesn't depend on the sample.
 
 - **Optics Tokens** (a Sigma Tokens file), in the shape Polaris uses:
   - primitives: color scales (gray, plus brand, success, critical, warning, caution, info and magic hues, in
@@ -1002,7 +1002,7 @@ made from the Sigma Icons sample (Lucide icons, outline and filled), so Optics d
   with a Do and a Don't for each). Welcome to Sigma (version 7) makes them once per browser as your own files
   (saved like any other, so they're yours to change), and
   Sigma Tokens ▾ → Add Optics design system adds a fresh set; Optics Components is published as v1 so other files
-  can link it, and the guide's first page says where Optics is. Icons are **Optics Icons**: `opticsIconsDocument` copies the Sigma Icons sample's 90 icons (72 outline, 18 filled) with Optics ids (`optics-plus`) and Lucide's license, published as v1; both Optics design files link it (no new icons were needed). `tests/optics.test.js` builds the
+  can link it, and the guide's first page says where Optics is. Icons are **Optics Icons**: `opticsIconsDocument` copies Sigma Icons' 1,895 icons (all 1,877 Lucide outline icons and 18 filled shapes) with Optics ids (`optics-plus`) and Lucide's license, published as v1; both Optics design files link it, and Optics Foundations' Icons page shows up to 12 per group with the group's size. Sigma Icons, the Welcome to Sigma sample, is now the whole Lucide set too (the guide's icons keep its groups, Actions, Arrows, Status…, and the rest keep Lucide's categories; the guide is at version 8, and the old 90-icon sample goes to the Archive). `tests/optics.test.js` builds the
   files and checks them: valid in the file format, no one-off values, 99% or more of values from tokens, every
   component Ready, and no accessibility errors in either mode. Also: the arranger stacks rows as well as columns
   (Do and Don't side by side), and publishing ignores an instance's record of its main's size, so a freshly opened

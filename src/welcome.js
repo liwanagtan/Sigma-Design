@@ -9,7 +9,7 @@ import { createNode, uid, makePaint } from './store.js';
 import { DEFAULT_LAYOUT } from './layout.js';
 import { sampleIconId } from './sample-icons.js';
 
-export const WELCOME_VERSION = 7;
+export const WELCOME_VERSION = 8;
 // The sample icons the guide uses (outline unless marked filled).
 const GUIDE_ICONS = ['plus', 'search', 'pencil', 'copy', 'share-2', 'trash', 'settings', 'user', 'log-out', 'star', 'heart', 'bookmark', 'bell'];
 export const WELCOME_ICONS = [...GUIDE_ICONS.map((n) => sampleIconId(n)), ...['star', 'heart', 'bookmark', 'bell'].map((n) => sampleIconId(n, true))];
@@ -211,7 +211,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
   const iconsBox = stack('Sigma Icons', 'vertical', { gap: P('space/2'), padding: P('space/6'), fill: S('surface/default'), radius: P('radius/lg'), stroke: S('border/strong'), width: 300 }, [
     text('Kind', 'Sigma Icons file', S('text/link'), T('label/default'), { textCase: 'upper' }),
     text('Name', 'Sigma Icons', S('text/primary'), T('heading/h3')),
-    para('Icons from Lucide, outline and filled, in groups.', { typo: T('body/small'), color: S('text/secondary') }),
+    para('The whole Lucide set, about 1,900 icons, outline and filled, in groups.', { typo: T('body/small'), color: S('text/secondary') }),
   ]);
   const arrow = stack('Publish and use', 'vertical', { gap: P('space/1'), props: { layout: autoLayout({ mode: 'vertical', alignC: 'center' }) } }, [
     text('Label', 'publish →', S('text/secondary'), T('label/default')),
@@ -513,7 +513,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     { h: 'A Sigma Icons file', bullets: [
       'Import SVGs from any free set (Lucide, Tabler, Heroicons, Phosphor, Material Symbols), drop them in, or paste SVG code. Colors are removed: an icon takes the color of the layer that shows it.',
       'Icons are outline or filled, in groups, with keywords for search. Publish… makes them available to Sigma Design files.',
-      '+ Sigma Icons ▾ → Lucide (on the files home) adds the whole Lucide set: about 1,900 icons.',
+      'Sigma Icons, in the Welcome to Sigma folder, is the whole Lucide set: about 1,900 icons. + Sigma Icons ▾ → Lucide (on the files home) adds it as a file of your own.',
     ] },
     { h: 'Icons in components', bullets: [
       'Icon libraries… (Σ menu) links a Sigma Icons file. A file keeps copies of only the icons it uses.',

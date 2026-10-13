@@ -51,6 +51,7 @@ test('optics: the tokens are complete, every one with a CSS variable', async () 
   ok(all.every((v) => v.codeSyntax.web.startsWith('--optics-')));
   ok(OPTICS_ICONS.every((id) => icons.some((x) => x.id === id)), 'every icon Optics uses is in Optics Icons');
   ok(icons.length === sample.icons.length && icons.every((x) => x.id.startsWith('optics-')), 'Optics Icons: every Sigma Icons icon, with Optics ids');
+  ok(sample.icons.length > 1800, `Sigma Icons is the whole Lucide set (${sample.icons.length})`);
 });
 
 test('optics: Optics Components validate, use tokens for every value, and every component is Ready', async () => {

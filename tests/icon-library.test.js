@@ -274,9 +274,14 @@ import { snapshotForLibrary, resolveVariables } from '../src/variables.js';
 import { loadDocument, walk } from '../src/store.js';
 import { loadIconSet } from '../src/icon-library.js';
 
-test('sample icons: Lucide icons in groups, outline and filled, with every icon the guide uses', async () => {
-  const doc = sampleIconsDocument(await loadIconSet(ICON_SETS[0]));
+test('sample icons: the whole Lucide set, outline and filled, the guide’s icons in its groups', async () => {
+  const lucide = await loadIconSet(ICON_SETS[0]);
+  const doc = sampleIconsDocument(lucide);
   const ids = new Set(doc.icons.map((i) => i.id));
+  eq(doc.icons.filter((i) => i.style === 'outline').length, lucide.icons.length, 'every Lucide icon');
+  eq(ids.size, doc.icons.length, 'no icon twice');
+  eq(doc.icons.find((i) => i.id === sampleIconId('trash')).group, 'Actions', 'the guide’s icons keep its groups');
+  eq(doc.icons.find((i) => i.id === sampleIconId('pizza')).group, 'Food & beverage', 'the rest keep Lucide’s categories');
   ok(WELCOME_ICONS.every((id) => ids.has(id)), 'the guide’s icons are there');
   ok(doc.icons.some((i) => i.style === 'filled') && doc.icons.some((i) => i.style === 'outline'), 'both styles');
   const heart = doc.icons.find((i) => i.id === sampleIconId('heart', true));
