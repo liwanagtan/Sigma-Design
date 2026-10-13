@@ -1,0 +1,21 @@
+// Lay a document out as the editor does when it opens a file: tokens resolved, instances built, text measured
+// once its fonts come from tokens (a saved file leaves bound values out), auto layout applied; twice, since
+// instances size from their laid-out main components. It calls each step itself, so pages without the
+// editor's normalizers (tools/capture/compare.html) lay out the same way. Use it inside store.withDocument.
+import { state, walk, fixGroups } from './store.js';
+import { syncInstances } from './components.js';
+import { resolveVariables, normalizeTokenGroups } from './variables.js';
+import { applyLayouts } from './layout.js';
+import { measureText } from './text.js';
+
+export function layOutDocument() {
+  for (let i = 0; i < 2; i++) {
+    normalizeTokenGroups();
+    syncInstances();
+    resolveVariables();
+    for (const pg of state.doc.pages) walk(pg.children, (n) => void (n.type === 'text' && measureText(n)));
+    fixGroups();
+    applyLayouts();
+    fixGroups();
+  }
+}

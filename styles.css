@@ -1014,5 +1014,6 @@ button.group-caret.open { transform: rotate(90deg); }
 .a11y-sev { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 8px; align-self: flex-start; margin-top: 2px; }
 .a11y-sev.error { background: #fdecec; color: #b42318; }
 .a11y-sev.warning { background: #fff4e5; color: #b54708; }
-.a11y-row input[type="checkbox"] { justify-self: start; }
-.a11y-row select { min-width: 0; }
+.a11y-row { grid-template-columns: 80px minmax(0, 1fr); }
+.a11y-row .prop-input { width: 100%; min-width: 0; box-sizing: border-box; }
+.a11y-row input[type="checkbox"] { justify-self: start; width: auto; }

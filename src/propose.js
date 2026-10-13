@@ -2,8 +2,8 @@
 // and a note, and save them as a changeset in .sigma/changesets/, with each changed component and page
 // rendered before and after. The sync skill turns a changeset into a ticket and a pull request (Phase 26);
 // nothing goes to the repo's history from here.
-import { state, reindex, normalizeDocument, walk } from './store.js';
-import { measureText } from './text.js';
+import { walk, withDocument } from './store.js';
+import { layOutDocument } from './lay-out.js';
 import { buildSVG } from './io.js';
 import { modal } from './libraries.js';
 import { fromProjectFile, formatProjectJSON } from './project-format.js';
@@ -16,31 +16,20 @@ const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').
 const toast = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
 const KINDS = { file: 'File', token: 'Token', icon: 'Icon', component: 'Component', page: 'Page', comment: 'Comment' };
 
-// Use a project file version (another document than the open one): load it into the editor's state for a
-// moment, rebuild its derived data, run `fn`, and put the open document back.
+// Use a project file version (another document than the open one), laid out, while `fn` runs.
 function withVersion(files, path, fn) {
   const file = files[path];
   if (!file) return null;
   const ids = Object.fromEntries(Object.keys(files).map((p, i) => [p, `render-${i}`]));
   const { doc } = fromProjectFile(file, { path, resolve: (p) => (files[p] ? { fileId: ids[p], file: files[p] } : null) });
-  const saved = { doc: state.doc, selection: state.selection, editing: state.editingTextId };
   try {
-    state.doc = doc;
-    state.selection = [];
-    state.editingTextId = null;
-    reindex();
-    for (const pg of doc.pages) walk(pg.children, (n) => void (n.type === 'text' && measureText(n)));
-    normalizeDocument();
-    normalizeDocument(); // instances size from their laid-out main components
-    return fn(doc);
+    return withDocument(doc, (d) => {
+      layOutDocument();
+      return fn(d);
+    });
   } catch (err) {
     console.warn(`Couldn’t read ${path}`, err);
     return null;
-  } finally {
-    state.doc = saved.doc;
-    state.selection = saved.selection;
-    state.editingTextId = saved.editing;
-    reindex();
   }
 }
 

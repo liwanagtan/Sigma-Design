@@ -25,8 +25,10 @@ function grouped(issues) {
   const out = new Map();
   for (const i of issues) {
     const g = out.get(i.group);
-    if (g) g.ids.push(i.id);
-    else out.set(i.group, { ...i, ids: [i.id] });
+    if (g) {
+      g.ids.push(i.id);
+      if (!g.frames.includes(i.frame)) g.frames.push(i.frame);
+    } else out.set(i.group, { ...i, ids: [i.id], frames: [i.frame] });
   }
   return [...out.values()];
 }
@@ -43,7 +45,7 @@ function body(issues, scope) {
     if (!rows.length) continue;
     html += `<div class="audit-section"><div class="audit-title">${label} <span class="muted">${rows.length}</span></div><div class="muted a11y-reason">${esc(reason)}</div>` +
       rows.map(({ g, i }) => `<div class="audit-row"><span class="a11y-sev ${g.severity}">${g.severity === 'error' ? 'Error' : 'Warning'}</span>` +
-        `<span class="a11y-what"><b>${esc(g.name)}</b> <span class="muted">in ${esc(g.frame)}${g.ids.length > 1 ? ` · ×${g.ids.length}` : ''}</span><br>${esc(g.message)}</span>` +
+        `<span class="a11y-what"><b>${esc(g.name)}</b> <span class="muted">in ${esc(g.frames.length > 2 ? `${g.frames.length} frames` : g.frames.join(' and '))}${g.ids.length > 1 ? ` · ×${g.ids.length}` : ''}</span><br>${esc(g.message)}</span>` +
         `<span class="audit-actions">${kind === 'alt' || kind === 'label' || kind === 'heading' || kind === 'focus' ? `<button class="btn" data-annotate="${i}">Annotate</button>` : ''}<button class="btn" data-select="${i}">Select</button></span></div>`).join('') +
       '</div>';
   }

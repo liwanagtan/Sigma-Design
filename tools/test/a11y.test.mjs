@@ -16,10 +16,10 @@ const issue = (over) => ({ kind: 'contrast', severity: 'error', name: 'Label in 
 test('a11y: issues read as Markdown, errors first, copies of one issue once', () => {
   const lines = issuesMarkdown([
     issue({ kind: 'target', severity: 'warning', name: 'Button', message: 'Button is 87×32; under 44×44', group: 'target:button' }),
-    issue(), issue(),
+    issue(), issue({ frame: 'Settings — Desktop' }),
   ]);
   assert.deepEqual(lines, [
-    '- ❌ **Text contrast**: _Label in Button_ in Settings — Mobile: 3.78:1 against #EF4343; needs 4.5:1 (×2)',
+    '- ❌ **Text contrast**: _Label in Button_ in Settings — Mobile and Settings — Desktop: 3.78:1 against #EF4343; needs 4.5:1 (×2)',
     '- ⚠️ **Tap targets**: _Button_ in Settings — Mobile: Button is 87×32; under 44×44',
   ]);
 });
