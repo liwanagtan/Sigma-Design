@@ -5,7 +5,7 @@ import { createNode, makePaint } from '../src/store.js';
 import { toProjectFile } from '../src/project-format.js';
 import { mergeBranch } from '../src/branches.js';
 
-const asBase = (doc) => toProjectFile(doc, { pathOf: (id) => `id:${id}` }).file;
+const asBase = (doc) => ({ ...toProjectFile(doc, { pathOf: (id) => `id:${id}` }).file, name: '' }); // as createBranch keeps it
 
 test('branches: the branch’s changes go into the main file, which changed too; library copies come along', () => {
   const a = createNode('frame', { name: 'Home', w: 100, h: 100, fills: [makePaint('#FFFFFF')] });

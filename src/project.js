@@ -226,6 +226,8 @@ export async function saveToProject({ force = false } = {}) {
   const meta = await projectMetaOf(id);
   const inProject = isProjectMeta(meta);
   const path = inProject ? meta.project.path : freePath(fileKind(state.doc), state.doc.name);
+  const pkg = project.files.find((f) => f.path === path && f.package);
+  if (pkg) return toast(`“${state.doc.name}” comes from the package ${pkg.package}${pkg.version ? ` ${pkg.version}` : ''}: it’s read-only here. Change it in the package, then update the package.`);
   const { text, warnings } = serializeForProject(state.doc, { pathOf: await pathMap(), path });
   // Check it the way an agent would before it goes in the repo.
   const files = {};

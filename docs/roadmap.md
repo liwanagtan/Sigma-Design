@@ -717,7 +717,7 @@ Unchanged from Phase 15 above: code names per platform for tokens, components an
 - ~~**CLI and MCP server**~~ Done: the command line (`npx sigma-design …`, Phases 22–35) runs every sync step, CI runs `check` and render parity, and `npx sigma-design mcp` serves the same steps as MCP tools for agents without a terminal (`tools/mcp.mjs`).
 - **Hosted team service:** a GitHub App so designers without git can propose changes, plus sign-in, permissions and audit logs for mature teams.
 - ~~**Design-aware merging**~~ Done: `npx sigma-design merge-driver install` sets git's merge driver for `*.sigma.json`: their changes go onto ours token by token, icon by icon, component by component, and a page's top-level layers one by one; an item both sides changed differently keeps ours, is listed, and stops the merge for a person to check in Sigma.
-- **Monorepos and shared packages:** one design system package used by several apps on different versions.
+- ~~**Monorepos and shared packages**~~ Done: `packages` in `sigma.config.json` names design system packages whose `.sigma/` files the app's files link (`node_modules/<package>/.sigma/…`, through workspace links too), at the version each app has installed; they're listed with their package and version and are read-only (the server, the command line and the editor refuse to write them). Publishing a package's Sigma files is the package's own release.
 - ~~**AI data policy:**~~ Done: `docs/data-and-ai.md`. Sigma calls no model; teams choose their model or provider by choosing their coding agent, and the doc says what the agent reads and what leaves through the workflow.
 
 ## Open source

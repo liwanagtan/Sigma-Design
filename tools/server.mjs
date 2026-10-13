@@ -42,9 +42,32 @@ export function sigmaHandler({ root = EDITOR_ROOT, project = null, log = () => {
   const projectReal = project ? realpathSync(project) : null;
   const heads = new Map(); // path → [mtime, kind, name]: what a file is, cached by mtime
 
-  // Every Sigma file in the project, with its kind and name.
+  // Design system packages the project uses (sigma.config.json → packages): their .sigma/ files can be read,
+  // never written. { name, version, dir (node_modules/<name>), real (where it really is: a workspace link may
+  // lead outside the project) }.
+  function packages() {
+    let config = null;
+    try {
+      config = JSON.parse(readFileSync(join(project, 'sigma.config.json'), 'utf8'));
+    } catch {
+      return [];
+    }
+    return (Array.isArray(config?.packages) ? config.packages : []).filter((n) => typeof n === 'string' && /^(@[\w.-]+\/)?[\w.-]+$/.test(n)).map((name) => {
+      const dir = join(project, 'node_modules', ...name.split('/'));
+      if (!existsSync(join(dir, '.sigma'))) return null;
+      let version = null;
+      try {
+        version = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).version || null;
+      } catch {}
+      return { name, version, dir, real: realpathSync(dir) };
+    }).filter(Boolean);
+  }
+  const packageOf = (norm) => packages().find((p) => norm.startsWith(`node_modules/${p.name}/.sigma/`)) || null;
+
+  // Every Sigma file in the project (and in the design system packages it uses), with its kind and name.
   function projectFiles() {
     const out = [];
+    let extra = null; // a package's files: { package, version, readOnly }
     const walk = (dir) => {
       if (!existsSync(dir)) return;
       const entries = readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
@@ -69,10 +92,14 @@ export function sigmaHandler({ root = EDITOR_ROOT, project = null, log = () => {
           }
           heads.set(rel, head);
         }
-        out.push({ path: rel, kind: head[1], name: head[2], mtime, size: Number(st.size) });
+        out.push({ path: rel, kind: head[1], name: head[2], mtime, size: Number(st.size), ...(extra || {}) });
       }
     };
     walk(join(project, '.sigma'));
+    for (const p of packages()) {
+      extra = { package: p.name, version: p.version, readOnly: true };
+      walk(join(p.dir, '.sigma'));
+    }
     return out;
   }
 
@@ -83,12 +110,15 @@ export function sigmaHandler({ root = EDITOR_ROOT, project = null, log = () => {
     const lex = relative(project, full);
     if (!lex || lex.startsWith('..') || isAbsolute(lex)) return null;
     const norm = toPosix(lex);
-    if (norm !== 'sigma.config.json' && !(norm.startsWith('.sigma/') && (norm.endsWith('.json') || norm.endsWith('.svg')))) return null;
-    // A link can't lead outside the project: the file (or its nearest folder that exists) must be inside it.
+    const pkg = norm.startsWith('node_modules/') ? packageOf(norm) : null;
+    if (norm !== 'sigma.config.json' && !((norm.startsWith('.sigma/') || pkg) && (norm.endsWith('.json') || norm.endsWith('.svg')))) return null;
+    // A link can't lead outside the project (or, for a package's file, outside that package's folder): the
+    // file (or its nearest folder that exists) must be inside it.
     let near = full;
     while (!existsSync(near)) near = dirname(near);
     const real = realpathSync(near);
-    if (real !== projectReal && !real.startsWith(projectReal + sep)) return null;
+    const inside = (dir) => real === dir || real.startsWith(dir + sep);
+    if (pkg ? !inside(pkg.real) : !inside(projectReal)) return null;
     return full;
   }
 
@@ -175,13 +205,15 @@ export function sigmaHandler({ root = EDITOR_ROOT, project = null, log = () => {
     if (url.pathname !== '/api/project/file') return reply(res, 404, { error: 'Unknown API' });
     const rel = q.get('path') || '';
     const full = safePath(rel);
-    if (!full) return reply(res, 400, { error: `Sigma doesn't read or write ${JSON.stringify(rel)} (only .sigma/ files and sigma.config.json)` });
+    if (!full) return reply(res, 400, { error: `Sigma doesn't read or write ${JSON.stringify(rel)} (only .sigma/ files, sigma.config.json, and the .sigma/ files of the packages in it)` });
     if (method === 'GET') {
       if (!existsSync(full)) return reply(res, 404, { error: `${rel} doesn't exist` });
       return reply(res, 200, readFileSync(full), 'application/json; charset=utf-8', { 'X-Sigma-Mtime': mtimeOf(full) });
     }
     if (method === 'PUT') {
       if (req.headers['x-sigma'] !== '1') return reply(res, 403, { error: 'Writes need the X-Sigma header' });
+      const pkg = rel.startsWith('node_modules/') ? packageOf(toPosix(rel)) : null;
+      if (pkg) return reply(res, 403, { error: `${rel} comes from the package ${pkg.name}${pkg.version ? ` (${pkg.version})` : ''}: change it in that package, then update it here.` });
       const base = q.get('base') || '';
       const exists = existsSync(full);
       const current = exists ? mtimeOf(full) : null;

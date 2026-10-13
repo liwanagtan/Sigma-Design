@@ -381,6 +381,11 @@ What the sync skill decided about the project, so later runs follow it (people c
 - `components[].manifest`: the captures' manifest the library was built from (default
   `.sigma/captures/manifest.json`; `skills/sigma-sync/reference/components.md`); `components[].styles`: the CSS
   files its components' styles are in, where `components write` edits them (default: every `.css` file).
+- `packages`: design system packages whose Sigma files this project uses, by npm name
+  (`["@acme/design-system"]`). A package ships its files in its own `.sigma/` folder; this project's files link
+  them by path (`"uses": { "tokens": ["node_modules/@acme/design-system/.sigma/tokens/core.sigma.json"] }`), so
+  each app uses the version it has installed (in a workspace, the link in `node_modules` may lead to
+  `packages/…`). They're read-only here: Sigma reads them, never writes them; change them in the package.
 - `workflow` (how a proposal becomes a ticket and a pull request; `skills/sigma-sync/reference/workflow.md`):
   `git` is `github`, `gitlab`, `azure` (Azure DevOps) or `bitbucket`; `tracker` is `notion`, `github`, `gitlab`, `linear`, `jira` or `none`, with
   `notion: { database, status, done }`, `linear: { team, done }` or `jira: { project, issueType, done }`;
