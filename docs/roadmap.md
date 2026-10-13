@@ -710,7 +710,7 @@ Unchanged from Phase 15 above: code names per platform for tokens, components an
 
 ### Later
 
-- **Responsive breakpoints:** frames that change layout by width. This reaches into `layout.js` and `render.js`, so it waits until sync works end to end.
+- ~~**Responsive breakpoints:**~~ Done: an auto layout frame's breakpoints (Auto layout → Breakpoints, `layout.breakpoints`) change its direction, gap, padding and alignment at a width or narrower, the narrowest that fits winning; instances copy them, so a component reflows when resized; Inspect writes them as `@media` (a screen) or `@container` (a frame inside one) and live sync's component diffs include them. Showing or hiding layers by width is left for later.
 - ~~**Render parity:**~~ Done: `tools/capture/parity.html` captures every component library in `sigma.config.json` from its components page and compares Sigma's layout of each (and its pages) with them; `node tools/test/run-render-parity.mjs <project>` runs it headless, and CI runs it on `examples/css-app`, so drift fails the build.
 - ~~**Accessibility checks**~~ Done (Part D, Phase 16), and in the PR: Propose change runs the check, and the pull request body lists what it found.
 - **More integrations:** GitHub Issues, GitLab (merge requests with `glab`, and issues), Azure DevOps pull requests (`az repos`), Bitbucket pull requests (its API, with a token from `BITBUCKET_TOKEN`), Linear and Jira are done (`workflow.git`, `workflow.tracker`).

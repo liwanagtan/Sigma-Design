@@ -5,7 +5,7 @@ import {
 } from './store.js';
 import { mul, inv, apply, translate, aabb, unionBoxes, round, IDENTITY } from './geom.js';
 import { measureText } from './text.js';
-import { isAutoLayout, guessLayout, setSizing } from './layout.js';
+import { isAutoLayout, guessLayout, setSizing, layoutOf, directionOf } from './layout.js';
 import { applyConstraints } from './constraints.js';
 import {
   isInsideInstance, owningInstance, createInstance, detachInstance, resetOverrides, mainComponentOf, canPlaceInside,
@@ -315,8 +315,10 @@ export function nudge(dx, dy) {
   for (const n of nodes) if (!inFlowNodes.includes(n)) moveWorld(n, dx, dy);
   if (inFlowNodes.length) {
     // In auto layout, arrows along the flow direction reorder instead of moving.
-    const horiz = getParent(inFlowNodes[0].id).layout.mode === 'horizontal';
-    const d = Math.sign(horiz ? dx : dy);
+    const parent = getParent(inFlowNodes[0].id);
+    const horiz = layoutOf(parent).mode === 'horizontal';
+    // A right-to-left row runs from the right: left is later.
+    const d = Math.sign(horiz ? dx : dy) * (horiz && directionOf(parent) === 'rtl' ? -1 : 1);
     if (d) reorderInFlow(inFlowNodes, d);
   }
   if (nodes.length) commit();

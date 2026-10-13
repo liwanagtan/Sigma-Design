@@ -1,7 +1,8 @@
 // Right-to-left auto layout (Part D, "Later"): a frame's dir, inherited like HTML's.
 import { test, eq, ok } from './harness.js';
 import { useDoc } from './core.test.js';
-import { createNode } from '../src/store.js';
+import { createNode, select } from '../src/store.js';
+import { nudge } from '../src/commands.js';
 import { syncInstances, createInstance } from '../src/components.js';
 import { applyLayouts, DEFAULT_LAYOUT, directionOf, flowInsertBefore } from '../src/layout.js';
 import { toProjectFile, fromProjectFile } from '../src/project-format.js';
@@ -53,6 +54,18 @@ test('rtl: frames and instances inside follow the frame they’re in, unless the
   applyLayouts();
   eq(flowInsertBefore(f, { x: 200, y: 10 }, new Set())?.name, 'B', 'between A (230–280) and B (160–220): before B');
   eq(flowInsertBefore(f, { x: 100, y: 10 }, new Set()), null, 'left of B: at the end');
+});
+
+test('rtl: the left arrow moves a layer later in a right-to-left row (it runs from the right)', () => {
+  const a = box('A', 50), b = box('B', 60);
+  const f = row({ dir: 'rtl' }, [a, b]);
+  useDoc([f]);
+  applyLayouts();
+  select([a.id]);
+  nudge(-1, 0);
+  eq(f.children.map((k) => k.name), ['B', 'A'], 'A, at the right, moved left: after B');
+  nudge(1, 0);
+  eq(f.children.map((k) => k.name), ['A', 'B']);
 });
 
 test('rtl: kept in project files and checked', () => {

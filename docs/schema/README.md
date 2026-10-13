@@ -256,6 +256,12 @@ for agents mapping Sigma to the code library: `codeName` on a component (or its 
 `a11y.role` below) and `keyboard` (how it works with a keyboard and screen readers); `"checks"` records what a
 person confirmed for its readiness: `{ "variants": true, "breakpoints": true, "accessibility": true }`.
 
+**Breakpoints** (optional): an auto layout frame can lay out differently by its width.
+`"layout": { "mode": "horizontal", "gap": 24, "breakpoints": [{ "maxW": 600, "mode": "vertical", "gap": 12 }] }`:
+at 600px wide or narrower, the breakpoint's values (`mode`, `gap`, `spacing`, `pt`, `pr`, `pb`, `pl`, `alignP`,
+`alignC`) replace the frame's; the narrowest that fits wins, like `max-width` media queries. They make sense on
+frames with a fixed or fill width. Instances copy them, so a component reflows when an instance is resized.
+
 **Direction** (optional): `"dir": "rtl"` on a frame lays out right to left, like HTML's `dir`: auto layout
 rows start at the right and the counter-axis start is the right edge, for this frame and everything inside it
 until a frame sets its own (`"ltr"`). Padding stays physical (`pl` is the left padding). An instance follows its
