@@ -6,7 +6,7 @@ import { layOutDocument } from '../src/lay-out.js';
 import { loadIconSet, ICON_SETS, usedIconIds, newIconsDocument } from '../src/icon-library.js';
 import { sampleIconsDocument } from '../src/sample-icons.js';
 import { opticsTokenDocument } from '../src/optics-tokens.js';
-import { opticsComponentsDocument, opticsFoundationsDocument, OPTICS_ICONS } from '../src/optics.js';
+import { opticsComponentsDocument, opticsFoundationsDocument, opticsIconsDocument, OPTICS_ICONS } from '../src/optics.js';
 import { auditDocument } from '../src/audit.js';
 import { checkAccessibility } from '../src/a11y.js';
 import { readiness, componentRows } from '../src/component-docs.js';
@@ -19,16 +19,17 @@ let built = null;
 async function optics() {
   if (built) return built;
   const tokens = opticsTokenDocument();
-  const icons = sampleIconsDocument(await loadIconSet(ICON_SETS.find((s) => s.id === 'lucide'))).icons;
+  const sample = sampleIconsDocument(await loadIconSet(ICON_SETS.find((s) => s.id === 'lucide')));
+  const icons = opticsIconsDocument(sample.icons, sample.source).icons;
   const published = { version: 1, collections: tokens.collections };
   const link = (doc) => {
     doc.libraries = [libraryEntry('optics-tokens', tokens.name, published)];
     const used = usedIconIds(doc.pages.flatMap((pg) => pg.children));
-    doc.iconLibraries = [{ fileId: 'sigma-icons', name: 'Sigma Icons', version: 1, count: icons.length, icons: icons.filter((x) => used.has(x.id)) }];
+    doc.iconLibraries = [{ fileId: 'optics-icons', name: 'Optics Icons', version: 1, count: icons.length, icons: icons.filter((x) => used.has(x.id)) }];
     return doc;
   };
   built = {
-    tokens, icons,
+    tokens, icons, sample,
     components: () => link(opticsComponentsDocument(tokens.collections)),
     foundations: () => link(opticsFoundationsDocument(tokens.collections, { icons })),
   };
@@ -43,12 +44,13 @@ function open(doc) {
 const errorsIn = (doc) => doc.pages.flatMap((pg) => checkAccessibility(pg.children).filter((i) => i.severity === 'error').map((i) => `${pg.name}: ${i.name} — ${i.message}`));
 
 test('optics: the tokens are complete, every one with a CSS variable', async () => {
-  const { tokens, icons } = await optics();
+  const { tokens, icons, sample } = await optics();
   eq(tokens.collections.map((c) => [c.name, c.modes.map((m) => m.name)]), [['Primitives', ['Value']], ['Semantic', ['Light', 'Dark']], ['Typography', ['Default']]]);
   const all = tokens.collections.flatMap((c) => c.variables);
   ok(all.length > 200, `${all.length} tokens`);
   ok(all.every((v) => v.codeSyntax.web.startsWith('--optics-')));
-  ok(OPTICS_ICONS.every((id) => icons.some((x) => x.id === id)), 'every icon Optics uses is in Sigma Icons');
+  ok(OPTICS_ICONS.every((id) => icons.some((x) => x.id === id)), 'every icon Optics uses is in Optics Icons');
+  ok(icons.length === sample.icons.length && icons.every((x) => x.id.startsWith('optics-')), 'Optics Icons: every Sigma Icons icon, with Optics ids');
 });
 
 test('optics: Optics Components validate, use tokens for every value, and every component is Ready', async () => {
@@ -57,10 +59,10 @@ test('optics: Optics Components validate, use tokens for every value, and every 
   const { tokens, icons } = await optics();
   const tokenDoc = newTokenDocument(tokens.name);
   tokenDoc.variables.collections = tokens.collections;
-  const iconDoc = newIconsDocument('Sigma Icons');
+  const iconDoc = newIconsDocument('Optics Icons');
   iconDoc.icons = icons;
-  const paths = { 'optics-tokens': '.sigma/tokens/optics.sigma.json', 'sigma-icons': '.sigma/icons/sigma.sigma.json' };
-  const files = { [paths['optics-tokens']]: toProjectFile(tokenDoc).file, [paths['sigma-icons']]: toProjectFile(iconDoc).file };
+  const paths = { 'optics-tokens': '.sigma/tokens/optics.sigma.json', 'optics-icons': '.sigma/icons/optics.sigma.json' };
+  const files = { [paths['optics-tokens']]: toProjectFile(tokenDoc).file, [paths['optics-icons']]: toProjectFile(iconDoc).file };
   const file = toProjectFile(doc, { pathOf: (id) => paths[id] || null }).file;
   for (const pg of file.pages) {
     delete pg.welcomeColumns; // arranged when the editor opens it
@@ -85,6 +87,13 @@ test('optics: no accessibility errors in Optics Components or Foundations (Light
   eq(errorsIn(found), []);
   eq(auditDocument(found).groups.map((g) => `${g.kind} ${JSON.stringify(g.value)} ×${g.layers.length} (${g.layers.slice(0, 3).map((l) => l.name).join(', ')})`), [], 'Foundations: no one-off values either');
   eq(found.pages.map((p) => p.name), ['Color', 'Typography', 'Spacing', 'Radius', 'Elevation', 'Motion', 'Icons']);
+  // Every icon in both files is an Optics Icon (none from Sigma Icons).
+  const iconIds = new Set();
+  for (const d of [comps, found]) for (const pg of d.pages) walk(pg.children, (n) => {
+    if (n.iconId) iconIds.add(n.iconId);
+    for (const def of Object.values(n.props || {})) if (def.type === 'icon') iconIds.add(def.default);
+  });
+  ok(iconIds.size > 20 && [...iconIds].every((id) => id.startsWith('optics-')), [...iconIds].filter((id) => !id.startsWith('optics-')).join(', '));
   let modesShown = 0;
   for (const pg of found.pages) walk(pg.children, (n) => void (n.modes && modesShown++));
   ok(modesShown >= 4, 'Light and Dark panels on Color and Elevation');

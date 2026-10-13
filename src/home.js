@@ -506,7 +506,7 @@ async function openWelcome() {
 async function addOpticsFiles() {
   toast('Adding Optics…');
   const ids = await addOptics();
-  toast(`Added Optics: Optics Tokens, Optics Foundations and Optics Components (${ids.length} files)`);
+  toast(`Added Optics: Optics Tokens, Optics Icons, Optics Foundations and Optics Components (${ids.length} files)`);
   renderHome();
 }
 
