@@ -256,7 +256,7 @@
           "groupId": "gtw5e151xcnlhl",
           "valuesByMode": {
             "semantic-dark": { "alias": "color-blue-600" },
-            "semantic-light": { "alias": "color-blue-600" }
+            "semantic-light": "#2741D9"
           }
         },
         {
