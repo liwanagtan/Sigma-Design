@@ -81,6 +81,11 @@ test('breakpoints: hide layers at a width; drawn and laid out without them, neve
   f.w = 800;
   applyLayouts();
   ok(isShown(side), 'wide again: shown');
+  f.w = 500;
+  applyLayouts();
+  delete f.layout;
+  applyLayouts();
+  ok(isShown(side), 'without auto layout, nothing is hidden by width');
   // In a component: its instances hide their copy when resized.
   const badge = box('Badge', 30, 20);
   const card = createNode('component', { name: 'Card', w: 300, h: 40, layout: { ...DEFAULT_LAYOUT, mode: 'horizontal', breakpoints: [{ maxW: 200, hide: [badge.id] }] }, children: [box('Title', 100, 20), badge] });
