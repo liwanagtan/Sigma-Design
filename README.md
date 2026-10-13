@@ -37,8 +37,9 @@ node bin/sigma-design.mjs standalone --port 5173       # Sigma on its own
 node bin/sigma-design.mjs dev examples/css-app         # Sigma in the example project
 ```
 
-Tests: with the server running, open `/tests/` (the in-browser tests); `npm run test:node` runs the server's
-and `init`'s tests in Node.
+Tests: with the server running, open `/tests/` (the in-browser tests); `npm run test:node` runs the Node
+tests (the server, the command line, `init`, adapters, live sync, the team workflow). See `CONTRIBUTING.md`
+for how to make a change, and `docs/data-and-ai.md` for what Sigma sends where (nothing to AI models).
 
 ## Features
 
@@ -293,7 +294,7 @@ Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.
 | `tools/live-sync.mjs` | Live sync while Sigma runs: watching the token and icon sources, and writing the code after a save |
 | `tools/agents.mjs` | `sigma-design agents`: the rules and project skills for the repo's coding agents |
 | `tools/lib/adapters.mjs` | Project adapters: loading them, their context (files and Sigma's helpers), undoing a write |
-| `tools/test/` | Node tests for the server, `init`, adapters, `agents` and live sync (`npm run test:node`) |
+| `tools/test/` | Node tests for the server, `init`, adapters, `agents`, live sync, accessibility in pull requests and the team workflow (`npm run test:node`) |
 | `tools/sigma.mjs` | The command line the sync skill uses (validate, check, tokens and icons import / diff / write, changesets, library and pages build, components diff / write, comments) |
 | `src/capture-to-sigma.js` | Captured components → Sigma components (auto layout, token bindings, icons, variants), captured pages → frames of library instances, and comparing them with the capture |
 | `src/capture-compare.js` | Lays a built library and pages out and compares them with their captures (`tools/capture/compare.html`) |

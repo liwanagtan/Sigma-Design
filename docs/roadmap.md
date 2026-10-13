@@ -712,19 +712,19 @@ Unchanged from Phase 15 above: code names per platform for tokens, components an
 
 - **Responsive breakpoints:** frames that change layout by width. This reaches into `layout.js` and `render.js`, so it waits until sync works end to end.
 - **Render parity:** routine comparison of Sigma's SVG render with the real CSS render, flagging drift.
-- **Accessibility checks** (Part D, Phase 16), fed into the PR as well.
-- **More integrations:** GitLab, Bitbucket, Azure DevOps; Jira, Linear, GitHub Issues.
+- ~~**Accessibility checks**~~ Done (Part D, Phase 16), and in the PR: Propose change runs the check, and the pull request body lists what it found.
+- **More integrations:** GitHub Issues, GitLab (merge requests with `glab`, and issues), Linear and Jira are done (`workflow.git`, `workflow.tracker`). Bitbucket and Azure DevOps are left.
 - **CLI and MCP server,** if teams want deterministic sync in CI or agents without a terminal. Built from the steps the skill repeats.
 - **Hosted team service:** a GitHub App so designers without git can propose changes, plus sign-in, permissions and audit logs for mature teams.
 - **Design-aware merging** of Sigma files changed on two branches.
 - **Monorepos and shared packages:** one design system package used by several apps on different versions.
-- **AI data policy:** let teams choose their model or provider, and document what is sent to it.
+- ~~**AI data policy:**~~ Done: `docs/data-and-ai.md`. Sigma calls no model; teams choose their model or provider by choosing their coding agent, and the doc says what the agent reads and what leaves through the workflow.
 
 ## Open source
 
 - **What's open:** the editor, the file schema, the skills and the validator.
 - **License:** a permissive license (MIT or Apache 2.0) for the schema, skills and validator, to make adoption easy. For the editor and any server, consider AGPL if closed hosted forks are a concern; otherwise the same permissive license. Decide before the first public release.
-- **Before going public:** a CONTRIBUTING guide, the schema docs from Phase 20, and a check that the name Sigma and the positioning don't lean on Figma's trademarks.
+- **Before going public:** ~~a CONTRIBUTING guide~~ (done: `CONTRIBUTING.md`), ~~the schema docs from Phase 20~~ (done: `docs/schema/README.md`), and a check that the name Sigma and the positioning don't lean on Figma's trademarks.
 
 ## Risks and open questions
 
