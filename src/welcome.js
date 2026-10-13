@@ -9,7 +9,7 @@ import { createNode, uid, makePaint } from './store.js';
 import { DEFAULT_LAYOUT } from './layout.js';
 import { sampleIconId } from './sample-icons.js';
 
-export const WELCOME_VERSION = 5;
+export const WELCOME_VERSION = 6;
 // The sample icons the guide uses (outline unless marked filled).
 const GUIDE_ICONS = ['plus', 'search', 'pencil', 'copy', 'share-2', 'trash', 'settings', 'user', 'log-out', 'star', 'heart', 'bookmark', 'bell'];
 export const WELCOME_ICONS = [...GUIDE_ICONS.map((n) => sampleIconId(n)), ...['star', 'heart', 'bookmark', 'bell'].map((n) => sampleIconId(n, true))];
@@ -176,6 +176,9 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     { h: 'How they connect', p: [
       'This file uses the Sigma Tokens and Sigma Icons files next to it in the Welcome to Sigma folder on the files home. Every color, size, text style and shadow here comes from one of its tokens, so switching a mode or a brand restyles everything at once.',
       'When a Sigma Tokens or Sigma Icons file publishes a new version, the Sigma Design files that use it are offered the update.',
+    ] },
+    { h: 'A complete design system: Optics', p: [
+      'The folder also has Optics, a design system made in Sigma and inspired by Shopify’s Polaris: Optics Tokens, Optics Foundations (color, type, spacing, elevation, motion, icons) and Optics Components (buttons, fields, badges, banners, cards, tabs, a modal and more, documented and ready). Link Optics Tokens and Optics Components from your own files to design with them.',
     ] },
     { h: 'Find your way', bullets: [
       'Layers and Assets are on the left. The right panel shows what you’ve selected, or this file’s tokens and libraries when nothing is.',
@@ -608,7 +611,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
 }
 
 // The first time the file is opened (when its text is measured and its layouts are done), stack each page's
-// example columns by their real heights. Returns whether anything moved.
+// example columns (or rows) by their real heights. Returns whether anything moved.
 const COLUMN_GAP = 64;
 export function arrangeWelcome(doc) {
   let moved = false;
@@ -626,6 +629,19 @@ export function arrangeWelcome(doc) {
       }
     }
     delete pg.welcomeColumns;
+    moved = true;
+  }
+  // Rows (Optics' Do and Don't pairs): each row starts below the tallest layer of the row above.
+  for (const pg of doc.pages) {
+    if (!pg.welcomeRows) continue;
+    const byId = new Map(pg.children.map((n) => [n.id, n]));
+    let y = null;
+    for (const row of pg.welcomeRows) {
+      const nodes = row.map((id) => byId.get(id)).filter(Boolean);
+      if (y !== null) for (const n of nodes) n.y = y;
+      y = Math.max(...nodes.map((n) => n.y + n.h)) + COLUMN_GAP;
+    }
+    delete pg.welcomeRows;
     moved = true;
   }
   return moved;

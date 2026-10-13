@@ -23,6 +23,9 @@ import { toast } from './io.js';
 
 const PREFS_KEY = 'sigma.home.prefs';
 const KIND_ORDER = ['design', 'tokens', 'icons']; // the Welcome to Sigma folder: the guide, then its libraries
+// …and then Optics: its tokens, foundations and components.
+const OPTICS_ORDER = ['Optics Tokens', 'Optics Foundations', 'Optics Components'];
+const welcomeOrder = (a, b) => (!!a.optics - !!b.optics) || (a.optics ? OPTICS_ORDER.indexOf(a.name) - OPTICS_ORDER.indexOf(b.name) : KIND_ORDER.indexOf(fileKind(a)) - KIND_ORDER.indexOf(fileKind(b)));
 const SORTS = { edited: 'Last edited', name: 'Name', created: 'Date created' };
 
 let root = null;
@@ -660,7 +663,7 @@ export async function renderHome() {
     await renderProjectFiles(list, section, q);
   } else if (welcome) {
     list.innerHTML = WELCOME_INTRO +
-      (files.length ? files.sort((a, b) => KIND_ORDER.indexOf(fileKind(a)) - KIND_ORDER.indexOf(fileKind(b))).map((f) => card(f, { describe: true })).join('')
+      (files.length ? files.sort(welcomeOrder).map((f) => card(f, { describe: true })).join('')
         : `<div class="home-empty"><div class="home-empty-title">Welcome to Sigma</div><p>The guide isn’t here (it may be in the Archive).</p>
           <div class="home-empty-actions"><button class="btn primary" data-empty-action="welcome">Open Welcome to Sigma</button></div></div>`);
   } else if (archive) {
@@ -716,8 +719,15 @@ function archivedCard(f) {
 // The Welcome to Sigma folder: what it's for, and (on each card) what each sample file holds.
 const WELCOME_INTRO = `<div class="welcome-intro">
   <p><b>Welcome to Sigma</b> is where to learn Sigma: a guide, and the small design system it's built with. Open <b>Sigma Design</b> first; it explains everything, page by page, with examples to try.</p>
+  <p><b>Optics</b> is a complete design system made in Sigma, inspired by Shopify's Polaris: <b>Optics Tokens</b>, <b>Optics Foundations</b> and <b>Optics Components</b>. Every component is built from the tokens, documented and ready to use; your own design files can link Optics Tokens and Optics Components to design with them.</p>
   <p class="muted">These are sample files: open them and try anything. Nothing in them is saved, so they're back to the original whenever you open them again. <b>Duplicate to keep changes</b> (in the banner) makes a copy of your own, which goes with your files.</p>
 </div>`;
+// Optics (Phase 36): what each of its files holds, by name.
+const OPTICS_DESCRIPTIONS = {
+  'Optics Tokens': 'Optics’ design tokens, shaped like Polaris: a palette, spacing, type, radius and motion, semantic colors and shadows in Light and Dark, and text styles.',
+  'Optics Foundations': 'Optics’ foundations, built from its tokens: color in Light and Dark, typography, spacing, radius, elevation, motion and icons.',
+  'Optics Components': 'Optics’ components: buttons, form fields, badges, banners, cards, tabs, a modal and more, with variants, states and docs. Link it from your files to use them.',
+};
 const SAMPLE_DESCRIPTIONS = {
   design: 'The guide. Ten pages, each with a short explanation and examples: the canvas, layout, components, design tokens, style, quality checks, libraries and versions, Sigma Tokens and Sigma Icons.',
   tokens: 'The design tokens the guide is built with: primitives, semantic colors in Light and Dark, a Brand B, text styles and component tokens.',
@@ -741,8 +751,8 @@ function card(f, { describe = false } = {}) {
   return `<a class="file-card${tokens ? ' tokens' : ''}" href="${fileHref(f.id)}" data-id="${f.id}" draggable="false">
     <div class="file-thumb" style="background:${tokens ? '#FFFFFF' : esc(f.background || '#F5F5F5')}">${thumb}</div>
     <div class="file-info">${name}<div class="file-time">${kindBadge(kind)}${sample
-      ? `<span class="kind-badge sample" title="A sample file: try anything; nothing is saved, and it resets when reopened">Sample</span>${tokens ? 'For the guide' : 'Guide to Sigma'}` // never edited, so no "Edited … ago"
-      : `Edited ${ago(f.updatedAt)}`}</div>${describe && sample && SAMPLE_DESCRIPTIONS[kind] ? `<div class="card-desc">${SAMPLE_DESCRIPTIONS[kind]}</div>` : ''}</div>
+      ? `<span class="kind-badge sample" title="A sample file: try anything; nothing is saved, and it resets when reopened">Sample</span>${f.optics ? 'Optics design system' : tokens ? 'For the guide' : 'Guide to Sigma'}` // never edited, so no "Edited … ago"
+      : `Edited ${ago(f.updatedAt)}`}</div>${describe && sample && (f.optics ? OPTICS_DESCRIPTIONS[f.name] : SAMPLE_DESCRIPTIONS[kind]) ? `<div class="card-desc">${f.optics ? OPTICS_DESCRIPTIONS[f.name] : SAMPLE_DESCRIPTIONS[kind]}</div>` : ''}</div>
     <div class="file-created">${sample ? '' : new Date(f.createdAt).toLocaleDateString()}</div>
     <button class="icon-btn file-more" data-more title="More actions">${MORE_ICON}</button>
   </a>`;

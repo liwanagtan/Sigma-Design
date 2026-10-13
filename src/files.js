@@ -9,6 +9,8 @@ import { libraryEntry } from './variables.js';
 import { welcomeDocument, WELCOME_VERSION, WELCOME_ICONS } from './welcome.js';
 import { newIconsDocument, sanitizeIcons, iconMarkup, usedIconIds, ICON_SETS, loadIconSet } from './icon-library.js';
 import { sampleIconsDocument, SAMPLE_ICONS_NAME } from './sample-icons.js';
+import { opticsTokenDocument } from './optics-tokens.js';
+import { opticsComponentsDocument, opticsFoundationsDocument, OPTICS_ICONS } from './optics.js';
 
 // The sample files (the Welcome to Sigma guide, its Sigma Tokens and its Sigma Icons) live in the files home's Welcome to
 // Sigma folder rather than with your own files.
@@ -72,6 +74,7 @@ async function setUpWelcomeFolder() {
         await nameSampleTokens(l.fileId);
       }
       for (const l of doc?.iconLibraries || []) keep.add(l.fileId);
+      for (const m of await listFiles()) if (m.optics === WELCOME_VERSION) keep.add(m.id); // this guide's Optics files
       await archiveSamples(keep);
     }
   }
@@ -450,7 +453,7 @@ export async function appendToTokenFile(id, collections, notes, { libraries = []
 export async function sampleTokenFile() {
   const sampleName = sampleTokenDocument().name;
   const candidates = (await listTokenFiles())
-    .filter((m) => m.sample || m.name === sampleName || m.name === LEGACY_SAMPLE_TOKENS_NAME)
+    .filter((m) => !m.optics && (m.sample || m.name === sampleName || m.name === LEGACY_SAMPLE_TOKENS_NAME))
     .sort((a, b) => b.updatedAt - a.updatedAt);
   for (const meta of candidates) {
     const published = (await loadPublished(meta.id))?.published;
@@ -473,7 +476,7 @@ export async function sampleIconFile() {
     const published = (await loadPublishedIcons(meta.id))?.published;
     if (!published) continue;
     const ids = new Set(published.icons.map((x) => x.id));
-    if (!WELCOME_ICONS.every((id) => ids.has(id))) continue; // icons the guide uses are missing
+    if (![...WELCOME_ICONS, ...OPTICS_ICONS].every((id) => ids.has(id))) continue; // icons the guide or Optics use are missing
     return { id: meta.id, name: meta.name, published };
   }
   let doc;
@@ -507,10 +510,41 @@ export async function welcomeFile() {
     }];
   }
   const id = await createFile(doc, {}, { welcome: WELCOME_VERSION });
+  const optics = await opticsFiles(icons);
   // The new guide replaces the old one: older sample files go to the Archive.
-  const moved = await archiveSamples(new Set([id, lib.id, ...(icons ? [icons.id] : [])]));
+  const moved = await archiveSamples(new Set([id, lib.id, ...(icons ? [icons.id] : []), ...optics]));
   if (moved) toast(`Moved ${moved === 1 ? 'the previous sample file' : `${moved} older sample files`} to the Archive`);
   return id;
+}
+
+// Optics (Phase 36), in the Welcome to Sigma folder with the guide: Optics Tokens, Optics Components (published,
+// so other files can link it) and Optics Foundations, using the sample Sigma Icons. Returns their ids.
+async function opticsFiles(icons) {
+  const meta = { sample: true, optics: WELCOME_VERSION };
+  const { name, collections } = opticsTokenDocument();
+  const tokens = await createTokenFileWith(name, collections, 'Optics v1', { meta });
+  const link = (doc) => {
+    doc.libraries = [libraryEntry(tokens.id, tokens.name, tokens.published)];
+    if (!icons) return doc;
+    // Like any Sigma Design file, it keeps copies of just the icons it uses.
+    const used = usedIconIds(doc.pages.flatMap((pg) => pg.children));
+    doc.iconLibraries = [{
+      fileId: icons.id, name: icons.name, version: icons.published.version, count: icons.published.icons.length,
+      icons: structuredClone(icons.published.icons.filter((x) => used.has(x.id))),
+    }];
+    return doc;
+  };
+  const components = link(opticsComponentsDocument(tokens.published.collections));
+  // Published as v1, laid out as it opens, so a file linking it gets components at their real sizes.
+  const [{ withDocument }, { layOutDocument }, { publishRecord }] = await Promise.all([import('./store.js'), import('./lay-out.js'), import('./libraries.js')]);
+  const laidOut = withDocument(structuredClone(components), () => {
+    layOutDocument();
+    return publishRecord(1, 'Optics v1');
+  });
+  components.publishedComponents = laidOut;
+  const componentsId = await createFile(components, {}, meta);
+  const foundationsId = await createFile(link(opticsFoundationsDocument(tokens.published.collections, { icons: icons?.published.icons || [] })), {}, meta);
+  return [tokens.id, componentsId, foundationsId];
 }
 
 // The first visit to Sigma in this browser (no files at all) starts with "Welcome to Sigma". Returns its
