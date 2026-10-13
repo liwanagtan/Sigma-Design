@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "stack": {
+    "styling": [
+      "css-variables"
+    ],
+    "framework": "react"
+  },
+  "tokens": [
+    {
+      "sigma": ".sigma/tokens/acme-react.sigma.json",
+      "name": "Acme react tokens",
+      "sources": [
+        {
+          "path": "src/styles/tokens.css",
+          "format": "css-variables"
+        }
+      ],
+      "naming": "kebab",
+      "modes": {
+        "Default": ":root"
+      }
+    }
+  ],
+  "workflow": {
+    "git": "github",
+    "tracker": "none",
+    "branch": "design/{slug}",
+    "base": "main",
+    "labels": [
+      "design"
+    ]
+  },
+  "components": [
+    {
+      "sigma": ".sigma/design/acme-react-library.sigma.json",
+      "source": "src/components",
+      "manifest": ".sigma/captures/manifest.json",
+      "styles": [
+        "src/styles/components.css"
+      ],
+      "page": "http://localhost:5190/sigma.html"
+    }
+  ]
+}

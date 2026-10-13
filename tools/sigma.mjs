@@ -896,11 +896,11 @@ const topComponents = (file) => {
 
 // For each library in sigma.config.json's components: what changed since --base, and the code plan.
 function componentPlans(root, config) {
-  const base = flags.base || 'HEAD';
+  const base = flags['base-file'] ? 'the last save' : flags.base || 'HEAD';
   return entriesOf(config, 'components').map((e) => {
     const now = readSigma(root, e.sigma);
     if (!now) fail(`${e.sigma} doesn’t exist yet: build the library first (library build)`);
-    const thenText = gitShow(root, base, e.sigma);
+    const thenText = baseText(root, e);
     const then = thenText ? JSON.parse(thenText) : null;
     const manifestPath = e.manifest || MANIFEST;
     const manifest = exists(root, manifestPath) ? JSON.parse(readText(root, manifestPath)) : { components: [] };

@@ -18,7 +18,7 @@ import { listFilesIn } from './lib/project.mjs';
 const TOOLS = fileURLToPath(new URL('./sigma.mjs', import.meta.url));
 
 // Run the sync tools with --json: { status, result (parsed JSON or null), output }.
-function tools(args, cwd) {
+export function tools(args, cwd) {
   return new Promise((ok) => {
     execFile(process.execPath, [TOOLS, ...args, '--json'], { cwd, maxBuffer: 64 * 1024 * 1024 }, (err, stdout, stderr) => {
       let result = null;
@@ -108,8 +108,11 @@ export function startLiveSync({ root, log = () => {}, interval = 800 } = {}) {
 
   // Sigma saved a project file: write what that save changed to the code.
   async function afterSave(rel, before) {
+    if (before === null) return null; // a new file: nothing it changed yet
+    const lib = (config(root)?.components || []).findIndex((e) => e.sigma === rel);
+    if (lib >= 0) return serial(() => writeComponents(lib, before));
     const w = watched(root).find((x) => x.entry.sigma === rel);
-    if (!w || before === null) return null; // not a token or icon file (or a new one)
+    if (!w) return null; // not a token, icon or library file
     return serial(async () => {
       const dir = mkdtempSync(join(tmpdir(), 'sigma-save-'));
       const baseFile = join(dir, 'before.json');
@@ -125,6 +128,28 @@ export function startLiveSync({ root, log = () => {}, interval = 800 } = {}) {
         rmSync(dir, { recursive: true, force: true });
       }
     });
+  }
+
+  // A library saved: the exact part of its components' code (CSS, defaults; Phase 30), and what's left listed.
+  async function writeComponents(index, before) {
+    const dir = mkdtempSync(join(tmpdir(), 'sigma-save-'));
+    const baseFile = join(dir, 'before.json');
+    writeFileSync(baseFile, before);
+    try {
+      const r = await tools(['components', 'write', root, '--entry', String(index), '--base-file', baseFile], root);
+      for (const w of watched(root)) seen.set(`${w.kind}:${w.index}`, signature(root, w));
+      const plans = Array.isArray(r.result) ? r.result : [];
+      const files = [...new Set(plans.flatMap((p) => p.applied.map((a) => a.file)))];
+      const agent = plans.flatMap((p) => p.agent.map((t) => `${t}`));
+      const report = { written: files.map((path) => ({ path, lines: null })), agent, components: plans.map((p) => p.name) };
+      report.text = plans.length
+        ? `${plans.map((p) => p.name).join(', ')}: ${files.length ? `wrote ${files.join(', ')}` : 'nothing to write to the code'}${agent.length ? `; ${agent.length} thing${agent.length === 1 ? '' : 's'} for your coding agent (sigma-design components diff)` : ''}`
+        : 'library saved: no component changes for the code';
+      log(report.text);
+      return report;
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   }
 
   let timer = null;

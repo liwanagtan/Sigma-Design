@@ -933,3 +933,16 @@ button.group-caret.open { transform: rotate(90deg); }
 .inst-row.slot-row { grid-template-columns: minmax(0, 1fr) auto; }
 .slot-row .inst-label { overflow: visible; }
 .slot-tag { flex: none; }
+
+/* Check against code (Phase 35) */
+.check-modal { width: min(640px, calc(100vw - 32px)); }
+.check-status { margin-bottom: 10px; }
+.check-section { margin-bottom: 12px; }
+.check-head { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+.check-ok { color: #0f7a40; }
+.check-bad { color: #b54708; }
+.check-row { display: flex; gap: 8px; padding: 2px 0; }
+.check-row.ok .check-mark { color: #0f7a40; }
+.check-row.bad .check-mark { color: #b54708; }
+.check-diff { padding: 0 0 2px 22px; color: var(--muted); font-size: 12px; }
+.check-report { max-height: 50vh; overflow: auto; }

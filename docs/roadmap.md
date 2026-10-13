@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Phases 1–14 and Part E (Phases 20–30) are done**, except Phase 26's real run (a Notion ticket and CI on a pull request). Part F: Sigma inside your project (Phases 31–35) has begun: Phases 31–34 are done; next is Phase 35. Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **Phases 1–14 and Part E (Phases 20–30) are done**, except Phase 26's real run (a Notion ticket and CI on a pull request). Part F: Sigma inside your project (Phases 31–35) is done. Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -395,7 +395,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 32: Install like a dev tool (npm package `sigma-design`)
 - [x] Phase 33: Setup by the agent: adapters, rules and project skills
 - [x] Phase 34: Live sync while Sigma runs
-- [ ] Phase 35: Sigma renders the project's components
+- [x] Phase 35: Sigma renders the project's components
 
 ## Follow-ups
 
@@ -835,6 +835,21 @@ the browser.
   component change, recapture and compare to confirm the code matches the design.
 - **Done when:** in a project with React components, the library builds from Sigma's component pages, and a
   component change made in Sigma is confirmed against the rendered code from inside Sigma.
+- **What shipped:** instead of serving the app through Sigma's origin (its `/`, `/src/` and `/api/` would clash with
+  Vite's), the project's components page loads a capture **bridge** (`sigma-design/bridge`, `tools/capture/bridge.js`):
+  Sigma opens the page (`components[].page`) in a hidden frame and asks for captures by message, which works across
+  origins and with any bundler. In the GUI (`src/code-check.js`): **Build from code…** on the home screen for a library
+  `sigma.config.json` lists but that isn't built; **Check against code…** in a library's menu (captures every
+  component and page, saves them in the project, compares, shows ✓/✗ with the differences) with **Update the library
+  from code** (the server's new action endpoint runs `library build`). Live sync now also writes the exact part of
+  a library's components' code when it's saved (`components write --base-file`), and the save message says what it
+  wrote and what's left for an agent. Fixed on the way: ⌘S in the design editor showed an old "Autosaved"
+  message over the real save's. Verified on `examples/react-app` (Vite 8, React 19): `npx sigma-design init` set up
+  its tokens; the library built from `sigma.html` with Build from code (12 of 13 at first: the check showed the
+  app wasn't loading Inter and the card's button label wasn't in the manifest; after both fixes, 13 of 13); then
+  the Badge's side padding changed in Sigma (`--space-2` → `--space-3`), saved, was written to `components.css` by
+  live sync (`padding: var(--space-1) var(--space-3)`), and Check against code confirmed it against the app as
+  rendered by Vite: 13 of 13, with the badge captured 24px wider than its text.
 
 ## Risks and open questions
 

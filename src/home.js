@@ -13,6 +13,7 @@ import {
   project, onProjectChange, projectListing, openProjectFile, newProjectFile,
 } from './project.js';
 import { openProposeDialog, changesetListing } from './propose.js';
+import { buildLibraryFromCode } from './code-check.js';
 import { showContextMenu } from './menu.js';
 import { modal } from './libraries.js';
 import { icons } from './icons.js';
@@ -158,6 +159,8 @@ export function initHome(el) {
   list.addEventListener('click', (e) => {
     if (e.target.closest('[data-propose-change]')) return openProposeDialog();
     if (e.target.closest('[data-move-into-project]')) return moveIntoProjectDialog();
+    const build = e.target.closest('[data-build-library]');
+    if (build) return buildLibraryFromCode((project.config?.components || []).find((c) => c.sigma === build.dataset.buildLibrary));
     if (e.target.closest('[data-not-now]')) {
       prefs.notNow = { ...(prefs.notNow || {}), [project.name]: true };
       savePrefs();
@@ -295,7 +298,7 @@ async function renderProjectFiles(list, section, q) {
   items.sort((a, b) => (sort === 'name' ? a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
     : sort === 'created' ? (b.meta?.createdAt || 0) - (a.meta?.createdAt || 0) : edited(b) - edited(a) || a.path.localeCompare(b.path)));
   if (recents && !q) items = items.slice(0, 24);
-  const move = await moveNotice();
+  const move = (await moveNotice()) + (section === 'design' || recents ? unbuiltLibraries() : '');
   if (items.length) {
     list.innerHTML = move + items.map(projectCard).join('');
     return;
@@ -307,6 +310,13 @@ async function renderProjectFiles(list, section, q) {
   const [title, text, act, label] = EMPTY_PROJECT[section] || ['No Sigma files in this project yet', 'Create one with the buttons above, or let the sync skill set the project up from its code (skills/sigma-sync).', 'blank', 'New Sigma Design file'];
   list.innerHTML = move + `<div class="home-empty"><div class="home-empty-title">${title}</div><p>${text}</p>
     ${project.connected ? `<div class="home-empty-actions"><button class="btn primary" data-empty-action="${act}">${icons.plus} ${label}</button></div>` : ''}</div>`;
+}
+
+// Component libraries sigma.config.json lists that aren't built yet: build them from the code (Phase 35).
+function unbuiltLibraries() {
+  if (!project.connected) return '';
+  return (project.config?.components || []).filter((c) => !project.files.some((f) => f.path === c.sigma)).map((c) =>
+    `<div class="home-notice move-notice"><span>The component library <code>${esc(c.sigma)}</code> isn’t built yet. Sigma can capture the components${c.page ? ` from <code>${esc(c.page)}</code>` : ''} and build it.</span><button class="btn primary" data-build-library="${esc(c.sigma)}">Build from code…</button></div>`).join('');
 }
 
 // Files kept only in this browser aren't part of the project: offer, once, to move them in.

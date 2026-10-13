@@ -1,0 +1,544 @@
+{
+  "format": 1,
+  "kind": "design",
+  "name": "Acme react library",
+  "uses": { "tokens": [".sigma/tokens/acme-react.sigma.json"] },
+  "pages": [
+    {
+      "id": "components",
+      "name": "Components",
+      "background": "#F5F5F5",
+      "children": [
+        {
+          "id": "button",
+          "type": "componentSet",
+          "name": "Button",
+          "description": "src/components/Button.jsx: <Button variant>; styles in .button (src/styles/components.css)",
+          "clip": false,
+          "codeName": "Button",
+          "codeNames": { "State": "state", "Variant": "variant" },
+          "h": 187,
+          "props": {
+            "button-label": {
+              "type": "text",
+              "name": "Label",
+              "codeName": "children",
+              "default": "Continue"
+            }
+          },
+          "w": 368.29,
+          "x": 40,
+          "y": 40,
+          "children": [
+            {
+              "id": "button-variant-primary-state-default",
+              "type": "component",
+              "name": "Variant=Primary, State=Default",
+              "bindings": {
+                "fills.0.color": "accent",
+                "layout.gap": "space-2",
+                "layout.pb": "space-2",
+                "layout.pl": "space-4",
+                "layout.pr": "space-4",
+                "layout.pt": "space-2",
+                "radius": "radius-md"
+              },
+              "clip": false,
+              "fills": [{}],
+              "layout": { "alignC": "center", "mode": "horizontal" },
+              "sizingH": "hug",
+              "sizingV": "hug",
+              "x": 20,
+              "y": 20,
+              "children": [
+                {
+                  "id": "button-variant-primary-state-default-label-0",
+                  "type": "text",
+                  "name": "Label",
+                  "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                  "fills": [{}],
+                  "fontSize": 14,
+                  "propRefs": { "text": "button-label" },
+                  "text": "Continue",
+                  "textAlign": "center"
+                }
+              ]
+            },
+            {
+              "id": "button-variant-primary-state-hover",
+              "type": "component",
+              "name": "Variant=Primary, State=Hover",
+              "bindings": {
+                "fills.0.color": "accent-hover",
+                "layout.gap": "space-2",
+                "layout.pb": "space-2",
+                "layout.pl": "space-4",
+                "layout.pr": "space-4",
+                "layout.pt": "space-2",
+                "radius": "radius-md"
+              },
+              "clip": false,
+              "fills": [{}],
+              "layout": { "alignC": "center", "mode": "horizontal" },
+              "sizingH": "hug",
+              "sizingV": "hug",
+              "x": 137.43,
+              "y": 20,
+              "children": [
+                {
+                  "id": "button-variant-primary-state-hover-label-0",
+                  "type": "text",
+                  "name": "Label",
+                  "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                  "fills": [{}],
+                  "fontSize": 14,
+                  "propRefs": { "text": "button-label" },
+                  "text": "Continue",
+                  "textAlign": "center"
+                }
+              ]
+            },
+            {
+              "id": "button-variant-primary-state-disabled",
+              "type": "component",
+              "name": "Variant=Primary, State=Disabled",
+              "bindings": {
+                "fills.0.color": "accent",
+                "layout.gap": "space-2",
+                "layout.pb": "space-2",
+                "layout.pl": "space-4",
+                "layout.pr": "space-4",
+                "layout.pt": "space-2",
+                "radius": "radius-md"
+              },
+              "clip": false,
+              "fills": [{}],
+              "layout": { "alignC": "center", "mode": "horizontal" },
+              "opacity": 0.5,
+              "sizingH": "hug",
+              "sizingV": "hug",
+              "x": 254.86,
+              "y": 20,
+              "children": [
+                {
+                  "id": "button-variant-primary-state-disabled-label-0",
+                  "type": "text",
+                  "name": "Label",
+                  "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                  "fills": [{}],
+                  "fontSize": 14,
+                  "propRefs": { "text": "button-label" },
+                  "text": "Continue",
+                  "textAlign": "center"
+                }
+              ]
+            },
+            {
+              "id": "button-variant-secondary-state-default",
+              "type": "component",
+              "name": "Variant=Secondary, State=Default",
+              "bindings": {
+                "fills.0.color": "surface",
+                "layout.gap": "space-2",
+                "layout.pb": "space-2",
+                "layout.pl": "space-4",
+                "layout.pr": "space-4",
+                "layout.pt": "space-2",
+                "radius": "radius-md"
+              },
+              "clip": false,
+              "fills": [{}],
+              "layout": { "alignC": "center", "mode": "horizontal" },
+              "sizingH": "hug",
+              "sizingV": "hug",
+              "x": 20,
+              "y": 77,
+              "children": [
+                {
+                  "id": "button-variant-secondary-state-default-label-0",
+                  "type": "text",
+                  "name": "Label",
+                  "bindings": { "fills.0.color": "accent", "fontWeight": "font-weight-bold" },
+                  "fills": [{}],
+                  "fontSize": 14,
+                  "propRefs": { "text": "button-label" },
+                  "text": "Continue",
+                  "textAlign": "center"
+                }
+              ]
+            },
+            {
+              "id": "button-variant-secondary-state-hover",
+              "type": "component",
+              "name": "Variant=Secondary, State=Hover",
+              "bindings": {
+                "fills.0.color": "surface-muted",
+                "layout.gap": "space-2",
+                "layout.pb": "space-2",
+                "layout.pl": "space-4",
+                "layout.pr": "space-4",
+                "layout.pt": "space-2",
+                "radius": "radius-md"
+              },
+              "clip": false,
+              "fills": [{}],
+              "layout": { "alignC": "center", "mode": "horizontal" },
+              "sizingH": "hug",
+              "sizingV": "hug",
+              "x": 137.43,
+              "y": 77,
+              "children": [
+                {
+                  "id": "button-variant-secondary-state-hover-label-0",
+                  "type": "text",
+                  "name": "Label",
+                  "bindings": { "fills.0.color": "accent", "fontWeight": "font-weight-bold" },
+                  "fills": [{}],
+                  "fontSize": 14,
+                  "propRefs": { "text": "button-label" },
+                  "text": "Continue",
+                  "textAlign": "center"
+                }
+              ]
+            },
+            {
+              "id": "button-variant-secondary-state-disabled",
+              "type": "component",
+              "name": "Variant=Secondary, State=Disabled",
+              "bindings": {
+                "fills.0.color": "surface",
+                "layout.gap": "space-2",
+                "layout.pb": "space-2",
+                "layout.pl": "space-4",
+                "layout.pr": "space-4",
+                "layout.pt": "space-2",
+                "radius": "radius-md"
+              },
+              "clip": false,
+              "fills": [{}],
+              "layout": { "alignC": "center", "mode": "horizontal" },
+              "opacity": 0.5,
+              "sizingH": "hug",
+              "sizingV": "hug",
+              "x": 254.86,
+              "y": 77,
+              "children": [
+                {
+                  "id": "button-variant-secondary-state-disabled-label-0",
+                  "type": "text",
+                  "name": "Label",
+                  "bindings": { "fills.0.color": "accent", "fontWeight": "font-weight-bold" },
+                  "fills": [{}],
+                  "fontSize": 14,
+                  "propRefs": { "text": "button-label" },
+                  "text": "Continue",
+                  "textAlign": "center"
+                }
+              ]
+            },
+            {
+              "id": "button-variant-danger-state-default",
+              "type": "component",
+              "name": "Variant=Danger, State=Default",
+              "bindings": {
+                "fills.0.color": "danger",
+                "layout.gap": "space-2",
+                "layout.pb": "space-2",
+                "layout.pl": "space-4",
+                "layout.pr": "space-4",
+                "layout.pt": "space-2",
+                "radius": "radius-md"
+              },
+              "clip": false,
+              "fills": [{}],
+              "layout": { "alignC": "center", "mode": "horizontal" },
+              "sizingH": "hug",
+              "sizingV": "hug",
+              "x": 20,
+              "y": 134,
+              "children": [
+                {
+                  "id": "button-variant-danger-state-default-label-0",
+                  "type": "text",
+                  "name": "Label",
+                  "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                  "fills": [{}],
+                  "fontSize": 14,
+                  "propRefs": { "text": "button-label" },
+                  "text": "Continue",
+                  "textAlign": "center"
+                }
+              ]
+            },
+            {
+              "id": "button-variant-danger-state-hover",
+              "type": "component",
+              "name": "Variant=Danger, State=Hover",
+              "bindings": {
+                "fills.0.color": "danger-hover",
+                "layout.gap": "space-2",
+                "layout.pb": "space-2",
+                "layout.pl": "space-4",
+                "layout.pr": "space-4",
+                "layout.pt": "space-2",
+                "radius": "radius-md"
+              },
+              "clip": false,
+              "fills": [{}],
+              "layout": { "alignC": "center", "mode": "horizontal" },
+              "sizingH": "hug",
+              "sizingV": "hug",
+              "x": 137.43,
+              "y": 134,
+              "children": [
+                {
+                  "id": "button-variant-danger-state-hover-label-0",
+                  "type": "text",
+                  "name": "Label",
+                  "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                  "fills": [{}],
+                  "fontSize": 14,
+                  "propRefs": { "text": "button-label" },
+                  "text": "Continue",
+                  "textAlign": "center"
+                }
+              ]
+            },
+            {
+              "id": "button-variant-danger-state-disabled",
+              "type": "component",
+              "name": "Variant=Danger, State=Disabled",
+              "bindings": {
+                "fills.0.color": "danger",
+                "layout.gap": "space-2",
+                "layout.pb": "space-2",
+                "layout.pl": "space-4",
+                "layout.pr": "space-4",
+                "layout.pt": "space-2",
+                "radius": "radius-md"
+              },
+              "clip": false,
+              "fills": [{}],
+              "layout": { "alignC": "center", "mode": "horizontal" },
+              "opacity": 0.5,
+              "sizingH": "hug",
+              "sizingV": "hug",
+              "x": 254.86,
+              "y": 134,
+              "children": [
+                {
+                  "id": "button-variant-danger-state-disabled-label-0",
+                  "type": "text",
+                  "name": "Label",
+                  "bindings": { "fills.0.color": "color-gray-0", "fontWeight": "font-weight-bold" },
+                  "fills": [{}],
+                  "fontSize": 14,
+                  "propRefs": { "text": "button-label" },
+                  "text": "Continue",
+                  "textAlign": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "badge",
+          "type": "componentSet",
+          "name": "Badge",
+          "description": "src/components/Badge.jsx: <Badge tone>; styles in .badge",
+          "clip": false,
+          "codeName": "Badge",
+          "codeNames": { "Tone": "tone" },
+          "h": 155.5,
+          "props": {
+            "badge-label": {
+              "type": "text",
+              "name": "Label",
+              "codeName": "children",
+              "default": "Draft"
+            }
+          },
+          "w": 98.62,
+          "x": 40,
+          "y": 287,
+          "children": [
+            {
+              "id": "badge-tone-neutral",
+              "type": "component",
+              "name": "Tone=Neutral",
+              "bindings": {
+                "fills.0.color": "surface-muted",
+                "layout.pb": "space-1",
+                "layout.pl": "space-3",
+                "layout.pr": "space-3",
+                "layout.pt": "space-1",
+                "radius": "radius-full"
+              },
+              "clip": false,
+              "fills": [{}],
+              "layout": { "gap": 0, "mode": "horizontal" },
+              "sizingH": "hug",
+              "sizingV": "hug",
+              "x": 20,
+              "y": 20,
+              "children": [
+                {
+                  "id": "badge-tone-neutral-text-0",
+                  "type": "text",
+                  "name": "Text",
+                  "bindings": {
+                    "fills.0.color": "text-secondary",
+                    "fontSize": "font-size-sm",
+                    "fontWeight": "font-weight-medium"
+                  },
+                  "fills": [{}],
+                  "propRefs": { "text": "badge-label" },
+                  "text": "Draft"
+                }
+              ]
+            },
+            {
+              "id": "badge-tone-success",
+              "type": "component",
+              "name": "Tone=Success",
+              "bindings": {
+                "fills.0.color": "color-green-100",
+                "layout.pb": "space-1",
+                "layout.pl": "space-3",
+                "layout.pr": "space-3",
+                "layout.pt": "space-1",
+                "radius": "radius-full"
+              },
+              "clip": false,
+              "fills": [{}],
+              "layout": { "gap": 0, "mode": "horizontal" },
+              "sizingH": "hug",
+              "sizingV": "hug",
+              "x": 20,
+              "y": 66.5,
+              "children": [
+                {
+                  "id": "badge-tone-success-text-0",
+                  "type": "text",
+                  "name": "Text",
+                  "bindings": {
+                    "fills.0.color": "color-green-700",
+                    "fontSize": "font-size-sm",
+                    "fontWeight": "font-weight-medium"
+                  },
+                  "fills": [{}],
+                  "propRefs": { "text": "badge-label" },
+                  "text": "Active"
+                }
+              ]
+            },
+            {
+              "id": "badge-tone-warning",
+              "type": "component",
+              "name": "Tone=Warning",
+              "bindings": {
+                "fills.0.color": "color-amber-100",
+                "layout.pb": "space-1",
+                "layout.pl": "space-3",
+                "layout.pr": "space-3",
+                "layout.pt": "space-1",
+                "radius": "radius-full"
+              },
+              "clip": false,
+              "fills": [{}],
+              "layout": { "gap": 0, "mode": "horizontal" },
+              "sizingH": "hug",
+              "sizingV": "hug",
+              "x": 20,
+              "y": 113,
+              "children": [
+                {
+                  "id": "badge-tone-warning-text-0",
+                  "type": "text",
+                  "name": "Text",
+                  "bindings": {
+                    "fills.0.color": "color-amber-700",
+                    "fontSize": "font-size-sm",
+                    "fontWeight": "font-weight-medium"
+                  },
+                  "fills": [{}],
+                  "propRefs": { "text": "badge-label" },
+                  "text": "Paused"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "card",
+          "type": "component",
+          "name": "Card",
+          "description": "src/components/Card.jsx: <Card title action>; styles in .card",
+          "bindings": {
+            "effects.0": "shadow-card",
+            "fills.0.color": "surface",
+            "layout.gap": "space-3",
+            "layout.pb": "space-4",
+            "layout.pl": "space-4",
+            "layout.pr": "space-4",
+            "layout.pt": "space-4",
+            "radius": "radius-md"
+          },
+          "clip": false,
+          "codeName": "Card",
+          "effects": [{ "type": "drop-shadow" }],
+          "fills": [{}],
+          "layout": { "mode": "vertical" },
+          "props": {
+            "card-title": {
+              "type": "text",
+              "name": "Title",
+              "codeName": "title",
+              "default": "Website"
+            },
+            "card-body": {
+              "type": "text",
+              "name": "Body",
+              "codeName": "children",
+              "default": "The marketing site, with its blog and docs."
+            }
+          },
+          "sizingH": "fixed",
+          "sizingV": "hug",
+          "w": 312,
+          "x": 40,
+          "y": 502.5,
+          "children": [
+            {
+              "id": "card-title-0",
+              "type": "text",
+              "name": "Title",
+              "fills": [{ "color": "#0F172A" }],
+              "fontWeight": 700,
+              "propRefs": { "text": "card-title" },
+              "text": "Website"
+            },
+            {
+              "id": "card-body-1",
+              "type": "text",
+              "name": "Body",
+              "autoResize": "height",
+              "bindings": { "fills.0.color": "text-secondary" },
+              "fills": [{}],
+              "fontSize": 14,
+              "propRefs": { "text": "card-body" },
+              "sizingH": "fill",
+              "text": "The marketing site, with its blog and docs."
+            },
+            {
+              "id": "card-button-2",
+              "type": "instance",
+              "componentId": "button-variant-primary-state-default",
+              "propValues": { "button-label": "Open" }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

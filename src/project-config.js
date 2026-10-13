@@ -67,6 +67,7 @@ export function validateConfig(config, { files = [] } = {}) {
     if (typeof t.source !== 'string') error(`${at}.source`, 'should be the folder the components are in');
     if (t.manifest !== undefined && typeof t.manifest !== 'string') error(`${at}.manifest`, 'should be the path of the captures’ manifest.json');
     if (t.styles !== undefined && (!Array.isArray(t.styles) || t.styles.some((x) => typeof x !== 'string'))) error(`${at}.styles`, 'should list the CSS files the components’ styles are in');
+    if (t.page !== undefined && typeof t.page !== 'string') error(`${at}.page`, 'should be the URL of the components page (served by the app, loading sigma-design/bridge)');
   });
   list('pages', (t, at) => {
     sigmaFile(`${at}.sigma`, t.sigma, 'design');

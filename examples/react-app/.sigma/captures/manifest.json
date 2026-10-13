@@ -1,0 +1,219 @@
+{
+  "name": "Acme react library",
+  "library": ".sigma/design/acme-react-library.sigma.json",
+  "uses": {
+    "tokens": [
+      ".sigma/tokens/acme-react.sigma.json"
+    ]
+  },
+  "components": [
+    {
+      "name": "Button",
+      "codeName": "Button",
+      "source": "src/components/Button.jsx",
+      "description": "src/components/Button.jsx: <Button variant>; styles in .button (src/styles/components.css)",
+      "props": [
+        {
+          "name": "Label",
+          "type": "text",
+          "codeName": "children",
+          "layer": "Label"
+        }
+      ],
+      "variantCodeNames": {
+        "Variant": "variant",
+        "State": "state"
+      },
+      "match": {
+        "selector": ".button",
+        "variants": {
+          "Variant": {
+            "Secondary": ".button--secondary",
+            "Danger": ".button--danger",
+            "Primary": "*"
+          },
+          "State": {
+            "Disabled": ":disabled",
+            "Default": "*"
+          }
+        },
+        "props": {
+          "Label": "text"
+        }
+      },
+      "captures": [
+        {
+          "variant": {
+            "Variant": "Primary",
+            "State": "Default"
+          },
+          "file": "button-primary-default.json",
+          "element": "#button-primary"
+        },
+        {
+          "variant": {
+            "Variant": "Primary",
+            "State": "Hover"
+          },
+          "file": "button-primary-hover.json",
+          "element": "#button-primary"
+        },
+        {
+          "variant": {
+            "Variant": "Primary",
+            "State": "Disabled"
+          },
+          "file": "button-primary-disabled.json",
+          "element": "#button-primary"
+        },
+        {
+          "variant": {
+            "Variant": "Secondary",
+            "State": "Default"
+          },
+          "file": "button-secondary-default.json",
+          "element": "#button-secondary"
+        },
+        {
+          "variant": {
+            "Variant": "Secondary",
+            "State": "Hover"
+          },
+          "file": "button-secondary-hover.json",
+          "element": "#button-secondary"
+        },
+        {
+          "variant": {
+            "Variant": "Secondary",
+            "State": "Disabled"
+          },
+          "file": "button-secondary-disabled.json",
+          "element": "#button-secondary"
+        },
+        {
+          "variant": {
+            "Variant": "Danger",
+            "State": "Default"
+          },
+          "file": "button-danger-default.json",
+          "element": "#button-danger"
+        },
+        {
+          "variant": {
+            "Variant": "Danger",
+            "State": "Hover"
+          },
+          "file": "button-danger-hover.json",
+          "element": "#button-danger"
+        },
+        {
+          "variant": {
+            "Variant": "Danger",
+            "State": "Disabled"
+          },
+          "file": "button-danger-disabled.json",
+          "element": "#button-danger"
+        }
+      ]
+    },
+    {
+      "name": "Badge",
+      "codeName": "Badge",
+      "source": "src/components/Badge.jsx",
+      "description": "src/components/Badge.jsx: <Badge tone>; styles in .badge",
+      "props": [
+        {
+          "name": "Label",
+          "type": "text",
+          "codeName": "children",
+          "layer": "Text"
+        }
+      ],
+      "variantCodeNames": {
+        "Tone": "tone"
+      },
+      "match": {
+        "selector": ".badge",
+        "variants": {
+          "Tone": {
+            "Success": ".badge--success",
+            "Warning": ".badge--warning",
+            "Neutral": "*"
+          }
+        },
+        "props": {
+          "Label": "text"
+        }
+      },
+      "captures": [
+        {
+          "variant": {
+            "Tone": "Neutral"
+          },
+          "file": "badge-neutral.json",
+          "element": "#badge-neutral"
+        },
+        {
+          "variant": {
+            "Tone": "Success"
+          },
+          "file": "badge-success.json",
+          "element": "#badge-success"
+        },
+        {
+          "variant": {
+            "Tone": "Warning"
+          },
+          "file": "badge-warning.json",
+          "element": "#badge-warning"
+        }
+      ]
+    },
+    {
+      "name": "Card",
+      "codeName": "Card",
+      "source": "src/components/Card.jsx",
+      "description": "src/components/Card.jsx: <Card title action>; styles in .card",
+      "props": [
+        {
+          "name": "Title",
+          "type": "text",
+          "codeName": "title",
+          "layer": "Title"
+        },
+        {
+          "name": "Body",
+          "type": "text",
+          "codeName": "children",
+          "layer": "Body"
+        }
+      ],
+      "instances": [
+        {
+          "layer": "Button",
+          "component": "Button",
+          "variant": {
+            "Variant": "Primary",
+            "State": "Default"
+          },
+          "props": {
+            "Label": "Open"
+          }
+        }
+      ],
+      "match": {
+        "selector": ".card",
+        "props": {
+          "Title": "text:.card__title",
+          "Body": "text:.card__body"
+        }
+      },
+      "captures": [
+        {
+          "file": "card.json",
+          "element": "#card"
+        }
+      ]
+    }
+  ]
+}

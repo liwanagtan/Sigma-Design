@@ -1,0 +1,4 @@
+node_modules/
+dist/
+.sigma/captures/*.json
+!.sigma/captures/manifest.json
