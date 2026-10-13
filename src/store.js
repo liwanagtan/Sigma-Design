@@ -510,6 +510,22 @@ export function loadDocument(doc, views = {}) {
   emit('doc');
 }
 
+// Run fn against another document without opening it (visual change review renders an update or an older
+// version this way): nothing is emitted, saved or put on the undo stack, and the open document is put back as is.
+export function withDocument(doc, fn) {
+  const saved = state.doc;
+  try {
+    state.doc = migrateDocument(doc);
+    reindex();
+    normalizeDocument();
+    return fn();
+  } finally {
+    state.doc = saved;
+    reindex();
+    normalizeDocument();
+  }
+}
+
 export function unloadDocument() {
   clearTimeout(saveTimer);
   pendingEdit = false;

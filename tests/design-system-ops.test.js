@@ -83,3 +83,30 @@ test('documentation page: components with previews, status, docs, properties and
   ok(html.includes('<th>Light</th><th>Dark</th>') && html.includes('#1E1E1E'), 'tokens per mode');
   ok(html.includes('cubic-bezier(0.2, 0, 0, 1)') && html.includes('--surface-default'));
 });
+
+// ---------- visual change review (Phase 19) ----------
+test('visual review: a copy renders what an update would change; the open file is left as it was', async () => {
+  const { withDocument, state, getNode } = await import('../src/store.js');
+  const { renderAll, renderAfter, visualChanges, renderSnapshot, pixelDiff, countInstances } = await import('../src/visual-review.js');
+  const red = createNode('frame', { name: 'Red', x: 0, y: 0, w: 40, h: 20, fills: [makePaint('#FF0000')] });
+  const blue = createNode('frame', { name: 'Blue', x: 100, y: 0, w: 40, h: 20, fills: [makePaint('#0000FF')] });
+  useDoc([red, blue]);
+  const saved = JSON.stringify(state.doc);
+  const before = renderAll();
+  eq(before.size, 2);
+  const after = renderAfter(() => {
+    getNode(red.id).fills = [makePaint('#00FF00')];
+    getNode(blue.id).x = 300; // moving isn't a change
+  });
+  eq(JSON.stringify(state.doc), saved, 'nothing changed in the open file');
+  eq(getNode(red.id), red, 'and its nodes are indexed again');
+  const changes = visualChanges(before, after);
+  eq(changes.map((c) => [c.name, c.change]), [['Red', 'changed']]);
+  eq(visualChanges(before, withDocument(structuredClone(state.doc), () => { state.doc.pages[0].children.pop(); return renderAll(); })).map((c) => [c.name, c.change]), [['Blue', 'removed']]);
+  const d = await pixelDiff(changes[0].before, changes[0].after);
+  ok(d.ratio > 0.9 && d.box && d.box.w === 40, 'every pixel of the red frame changed');
+  const same = await pixelDiff(renderSnapshot(blue), renderSnapshot({ ...blue, x: 999 }));
+  eq([same.ratio, same.box], [0, null]);
+  const doc = { pages: [{ children: [{ type: 'instance', componentId: 'a' }, { type: 'frame', children: [{ type: 'instance', componentId: 'b', children: [{ type: 'instance', componentId: 'a' }] }] }] }] };
+  eq(countInstances(doc, new Set(['a'])), 1, 'instances inside instances are the component’s');
+});
