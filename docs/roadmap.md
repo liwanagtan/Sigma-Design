@@ -4,7 +4,7 @@ Status: **Every phase is done: Phases 1–14, Part D (15–19), Part E (20–30)
 
 **What's next, in order:**
 
-1. **Finalize the project:** Optics is in (Phase 36). What's still open: plugins and automation (Part D, "Later": large, needs an API design first) and what needs a backend (real sharing in Part C; the hosted team service in Part E). The license files are in (see "Open source").
+1. **Finalize the project:** Optics is in (Phase 36), as files of your own. What's still open: plugins and automation (Part D, "Later": large, needs an API design first) and what needs a backend (real sharing in Part C; the hosted team service in Part E). The license files are in (see "Open source").
 2. **Publish to npm:** claim `sigma-design` and publish the package (Phase 32 made it ready).
 3. **Pilot teams:** two or three teams, after npm, to shape the workflow around how they actually work.
 
@@ -949,8 +949,7 @@ the browser.
 # Part G: A working design system
 
 **Optics**: a real design system made in Sigma, to start from and to show what Sigma does. Three working files
-in the **Welcome to Sigma** folder, next to the guide: **Optics Tokens**, **Optics Foundations** and **Optics
-Components**. They're working files, not pictures of one: every component is built from the tokens, has its
+of your own (not samples): **Optics Tokens**, **Optics Foundations** and **Optics Components**. They're working files, not pictures of one: every component is built from the tokens, has its
 variants, states and properties, and passes Sigma's own checks.
 
 ## Phase 36: Optics, a working design system inspired by Polaris
@@ -984,12 +983,13 @@ file (Lucide icons), adding any Optics needs to that set.
   value; the accessibility check finds no errors (contrast AA in both modes, 44px targets, labels); each
   component has docs (purpose, usage, Do and Don't, role and keyboard behavior) and is Ready in Component
   status; and Export documentation page makes a complete docs site from Optics Components.
-- **In Welcome to Sigma:** made with the guide (bump `WELCOME_VERSION`), shown in its folder, and like the other
-  samples never saved over, so anyone can try things and reopen them fresh. A user's own design file can link
-  Optics Tokens and Optics Components to build with them.
+- **Your own files:** made once with Welcome to Sigma, and listed with your other files (Optics Tokens under
+  Sigma Tokens; Optics Foundations and Optics Components under Sigma Design). They're saved like any file, so you
+  can change them and build on them; **Sigma Tokens ▾ → Add Optics design system** adds a fresh set. A design
+  file can link Optics Tokens and Optics Components to build with them.
 - **Tests:** browser tests build the three files and run the checks above on them, so a change to Sigma that
   breaks Optics fails CI.
-- **Done when:** the three files open from Welcome to Sigma, a new design file can link Optics Tokens and Optics
+- **Done when:** the three files are in your files and open, a new design file can link Optics Tokens and Optics
   Components and build a screen from them, and the checks above pass in CI.
 - **What shipped:** `src/optics-tokens.js` builds **Optics Tokens** (242 tokens: Primitives on numbered steps,
   Semantic roles in Light and Dark, 13 text styles; every token named `--optics-…` in CSS) and `src/optics.js`
@@ -997,12 +997,13 @@ file (Lucide icons), adding any Optics needs to that set.
   sheet of specimens made from the tokens, with Light and Dark panels) and **Optics Components** (15 components:
   Button and Icon button in five states, Text field, Select, Checkbox, Radio button, Badge, Banner, Card, Avatar,
   Tab and Tabs, Modal, Tooltip and Spinner, with properties, nested instances and docs, all Ready; a Usage page
-  with a Do and a Don't for each). Welcome to Sigma (version 6) makes them with the guide, in its folder after the
-  guide's files; Optics Components is published as v1 so other files can link it, and the guide's first page
-  introduces Optics. Icons come from Sigma Icons (no new ones were needed). `tests/optics.test.js` builds the
+  with a Do and a Don't for each). Welcome to Sigma (version 7) makes them once per browser as your own files
+  (saved like any other: first made as samples in its folder, then moved out so they're yours to change), and
+  Sigma Tokens ▾ → Add Optics design system adds a fresh set; Optics Components is published as v1 so other files
+  can link it, and the guide's first page says where Optics is. Icons come from Sigma Icons (no new ones were needed). `tests/optics.test.js` builds the
   files and checks them: valid in the file format, no one-off values, 99% or more of values from tokens, every
   component Ready, and no accessibility errors in either mode. Also: the arranger stacks rows as well as columns
   (Do and Don't side by side), and publishing ignores an instance's record of its main's size, so a freshly opened
-  Optics Components doesn't show unpublished changes. Verified in the editor: the six files in the folder, a new
+  Optics Components doesn't show unpublished changes. Verified in the editor: the three files under Sigma Tokens and Sigma Design (saved when edited, no sample banner), a new
   file linking Optics Tokens and Optics Components builds a Banner, a Card and a Button that resolve every token
   and icon, and Export documentation page makes a page with all 15 components.
