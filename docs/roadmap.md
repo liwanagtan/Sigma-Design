@@ -410,6 +410,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 16: Accessibility checks and annotations (Part D; done after Phase 19)
 - [x] Phase 36: Optics, a working design system inspired by Polaris (Part G)
 - [x] Phase 37: Optics Components: every Polaris component, a page each (Part G)
+- [ ] Phase 38: Page groups (Part H)
 
 ## Follow-ups
 
@@ -1061,3 +1062,33 @@ Overview page lists them all by category.
   and that `OPTICS_ICON_NAMES` lists every icon the components use (39). `examples/optics/` was rebuilt (0 errors, 0 warnings);
   files made by an earlier Sigma keep their 15 components, and Sigma Tokens ▾ → Add Optics design system adds the
   new set. Verified in the editor: the Overview, Toast, Tooltip, App frame and Index table pages.
+
+# Part H: Beyond Figma
+
+Features Figma doesn't have, that make Sigma files easier to work in.
+
+## Phase 38: Page groups
+
+A design file's pages can be grouped, so a file with many pages stays easy to find your way around. Optics
+Components (87 pages) is the first to use it: its components grouped by category.
+
+- **Model:** a page can belong to a group (`page.group`, the group's name). The pages stay one ordered list, so
+  everything that walks `doc.pages` keeps working, and a group's pages stay together: moving a page into a group
+  puts it at the group's end. Files without groups are unchanged; the project format and validator carry the field.
+- **Pages list:** groups show as headers with their pages under them, collapsible (a chevron and the page
+  count); the group of the open page stays open. Ungrouped pages sit between groups, in order. Collapsed groups
+  are remembered per person in the browser, not saved in the file.
+- **Making and changing groups:** **+** → New page or New group; right-click a page → Move to group ▸ (the groups,
+  New group…, Remove from group); right-click a group → Rename, New page in group, Ungroup (keeps the pages),
+  Delete group and its pages (asks first). Pages can be dragged to reorder them and into or out of groups, and
+  groups can be dragged as a whole. Undo works for all of it.
+- **Finding pages:** with more than about a dozen pages, a filter field above the list (matches page and group
+  names). Wherever pages are listed by name (the use report's page picker, handoff, comments, the documentation
+  export), they read “Group / Page”.
+- **Optics:** Optics Components groups its pages by category (the Overview first, ungrouped); `examples/optics/`
+  is rebuilt.
+- **Guide and docs:** Welcome to Sigma's Canvas basics page shows page groups (the guide's version goes up); the
+  README describes them.
+- **Done when:** groups can be made, renamed, collapsed, dragged, ungrouped and deleted with undo; they survive
+  saving, the project format, branches and merge, and Duplicate; Optics Components opens grouped; tests cover the
+  model, the list and the project format.
