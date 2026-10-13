@@ -17,7 +17,7 @@ const SPACING = ['gap', 'pt', 'pr', 'pb', 'pl'];
 const TYPE_BINDINGS = ['typography', 'fontSize', 'fontFamily', 'fontWeight', 'lineHeight'];
 
 // Every value a layer has that could come from a token: [{ kind, bound: tokenId | null }].
-function slots(n) {
+export function slots(n) {
   const b = n.bindings || {};
   const ref = (path) => b[path] || (n.propRefs?.[path] ? 'property' : null);
   const out = [];

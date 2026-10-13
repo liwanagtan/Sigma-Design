@@ -7,6 +7,7 @@ import { propsOf, mainComponentOf, parseVariantName, variantDefs, isInsideInstan
 import { getSizing, isAutoLayout } from './layout.js';
 import { cornerRadii, strokeSides } from './render.js';
 import { findIcon } from './icon-library.js';
+import { docsHTML } from './component-docs.js';
 import {
   cssVar, cssVarName, tokenCode, PLATFORMS, componentCode, propCode, variantPropCode, variantValueCode, defaultComponentCode, defaultPropCode,
 } from './code-names.js';
@@ -196,6 +197,12 @@ export function inspectHTML(nodes) {
   if (n.type === 'instance' && !isInsideInstance(n)) {
     const usage = instanceUsage(n);
     if (usage) html += block('Code', `<pre class="inspect-code">${esc(usage)}</pre>`, usage);
+    const main = mainComponentOf(n);
+    const docs = main ? docsHTML(main) : '';
+    if (docs) html += block('Component docs', docs);
+  } else if (comp && !isInsideInstance(n)) {
+    const docs = docsHTML(comp);
+    if (docs) html += block('Component docs', docs);
   }
   const css = layerCSS(n);
   const cssText = css.map(([k, v]) => `${k}: ${v};`).join('\n');

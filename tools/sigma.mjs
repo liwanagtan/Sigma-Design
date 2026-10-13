@@ -42,6 +42,7 @@ import { componentDiff, formatComponentDiff } from '../src/component-diff.js';
 import { loadAdapter, adapterContext, Snapshot, changedLines } from './lib/adapters.mjs';
 import { parseRules, findRule, editRules } from '../src/css-rules.js';
 import { useReport, formatUseReport } from '../src/use-report.js';
+import { changelogFromChangesets, changelogMarkdown } from '../src/changelog.js';
 import { defaultTokenCode } from '../src/code-names.js';
 import { parseVariantName } from '../src/components.js';
 import { validateProject } from '../src/validate.js';
@@ -1132,6 +1133,17 @@ function report(dir) {
   out(json ? r : formatUseReport(r));
 }
 
+// ---------- changelog (Part D, Phase 18) ----------
+// "What's new" for a library (or any Sigma file), from the proposals that changed it, as Markdown.
+function changelog(dir) {
+  const root = resolve(dir || '.');
+  const all = Object.entries(readProject(root).files).map(([p, t]) => [p, JSON.parse(t)]);
+  const targets = flags.file ? all.filter(([p]) => p === flags.file) : all.filter(([, f]) => f.kind === 'design' && (f.pages || []).some((pg) => (pg.children || []).some((n) => n.type === 'component' || n.type === 'componentSet')));
+  if (!targets.length) fail(flags.file ? `${flags.file} isn’t a Sigma file of this project` : 'no component library in this project (--file PATH for another file)');
+  const list = changesets(root);
+  out(targets.map(([p, f]) => changelogMarkdown(f.name, changelogFromChangesets(list, p))).join('\n'));
+}
+
 // ---------- comments (Phase 27) ----------
 const rid = () => Math.random().toString(36).slice(2, 10);
 // A layer by id, by name path ("Card / Title") or by name: { node, page, path }.
@@ -1280,6 +1292,7 @@ else if (cmd === 'components' && sub === 'diff') componentsDiff(dir);
 else if (cmd === 'components' && sub === 'write') componentsWrite(dir);
 else if (cmd === 'adapter' && sub === 'test') await adapterTest(dir);
 else if (cmd === 'report') report(sub);
+else if (cmd === 'changelog') changelog(sub);
 else if (cmd === 'comment' && sub === 'list') commentList(dir);
 else if (cmd === 'comment' && sub === 'add') commentAdd(dir);
 else if (cmd === 'comment' && sub === 'resolve') commentResolve(dir, pos[3]);
@@ -1309,6 +1322,7 @@ else {
   node tools/sigma.mjs components write [project] [--base REV] [--entry N] [--dry-run]
   node tools/sigma.mjs adapter test [project] [--kind tokens|icons]
   node tools/sigma.mjs report [project] [--days N] [--handoff] [--json]
+  node tools/sigma.mjs changelog [project] [--file PATH]
   node tools/sigma.mjs comment list [project] [--all]
   node tools/sigma.mjs comment add [project] --file PATH --layer ID|NAME --text TEXT [--author NAME] [--reply-to ID]
   node tools/sigma.mjs comment resolve <id> [project] [--author NAME]

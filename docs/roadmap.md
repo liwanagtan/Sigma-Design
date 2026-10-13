@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Phases 1–14, Part E (Phases 20–30) and Part F (Phases 31–35) are done.** Part D's Phase 17 is done; next are Phases 18 and 19 (running the system, visual change review), then Phase 16 (accessibility checks). Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **Phases 1–14, Part E (Phases 20–30) and Part F (Phases 31–35) are done.** Part D's Phases 17 and 18 are done; next is Phase 19 (visual change review), then Phase 16 (accessibility checks). Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -397,7 +397,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 34: Live sync while Sigma runs
 - [x] Phase 35: Sigma renders the project's components
 - [x] Phase 17: Design system use report (Part D)
-- [ ] Phase 18: Running the system (Part D)
+- [x] Phase 18: Running the system (Part D)
 - [ ] Phase 19: Visual change review (Part D)
 - [ ] Phase 16: Accessibility checks and annotations (Part D; planned, after Phase 19)
 
@@ -489,6 +489,22 @@ From Figma's "Operations" guides on designsystems.com. These matter once other d
 - **Component docs:** beyond one description: the purpose first (what it's for and what it isn't), usage guidance, do and don't examples (linked frames), and a link to the component's code (with Phase 15's code names). Shown in Assets, the playground and the Inspect panel.
 - **Changelog:** one "What's new" history per library, from publish notes and the automatic list of changes, exportable as Markdown to start a newsletter or release notes.
 - **Documentation site:** generate a page from a library's tokens and components to share. Sharing it beyond this browser needs the backend from "Real sharing".
+- **What shipped:** a status (Draft, In review, Ready; Deprecated wins) and docs on a component or set
+  (`src/component-docs.js`): purpose, what it's not for, usage, Do and Don't examples (frames in the file) and a
+  code link, edited from **Docs…** in the component's menu, where the status is set too; shown in Assets' tooltip,
+  the Design panel, the playground and the Inspect panel. **Component status…** (main menu) is the matrix: every
+  component with its status and readiness checklist; Sigma checks the name (not a default one), purpose, variants
+  (two or more), tokens (90% of its values, the set's own background left out), docs (usage and a Do or Don't) and
+  code (a code name or link), and a person ticks breakpoints, accessibility, and variants for a component with none.
+  Each row says what's next and opens the component. **Changelog…** (`src/changelog.js`): in a project, the
+  proposals that changed the file with their pull requests and tickets; in the browser, its publishes, each with
+  what changed since the one before; copy or download as Markdown, also `sigma-design changelog [--file PATH]`.
+  **Export documentation page** (`src/doc-site.js`): one HTML file with each component's variant previews (the same
+  SVG as Export), status, docs with Do and Don't previews, variant and component properties with their code names,
+  and the tokens it uses per mode with their CSS names. Live sync leaves status and docs out of agent tasks (they
+  don't change code). Verified on `examples/css-app`: Button's docs saved to the library file, the matrix shows
+  Button at 80% tokens, Input 44% and Card 62%, the changelog lists PR #1 and the proposed "Button says Next", and
+  the documentation page shows the ten Button variants and both token collections.
 
 ## Phase 19: Visual change review
 

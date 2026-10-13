@@ -76,8 +76,11 @@ export function rootCSS(node, codeOf) {
 
 // What a node is, apart from what rootCSS covers: for spotting visual changes.
 const ROOT_COVERED = ['fills', 'strokes', 'strokeWidth', 'strokeAlign', 'strokeSides', 'radius', 'radii', 'opacity', 'effects', 'bindings', 'layout'];
+// About the component, not how it looks: never a change to its code.
+const META = ['docs', 'status', 'checks', 'description', 'codeName', 'codeNames', 'deprecated'];
 function shape(node, { root = false } = {}) {
   const { id, children, name, propRefs, ...rest } = node;
+  for (const k of META) delete rest[k];
   if (root) {
     for (const k of ROOT_COVERED) delete rest[k];
     delete rest.x; // where it sits on the canvas isn't part of the code

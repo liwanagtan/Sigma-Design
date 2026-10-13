@@ -34,6 +34,7 @@ import {
 } from './variables.js';
 import { openVariablesEditor } from './variables-ui.js';
 import { showContextMenu } from './menu.js';
+import { openComponentMatrix } from './component-docs.js';
 import { stopEditing, TEXT_CASES } from './text.js';
 import { toWorld, nodeWorldSVG, strokeSides } from './render.js';
 import { GRID_TYPES, newGrid, retypeGrid } from './grids.js';
@@ -129,6 +130,9 @@ function initFileHeader() {
       { label: 'Component libraries…', action: () => openLibrariesDialog() },
       { label: 'Icon libraries…', action: () => openIconLibrariesDialog() },
       { label: 'Publish components…', action: () => openPublishComponentsDialog() },
+      { label: 'Component status…', action: () => openComponentMatrix() },
+      { label: 'Changelog…', action: () => import('./changelog.js').then((m) => m.openChangelog()) },
+      { label: 'Export documentation page', action: () => import('./doc-site.js').then((m) => m.exportDocumentationPage()) },
       '-',
       { label: 'Keyboard shortcuts', shortcut: '?', action: showShortcuts },
     ]);
@@ -1319,8 +1323,8 @@ export function renderAssets() {
   // Within a page, "/" in component names groups them, e.g. "Buttons/Primary".
   const tile = ({ node, insert }) => {
     const leaf = node.name.slice(node.name.lastIndexOf('/') + 1);
-    const desc = node.description || insert.description;
-    return `<div class="asset${isDeprecated(insert) ? ' deprecated' : ''}" draggable="true" data-component="${insert.id}" title="${isDeprecated(insert) ? 'Deprecated · ' : ''}"${esc(node.name)}${desc ? `\n${esc(desc)}` : ''}\nClick to insert, or drag onto the canvas">` +
+    const desc = node.docs?.purpose || node.description || insert.docs?.purpose || insert.description;
+    return `<div class="asset${isDeprecated(insert) ? ' deprecated' : ''}" draggable="true" data-component="${insert.id}" title="${isDeprecated(insert) ? 'Deprecated · ' : ''}${esc(node.name)}${desc ? `\n${esc(desc)}` : ''}\nClick to insert, or drag onto the canvas">` +
       `<div class="asset-thumb">${componentThumb(insert)}<button class="asset-info" data-asset-info="${insert.id}" title="Component details: try its properties, then insert">${ASSET_INFO_ICON}</button></div>` +
       `<div class="asset-name">${esc(leaf)}${node.type === 'componentSet' ? ` <span class="muted">· ${node.children.length}</span>` : ''}</div></div>`;
   };
