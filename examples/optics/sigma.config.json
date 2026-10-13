@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "notes": "Optics, a working design system made in Sigma and inspired by Shopify’s Polaris. There is no code here: tokens, icons and components have no sources. Rebuild with node tools/build-optics.mjs.",
+  "stack": {},
+  "tokens": [],
+  "icons": [],
+  "components": []
+}

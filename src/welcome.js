@@ -611,7 +611,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
 }
 
 // The first time the file is opened (when its text is measured and its layouts are done), stack each page's
-// example columns (or rows) by their real heights. Returns whether anything moved.
+// example columns by their real heights. Returns whether anything moved.
 const COLUMN_GAP = 64;
 export function arrangeWelcome(doc) {
   let moved = false;
@@ -629,19 +629,6 @@ export function arrangeWelcome(doc) {
       }
     }
     delete pg.welcomeColumns;
-    moved = true;
-  }
-  // Rows (Optics' Do and Don't pairs): each row starts below the tallest layer of the row above.
-  for (const pg of doc.pages) {
-    if (!pg.welcomeRows) continue;
-    const byId = new Map(pg.children.map((n) => [n.id, n]));
-    let y = null;
-    for (const row of pg.welcomeRows) {
-      const nodes = row.map((id) => byId.get(id)).filter(Boolean);
-      if (y !== null) for (const n of nodes) n.y = y;
-      y = Math.max(...nodes.map((n) => n.y + n.h)) + COLUMN_GAP;
-    }
-    delete pg.welcomeRows;
     moved = true;
   }
   return moved;

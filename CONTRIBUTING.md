@@ -39,6 +39,9 @@ in `tools/test/*.test.mjs`.
 - **The command line** (`tools/sigma.mjs`) and the editor share pure modules (`src/use-report.js`,
   `src/changesets.js`, `src/a11y-kinds.js`…). Keep logic the command line needs out of modules that touch the
   DOM.
+- **Optics** (`src/optics-tokens.js`, `src/optics.js`) also ships as `examples/optics/`: after changing it, run
+  `node tools/build-optics.mjs` (and `node tools/build-sample-project.mjs` after changing the Welcome to Sigma
+  samples) and commit the files it writes.
 - **Skills** (`skills/sigma-sync/`) are instructions for coding agents. If you change a command they use,
   update them too.
 - **The roadmap** (`docs/roadmap.md`) says what's planned. Tick a phase off and write what shipped when you
