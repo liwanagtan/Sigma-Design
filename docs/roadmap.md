@@ -409,6 +409,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 19: Visual change review (Part D)
 - [x] Phase 16: Accessibility checks and annotations (Part D; done after Phase 19)
 - [x] Phase 36: Optics, a working design system inspired by Polaris (Part G)
+- [ ] Phase 37: Optics Components: every Polaris component, a page each (Part G)
 
 ## Follow-ups
 
@@ -1014,3 +1015,31 @@ made from **Sigma Icons**, the main sample icon file (the whole Lucide set, outl
   Optics Components doesn't show unpublished changes. Verified in the editor: the four files under Sigma Tokens, Sigma Icons and Sigma Design (saved when edited, no sample banner; every icon in both design files resolves from Optics Icons), a new
   file linking Optics Tokens and Optics Components builds a Banner, a Card and a Button that resolve every token
   and icon, and Export documentation page makes a page with all 15 components.
+
+## Phase 37: Optics Components: every Polaris component, a page each
+
+Optics Components grows to every Polaris component: the 59 web components Polaris has today (shopify.dev, App
+Home) and the components of the older Polaris React library that aren't web components. Each component gets a
+page with the component (every variant and state), its name and purpose, and its usage (a Do and a Don't); an
+Overview page lists them all by category.
+
+- **Folded in, as Polaris does:** Icon button into Button (icon only), Radio button into Choice list, Card and
+  Legacy card into Section, Tag into Chip (removable), Action list into Menu, Progress bar into Progress, Block,
+  Inline and Legacy stack into Stack, Inline grid into Grid, the five Skeletons into one Skeleton.
+- **Left out:** App provider and Scrollable (code only: nothing to draw).
+- **The 95 components:**
+  - Actions: Button, Button group, Clickable, Clickable chip, Link, Menu, Account connection, Page actions
+  - Feedback and status: Badge, Banner, Empty state, Progress, Spinner, Skeleton, Exception list, Inline error
+  - Forms: Checkbox, Choice list, Color field, Color picker, Date field, Date picker, Drop zone, Email field,
+    Money field, Number field, Password field, Search field, Select, Switch, Text area, Text field, URL field,
+    Autocomplete, Combobox, Filters, Index filters, Range slider, Form layout
+  - Layout and structure: Box, Divider, Grid, Ordered list, Unordered list, Page, Query container, Section,
+    Stack, Table, Bleed, Callout card, Layout, Media card, Description list, Footer help
+  - Media and visuals: Avatar, Icon, Image, Thumbnail, Video thumbnail, Keyboard key
+  - Overlays: Modal, Popover, Sheet, Tooltip
+  - Typography and content: Chip, Heading, Number, Paragraph, Text
+  - Lists and tables: Listbox, Option list, Resource item, Resource list, Data table, Index table
+  - Navigation: Tabs, Pagination, Navigation, Top bar, Fullscreen bar
+  - Utilities: Collapsible, Contextual save bar, Frame, Loading, Toast
+- **Same bar as Phase 36:** built from Optics Tokens and Optics Icons, documented and Ready, no one-off values, no
+  accessibility errors, nothing overlapping; `examples/optics/` rebuilt.
