@@ -1,0 +1,53 @@
+# Checks for every pull request and every push to main.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  node:
+    name: Node tests (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm run test:node
+
+  browser:
+    name: In-browser tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-save playwright@1.64.0
+      - run: npx playwright install --with-deps chromium
+      - run: node tools/test/run-browser-tests.mjs
+
+  sigma:
+    name: Sigma files match the code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Every example project's Sigma files are valid, and their tokens and icons match the code.
+      - run: |
+          for project in examples/*/; do
+            if [ -f "$project/sigma.config.json" ]; then
+              echo "== $project"
+              node bin/sigma-design.mjs check "$project"
+            fi
+          done
