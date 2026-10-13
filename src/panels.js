@@ -122,6 +122,9 @@ function initFileHeader() {
       ...projectMenuItems(),
       { label: 'Save to version history…', shortcut: '⌥⌘S', action: () => openSaveVersionDialog() },
       { label: 'Show version history', action: () => openHistory() },
+      ...(state.doc?.branch
+        ? [{ label: `Merge into “${state.doc.branch.ofName}”…`, action: () => import('./branches.js').then((m) => m.openMergeBranch()) }]
+        : state.doc && !state.doc.project && !state.doc.kind ? [{ label: 'Create branch…', action: () => import('./branches.js').then((m) => m.openCreateBranch()) }] : []),
       '-',
       { label: 'Design tokens…', action: () => openDesignTokensDialog() },
       { label: 'Browse design tokens…', action: () => openVariablesEditor() },
