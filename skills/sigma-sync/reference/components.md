@@ -82,7 +82,7 @@ commit it, and the next run follows it:
 ## 4. Build
 
 ```bash
-node <sigma>/tools/sigma.mjs library build <project> --from <project>/.sigma/captures [--dry-run]
+npx sigma-design library build <project> --from <project>/.sigma/captures [--dry-run]
 ```
 
 It creates the library file, or rebuilds the components named in the manifest in place (others are kept;
@@ -94,7 +94,7 @@ cause (an icon not imported, a token missing) or say why it's fine.
 
 ## 5. Compare
 
-With the project open in Sigma's server (`python3 <sigma>/serve.py <port> --project <project>`), open
+With Sigma running in the project (`npm run sigma`, or `npx sigma-design dev --port <port>`), open
 `http://localhost:<port>/tools/capture/compare.html`. It lays out every component in Sigma and compares
 each layer's size and position with its capture:
 

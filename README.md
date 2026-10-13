@@ -2,19 +2,43 @@
 
 A Figma-style design canvas that runs in the browser. It has no dependencies and no build step: plain ES modules render the document to SVG.
 
-## Run
+## Install in a project
 
-ES modules need a web server, so opening `index.html` directly won't work. Use the included server, which turns off browser caching so code changes always show up on reload:
+Sigma installs into an existing project, like a dev tool, and works on that project's real design system: its
+token files, icons and components. Node 18 or later; no other dependencies.
 
 ```bash
-python3 serve.py
+npx sigma-design init      # once: finds the project's tokens and icons, writes sigma.config.json and .sigma/
+npm run sigma              # opens Sigma on the project (the script init adds; or npx sigma-design dev)
 ```
 
-Automated tests run in the browser: with the server running, open http://localhost:5173/tests/.
+`init` reads CSS variables (with their modes: `[data-theme="dark"]`, `prefers-color-scheme`…), DTCG
+`tokens.json` files and folders of SVG icons by itself. For other stacks (Tailwind, a JS theme, SCSS, icon
+components) it says what it found and hands over to your coding agent, which finishes setup with the
+`sigma-sync` skill (`node_modules/sigma-design/skills/sigma-sync/SKILL.md`). Running it again changes
+nothing that's there. The sync tools are commands of the same package: `npx sigma-design check`,
+`tokens import | diff | write`, `icons …`, `changeset …` and so on (`npx sigma-design help`).
 
-Any static server works too (`python3 -m http.server 5173`), but after updating the code you may need a hard reload (⌘⇧R).
+## Standalone
 
-Then open http://localhost:5173.
+Sigma is also a design tool on its own, with files saved in the browser:
+
+```bash
+npx sigma-design standalone
+```
+
+## Developing Sigma
+
+ES modules need a web server, so opening `index.html` directly won't work. Sigma's server (`tools/server.mjs`)
+turns off browser caching, so code changes show up on reload:
+
+```bash
+node bin/sigma-design.mjs standalone --port 5173       # Sigma on its own
+node bin/sigma-design.mjs dev examples/css-app         # Sigma in the example project
+```
+
+Tests: with the server running, open `/tests/` (the in-browser tests); `npm run test:node` runs the server's
+and `init`'s tests in Node.
 
 ## Features
 
@@ -202,10 +226,10 @@ Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.
 
 - **Files link by path, and git does the versioning.** A Sigma Design file lists the Sigma Tokens, Sigma Icons and component library files it uses by their paths; whatever is checked out is what it uses.
 - **Derived data is left out:** instances' layers, the values of token-bound properties, positions and sizes set by auto layout and text, and copies of linked files are rebuilt when a file opens. So is anything at its default value. A token change touches one line of one file.
-- **Open a project:** `python3 serve.py 5173 --project ../my-app` (or `SIGMA_PROJECT=../my-app`). Sigma then works on that project: the sidebar shows its name, **Sigma Design**, **Sigma Tokens**, **Sigma Icons** and **Recents** list the project's files (its `.sigma/` folder), new files go into the project, and a **Proposals** section lists changes proposed from Sigma. Files kept only in this browser are hidden there, with a one-time **Move into project…** (links between moved files are kept); the Archive is hidden too (git is the history of project files). Without a project, Sigma is a standalone design tool with files in the browser, as before. Sigma doesn't open projects itself: it runs inside one (soon installed as a package, `npm run sigma`).
+- **In a project** (`npm run sigma`, or `npx sigma-design dev`), Sigma works on that project: the sidebar shows its name, **Sigma Design**, **Sigma Tokens**, **Sigma Icons** and **Recents** list the project's files (its `.sigma/` folder), new files go into the project, and a **Proposals** section lists changes proposed from Sigma. Files kept only in this browser are hidden there, with a one-time **Move into project…** (links between moved files are kept); the Archive is hidden too (git is the history of project files). Without a project, Sigma is a standalone design tool with files in the browser, as before. Sigma doesn't open projects itself: it runs inside the one it was started in. When its server stops, the home screen says so and how to start it again.
 - **Save to project (⌘S):** Sigma saves your edits in the browser as you work, as always; ⌘S (or **Save to project** in the file's menu, or the status chip by the file name) writes the file to the project, checked by the validator. The chip says **In project** or **Save to project** (changes not saved yet). In a project file, Publish is hidden: saving is publishing.
 - **Changes on disk:** Sigma checks the project every 2 seconds. When an agent or git changes the open file, it reloads (or asks, if it has changes not saved to the project); when a file it uses changes (new tokens or icons), it updates its copies and keeps your edits. Writes never overwrite a file that changed on disk since Sigma read it; Sigma asks instead.
-- **Safety:** the server listens on 127.0.0.1, answers only requests addressed to localhost, writes only `.sigma/` files and `sigma.config.json`, and only for requests from Sigma (they carry a header other websites can't send). Writes are logged.
+- **Safety:** the server (`tools/server.mjs`) listens on 127.0.0.1, answers only requests addressed to localhost, reads and writes only `.sigma/` files and `sigma.config.json` (never through a link leading outside the project), and writes only for requests from Sigma (they carry a header other websites can't send). Writes are logged.
 - **Propose change** (a file's menu, or the Proposals section): Sigma lists the edits since the last commit (it asks the server for the committed versions) as tokens, icons, components, pages and file settings, leaving out ones already proposed. Pick those that belong together, add a title and a note, and Sigma saves a changeset in `.sigma/changesets/` with before and after pictures of each changed component, page and icon. The rest can go in another proposal. The Proposals section lists them with their status. `node tools/sigma.mjs changeset list | show | apply | status` work with them; `apply --to <folder>` writes a pull request's files: the base with only that changeset's changes.
 - **Proposals become pull requests** through the sync skill (`skills/sigma-sync/reference/workflow.md`): a ticket (Notion or GitHub Issues), a branch named by `workflow.branch` in a worktree, `changeset prepare` (the changeset applied to the Sigma files, the code written for tokens and icons, the changeset and pictures copied in, checked), the project's own checks, then a draft pull request in the repo's template with `changeset pr-body` (what changed, before and after pictures). `changeset sync` reads pull requests with `gh` and sets each proposal's status (In review, Changes requested, Merged, Closed), which the Proposals section shows.
 - **Check files** with `node tools/validate.js <project folder>` (Node 18+, no dependencies): it reports each problem with where it is and what to do, and exits with 1 when there are errors.
@@ -246,6 +270,10 @@ Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.
 | `src/project-config.js` | `sigma.config.json`: what the sync skill decided about a project |
 | `src/token-sync.js` | Tokens between code and Sigma: CSS variables in and out, merging, diffs |
 | `src/icon-sync.js` | Icons between code and Sigma: SVG folders in and out, merging, diffs, writing in the project's style |
+| `bin/sigma-design.mjs` | The `sigma-design` command (the npm package's): `init`, `dev`, `standalone`, and the sync tools |
+| `tools/server.mjs` | Sigma's local server: the editor and, in a project, the project API (Node, no dependencies) |
+| `tools/init.mjs` | `sigma-design init`: finds a project's tokens and icons and sets Sigma up |
+| `tools/test/` | Node tests for the server and `init` (`npm run test:node`) |
 | `tools/sigma.mjs` | The command line the sync skill uses (validate, check, tokens and icons import / diff / write, changesets, library and pages build, components diff / write, comments) |
 | `src/capture-to-sigma.js` | Captured components → Sigma components (auto layout, token bindings, icons, variants), captured pages → frames of library instances, and comparing them with the capture |
 | `src/capture-compare.js` | Lays a built library and pages out and compares them with their captures (`tools/capture/compare.html`) |

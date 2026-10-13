@@ -21,9 +21,9 @@ project adds itself.
 Sigma reads and writes them itself:
 
 ```bash
-node <sigma>/tools/sigma.mjs icons import <project>     # files → Sigma (groups from folders)
-node <sigma>/tools/sigma.mjs icons diff <project>       # what changed in Sigma since HEAD
-node <sigma>/tools/sigma.mjs icons write <project>      # Sigma → files
+npx sigma-design icons import <project>     # files → Sigma (groups from folders)
+npx sigma-design icons diff <project>       # what changed in Sigma since HEAD
+npx sigma-design icons write <project>      # Sigma → files
 ```
 
 - Import keeps ids and keywords, so importing twice changes nothing. Colors become `currentColor`; only
@@ -40,7 +40,7 @@ node <sigma>/tools/sigma.mjs icons write <project>      # Sigma → files
    root's `fill`/`stroke` say whether it's outline (`fill="none" stroke="currentColor"`) or filled. Then:
 
    ```bash
-   node <sigma>/tools/sigma.mjs icons import <project> --from /tmp/icons
+   npx sigma-design icons import <project> --from /tmp/icons
    ```
 
 2. **Write back:** `icons write <project>` lists each added or changed icon with its SVG. Write each as a

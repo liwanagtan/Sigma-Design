@@ -1,4 +1,4 @@
-// A tiny in-browser test runner. Open /tests/ while serve.py is running.
+// A tiny in-browser test runner. Open /tests/ while Sigma's server is running (node bin/sigma-design.mjs standalone).
 const tests = [];
 
 export function test(name, fn) {

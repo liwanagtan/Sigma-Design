@@ -3,32 +3,39 @@
   "configurations": [
     {
       "name": "sigma",
-      "runtimeExecutable": "python3",
+      "runtimeExecutable": "node",
       "runtimeArgs": [
-        "serve.py",
-        "5174"
+        "bin/sigma-design.mjs",
+        "standalone",
+        "--port",
+        "5174",
+        "--no-open"
       ],
       "port": 5174
     },
     {
       "name": "sigma-sample-project",
-      "runtimeExecutable": "python3",
+      "runtimeExecutable": "node",
       "runtimeArgs": [
-        "serve.py",
+        "bin/sigma-design.mjs",
+        "dev",
+        "examples/sample-project",
+        "--port",
         "5175",
-        "--project",
-        "examples/sample-project"
+        "--no-open"
       ],
       "port": 5175
     },
     {
       "name": "sigma-css-app",
-      "runtimeExecutable": "python3",
+      "runtimeExecutable": "node",
       "runtimeArgs": [
-        "serve.py",
+        "bin/sigma-design.mjs",
+        "dev",
+        "examples/css-app",
+        "--port",
         "5176",
-        "--project",
-        "examples/css-app"
+        "--no-open"
       ],
       "port": 5176
     }
