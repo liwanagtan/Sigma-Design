@@ -22,7 +22,9 @@
     "!tools/build-*",
     "skills/",
     "docs/schema/",
-    "README.md"
+    "README.md",
+    "LICENSE",
+    "NOTICE"
   ],
   "scripts": {
     "start": "node bin/sigma-design.mjs standalone",
@@ -39,5 +41,5 @@
     "ai",
     "agents"
   ],
-  "license": "UNLICENSED"
+  "license": "SEE LICENSE IN LICENSE"
 }
