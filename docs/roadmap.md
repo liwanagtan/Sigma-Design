@@ -724,18 +724,18 @@ Unchanged from Phase 15 above: code names per platform for tokens, components an
 
 - **What's open:** the editor, the file schema, the skills and the validator.
 - **License:** a permissive license (MIT or Apache 2.0) for the schema, skills and validator, to make adoption easy. For the editor and any server, consider AGPL if closed hosted forks are a concern; otherwise the same permissive license. Decide before the first public release.
-- **Before going public:** ~~a CONTRIBUTING guide~~ (done: `CONTRIBUTING.md`), ~~the schema docs from Phase 20~~ (done: `docs/schema/README.md`), and a check that the name Sigma and the positioning don't lean on Figma's trademarks.
+- **Before going public:** ~~a CONTRIBUTING guide~~ (done: `CONTRIBUTING.md`), ~~the schema docs from Phase 20~~ (done: `docs/schema/README.md`), and ~~a check that the name Sigma and the positioning don't lean on Figma's trademarks~~ (done as a project check, not legal advice: the README's opening line called Sigma "a Figma-style design canvas" and the npm keywords had `figma-alternative`; both now describe Sigma on its own terms. What's left are factual comparisons that help people coming from Figma ("Sigma's name for Figma's variables", "works the way it does in Figma") and code comments. No Figma logos, icons or assets are used. Have a lawyer confirm before the first public release, with the license).
 
 ## Risks and open questions
 
-- **Agent consistency:** the saved mappings and the validator are the main guards. If runs still drift, move those steps into code (the CLI in "Later").
-- **Rendering drift:** Sigma draws SVG; apps render CSS. Phase 28's comparison step and render parity address it.
+- ~~**Agent consistency:**~~ Addressed: the steps agents repeat are code now (`npx sigma-design` commands, adapters that run without an agent, the MCP server), and CI checks the result (`check`, render parity).
+- ~~**Rendering drift:**~~ Addressed: Check against code (Phase 35) and render parity in CI compare Sigma's layout with the code's render.
 - **Scope:** Phases 28–30 are each larger than any phase so far. Ship Phases 20–23 on a real project before starting them.
 - **Pilot teams:** find two or three before Phase 26, and shape the workflow around how they actually work.
 - ~~**Derived data in files (Phase 20):**~~ Decided (16 and 17 above): files store a lot that Sigma can rebuild: instances' children, the resolved values of token-bound properties, and copies of the libraries a file links (tokens, components, icons). Written to a repo as-is, one token change rewrites thousands of lines across many files. Diff-friendly saving should leave derived data out and rebuild it on load.
 - ~~**Publish vs git (decide before Phase 21):**~~ Decided (16 above): with the repo as the source of truth, a design file could point at `.sigma/tokens/core.sigma.json` by path and use whatever version is checked out, with git doing the versioning. That drops the library copies (most of the point above). Decide what Publish and Accept update mean inside a project.
-- **A validator that runs in Node (Phase 20):** normalizing measures text with a canvas, icon import uses `DOMParser`, and `files.js` needs IndexedDB and BroadcastChannel. The validator needs a DOM-free core (schema, migrations, token resolution); layout and text measurement stay browser-only or are skipped when validating.
-- **Project folder access (Phase 21):** the File System Access API only works in Chrome and Edge. Sigma already runs from `serve.py` inside a project, so the server could read and write `.sigma/` and tell the editor when an agent or a `git pull` changes a file. That works in every browser and keeps the editor build-free; the browser API becomes the fallback.
+- ~~**A validator that runs in Node (Phase 20):**~~ Resolved: `src/validate.js` runs in Node and the browser (`npx sigma-design validate | check`). normalizing measures text with a canvas, icon import uses `DOMParser`, and `files.js` needs IndexedDB and BroadcastChannel. The validator needs a DOM-free core (schema, migrations, token resolution); layout and text measurement stay browser-only or are skipped when validating.
+- ~~**Project folder access (Phase 21):**~~ Resolved: Sigma's own server reads and writes the project (Phases 21 and 32), in every browser. the File System Access API only works in Chrome and Edge. Sigma already runs from `serve.py` inside a project, so the server could read and write `.sigma/` and tell the editor when an agent or a `git pull` changes a file. That works in every browser and keeps the editor build-free; the browser API becomes the fallback.
 
 
 # Part F: Sigma inside your project
@@ -927,7 +927,7 @@ the browser.
 
 ## Risks and open questions
 
-- **Bundlers (Phase 35):** rendering components needs the project's build (Vite, webpack, Next). Serving the
+- ~~**Bundlers (Phase 35):**~~ Resolved: the components page is the app's own, built with its tooling, and loads the capture bridge (Phase 35). rendering components needs the project's build (Vite, webpack, Next). Serving the
   app's dev server through Sigma's origin (a proxy) may be simpler than building pages ourselves.
 - **Writing code on save (Phase 34):** direct edits to a working copy should never surprise a developer.
   Edits stay exact and minimal, and Sigma never writes while the code has a conflicting change it hasn't
