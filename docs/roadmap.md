@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Phases 1–14 and Part E (Phases 20–30) are done**, except Phase 26's real run (a Notion ticket and CI on a pull request). Part F: Sigma inside your project (Phases 31–35) has begun: Phases 31 and 32 are done; next is Phase 33. Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **Phases 1–14 and Part E (Phases 20–30) are done**, except Phase 26's real run (a Notion ticket and CI on a pull request). Part F: Sigma inside your project (Phases 31–35) has begun: Phases 31–33 are done; next is Phase 34. Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -393,7 +393,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 30: Design to code for components
 - [x] Phase 31: Project mode in the editor
 - [x] Phase 32: Install like a dev tool (npm package `sigma-design`)
-- [ ] Phase 33: Setup by the agent: adapters, rules and project skills
+- [x] Phase 33: Setup by the agent: adapters, rules and project skills
 - [ ] Phase 34: Live sync while Sigma runs
 - [ ] Phase 35: Sigma renders the project's components
 
@@ -784,6 +784,23 @@ the browser.
 - **Done when:** `examples/mui-app` (a JS theme) gets an adapter that round-trips its tokens, a token changed
   in Sigma is written by the adapter (no agent) as a one-line diff, and a fresh agent session in the repo
   follows the rules and skills without being told about Sigma.
+- **What shipped:** adapters (`tools/lib/adapters.mjs`, contract in `skills/sigma-sync/reference/adapters.md`):
+  an entry's `adapter` module is used by `tokens import`, `tokens write`, `icons import`, `icons write` and
+  `check`; it gets a context for file access (so Sigma knows, and can undo, what it changed) and Sigma's own
+  value helpers (color formats, CSS values, icon SVG); every write is read back, and one that doesn't read back
+  the same, or that the adapter refuses, is put back with the reason. `sigma-design adapter test` proves one
+  (reads what Sigma has; one color and one number, or one icon, written, read back, small diff, all put back).
+  `sigma-design agents` (`tools/agents.mjs`, also run by `init`): the Sigma section in the repo's agent
+  instructions (`AGENTS.md`, `CLAUDE.md`, Copilot, Cursor; `AGENTS.md` and a `CLAUDE.md` including it when
+  there are none) and four project skills, regenerated between markers so the team's text and each skill's
+  Project notes stay. The skill's setup now writes adapters instead of one-off extractions. Fixed on the way:
+  DTCG files without sets kept no code names on import; a project file's header showed Publish until
+  something refreshed it. Verified on `examples/mui-app`: adapters for its MUI theme and React icon components
+  pass `adapter test`; a color changed in Sigma's editor became a one-line edit in `src/theme.js` (the file's
+  lowercase hex) with no agent; and a fresh headless Claude Code session in a copy of the project (Sigma
+  installed from the packed tarball, no mention of Sigma in its README or source), asked only to "change the
+  light theme's primary blue to #1f4ae0", edited `src/theme.js`, ran `npx sigma-design tokens import` and
+  `check` on its own (one line in each file), and pointed out that `primary.dark` was now lighter than `main`.
 
 ### Phase 34: Live sync while Sigma runs
 
