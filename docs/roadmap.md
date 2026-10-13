@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Phases 1–14 and Part E (Phases 20–30) are done**, except Phase 26's real run (a Notion ticket and CI on a pull request). Part F: Sigma inside your project (Phases 31–35) is done. Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
+Status: **Phases 1–14 and Part E (Phases 20–30) are done**, except the ticket half of Phase 26 (its pull request and CI parts have run for real). Part F: Sigma inside your project (Phases 31–35) is done. Part E folded in Part D's Phases 15 and 16; the rest of Part D, "Later (needs a backend)" in Part C and "Follow-ups" come after.
 
 ## Scope
 
@@ -605,7 +605,7 @@ Unchanged from Phase 15 above: code names per platform for tokens, components an
 - **Branch and PR:** the skill creates a branch named by `workflow.branch`, writes the code changes (tokens and icons from Phases 22–23; components from Phase 30) and the Sigma files, and opens a draft PR using the repo's template, linked to the ticket.
 - **Status in Sigma:** each changeset shows Proposed, In review, Changes requested or Merged. On merge the ticket moves to Done.
 - **Done when:** on a real repo, a proposed token change becomes a Notion ticket and a GitHub PR that passes the team's CI, and Sigma shows it as merged after merge.
-- **What shipped (not yet run for real):** `skills/sigma-sync/reference/workflow.md` and `tools/sigma.mjs changeset branch | prepare | pr-body | ticket | sync`; statuses in the Project section. Dry run on `examples/css-app` (local only): `prepare` into a worktree on `design/darker-hover-for-buttons` gave the token change in the Sigma file and in `tokens.css` (`#2741d9`, plus the dark theme keeping its reference) and passed `check`; the PR body and ticket text read well. **Still to do:** a real run — a GitHub pull request (and CI) and a Notion ticket — which needs the team's go-ahead and a Notion connection (none in this session).
+- **What shipped (not yet run for real):** `skills/sigma-sync/reference/workflow.md` and `tools/sigma.mjs changeset branch | prepare | pr-body | ticket | sync`; statuses in the Project section. Dry run on `examples/css-app` (local only): `prepare` into a worktree on `design/darker-hover-for-buttons` gave the token change in the Sigma file and in `tokens.css` (`#2741d9`, plus the dark theme keeping its reference) and passed `check`; the PR body and ticket text read well. **Run for real since:** a design proposal became a GitHub pull request ([#1](https://github.com/liwanagtan/Sigma-Design/pull/1): tighter buttons and a Secondary variant, from `changeset prepare` in a worktree), was merged, and `changeset sync` set it to Merged in Sigma. The repository now has CI (`.github/workflows/ci.yml`: Node tests on Node 20 and 22, the in-browser tests headlessly in Chromium, `sigma-design check` on every example project), and pull requests pass it ([#3](https://github.com/liwanagtan/Sigma-Design/pull/3)). **Still to do:** the ticket: a Notion ticket from `changeset ticket` (needs a Notion connection), or GitHub Issues as the tracker (`workflow.tracker: "github"`, which works through `gh`); and a design proposal's own PR passing CI (#1 was opened before CI existed).
 
 ### Phase 27: Comments
 
