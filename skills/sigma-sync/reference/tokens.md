@@ -6,7 +6,10 @@ a [DTCG](https://www.designtokens.org/) tokens.json and import it with `tokens i
 ## Shape
 
 Top-level keys are **token sets**. A set named `Collection` is a collection with one mode; sets named
-`Collection/Mode` are that collection's modes (the first one listed is the default).
+`Collection/Mode` are that collection's modes (the first one listed is the default). Sigma reads top-level keys
+as sets only when at least one is `Collection/Mode` or `$metadata.tokenSetOrder` lists them; otherwise they're
+groups of a single `Tokens` collection. So when every set has one mode (`Primitives` alone), list them:
+`"$metadata": { "tokenSetOrder": ["Primitives"] }`.
 
 ```json
 {

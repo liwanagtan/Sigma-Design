@@ -4,6 +4,7 @@
 //   npx sigma-design init [dir] [--dry-run]                  set Sigma up in a project (once)
 //   npx sigma-design dev [dir] [--port N] [--no-open]         Sigma on this project (npm run sigma)
 //   npx sigma-design standalone [--port N] [--no-open]        Sigma on its own: a design tool, files in the browser
+//   npx sigma-design agents [dir] [--dry-run]                 rules and project skills for the repo's coding agents
 //   npx sigma-design <command> …                              the sync tools: check, tokens, icons, changeset,
 //                                                             library, pages, components, comment (tools/sigma.mjs)
 import { readFileSync, existsSync } from 'node:fs';
@@ -12,6 +13,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { startServer, EDITOR_ROOT } from '../tools/server.mjs';
 import { runInit, isSetUp } from '../tools/init.mjs';
+import { runAgents } from '../tools/agents.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(join(here, '..', 'package.json'), 'utf8'));
@@ -52,12 +54,28 @@ async function serve({ project }) {
   if (!flag('no-open')) openBrowser(url);
 }
 
+// Write (or show) the rules and project skills; prints what it did.
+function agents(dir, { dry = false } = {}) {
+  const plan = runAgents(dir, { editorRoot: EDITOR_ROOT, dryRun: dry });
+  const changed = plan.filter((f) => f.action !== 'unchanged');
+  console.log(`Rules and skills for coding agents${dry ? ' (dry run: nothing written)' : ''}: ${changed.length ? '' : 'up to date'}`);
+  for (const f of changed) console.log(`  ${dry ? `would ${f.action}` : `${f.action}d`.replace('created', 'created').replace('updated', 'updated')} ${f.path}`);
+  if (dry && changed.length) {
+    const rules = changed.find((f) => !f.path.includes('/skills/') && f.text.includes('sigma-design:start'));
+    if (rules) console.log(`
+The Sigma section (in ${rules.path}):
+${rules.text.slice(rules.text.indexOf('<!-- sigma-design:start -->'))}`);
+  }
+}
+
 function help() {
   console.log(`sigma-design ${pkg.version}: Sigma, the design tool, inside your project.
 
   npx sigma-design init [dir] [--dry-run]            set Sigma up in a project (finds its tokens and icons)
   npx sigma-design dev [dir] [--port N] [--no-open]  open Sigma on the project (npm run sigma)
   npx sigma-design standalone [--port N]             Sigma on its own, with files in the browser
+  npx sigma-design agents [dir] [--dry-run]          rules and project skills for the repo's coding agents
+  npx sigma-design adapter test [dir]                prove the project's adapters (reference/adapters.md)
   npx sigma-design check [dir]                       Sigma files are valid, and tokens and icons match the code
 
 Sync tools (for people and agents; see skills/sigma-sync/SKILL.md):
@@ -70,6 +88,11 @@ Agents: the setup and sync instructions are in ${relative(process.cwd(), join(he
 if (!cmd || cmd === 'help' || cmd === '--help' || cmd === '-h') help();
 else if (cmd === '--version' || cmd === '-v' || cmd === 'version') console.log(pkg.version);
 else if (cmd === 'standalone') await serve({ project: null });
+else if (cmd === 'agents') {
+  const dir = resolve(positional()[0] || '.');
+  if (!existsSync(join(dir, 'sigma.config.json'))) fail(`no sigma.config.json in ${dir}: run npx sigma-design init first`);
+  agents(dir, { dry: flag('dry-run') });
+}
 else if (cmd === 'dev') {
   const dir = resolve(positional()[0] || '.');
   if (!existsSync(dir)) fail(`no such folder: ${dir}`);
@@ -96,7 +119,10 @@ else if (cmd === 'dev') {
     if (plan.config.tokens?.length) tools(['tokens', 'import', dir], dir);
     if (plan.config.icons?.length) tools(['icons', 'import', dir], dir);
   }
-  if (!dry && existsSync(join(dir, 'sigma.config.json'))) tools(['check', dir], dir);
+  if (!dry && existsSync(join(dir, 'sigma.config.json'))) {
+    tools(['check', dir], dir);
+    agents(dir);
+  }
   if (plan.forAgent.length) {
     console.log('\nFor your coding agent:');
     for (const line of plan.forAgent) console.log(`  - ${line}`);
