@@ -556,7 +556,7 @@ From Figma's Schema talks ("Taking cues from code": test-driven design and visua
 
 ## Later
 
-- **Branching and review:** propose a change to a library on a branch, review it, then merge and publish (*Future is complicated*, ChimeKit). Local branches can work in the browser; reviews between people need a backend.
+- ~~**Branching and review**~~ Done where it can be without a backend: in a project, git branches with Propose change and pull requests (Phases 25–26) and design-aware merging; in the browser, **Create branch…** copies a design file that remembers its base, and **Merge into “…”…** merges it back three ways (the main file may have changed too; a page merges layer by layer; on a conflict you choose whose wins), with **Compare…** as the review and a version saved first. Reviews between people in the browser need the backend from "Real sharing".
 - **Plugins and automation:** a way to script repetitive work and extend Sigma (*Future is automated*). Large; needs an API design first.
 - ~~**Right-to-left layout:**~~ Done: a frame's direction (Auto layout → Direction, `"dir": "rtl"`) applies to everything inside it, like HTML's `dir`: rows start at the right, the counter axis starts at the right edge, padding stays physical, instances follow the frame they're in (their main component stays as it is), dropping into a row and adding auto layout follow the direction, and Inspect writes `direction: rtl`. Language modes on text tokens already cover the strings; text alignment stays as set.
 
@@ -716,7 +716,7 @@ Unchanged from Phase 15 above: code names per platform for tokens, components an
 - **More integrations:** GitHub Issues, GitLab (merge requests with `glab`, and issues), Azure DevOps pull requests (`az repos`), Bitbucket pull requests (its API, with a token from `BITBUCKET_TOKEN`), Linear and Jira are done (`workflow.git`, `workflow.tracker`).
 - ~~**CLI and MCP server**~~ Done: the command line (`npx sigma-design …`, Phases 22–35) runs every sync step, CI runs `check` and render parity, and `npx sigma-design mcp` serves the same steps as MCP tools for agents without a terminal (`tools/mcp.mjs`).
 - **Hosted team service:** a GitHub App so designers without git can propose changes, plus sign-in, permissions and audit logs for mature teams.
-- ~~**Design-aware merging**~~ Done: `npx sigma-design merge-driver install` sets git's merge driver for `*.sigma.json`: their changes go onto ours token by token, icon by icon, component by component (a page's own content is one item); an item both sides changed differently keeps ours, is listed, and stops the merge for a person to check in Sigma.
+- ~~**Design-aware merging**~~ Done: `npx sigma-design merge-driver install` sets git's merge driver for `*.sigma.json`: their changes go onto ours token by token, icon by icon, component by component, and a page's top-level layers one by one; an item both sides changed differently keeps ours, is listed, and stops the merge for a person to check in Sigma.
 - **Monorepos and shared packages:** one design system package used by several apps on different versions.
 - ~~**AI data policy:**~~ Done: `docs/data-and-ai.md`. Sigma calls no model; teams choose their model or provider by choosing their coding agent, and the doc says what the agent reads and what leaves through the workflow.
 

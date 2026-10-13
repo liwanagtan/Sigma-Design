@@ -97,8 +97,8 @@ export function projectChanges(base, current) {
 // ---------- merging ----------
 /**
  * A three-way merge of one Sigma file (design-aware merging, for git's merge driver): their changes since
- * `base` are applied onto `ours`, token by token, icon by icon, component by component (a page's own content
- * is one item). An item both sides changed differently is a conflict: ours is kept, and it's listed.
+ * `base` are applied onto `ours`, token by token, icon by icon, component by component, and a page's top-level
+ * layers one by one. An item both sides changed differently is a conflict: ours is kept, and it's listed.
  * Returns { file (null: deleted), conflicts: [{ kind, id, name }] }.
  */
 export function mergeFiles(path, base, ours, theirs) {
@@ -106,15 +106,63 @@ export function mergeFiles(path, base, ours, theirs) {
   const yours = projectChanges({ [path]: base }, { [path]: theirs });
   const byKey = new Map(mine.map((i) => [i.key, i]));
   const conflicts = [];
-  const take = yours.filter((t) => {
+  const take = [];
+  for (const t of yours) {
     const m = byKey.get(t.key);
-    if (!m) return true;
-    if (!same(m.after, t.after)) conflicts.push({ kind: t.kind, id: t.id, name: t.name });
-    return false; // the same change on both sides, or a conflict (ours stays)
-  });
+    if (!m) take.push(t);
+    else if (same(m.after, t.after)) continue; // the same change on both sides
+    else if (t.kind === 'page' && m.after && t.after && m.before) {
+      // A page both changed: merge it layer by layer (its top-level layers, and its own settings).
+      const p = mergePage(m.before, m.after, t.after);
+      for (const c of p.conflicts) conflicts.push({ kind: 'layer', id: c.id, name: `${m.name} / ${c.name}` });
+      take.push({ ...t, after: p.page });
+    } else conflicts.push({ kind: t.kind, id: t.id, name: t.name }); // ours stays
+  }
   if (!take.length) return { file: ours, conflicts };
   const merged = applyChanges({ [path]: ours }, take);
   return { file: path in merged ? merged[path] : ours, conflicts };
+}
+
+// A page's content merged three ways: its top-level layers one by one (ours in our order, theirs' new ones
+// after the layer they follow), and its own settings key by key. { page, conflicts: [{ id, name }] }.
+function mergePage(base, ours, theirs) {
+  const conflicts = [];
+  const idOf = (n) => n.id || n.$component;
+  const nameOf = (n) => n.name || n.$component;
+  const index = (list) => new Map((list || []).map((n) => [idOf(n), n]));
+  const B = index(base.children), O = index(ours.children), T = index(theirs.children);
+  const list = [...(ours.children || [])].map(clone);
+  const at = (id) => list.findIndex((n) => idOf(n) === id);
+  for (const [id, b] of B) {
+    const o = O.get(id), t = T.get(id);
+    if (o && t) {
+      if (same(t, b) || same(o, t)) continue;
+      if (same(o, b)) list[at(id)] = clone(t);
+      else conflicts.push({ id, name: nameOf(o) });
+    } else if (o && !t) {
+      if (same(o, b)) list.splice(at(id), 1);
+      else conflicts.push({ id, name: nameOf(o) }); // we changed what they removed: ours stays
+    } else if (!o && t && !same(t, b)) conflicts.push({ id, name: nameOf(t) }); // they changed what we removed
+  }
+  (theirs.children || []).forEach((t, i) => {
+    const id = idOf(t);
+    if (B.has(id)) return;
+    if (O.has(id)) {
+      if (!same(O.get(id), t)) conflicts.push({ id, name: nameOf(t) });
+      return;
+    }
+    const prev = i ? at(idOf(theirs.children[i - 1])) : -1;
+    list.splice(prev >= 0 ? prev + 1 : i === 0 ? 0 : list.length, 0, clone(t));
+  });
+  const page = { ...clone(ours), children: list };
+  for (const k of new Set([...Object.keys(base), ...Object.keys(ours), ...Object.keys(theirs)])) {
+    if (k === 'children' || same(theirs[k], base[k]) || same(ours[k], theirs[k])) continue;
+    if (same(ours[k], base[k])) {
+      if (theirs[k] === undefined) delete page[k];
+      else page[k] = clone(theirs[k]);
+    } else conflicts.push({ id: `page:${k}`, name: `page ${k}` });
+  }
+  return { page, conflicts };
 }
 
 // Changes not already in an open changeset (one that isn't merged or closed) with the same result.

@@ -90,3 +90,25 @@ test('merge: git merges two branches’ Sigma edits with the driver installed', 
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('merge: a page both sides changed merges layer by layer', () => {
+  const frame = (id, color, x = 0) => ({ id, type: 'frame', name: id, x, y: 0, w: 100, h: 100, fills: [{ color }] });
+  const base = { format: 1, kind: 'design', name: 'Pages', pages: [{ id: 'p', name: 'Home', children: [frame('A', '#FFFFFF'), frame('B', '#FFFFFF', 200)] }] };
+  const ours = structuredClone(base), theirs = structuredClone(base);
+  ours.pages[0].children[0].fills = [{ color: '#FF0000' }]; // we change A
+  theirs.pages[0].children[1].fills = [{ color: '#00FF00' }]; // they change B, add C after it, and rename the page
+  theirs.pages[0].children.push(frame('C', '#0000FF', 400));
+  theirs.pages[0].name = 'Start';
+  let r = mergeFiles('p.sigma.json', base, ours, theirs);
+  assert.deepEqual(r.conflicts, []);
+  const page = r.file.pages[0];
+  assert.deepEqual([page.name, ...page.children.map((n) => `${n.id}:${n.fills[0].color}`)], ['Start', 'A:#FF0000', 'B:#00FF00', 'C:#0000FF']);
+  theirs.pages[0].children[0].fills = [{ color: '#000000' }]; // now they change A too
+  r = mergeFiles('p.sigma.json', base, ours, theirs);
+  assert.deepEqual(r.conflicts.map((c) => [c.kind, c.name]), [['layer', 'Home / A']]);
+  assert.equal(r.file.pages[0].children[0].fills[0].color, '#FF0000', 'ours kept for A; B and C still merged');
+  assert.equal(r.file.pages[0].children.length, 3);
+  const removed = structuredClone(base);
+  removed.pages[0].children.splice(1, 1); // they delete B, which we didn't touch
+  assert.deepEqual(mergeFiles('p.sigma.json', base, ours, removed).file.pages[0].children.map((n) => n.id), ['A']);
+});
