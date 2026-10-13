@@ -295,6 +295,7 @@ Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.
 | `tools/live-sync.mjs` | Live sync while Sigma runs: watching the token and icon sources, and writing the code after a save |
 | `tools/agents.mjs` | `sigma-design agents`: the rules and project skills for the repo's coding agents |
 | `tools/lib/adapters.mjs` | Project adapters: loading them, their context (files and Sigma's helpers), undoing a write |
+| `tools/capture/parity.html` | Render parity: captures every library from its components page and compares Sigma's layout with the code (`tools/test/run-render-parity.mjs` runs it in CI) |
 | `tools/test/` | Node tests for the server, `init`, adapters, `agents`, live sync, accessibility in pull requests and the team workflow (`npm run test:node`) |
 | `tools/sigma.mjs` | The command line the sync skill uses (validate, check, tokens and icons import / diff / write, changesets, library and pages build, components diff / write, comments) |
 | `src/capture-to-sigma.js` | Captured components → Sigma components (auto layout, token bindings, icons, variants), captured pages → frames of library instances, and comparing them with the capture |
