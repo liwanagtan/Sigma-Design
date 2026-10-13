@@ -10,7 +10,7 @@ process exactly like a developer's would. Read `sigma.config.json` → `workflow
               "notion": { "database": "<database id or URL>", "status": "Status", "done": "Done" } }
 ```
 
-`git` is `github` (with `gh`) or `gitlab` (with `glab`). `tracker` is `notion`, `github` (GitHub Issues),
+`git` is `github` (with `gh`), `gitlab` (with `glab`) or `azure` (Azure DevOps, with `az repos`). `tracker` is `notion`, `github` (GitHub Issues),
 `gitlab` (GitLab issues), `linear`, `jira` or `none`; Linear and Jira say where tickets go:
 `"linear": { "team": "DES", "done": "Done" }`, `"jira": { "project": "DES", "issueType": "Task", "done": "Done" }`.
 
@@ -63,6 +63,8 @@ $S changeset show <id> <project>                 # read what it changes
    gh pr create --draft --base <base> --head "$B" --title "<title>" --body-file /tmp/pr-body.md --label design
    # GitLab (workflow.git "gitlab"): a draft merge request
    glab mr create --draft --target-branch <base> --source-branch "$B" --title "<title>" --description "$(cat /tmp/pr-body.md)" --label design
+   # Azure DevOps (workflow.git "azure"): a draft pull request
+   az repos pr create --draft --target-branch <base> --source-branch "$B" --title "<title>" --description "$(cat /tmp/pr-body.md)"
    ```
 
    On GitLab, `--images-base` is `https://<gitlab host>/<group>/<project>/-/raw/<branch>/<project path>`.
@@ -77,7 +79,7 @@ $S changeset show <id> <project>                 # read what it changes
 $S changeset sync <project>
 ```
 
-reads each open proposal's pull request with `gh` (or merge request with `glab`) and sets its status: **In review**, **Changes requested**
+reads each open proposal's pull request with `gh` (a GitLab merge request with `glab`, an Azure DevOps pull request with `az`) and sets its status: **In review**, **Changes requested**
 (a reviewer asked for changes: tell the designer what they said), **Merged** or **Closed**. Sigma's Project
 section shows them. When one is merged, move its ticket to Done (`workflow.notion.done`, `workflow.linear.done` or
 `workflow.jira.done`; GitHub and GitLab issues close from the pull request with "Closes #12"), and tell the person
