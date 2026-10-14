@@ -35,6 +35,7 @@ import { icons } from './icons.js';
 import { openIconPicker, availableIcons } from './icon-ui.js';
 import { iconLibraries, loadIconLibraries } from './libraries.js';
 import { findIcon, iconMarkup, iconGroups } from './icon-library.js';
+import { ask, isAsking } from './dialogs.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const toast = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
@@ -470,6 +471,7 @@ function outsideWin(e) {
   if (win && !win.el.contains(e.target) && !e.target.closest?.('.menu, .comp-picker, .icon-picker')) closePropWindow();
 }
 function winKey(e) {
+  if (isAsking()) return; // Escape is the open dialog's
   if (e.key === 'Escape' && win) {
     e.stopPropagation();
     closePropWindow();
@@ -1206,7 +1208,7 @@ function addVariantProp(comp, r) {
   openPropWindow({ comp: set, variantProp: name, anchor: r });
 }
 
-function deleteProp(node, key) {
+async function deleteProp(node, key) {
   const host = propsHost(node);
   if (key.startsWith('v:')) {
     if (!removeVariantProperty(host, key.slice(2))) return toast('A component set needs at least one variant property.');
@@ -1214,7 +1216,7 @@ function deleteProp(node, key) {
   }
   const uses = layersUsingProp(node, key).length;
   const def = propsOf(node)[key];
-  if (uses && !confirm(`Delete the property “${def?.name}”? ${uses} layer${uses === 1 ? ' uses' : 's use'} it; they keep their current state.`)) return;
+  if (uses && !(await ask(`${uses} layer${uses === 1 ? ' uses' : 's use'} it; they keep their current state.`, { title: `Delete the property “${def?.name}”?`, ok: 'Delete property', danger: true }))) return;
   removeComponentProp(node, key);
   commit();
 }

@@ -51,6 +51,7 @@ const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').
 const MIXED = Symbol('mixed');
 
 import { FONTS, WEIGHTS } from './fonts.js';
+import { ask, isAsking } from './dialogs.js';
 const TYPE_LABEL = {
   frame: 'Frame', group: 'Group', rect: 'Rectangle', ellipse: 'Ellipse', line: 'Line', text: 'Text', image: 'Image',
   component: 'Component', componentSet: 'Component set', instance: 'Instance', icon: 'Icon',
@@ -183,6 +184,7 @@ function showShortcuts() {
     window.removeEventListener('keydown', onKey, true);
   };
   const onKey = (e) => {
+    if (isAsking()) return; // Escape is the open dialog's
     if (e.key === 'Escape') {
       e.stopImmediatePropagation();
       close();
@@ -219,6 +221,11 @@ function deletePages(list) {
   state.doc.pages = pagesOf().filter((p) => !gone.has(p.id));
   if (wasCurrent) switchPage((pagesOf()[Math.min(i, pagesOf().length - 1)] || pagesOf()[0]).id);
   commit();
+}
+// Delete pages (or a group's) after asking; ⌘Z brings them back.
+async function confirmDeletePages(list, group = null) {
+  const what = group ? `“${group}” and its ${list.length === 1 ? 'page' : `${list.length} pages`}` : `page “${list[0].name}”`;
+  if (await ask('Everything on it goes too. ⌘Z undoes it.', { title: `Delete ${what}?`, ok: group ? 'Delete group' : 'Delete page', danger: true })) deletePages(list);
 }
 function setCollapsed(group, on) {
   const set = collapsedGroups(getCurrentFileId());
@@ -292,7 +299,7 @@ function initPages() {
     if (!row) return;
     if (e.target.closest('[data-del]')) {
       const pg = pagesOf().find((p) => p.id === row.dataset.page);
-      if (pg && confirm(`Delete page “${pg.name}”?`)) deletePages([pg]);
+      if (pg) confirmDeletePages([pg]);
       return;
     }
     switchPage(row.dataset.page);
@@ -322,9 +329,7 @@ function initPages() {
           ungroup(pagesOf(), group);
           commit();
         } },
-        { label: `Delete group and its ${members.length === 1 ? 'page' : `${members.length} pages`}`, disabled: members.length >= pagesOf().length, action: () => {
-          if (confirm(`Delete “${group}” and its ${members.length === 1 ? 'page' : `${members.length} pages`}?`)) deletePages(members);
-        } },
+        { label: `Delete group and its ${members.length === 1 ? 'page' : `${members.length} pages`}`, disabled: members.length >= pagesOf().length, action: () => confirmDeletePages(members, group) },
       ]);
     }
     const row = e.target.closest('[data-page]');
@@ -356,9 +361,7 @@ function initPages() {
         movePage(pagesOf(), pg.id, { group: null, beforeId: next && next !== pg ? next.id : null });
         commit();
       } }] : []),
-      ...(pagesOf().length > 1 ? ['-', { label: 'Delete page', action: () => {
-        if (confirm(`Delete page “${pg.name}”?`)) deletePages([pg]);
-      } }] : []),
+      ...(pagesOf().length > 1 ? ['-', { label: 'Delete page', action: () => confirmDeletePages([pg]) }] : []),
     ]);
   });
   list.addEventListener('dblclick', (e) => {

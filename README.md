@@ -328,6 +328,7 @@ Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.
 | `tests/` | In-browser test runner (`tests/index.html`) and tests |
 | `src/text.js` | Text measurement and the in-place text editor |
 | `src/panels.js` | Toolbar, layers, pages and properties panels |
+| `src/dialogs.js` | Sigma's own confirm and prompt dialogs (`ask`, `askText`): the browser's don't show in every embedded browser, where they answer Cancel at once |
 | `src/rail.js` | The file tools rail: icon buttons for the file's Sigma Tokens file, its tokens and their audit, and its component and icon libraries |
 | `src/page-groups.js` | Page groups: runs of grouped pages, keeping a group's pages together, moving pages and groups |
 | `src/io.js` | Clipboard, images, export, download |

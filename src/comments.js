@@ -9,6 +9,7 @@ import { apply, inv } from './geom.js';
 import { toScreen, toWorld } from './render.js';
 import { hitPath, pickFromPath } from './hit.js';
 import { pageLabel } from './page-groups.js';
+import { ask, askText } from './dialogs.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const AUTHOR_KEY = 'sigma.author';
@@ -17,18 +18,21 @@ let showResolved = false;
 export const comments = () => state.doc?.comments || [];
 export const commentsOnPage = (pg = page()) => comments().filter((c) => c.pageId === pg?.id);
 
-function author() {
-  let name = '';
+function storedAuthor() {
   try {
-    name = localStorage.getItem(AUTHOR_KEY) || '';
-  } catch {}
-  if (!name) {
-    name = (prompt('Your name, shown on your comments:') || '').trim() || 'Someone';
-    try {
-      localStorage.setItem(AUTHOR_KEY, name);
-    } catch {}
+    return localStorage.getItem(AUTHOR_KEY) || '';
+  } catch {
+    return '';
   }
-  return name;
+}
+const author = () => storedAuthor() || 'Someone';
+// Asks for the person's name the first time they comment (remembered in this browser).
+async function ensureAuthor() {
+  if (storedAuthor()) return;
+  const name = ((await askText('Your name, shown on your comments:', { title: 'Your name', ok: 'Save' })) || '').trim() || 'Someone';
+  try {
+    localStorage.setItem(AUTHOR_KEY, name);
+  } catch {}
 }
 
 const layerPath = (n) => [...ancestors(n)].reverse().concat(n).map((x) => x.name).join(' / ');
@@ -140,8 +144,9 @@ export function startComment(screenPoint) {
     <div class="comment-actions"><button class="btn" data-cancel>Cancel</button><button class="btn primary" data-post>Comment</button></div>`, wp);
   const input = el.querySelector('textarea');
   input.focus();
-  const post = () => {
+  const post = async () => {
     if (!input.value.trim()) return;
+    await ensureAuthor();
     const c = addComment({ worldPoint: wp, text: input.value, node });
     openThread(c.id);
   };
@@ -171,18 +176,20 @@ export function openThread(id) {
     <div class="comment-actions"><button class="btn" data-delete title="Delete the comment and its replies">Delete</button><span class="spacer"></span>
       <button class="btn" data-resolve>${c.resolved ? 'Reopen' : 'Resolve'}</button><button class="btn primary" data-reply>Reply</button></div>`, pinPoint(c));
   const input = el.querySelector('textarea');
-  el.querySelector('[data-reply]').onclick = () => {
+  el.querySelector('[data-reply]').onclick = async () => {
     if (!input.value.trim()) return;
+    await ensureAuthor();
     reply(c, input.value);
     openThread(c.id);
   };
   input.addEventListener('keydown', (e) => (e.metaKey || e.ctrlKey) && e.key === 'Enter' && el.querySelector('[data-reply]').click());
-  el.querySelector('[data-resolve]').onclick = () => {
+  el.querySelector('[data-resolve]').onclick = async () => {
+    if (!c.resolved) await ensureAuthor();
     setResolved(c, !c.resolved);
     c.resolved && !showResolved ? closeCommentPopover() : openThread(c.id);
   };
-  el.querySelector('[data-delete]').onclick = () => {
-    if (!confirm('Delete this comment and its replies?')) return;
+  el.querySelector('[data-delete]').onclick = async () => {
+    if (!(await ask('The comment and its replies are deleted for everyone who opens this file.', { title: 'Delete this comment?', ok: 'Delete', danger: true }))) return;
     deleteComment(c);
     closeCommentPopover();
   };

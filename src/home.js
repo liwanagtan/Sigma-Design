@@ -20,6 +20,7 @@ import { showContextMenu } from './menu.js';
 import { modal } from './libraries.js';
 import { icons } from './icons.js';
 import { toast } from './io.js';
+import { ask } from './dialogs.js';
 
 const PREFS_KEY = 'sigma.home.prefs';
 const KIND_ORDER = ['design', 'tokens', 'icons']; // the Welcome to Sigma folder: the guide, then its libraries
@@ -564,7 +565,7 @@ async function restore(id) {
 
 async function deleteForever(id) {
   const meta = (await listArchivedFiles()).find((f) => f.id === id);
-  if (!meta || !confirm(`Delete “${meta.name}” forever? It and its version history are erased from this browser. This can't be undone; download it first if you want a copy.`)) return;
+  if (!meta || !(await ask(`“${meta.name}” and its version history are erased from this browser. This can’t be undone; download it first if you want a copy.`, { title: `Delete “${meta.name}” forever?`, ok: 'Delete forever', danger: true }))) return;
   await deleteFile(id);
   toast(`Deleted “${meta.name}” forever`);
   renderHome();
@@ -572,7 +573,7 @@ async function deleteForever(id) {
 
 async function confirmEmptyArchive() {
   const n = (await listArchivedFiles()).length;
-  if (!n || !confirm(`Delete all ${n} file${n === 1 ? '' : 's'} in the Archive forever? They and their version history are erased from this browser. This can't be undone.`)) return;
+  if (!n || !(await ask(`${n === 1 ? 'The file' : `All ${n} files`} in the Archive and ${n === 1 ? 'its' : 'their'} version history are erased from this browser. This can’t be undone.`, { title: 'Empty the Archive?', ok: `Delete ${n === 1 ? '1 file' : `${n} files`} forever`, danger: true }))) return;
   await emptyArchive();
   toast('The Archive is empty');
   renderHome();

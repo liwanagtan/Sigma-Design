@@ -9,6 +9,7 @@ import { getCurrentFileId } from './files.js';
 import { modal } from './libraries.js';
 import { compareLibrary, comparePages } from './capture-compare.js';
 import { captureFromCode } from './capture-from-code.js';
+import { ask } from './dialogs.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const toast = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
@@ -69,7 +70,7 @@ export async function openCodeCheck() {
   };
   wrap.querySelector('[data-recheck]').addEventListener('click', run);
   wrap.querySelector('[data-update]').addEventListener('click', async () => {
-    if (!confirm('Rebuild the components the manifest lists from the code, as just captured? Their design in Sigma is replaced (other components and pages stay).')) return;
+    if (!(await ask('The components the manifest lists are rebuilt from the code, as just captured. Their design in Sigma is replaced (other components and pages stay).', { title: 'Rebuild from the code?', ok: 'Rebuild' }))) return;
     status('Building the library from the code…');
     const r = await (await api('/api/project/action?name=library-build', { method: 'POST', headers: { 'X-Sigma': '1' } })).json();
     if (!r.ok) return status(`Couldn’t build: ${r.output || JSON.stringify(r.result?.errors || r.result)}`);

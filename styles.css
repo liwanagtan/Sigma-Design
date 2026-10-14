@@ -1057,3 +1057,12 @@ button.group-caret.open { transform: rotate(90deg); }
 .bp-row .seg .icon-btn { width: 22px; }
 .bp-row > .icon-btn { width: 20px; flex: 0 0 auto; }
 .bp-row > .bp-hide { margin-left: auto; }
+
+/* ---------- ask and askText (dialogs.js): Sigma's own confirm and prompt ---------- */
+.ask-backdrop { z-index: 300; }
+.ask-modal { width: min(420px, calc(100vw - 32px)); }
+.ask-body { padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+.ask-message { white-space: pre-wrap; line-height: 1.5; color: var(--text); }
+.ask-input { width: 100%; box-sizing: border-box; }
+.btn.primary.destructive { background: #e03e1a; border-color: #e03e1a; }
+.btn.primary.destructive:hover { background: #c4320a; }

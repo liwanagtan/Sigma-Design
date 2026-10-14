@@ -23,6 +23,7 @@ import { project } from './project.js';
 const linkable = (meta) => meta.id !== getCurrentFileId() && (state.doc?.project?.path ? meta.project?.name === project.name : true);
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
+import { ask, isAsking } from './dialogs.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const toast = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
@@ -312,9 +313,11 @@ export async function useTokenFile(fileId) {
   if (old.length && uses) {
     const from = old.map((l) => `“${l.name}”`).join(' and ');
     const kept = uses - matched;
-    if (!confirm(`Use design tokens from “${res.meta.name}” instead of ${from}?\n\n` +
+    if (!(await ask(
       `${matched} use${matched === 1 ? '' : 's'} of tokens switch to the token with the same name in “${res.meta.name}”.` +
-      (kept ? ` ${kept} ha${kept === 1 ? 's' : 've'} no match and keep${kept === 1 ? 's' : ''} its current value.` : ''))) return;
+      (kept ? ` ${kept} ha${kept === 1 ? 's' : 've'} no match and keep${kept === 1 ? 's' : ''} its current value.` : ''),
+      { title: `Use design tokens from “${res.meta.name}” instead of ${from}?`, ok: 'Switch tokens' },
+    ))) return;
   }
   detachAliasesTo(new Set([...lost].filter((id) => !remap.has(id)))); // local tokens keep values with no match
   remapTokenUses(remap);
@@ -326,11 +329,11 @@ export async function useTokenFile(fileId) {
 }
 
 // Stop using a token file (layers keep their current values).
-export function stopUsingTokenFile(fileId = tokenFile()?.fileId) {
-  if (fileId) unlinkLibrary(fileId);
+export async function stopUsingTokenFile(fileId = tokenFile()?.fileId) {
+  if (fileId) await unlinkLibrary(fileId);
 }
 
-export function unlinkLibrary(fileId) {
+export async function unlinkLibrary(fileId) {
   const lib = libraries().find((l) => l.fileId === fileId);
   if (!lib) return;
   // Tokens that disappear with it: its own, and dependencies nothing else provides.
@@ -343,7 +346,7 @@ export function unlinkLibrary(fileId) {
   const aliases = [...referencedIds()].filter((id) => lost.has(id)).length;
   const parts = [layers && `${layers} layer${layers === 1 ? '' : 's'}`, aliases && `${aliases} token reference${aliases === 1 ? '' : 's'}`].filter(Boolean);
   const one = parts.length === 1 && (layers || aliases) === 1;
-  if (parts.length && !confirm(`${parts.join(' and ')} use${one ? 's' : ''} tokens from “${lib.name}”. Unlink anyway? ${one ? 'It keeps its' : 'They keep their'} current value${one ? '' : 's'}.`)) return;
+  if (parts.length && !(await ask(`${parts.join(' and ')} use${one ? 's' : ''} tokens from “${lib.name}”. ${one ? 'It keeps its' : 'They keep their'} current value${one ? '' : 's'}.`, { title: `Unlink “${lib.name}”?`, ok: 'Unlink' }))) return;
   detachAliasesTo(lost);
   state.doc.libraries = all.filter((l) => l !== lib);
   commit();
@@ -378,11 +381,11 @@ export async function linkComponentLibrary(fileId) {
     (missing ? `. ${missing} token use${missing === 1 ? '' : 's'} in them aren’t in this file’s Sigma Tokens, so those layers keep their colors` : ''));
 }
 
-export function unlinkComponentLibrary(fileId) {
+export async function unlinkComponentLibrary(fileId) {
   const lib = componentLibraries().find((l) => l.fileId === fileId);
   if (!lib) return;
   const uses = instancesFrom(lib);
-  if (uses && !confirm(`${uses} instance${uses === 1 ? ' uses' : 's use'} components from “${lib.name}”. Unlink anyway? They keep their current look but stop updating.`)) return;
+  if (uses && !(await ask(`${uses} instance${uses === 1 ? ' uses' : 's use'} components from “${lib.name}”. They keep their current look but stop updating.`, { title: `Unlink “${lib.name}”?`, ok: 'Unlink' }))) return;
   state.doc.componentLibraries = componentLibraries().filter((l) => l !== lib);
   reindex();
   commit();
@@ -580,6 +583,7 @@ export function modal(title, body, footer = '') {
     window.removeEventListener('keydown', onKey, true);
   };
   const onKey = (e) => {
+    if (isAsking()) return; // Escape is the open dialog's
     if (e.key === 'Escape') {
       e.stopImmediatePropagation();
       close();
@@ -659,7 +663,7 @@ export async function openLibrariesDialog() {
     const b = e.target.closest('button');
     if (!b) return;
     if (b.dataset.linkComponents) await linkComponentLibrary(b.dataset.linkComponents);
-    else if (b.dataset.unlinkComponents) unlinkComponentLibrary(b.dataset.unlinkComponents);
+    else if (b.dataset.unlinkComponents) await unlinkComponentLibrary(b.dataset.unlinkComponents);
     else if (b.dataset.open) {
       wrap.remove();
       return window.open(`#/file/${b.dataset.open}`, '_blank');
@@ -717,7 +721,7 @@ async function openLinkedTokenFilesDialog() {
     const b = e.target.closest('button');
     if (!b) return;
     if (b.dataset.link) await linkLibrary(b.dataset.link);
-    else if (b.dataset.unlink) unlinkLibrary(b.dataset.unlink);
+    else if (b.dataset.unlink) await unlinkLibrary(b.dataset.unlink);
     else if (b.dataset.open) {
       wrap.remove();
       return window.open(`#/file/${b.dataset.open}`, '_blank');
