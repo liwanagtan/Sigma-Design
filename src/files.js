@@ -12,10 +12,12 @@ import { sampleIconsDocument, SAMPLE_ICONS_NAME, SAMPLE_ICONS_VERSION, sampleIco
 import { opticsTokenDocument } from './optics-tokens.js';
 import { opticsComponentsDocument, opticsFoundationsDocument, opticsIconsDocument, OPTICS_ICON_NAMES } from './optics.js';
 
-// The sample files (the Welcome to Sigma guide, its Sigma Tokens and its Sigma Icons) live in the files home's Welcome to
+// The sample files (the guide, its sample tokens and its sample icons) live in the files home's Welcome to
 // Sigma folder rather than with your own files.
 export const isSampleFile = (meta) => !!(meta?.welcome || meta?.sample || meta?.sampleLegacy);
 const LEGACY_SAMPLE_TOKENS_NAME = 'Sample design tokens';
+// What the sample tokens and icons were called before the file kinds lost their "Sigma" (2026-10).
+const PREVIOUS_SAMPLE_NAMES = { tokens: 'Sigma Tokens', icons: 'Sigma Icons' };
 // Names earlier versions gave their sample files, before they were marked as samples.
 const LEGACY_SAMPLE_NAMES = { design: ['Welcome to Sigma', 'Sample design file'], tokens: ['Welcome to Sigma tokens', LEGACY_SAMPLE_TOKENS_NAME] };
 
@@ -52,9 +54,9 @@ const currentGuide = async () => (await listFiles())
   .filter((m) => m.welcome === WELCOME_VERSION && fileKind(m) === 'design')
   .sort((a, b) => b.updatedAt - a.updatedAt)[0] || null;
 
-// Once per guide version: make the Welcome to Sigma folder hold exactly the current Sigma Design (the guide)
-// and the Sigma Tokens it uses. If you've had sample files before but there's no current guide, one is
-// made (reusing your sample tokens, renamed Sigma Tokens); then older sample files move to the Archive.
+// Once per guide version: make the Welcome to Sigma folder hold exactly the current guide
+// and the sample tokens it uses. If you've had sample files before but there's no current guide, one is
+// made (reusing your sample tokens, renamed Sample tokens); then older sample files move to the Archive.
 // A browser that never had sample files is left alone (the first visit makes them).
 async function setUpWelcomeFolder() {
   const KEY = 'sigma.welcomeFolder';
@@ -82,11 +84,13 @@ async function setUpWelcomeFolder() {
   } catch {}
 }
 
-// The guide's token file is marked as a sample and named Sigma Tokens (it was "Sample design tokens").
+// The guide's tokens file is marked as a sample and named Sample tokens (it was "Sample design tokens", then
+// "Sigma Tokens").
 async function nameSampleTokens(id) {
   const meta = (await db.getAll('files')).find((m) => m.id === id);
-  if (!meta || fileKind(meta) !== 'tokens' || (meta.sample && meta.name !== LEGACY_SAMPLE_TOKENS_NAME)) return meta?.name;
-  const name = meta.name === LEGACY_SAMPLE_TOKENS_NAME || meta.sampleLegacy ? sampleTokenDocument().name : meta.name;
+  const old = [LEGACY_SAMPLE_TOKENS_NAME, PREVIOUS_SAMPLE_NAMES.tokens];
+  if (!meta || fileKind(meta) !== 'tokens' || (meta.sample && !old.includes(meta.name))) return meta?.name;
+  const name = old.includes(meta.name) || meta.sampleLegacy ? sampleTokenDocument().name : meta.name;
   await db.updateFile(id, (m, rec) => {
     const { sampleLegacy, ...rest } = m;
     return { meta: { ...rest, sample: true, name }, doc: rec && { ...rec, doc: { ...rec.doc, name } } };
@@ -250,7 +254,7 @@ export async function storageSummary() {
 }
 
 // ---------- mutations ----------
-// Files are Sigma Design files (a canvas), Sigma Tokens files (design tokens only, no canvas) or Sigma
+// Files are design files (a canvas), tokens files (Design tokens only, no canvas) or Sigma
 // Icons files (icons imported from SVG, no canvas).
 export const fileKind = (metaOrDoc) => (metaOrDoc?.kind === 'tokens' || metaOrDoc?.kind === 'icons' ? metaOrDoc.kind : 'design');
 export { newIconsDocument };
@@ -387,7 +391,7 @@ export async function listIconFiles() {
   return (await listFiles()).filter((f) => fileKind(f) === 'icons');
 }
 
-// The latest published icons of a Sigma Icons file: { meta, published } or null.
+// The latest published icons of an icons file: { meta, published } or null.
 export async function loadPublishedIcons(id) {
   const file = await loadFile(id);
   if (!file || fileKind(file.meta) !== 'icons') return null;
@@ -425,8 +429,8 @@ export async function createTokenFileWith(name, collections, notes = 'Initial ve
 // Add collections to an existing (closed) token file and publish a new version.
 export async function appendToTokenFile(id, collections, notes, { libraries = [], dependencies = [] } = {}) {
   const file = await loadFile(id);
-  if (!file) throw new Error('That Sigma Tokens file no longer exists.');
-  if (isSampleFile(file.meta)) throw new Error('The sample Sigma Tokens keep their original content. Pick another file.');
+  if (!file) throw new Error('That tokens file no longer exists.');
+  if (isSampleFile(file.meta)) throw new Error('The sample tokens keep their original content. Pick another file.');
   const doc = file.doc;
   doc.variables ||= { collections: [] };
   doc.variables.collections.push(...structuredClone(collections));
@@ -440,7 +444,7 @@ export async function appendToTokenFile(id, collections, notes, { libraries = []
     name = meta.name;
     return { meta: { ...meta, updatedAt: Date.now(), tokenVersion: doc.published.version }, doc: { id, doc, views: file.views } };
   });
-  if (!exists) throw new Error('That Sigma Tokens file no longer exists.');
+  if (!exists) throw new Error('That tokens file no longer exists.');
   broadcast('saved', id);
   broadcast('published', id);
   return { id, name, published: doc.published };
@@ -468,7 +472,7 @@ export async function sampleTokenFile() {
   return createTokenFileWith(name, collections, 'Sample tokens', { meta: { sample: true } });
 }
 
-// The sample Sigma Icons (the whole Lucide set, made the first time). Reuses one of the current kind
+// The sample icons (the whole Lucide set, made the first time). Reuses one of the current kind
 // (SAMPLE_ICONS_VERSION) that still has every icon the guide uses; null if the Lucide data can't be read (the
 // guide is then made without icons).
 export async function sampleIconFile() {
@@ -477,13 +481,19 @@ export async function sampleIconFile() {
     if (!published) continue;
     const ids = new Set(published.icons.map((x) => x.id));
     if (![...WELCOME_ICONS, ...OPTICS_ICON_NAMES.map((n) => sampleIconId(n))].every((id) => ids.has(id))) continue; // icons the guide or Optics use are missing
+    if (meta.name === PREVIOUS_SAMPLE_NAMES.icons) {
+      // It was "Sigma Icons": now "Sample icons" (the same icons, so it's kept).
+      await db.updateFile(meta.id, (m, rec) => ({ meta: { ...m, name: SAMPLE_ICONS_NAME }, doc: rec && { ...rec, doc: { ...rec.doc, name: SAMPLE_ICONS_NAME } } }));
+      broadcast('renamed', meta.id);
+      meta.name = SAMPLE_ICONS_NAME;
+    }
     return { id: meta.id, name: meta.name, published };
   }
   let doc;
   try {
     doc = sampleIconsDocument(await loadIconSet(ICON_SETS.find((s) => s.id === 'lucide')));
   } catch (err) {
-    console.warn('Could not make the sample Sigma Icons', err);
+    console.warn('Could not make the sample icons', err);
     return null;
   }
   const id = await createFile(doc, {}, { sample: true, sampleIcons: SAMPLE_ICONS_VERSION });
@@ -497,12 +507,12 @@ export async function welcomeFile() {
   const current = await currentGuide();
   if (current) return current.id;
   const lib = await sampleTokenFile();
-  lib.name = (await nameSampleTokens(lib.id)) || lib.name; // an older sample token file becomes Sigma Tokens
+  lib.name = (await nameSampleTokens(lib.id)) || lib.name; // an older sample tokens file takes the current name
   const icons = await sampleIconFile();
   const doc = welcomeDocument(lib.published.collections, { icons: icons?.published.icons || null });
   doc.libraries = [libraryEntry(lib.id, lib.name, lib.published)];
   if (icons) {
-    // Like any Sigma Design file, the guide keeps copies of just the icons it uses.
+    // Like any design file, the guide keeps copies of just the icons it uses.
     const used = usedIconIds(doc.pages.flatMap((pg) => pg.children));
     doc.iconLibraries = [{
       fileId: icons.id, name: icons.name, version: icons.published.version, count: icons.published.icons.length,
@@ -518,8 +528,8 @@ export async function welcomeFile() {
 }
 
 // Optics (Phase 36): a working design system as your own files (saved like any other): Optics Tokens, Optics
-// Icons (made from the Sigma Icons sample), Optics Components (published, so other files can link it) and Optics
-// Foundations. Made once with Welcome to Sigma; the files home's Sigma Tokens menu adds them again. Returns their ids.
+// Icons (made from the sample icons), Optics Components (published, so other files can link it) and Optics
+// Foundations. Made once with Welcome to Sigma; Add Optics design system, in the Welcome to Sigma folder, adds them again. Returns their ids.
 const OPTICS_KEY = 'sigma.optics';
 export async function addOptics() {
   const ids = await opticsFiles(await sampleIconFile());
@@ -546,7 +556,7 @@ async function opticsFiles(icons) {
   const meta = { optics: 1 };
   const { name, collections } = opticsTokenDocument();
   const tokens = await createTokenFileWith(name, collections, 'Optics v1', { meta });
-  // Optics Icons: the Sigma Icons sample's icons as Optics' own file (with Lucide's license and credit).
+  // Optics Icons: the sample icons as Optics' own file (with Lucide's license and credit).
   let opticsIcons = null;
   if (icons) {
     const doc = opticsIconsDocument(icons.published.icons, (await loadFile(icons.id))?.doc.source || null);
@@ -555,7 +565,7 @@ async function opticsFiles(icons) {
   const link = (doc) => {
     doc.libraries = [libraryEntry(tokens.id, tokens.name, tokens.published)];
     if (!opticsIcons) return doc;
-    // Like any Sigma Design file, it keeps copies of just the icons it uses.
+    // Like any design file, it keeps copies of just the icons it uses.
     const used = usedIconIds(doc.pages.flatMap((pg) => pg.children));
     doc.iconLibraries = [{
       fileId: opticsIcons.id, name: opticsIcons.name, version: opticsIcons.published.version, count: opticsIcons.published.icons.length,

@@ -1,4 +1,4 @@
-// Design tokens between a codebase and a Sigma Tokens file (Part E, Phase 22). Pure functions, no DOM: the
+// Design tokens between a codebase and a tokens file (Part E, Phase 22). Pure functions, no DOM: the
 // sync skill runs them in Node through tools/sigma.mjs.
 //
 //   CSS custom properties → Sigma: parseCSSVariables + cssToCollections (modes come from selectors, like
@@ -6,8 +6,8 @@
 //   any other stack → Sigma: the agent writes the tokens as DTCG (tokens.json), importTokens reads them
 //   mergeTokenCollections: the imported tokens into the existing Sigma file, keeping ids, descriptions and
 //     order, so importing the same code again changes nothing
-//   tokenChanges: what changed between two versions of a Sigma Tokens file, with code names and values
-//   applyToCSS: write a Sigma Tokens file back into CSS as minimal edits (each value keeps its unit and
+//   tokenChanges: what changed between two versions of a tokens file, with code names and values
+//   applyToCSS: write a tokens file back into CSS as minimal edits (each value keeps its unit and
 //     color format)
 //
 // Each token can record its name in code: token.codeSyntax = { web: '--color-blue-500' } (Figma calls this

@@ -1,4 +1,4 @@
-// Sigma Icons files: importing SVGs safely, outline vs filled, drawing icons, groups, search and versions.
+// Icons files: importing SVGs safely, outline vs filled, drawing icons, groups, search and versions.
 import { test, eq, ok } from './harness.js';
 import {
   parseSVGIcon, iconMarkup, iconGroups, iconMatches, iconNameFrom, diffIcons, sanitizeIcons, newIconsDocument,
@@ -91,7 +91,7 @@ test('icons: icons in an imported file are cleaned again', () => {
   eq(sanitizeIcons(null), []);
 });
 
-// ---------- icons in Sigma Design files ----------
+// ---------- icons in design files ----------
 import { useDoc } from './core.test.js';
 import { state, createNode, editNode, makePaint, getNode, select } from '../src/store.js';
 import { syncInstances, createInstance, publishableComponents, listComponents } from '../src/components.js';
@@ -231,7 +231,7 @@ test('icons: an outline and a filled icon can share a name; re-importing updates
 import { iconSetDocument, ICON_SETS } from '../src/icon-library.js';
 import { keepIcons } from '../src/libraries.js';
 
-test('icon sets: become a published Sigma Icons file with stable ids and credit', () => {
+test('icon sets: become a published icons file with stable ids and credit', () => {
   const data = {
     name: 'Lucide', version: '1.0.0', url: 'https://lucide.dev', license: 'ISC', licenseText: 'ISC License…', viewBox: '0 0 24 24',
     style: 'outline', strokeWidth: 2, cap: 'round', join: 'round',
@@ -266,7 +266,7 @@ test('icons: search ranks the exact name first, then names that start with it', 
   eq(iconScore({ name: 'arrow-right' }, 'arrow right'), 0);
 });
 
-// ---------- the sample Sigma Icons and the guide's icons page ----------
+// ---------- the sample icons and the guide's icons page ----------
 import { sampleIconsDocument, sampleIconId } from '../src/sample-icons.js';
 import { welcomeDocument, WELCOME_ICONS } from '../src/welcome.js';
 import { sampleTokenDocument } from '../src/sample-tokens.js';
@@ -274,7 +274,7 @@ import { snapshotForLibrary, resolveVariables } from '../src/variables.js';
 import { loadDocument, walk } from '../src/store.js';
 import { loadIconSet } from '../src/icon-library.js';
 
-test('sample icons: the whole Lucide set, outline and filled, the guide’s icons in its groups', async () => {
+test('Sample icons: the whole Lucide set, outline and filled, the guide’s icons in its groups', async () => {
   const lucide = await loadIconSet(ICON_SETS[0]);
   const doc = sampleIconsDocument(lucide);
   const ids = new Set(doc.icons.map((i) => i.id));
@@ -291,16 +291,16 @@ test('sample icons: the whole Lucide set, outline and filled, the guide’s icon
   eq(doc.published.icons.length, doc.icons.length);
 });
 
-test('Welcome to Sigma: the Sigma Icons page’s components and instances show sample icons', async () => {
+test('Welcome to Sigma: the Icons files page’s components and instances show sample icons', async () => {
   const icons = sampleIconsDocument(await loadIconSet(ICON_SETS[0])).published.icons;
   const tokens = sampleTokenDocument();
   const doc = welcomeDocument(tokens.collections, { icons });
   doc.libraries = [{ fileId: 'lib', name: tokens.name, version: 1, collections: snapshotForLibrary(tokens.collections, 'lib') }];
-  doc.iconLibraries = [{ fileId: 'icons', name: 'Sigma Icons', version: 1, count: icons.length, icons }];
+  doc.iconLibraries = [{ fileId: 'icons', name: 'Sample icons', version: 1, count: icons.length, icons }];
   loadDocument(doc);
   syncInstances();
   resolveVariables();
-  const pg = state.doc.pages.find((p) => p.name === '10 Sigma Icons');
+  const pg = state.doc.pages.find((p) => p.name === '10 Icons files');
   ok(pg, 'page 10');
   const layers = [];
   walk(pg.children, (n) => void (n.type === 'icon' && layers.push(n)));

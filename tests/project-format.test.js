@@ -67,7 +67,7 @@ test('project format: an opened file looks right: instances, token values and la
   eq(card('Light').fills[0].color, '#FFFFFF');
   eq(card('Dark').fills[0].color, '#2C3038', 'modes resolve');
   ok(card('Light').children.length > 1, 'instance layers are rebuilt from the main component');
-  const icons = doc.pages.find((x) => x.name === '10 Sigma Icons');
+  const icons = doc.pages.find((x) => x.name === '10 Icons files');
   let iconLayers = 0;
   walk(icons.children, (n) => void (n.type === 'icon' && iconLayers++));
   ok(iconLayers > 15 && doc.iconLibraries[0].icons.length > 5, 'icons are linked by path and copied in');
@@ -142,7 +142,7 @@ test('validator: says what’s wrong in words an agent can act on', () => {
     'should be a color like "#0D99FF" or "#0D99FF80", not "blue"',
     'points at token missing, which doesn’t exist',
     'points at “color/bad”, a color token; it needs a number token',
-    'uses token nope, which isn’t in this file or the Sigma Tokens files it uses',
+    'uses token nope, which isn’t in this file or the tokens files it uses',
     'uses “color/bad”, a color token; radius needs a number token',
     'an instance’s layers come from its main component',
     'ghost isn’t a component in this file',

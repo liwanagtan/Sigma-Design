@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Sigma Tokens file",
+  "title": "Tokens file",
   "description": "Design tokens. See docs/schema/README.md.",
   "type": "object",
   "required": [
@@ -30,7 +30,7 @@
             "type": "string",
             "pattern": "\\.sigma\\.json$"
           },
-          "description": "Project paths of Sigma Tokens files"
+          "description": "Project paths of tokens files"
         }
       },
       "additionalProperties": false

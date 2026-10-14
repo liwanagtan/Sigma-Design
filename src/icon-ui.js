@@ -1,4 +1,4 @@
-// Icons in Sigma Design files: the icon picker, and icon layers in main components.
+// Icons in design files: the icon picker, and icon layers in main components.
 // Icon layers go inside main components for now; instances get them from their main component.
 import { commit, getParent, ancestors, insertNode, createNode, select, selectedNodes, editNode } from './store.js';
 import { isInsideInstance } from './components.js';
@@ -10,7 +10,7 @@ const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').
 const toast = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
 
 // Every icon this file can use: [{ icon, lib }] (removed icons only when `withId` is one of them). The
-// whole sets come from the linked Sigma Icons files (loadIconLibraries); until they're read, just the
+// whole sets come from the linked icons files (loadIconLibraries); until they're read, just the
 // icons the file uses.
 export function availableIcons({ groups = null, withId = null } = {}) {
   const out = [];
@@ -50,7 +50,7 @@ export async function openIconPicker({ anchor, currentId = null, groups = null, 
   picker.className = 'token-picker icon-picker';
   document.body.appendChild(picker);
   if (!iconLibraries().length) {
-    picker.innerHTML = '<div class="muted token-picker-empty">This file doesn’t use a Sigma Icons file yet.</div><button class="btn wide" data-libs>Link a Sigma Icons file…</button>';
+    picker.innerHTML = '<div class="muted token-picker-empty">This file doesn’t use an icons file yet.</div><button class="btn wide" data-libs>Link an icons file…</button>';
     picker.querySelector('[data-libs]').onclick = () => {
       closeIconPicker();
       openIconLibrariesDialog();
@@ -60,7 +60,7 @@ export async function openIconPicker({ anchor, currentId = null, groups = null, 
   }
   const search = picker.querySelector('input');
   const list = picker.querySelector('.icon-picker-list');
-  // By library, then style, then group (A–Z, ungrouped last), so the picker reads like the Sigma Icons file.
+  // By library, then style, then group (A–Z, ungrouped last), so the picker reads like the icons file.
   const styleOrder = Object.keys(ICON_STYLES), libs = iconLibraries();
   const found = availableIcons({ groups, withId: currentId });
   const rank = (x) => [libs.indexOf(x.lib), styleOrder.indexOf(x.icon.style), x.icon.group ? 0 : 1];
@@ -208,8 +208,8 @@ export function iconLayerInfo(nodes) {
   const icon = ids.size === 1 ? findIcon([...ids][0]) : null;
   const lib = icon && iconLibraryOf(icon.id);
   const name = ids.size > 1 ? 'Mixed' : icon ? icon.name : 'Icon not available';
-  const where = icon?.removed ? 'Removed from its Sigma Icons file' : lib ? `${lib.name}${icon.group ? ` / ${icon.group}` : ''}`
-    : icon ? 'From a component library' : 'Its Sigma Icons file isn’t linked';
+  const where = icon?.removed ? 'Removed from its icons file' : lib ? `${lib.name}${icon.group ? ` / ${icon.group}` : ''}`
+    : icon ? 'From a component library' : 'Its icons file isn’t linked';
   return {
     icon, outline: nodes.some((n) => findIcon(n.iconId)?.style === 'outline' || findIcon(n.iconId)?.strokeWidth > 0), // has a stroke
     html: `<div class="icon-layer-row"><span class="icon-layer-preview">${icon ? iconMarkup(icon, { w: 20, h: 20 }) : ''}</span>` +

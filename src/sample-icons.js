@@ -1,4 +1,4 @@
-// The sample Sigma Icons file ("Sigma Icons" in the Welcome to Sigma folder): the whole Lucide set
+// The sample icons file ("Sample icons" in the Welcome to Sigma folder): the whole Lucide set
 // (https://lucide.dev, ISC License, about 1,900 icons), with filled versions of some shapes so it shows both
 // styles. The icons the guide uses are in groups of their own (Actions, Arrows, Status…); the rest are in
 // Lucide's categories. The Welcome to Sigma guide links it and uses its icons in components; Optics Icons is
@@ -6,7 +6,7 @@
 export const SAMPLE_ICONS_VERSION = 2; // 2: the whole Lucide set (1: a selection of 72 icons)
 import { newIconsDocument, sanitizeIcons } from './icon-library.js';
 
-export const SAMPLE_ICONS_NAME = 'Sigma Icons';
+export const SAMPLE_ICONS_NAME = 'Sample icons';
 
 // The guide's groups → Lucide icon names (outline). Every other Lucide icon keeps its Lucide category.
 const OUTLINE = {
@@ -31,7 +31,7 @@ const FILLED = {
 // The id of a sample icon (the guide refers to them by name).
 export const sampleIconId = (name, filled = false) => `sigma-${name}${filled ? '-filled' : ''}`;
 
-// The sample Sigma Icons document from the Lucide data (icon-sets/lucide.json), published as v1.
+// The sample icons document from the Lucide data (icon-sets/lucide.json), published as v1.
 export function sampleIconsDocument(lucide) {
   const byName = new Map(lucide.icons.map(([name, category, keywords, body]) => [name, { category, keywords, body }]));
   const icons = [];

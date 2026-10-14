@@ -1,7 +1,7 @@
-// Icons between a codebase and a Sigma Icons file (Part E, Phase 23). Pure functions, no DOM: the sync
+// Icons between a codebase and an icons file (Part E, Phase 23). Pure functions, no DOM: the sync
 // skill runs them in Node through tools/sigma.mjs.
 //
-// An icon folder maps to a Sigma Icons file: each .svg file is an icon named after the file, in a group
+// An icon folder maps to an icons file: each .svg file is an icon named after the file, in a group
 // named after its folder (relative to the icon folder; "" at the top). Writing back puts an icon at
 // <folder>/<group>/<name>.svg.
 import { parseSVGIcon, iconNameFrom } from './icon-library.js';
@@ -68,7 +68,7 @@ export function mergeIcons(existing = [], imported = [], { prune = false } = {})
   return { icons: kept, report };
 }
 
-// What changed between two versions of a Sigma Icons file: [{ id, name, group, change, icon, before }].
+// What changed between two versions of an icons file: [{ id, name, group, change, icon, before }].
 export function iconChanges(before = [], after = []) {
   const a = new Map(before.map((i) => [i.id, i]));
   const b = new Map(after.map((i) => [i.id, i]));

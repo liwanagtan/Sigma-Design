@@ -13,7 +13,7 @@ function loadSample() {
   return collections();
 }
 
-test('sample tokens: every reference resolves, and nothing loops', () => {
+test('Sample tokens: every reference resolves, and nothing loops', () => {
   const cols = loadSample();
   eq(cols.map((c) => c.name), ['Primitives', 'Semantic', 'Brand B', 'Typography', 'Components']);
   for (const c of cols) {
@@ -27,7 +27,7 @@ test('sample tokens: every reference resolves, and nothing loops', () => {
   }
 });
 
-test('sample tokens: three levels, modes, the brand and text styles resolve as designed', () => {
+test('Sample tokens: three levels, modes, the brand and text styles resolve as designed', () => {
   const cols = loadSample();
   const [, semantic, brand] = cols;
   const btn = findByReference('{button/primary/background}', 'color').variable;
@@ -42,7 +42,7 @@ test('sample tokens: three levels, modes, the brand and text styles resolve as d
   eq(groupTree(cols[0]).map((g) => g.name), ['color', 'space', 'layout', 'radius', 'border-width', 'font', 'opacity', 'motion', 'content']);
 });
 
-test('sample tokens: round-trips through tokens.json', () => {
+test('Sample tokens: round-trips through tokens.json', () => {
   const cols = loadSample();
   const back = importTokens(JSON.parse(JSON.stringify(exportDTCG(cols)))).collections;
   eq(back.map((c) => [c.name, c.variables.length]), cols.map((c) => [c.name, c.variables.length]));
@@ -57,7 +57,7 @@ test('Welcome to Sigma: ten pages, every binding points at a linked sample token
   resolveVariables();
   eq(state.doc.pages.length, 10);
   eq(state.doc.pages[0].name, '1 Start here');
-  eq(state.doc.variables?.collections?.length || 0, 0); // no local tokens: all of them come from the Sigma Tokens file
+  eq(state.doc.variables?.collections?.length || 0, 0); // no local tokens: all of them come from the tokens file
   let bound = 0, oneOff = 0;
   for (const pg of state.doc.pages) {
     ok(pg.children.some((n) => n.name === 'Guide'), `${pg.name} has a guide`);

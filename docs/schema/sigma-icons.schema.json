@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Sigma Icons file",
+  "title": "Icons file",
   "description": "Icons imported from SVG. See docs/schema/README.md.",
   "type": "object",
   "required": [

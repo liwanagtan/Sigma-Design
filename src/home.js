@@ -42,7 +42,7 @@ try {
   if (prefs.section === 'project') prefs.section = 'recents'; // the Project section's files are in the kind sections now
 } catch {}
 
-const SECTIONS = { report: 'Design system report', proposals: 'Proposals', recents: 'Recents', design: 'Sigma Design', tokens: 'Sigma Tokens', icons: 'Sigma Icons', welcome: 'Welcome to Sigma', archive: 'Archive' };
+const SECTIONS = { report: 'Design system report', proposals: 'Proposals', recents: 'Recents', design: 'Design', tokens: 'Tokens', icons: 'Icons', welcome: 'Welcome to Sigma', archive: 'Archive' };
 
 // Open the files home on a section (e.g. the Archive, when an archived file's link is opened).
 export function showHomeSection(section) {
@@ -80,9 +80,9 @@ export function initHome(el) {
       <nav class="home-nav">
         <button class="nav-item" data-section="recents">Recents</button>
         <div class="nav-label">Files</div>
-        <button class="nav-item" data-section="design">${NAV_DESIGN} Sigma Design</button>
-        <button class="nav-item" data-section="tokens">${NAV_TOKENS} Sigma Tokens</button>
-        <button class="nav-item" data-section="icons">${NAV_ICONS} Sigma Icons</button>
+        <button class="nav-item" data-section="design">${NAV_DESIGN} Design</button>
+        <button class="nav-item" data-section="tokens">${NAV_TOKENS} Tokens</button>
+        <button class="nav-item" data-section="icons">${NAV_ICONS} Icons</button>
         <button class="nav-item" data-section="proposals" id="nav-proposals" title="Changes proposed from Sigma, and their pull requests" hidden>${NAV_PROPOSALS} Proposals</button>
         <button class="nav-item" data-section="report" title="How much of the design files comes from the design system">${NAV_REPORT} Report</button>
         <div class="nav-spacer"></div>
@@ -102,9 +102,9 @@ export function initHome(el) {
             <button class="icon-btn" data-layout="list" title="List view">${LIST_ICON}</button>
           </div>
           <button class="btn" id="home-import">Import</button>
-          <button class="btn" id="home-new-icons" title="New Sigma Icons file">${icons.plus} Sigma Icons</button>
-          <button class="btn" id="home-new-tokens" title="New Sigma Tokens file">${icons.plus} Sigma Tokens</button>
-          <button class="btn primary" id="home-new" title="New Sigma Design file">${icons.plus} Sigma Design</button>
+          <button class="btn" id="home-new-icons" title="New icons file">${icons.plus} Icons file</button>
+          <button class="btn" id="home-new-tokens" title="New tokens file">${icons.plus} Tokens file</button>
+          <button class="btn primary" id="home-new" title="New design file">${icons.plus} Design file</button>
         </div>
       </header>
       <div id="home-notice"></div>
@@ -273,9 +273,9 @@ function projectCard(f) {
 }
 
 const EMPTY_PROJECT = {
-  design: ['No Sigma Design files in this project yet', 'Design pages and components on the project’s tokens and icons. The sync skill can also build them from the code (its components and pages).', 'blank', 'New Sigma Design file'],
-  tokens: ['No Sigma Tokens files in this project yet', 'The project’s design tokens, kept in step with the code. The sync skill sets this up from the code’s tokens (skills/sigma-sync).', 'tokens', 'New Sigma Tokens file'],
-  icons: ['No Sigma Icons files in this project yet', 'The project’s icons, kept in step with its icon folder. The sync skill sets this up (skills/sigma-sync).', 'icons', 'New Sigma Icons file'],
+  design: ['No design files in this project yet', 'Design pages and components on the project’s tokens and icons. The sync skill can also build them from the code (its components and pages).', 'blank', 'New design file'],
+  tokens: ['No tokens files in this project yet', 'The project’s design tokens, kept in step with the code. The sync skill sets this up from the code’s tokens (skills/sigma-sync).', 'tokens', 'New tokens file'],
+  icons: ['No icons files in this project yet', 'The project’s icons, kept in step with its icon folder. The sync skill sets this up (skills/sigma-sync).', 'icons', 'New icons file'],
 };
 
 // Recents and the kind sections, in a project: the project's files.
@@ -297,7 +297,7 @@ async function renderProjectFiles(list, section, q) {
     list.innerHTML = move + `<div class="home-empty"><p>No project files match “${esc(query)}”.</p></div>`;
     return;
   }
-  const [title, text, act, label] = EMPTY_PROJECT[section] || ['No Sigma files in this project yet', 'Create one with the buttons above, or let the sync skill set the project up from its code (skills/sigma-sync).', 'blank', 'New Sigma Design file'];
+  const [title, text, act, label] = EMPTY_PROJECT[section] || ['No Sigma files in this project yet', 'Create one with the buttons above, or let the sync skill set the project up from its code (skills/sigma-sync).', 'blank', 'New design file'];
   list.innerHTML = move + `<div class="home-empty"><div class="home-empty-title">${title}</div><p>${text}</p>
     ${project.connected ? `<div class="home-empty-actions"><button class="btn primary" data-empty-action="${act}">${icons.plus} ${label}</button></div>` : ''}</div>`;
 }
@@ -389,7 +389,7 @@ async function renderReport(list) {
       <label><input type="checkbox" data-report-handoff${prefs.reportHandoff ? ' checked' : ''}> Only pages marked for handoff</label>
     </div>`;
   if (!files.length) {
-    list.innerHTML = `<div class="report">${filters}<div class="home-empty"><p>No Sigma Design files to measure${projectMode() ? ' in this project' : ' in this browser'} yet.</p></div></div>`;
+    list.innerHTML = `<div class="report">${filters}<div class="home-empty"><p>No design files to measure${projectMode() ? ' in this project' : ' in this browser'} yet.</p></div></div>`;
     return;
   }
   const rows = (items, cols) => items.map((it) => `<tr>${cols.map((c) => `<td${c.num ? ' class="num"' : ''}>${c.get(it)}</td>`).join('')}</tr>`).join('');
@@ -455,8 +455,8 @@ async function newIconsFile() {
   await create(newIconsDocument());
 }
 
-// A Sigma Icons file with a free icon set (Lucide), published so Sigma Design files can link it. Offered when
-// there are no Sigma Icons files yet; in a project it's the way to get Lucide as a project file.
+// An icons file with a free icon set (Lucide), published so design files can link it. Offered when
+// there are no icons files yet; in a project it's the way to get Lucide as a project file.
 let creatingSet = false;
 async function newIconSetFile(set) {
   if (!set || creatingSet) return;
@@ -660,20 +660,20 @@ export async function renderHome() {
   } else if (!total) {
     list.innerHTML = `<div class="home-empty"><div class="home-empty-title">Create your first file</div>
       <p>Files are saved in this browser. You can also drag <b>.sigma.json</b> files here to import them.</p>
-      <div class="home-empty-actions"><button class="btn primary" data-empty-action="blank">${icons.plus} New Sigma Design file</button>
+      <div class="home-empty-actions"><button class="btn primary" data-empty-action="blank">${icons.plus} New design file</button>
       <button class="btn" data-empty-action="welcome">Open Welcome to Sigma</button></div></div>`;
   } else if (!inSection && section === 'tokens') {
-    list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No Sigma Tokens files yet</div>
-      <p>A Sigma Tokens file holds your design tokens (colors, spacing, type, shadows, motion) for Sigma Design files to use. It has no canvas.</p>
-      <div class="home-empty-actions"><button class="btn primary" data-empty-action="tokens">${icons.plus} New Sigma Tokens file</button></div></div>`;
+    list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No tokens files yet</div>
+      <p>A tokens file holds your design tokens (colors, spacing, type, shadows, motion) for design files to use. It has no canvas.</p>
+      <div class="home-empty-actions"><button class="btn primary" data-empty-action="tokens">${icons.plus} New tokens file</button></div></div>`;
   } else if (!inSection && section === 'icons') {
-    list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No Sigma Icons files yet</div>
-      <p>A Sigma Icons file holds icons imported from SVG (from a free icon set, for example). Components in Sigma Design files pick their icons from it. It has no canvas.</p>
-      <div class="home-empty-actions"><button class="btn primary" data-empty-action="icons">${icons.plus} New Sigma Icons file</button>
+    list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No icons files yet</div>
+      <p>An icons file holds icons imported from SVG (from a free icon set, for example). Components in design files pick their icons from it. It has no canvas.</p>
+      <div class="home-empty-actions"><button class="btn primary" data-empty-action="icons">${icons.plus} New icons file</button>
       ${ICON_SETS.map((s) => `<button class="btn" data-empty-action="icon-set" data-set="${s.id}">Add ${esc(s.name)} icons</button>`).join('')}</div></div>`;
   } else if (!inSection) {
-    list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No Sigma Design files yet</div>
-      <div class="home-empty-actions"><button class="btn primary" data-empty-action="blank">${icons.plus} New Sigma Design file</button>
+    list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No design files yet</div>
+      <div class="home-empty-actions"><button class="btn primary" data-empty-action="blank">${icons.plus} New design file</button>
       <button class="btn" data-empty-action="welcome">Open Welcome to Sigma</button></div></div>`;
   } else if (!files.length) {
     list.innerHTML = `<div class="home-empty"><p>No files match “${esc(query)}”.</p></div>`;
@@ -704,12 +704,12 @@ function archivedCard(f) {
 
 // The Welcome to Sigma folder: what it's for, and (on each card) what each sample file holds.
 const WELCOME_INTRO = `<div class="welcome-intro">
-  <p><b>Welcome to Sigma</b> is where to learn Sigma: a guide, and the small design system it's built with. Open <b>Sigma Design</b> first; it explains everything, page by page, with examples to try.</p>
+  <p><b>Welcome to Sigma</b> is where to learn Sigma: a guide, and the small design system it's built with. Open the <b>Guide</b> first; it explains everything, page by page, with examples to try.</p>
   <p class="muted">These are sample files: open them and try anything. Nothing in them is saved, so they're back to the original whenever you open them again. <b>Duplicate to keep changes</b> (in the banner) makes a copy of your own, which goes with your files.</p>
   <p class="muted"><b>Optics</b>, a complete design system inspired by Shopify’s Polaris (tokens, icons, foundations and every Polaris component), came as files of your own with your first Welcome to Sigma. <button class="link-btn" data-empty-action="optics">Add Optics design system</button> makes a fresh set.</p>
 </div>`;
 const SAMPLE_DESCRIPTIONS = {
-  design: 'The guide. Ten pages, each with a short explanation and examples: the canvas, layout, components, design tokens, style, quality checks, libraries and versions, Sigma Tokens and Sigma Icons.',
+  design: 'The guide. Ten pages, each with a short explanation and examples: the canvas, layout, components, design tokens, style, quality checks, libraries and versions, tokens files and icons files.',
   tokens: 'The design tokens the guide is built with: primitives, semantic colors in Light and Dark, a Brand B, text styles and component tokens.',
   icons: 'The whole Lucide set, about 1,900 icons, outline and filled, in groups. The guide’s components use them, and Optics Icons is made from it.',
 };

@@ -1,7 +1,7 @@
 // Libraries: a design file links
 //   - token files (doc.libraries): published design tokens
 //   - component libraries (doc.componentLibraries): components published by other design files
-//   - icon libraries (doc.iconLibraries): icons published by Sigma Icons files
+//   - icon libraries (doc.iconLibraries): icons published by icons files
 // and keeps a snapshot of the published version it accepted. Edits reach it only when the source file
 // publishes a new version and this file accepts the update.
 import { state, commit, emit, reindex, walk } from './store.js';
@@ -61,7 +61,7 @@ function setComponentLibrary(fileId, name, published) {
 // Icons in use here (by layers anywhere in the file, and component property defaults).
 const iconsInUse = () => usedIconIds((state.doc.pages || []).flatMap((pg) => pg.children));
 
-// Use a Sigma Icons file's published version. The file keeps copies of only the icons it uses, from that
+// Use an icons file's published version. The file keeps copies of only the icons it uses, from that
 // version; icons the version removed but this file uses stay (marked removed, so the picker leaves them
 // out) until they're swapped.
 function setIconLibrary(fileId, name, published) {
@@ -77,7 +77,7 @@ function setIconLibrary(fileId, name, published) {
   else libs.push(entry);
 }
 
-// Read the whole published icon set of every linked Sigma Icons file (for the picker).
+// Read the whole published icon set of every linked icons file (for the picker).
 export async function loadIconLibraries() {
   await Promise.all(iconLibraries().map(async (lib) => {
     const res = await loadPublishedIcons(lib.fileId);
@@ -96,7 +96,7 @@ export function keepIcons(ids) {
 }
 
 // Icons in use that the file has no copy of (pasted from another file, say): copy them from the linked
-// Sigma Icons files. Returns how many were added.
+// Icons files. Returns how many were added.
 export async function repairIcons() {
   if (!state.doc || !iconLibraries().length) return 0;
   const missing = [...iconsInUse()].filter((id) => !iconLibraries().some((l) => l.icons.some((x) => x.id === id)) &&
@@ -115,7 +115,7 @@ export async function repairIcons() {
 export async function linkIconLibrary(fileId) {
   if (iconLibraries().some((l) => l.fileId === fileId)) return;
   const res = await loadPublishedIcons(fileId);
-  if (!res?.published) return toast('That Sigma Icons file has no published version yet. Publish it from the file first.');
+  if (!res?.published) return toast('That icons file has no published version yet. Publish it from the file first.');
   setIconLibrary(fileId, res.meta.name, res.published);
   commit();
   toast(`Linked “${res.meta.name}” (v${res.published.version}, ${res.published.icons.length.toLocaleString()} icons)`);
@@ -132,7 +132,7 @@ export function unlinkIconLibrary(fileId) {
   toast(`Unlinked “${lib.name}”`);
 }
 
-// The Sigma Icons files components use (in icon layers or Icon properties), recorded when publishing so a
+// The icons files components use (in icon layers or Icon properties), recorded when publishing so a
 // file linking the component library links them too (to choose other icons in instances).
 function componentIconFiles(components) {
   const used = usedIconIds(components);
@@ -157,9 +157,9 @@ function componentIcons(components) {
 }
 
 // ---------- the tokens a component library uses ----------
-// Published components record the Sigma Tokens file they were built with and the name of every token they
+// Published components record the tokens file they were built with and the name of every token they
 // use: published.tokens = { files: [{ fileId, name, version }], names: { tokenId: 'type:name' } }.
-// In a file using the library, a token the file doesn't have (another Sigma Tokens file, like a second
+// In a file using the library, a token the file doesn't have (another tokens file, like a second
 // brand with the same token names) is matched by name to the file's own, so library components follow
 // this file's tokens and modes. Returns the number of uses left without a match.
 function eachTokenUse(nodes, fn) {
@@ -186,12 +186,12 @@ export function relinkLibraryTokens(entry) {
   return missing;
 }
 
-// After this file's tokens change (another Sigma Tokens file), match every library's components again.
+// After this file's tokens change (another tokens file), match every library's components again.
 export function relinkAllLibraryTokens() {
   for (const lib of componentLibraries()) relinkLibraryTokens(lib);
 }
 
-// What publishing records: the Sigma Tokens file(s) this file uses, the names of the tokens the components
+// What publishing records: the tokens file(s) this file uses, the names of the tokens the components
 // use, and how many uses point at this file's local tokens (other files won't have those).
 function componentTokens(components) {
   const names = {};
@@ -229,11 +229,11 @@ function instancesFrom(lib) {
 }
 
 export async function linkLibrary(fileId) {
-  if (isDesignFile()) return useTokenFile(fileId); // design files use one token file
-  if (fileId === getCurrentFileId()) return toast('A Sigma Tokens file can’t link itself.');
+  if (isDesignFile()) return useTokenFile(fileId); // Design files use one token file
+  if (fileId === getCurrentFileId()) return toast('A tokens file can’t link itself.');
   if (libraries().some((l) => l.fileId === fileId)) return;
   const res = await loadPublished(fileId);
-  if (!res?.published) return toast('That Sigma Tokens file has no published version yet. Publish it from the file first.');
+  if (!res?.published) return toast('That tokens file has no published version yet. Publish it from the file first.');
   if ((res.published.dependencies || []).some((d) => d.fileId === getCurrentFileId())) {
     return toast(`“${res.meta.name}” already uses this file’s tokens, so this file can’t use its tokens in return.`);
   }
@@ -292,7 +292,7 @@ function tokenUses(ids) {
 export async function useTokenFile(fileId) {
   if (tokenFile()?.fileId === fileId && libraries().length === 1) return;
   const res = await loadPublished(fileId);
-  if (!res?.published) return toast('That Sigma Tokens file has no published version yet. Publish it from the file first.');
+  if (!res?.published) return toast('That tokens file has no published version yet. Publish it from the file first.');
   const old = libraries();
   const before = new Map(libraryCollections().flatMap((c) => (c.variables || []).map((v) => [v.id, v])));
   // What the new file provides, by id and by name.
@@ -357,14 +357,14 @@ export async function linkComponentLibrary(fileId) {
   if (componentLibraries().some((l) => l.fileId === fileId)) return;
   const res = await loadPublishedComponents(fileId);
   if (!res?.published) return toast('That file has no published components yet.');
-  // A file without a Sigma Tokens file starts using the one the components were built with.
+  // A file without a tokens file starts using the one the components were built with.
   const needs = res.published.tokens?.files?.[0];
   let alsoTokens = false;
   if (needs && !libraries().length && needs.fileId !== getCurrentFileId() && (await loadPublished(needs.fileId))?.published) {
     await useTokenFile(needs.fileId);
     alsoTokens = libraries().some((l) => l.fileId === needs.fileId);
   }
-  // Components with Icon properties choose from their Sigma Icons files: link those too.
+  // Components with Icon properties choose from their icons files: link those too.
   const iconFiles = [];
   for (const f of res.published.iconFiles || []) {
     if (iconLibraries().some((l) => l.fileId === f.fileId)) continue;
@@ -378,7 +378,7 @@ export async function linkComponentLibrary(fileId) {
   toast(`Linked components from “${res.meta.name}” (v${res.published.version})` +
     (alsoTokens ? `, and this file now uses their design tokens from “${needs.name}”` : '') +
     (iconFiles.length ? `, and their icons from ${iconFiles.map((n) => `“${n}”`).join(', ')}` : '') +
-    (missing ? `. ${missing} token use${missing === 1 ? '' : 's'} in them aren’t in this file’s Sigma Tokens, so those layers keep their colors` : ''));
+    (missing ? `. ${missing} token use${missing === 1 ? '' : 's'} in them aren’t in this file’s tokens file, so those layers keep their colors` : ''));
 }
 
 export async function unlinkComponentLibrary(fileId) {
@@ -449,7 +449,7 @@ export function componentPublishStatus() {
   const pub = state.doc?.publishedComponents;
   const now = publishableComponents();
   const d = diffComponents(pub?.components || [], now);
-  // A newer version of an icon they use (from an updated Sigma Icons file) is a change too.
+  // A newer version of an icon they use (from an updated icons file) is a change too.
   const iconsChanged = !!pub && JSON.stringify(componentIcons(now)) !== JSON.stringify(pub.icons || {});
   const dirty = !pub || iconsChanged || d.added.length + d.changed.length + d.removed.length > 0;
   return { pub, count: now.length, dirty };
@@ -471,9 +471,9 @@ export function openPublishComponentsDialog() {
   const version = (pub?.version || 0) + 1;
   const { tokens, local } = componentTokens(componentSnapshot());
   const body = `<p class="muted">Publishes this file's ${count} component${count === 1 ? '' : 's'} as version ${version}. ` +
-    'Sigma Design files that use them as a library will be offered the update.</p>' +
-    (tokens.files.length ? `<p class="muted">They use design tokens from ${tokens.files.map((f) => `“${esc(f.name)}”`).join(' and ')}; files using the library use it too, or match the tokens by name in their own Sigma Tokens file.</p>` : '') +
-    (local ? `<div class="warn">${local} use${local === 1 ? '' : 's'} of this file’s local tokens. Other files won’t have them, so those layers keep their current values there. Move the tokens to a Sigma Tokens file first (Design tokens window → Move to Sigma Tokens…).</div>` : '') +
+    'Design files that use them as a library will be offered the update.</p>' +
+    (tokens.files.length ? `<p class="muted">They use design tokens from ${tokens.files.map((f) => `“${esc(f.name)}”`).join(' and ')}; files using the library use it too, or match the tokens by name in their own tokens file.</p>` : '') +
+    (local ? `<div class="warn">${local} use${local === 1 ? '' : 's'} of this file’s local tokens. Other files won’t have them, so those layers keep their current values there. Move the tokens to a tokens file first (Design tokens window → Move to tokens file…).</div>` : '') +
     (diffList('Added', d.added, 'added') + diffList('Changed', d.changed, 'changed') + diffList('Removed', d.removed, 'removed') || '<div class="muted">No changes since the last version.</div>') +
     '<label class="inspector-label">Notes (optional)</label><textarea class="desc publish-notes" rows="3" placeholder="What changed and why?"></textarea>';
   const wrap = modal('Publish components', body, `<button class="btn" data-compare title="The components as published and as they are now, and the files they reach">Compare…</button><span class="spacer"></span><button class="btn" data-close>Cancel</button><button class="btn primary" data-confirm>Publish v${version}</button>`);
@@ -512,7 +512,7 @@ export async function checkLibraryUpdates() {
   if (found.length) {
     const names = (kind) => found.filter((u) => u.kind === kind).map((u) => `${esc(u.meta.name)} v${u.published.version}`).join(', ');
     const parts = [
-      names('tokens') && `${isDesignFile() ? 'Design token' : 'Sigma Tokens'} updates: ${names('tokens')}`,
+      names('tokens') && `${isDesignFile() ? 'Design token' : 'Tokens file'} updates: ${names('tokens')}`,
       names('components') && `Component library updates: ${names('components')}`,
       names('icons') && `Icon updates: ${names('icons')}`,
     ].filter(Boolean);
@@ -550,7 +550,7 @@ function reviewUpdates() {
       (u.published.notes ? `<div class="update-notes">“${esc(u.published.notes)}”</div>` : '') +
       (iconsKind ? `<div class="muted">${u.published.icons.length.toLocaleString()} icons in v${u.published.version}${u.lib.count ? ` (${u.lib.count.toLocaleString()} in v${u.lib.version})` : ''}. Changes to the icons this file uses:</div>` : '') +
       (diffList('Added', d.added, 'added') + diffList('Changed', d.changed, 'changed') + diffList('Removed', d.removed, 'removed') +
-        diffList('Sigma Tokens files it points at', deps, 'changed') || '<div class="muted">No changes.</div>') +
+        diffList('Tokens files it points at', deps, 'changed') || '<div class="muted">No changes.</div>') +
       (d.removed.length ? `<div class="muted">${comps ? 'Instances of removed components keep their current look.' : iconsKind ? 'Layers using removed icons keep them until you swap them.' : 'Layers using removed tokens keep their current values.'}</div>` : '') +
       `<div class="update-actions"><button class="btn" data-compare="${i}" title="See this file before and after the update">Compare…</button><button class="btn primary" data-accept="${i}">Accept update</button></div></div>`;
   }).join('');
@@ -618,13 +618,13 @@ export async function openDesignTokensDialog() {
       : `<button class="btn${using.size ? '' : ' primary'}" data-use="${f.id}" ${f.tokenVersion ? '' : 'disabled title="Publish it first"'}>${using.size ? 'Switch to this' : 'Use'}</button>`;
     return libraryRow(TOKEN_ICON, f.name, versionStatus(f.tokenVersion, lib), openBtn(f.id) + action);
   }).join('') + libraries().filter((l) => !files.some((f) => f.id === l.fileId)).map((l) =>
-    libraryRow(TOKEN_ICON, l.name, `<span class="muted">Sigma Tokens file archived or deleted · using v${l.version}</span>`, `<button class="btn" data-stop="${l.fileId}">Stop using</button>`)).join('');
+    libraryRow(TOKEN_ICON, l.name, `<span class="muted">Tokens file archived or deleted · using v${l.version}</span>`, `<button class="btn" data-stop="${l.fileId}">Stop using</button>`)).join('');
   const deps = dependencyLibraries();
-  const body = '<p class="muted lib-intro">A Sigma Design file uses one Sigma Tokens file for its design tokens (and can keep a few local ones). ' +
-    'Switching moves layers to the tokens with the same names in the new file. Updates arrive when the Sigma Tokens file publishes and you accept them.</p>' +
-    (several ? '<div class="warn">This file uses several Sigma Tokens files, from before a Sigma Design file used one. Choose the one to keep: layers move to its tokens with the same names.</div>' : '') +
-    (rows || '<div class="muted lib-empty">No Sigma Tokens files yet. Create one from the home page and publish it.</div>') +
-    (deps.length ? `<p class="muted">Also included, because the Sigma Tokens file points at them: ${deps.map((d) => `${esc(d.name)} v${d.version}`).join(', ')}.</p>` : '');
+  const body = '<p class="muted lib-intro">A design file uses one tokens file for its design tokens (and can keep a few local ones). ' +
+    'Switching moves layers to the tokens with the same names in the new file. Updates arrive when the tokens file publishes and you accept them.</p>' +
+    (several ? '<div class="warn">This file uses several tokens files, from before a design file used one. Choose the one to keep: layers move to its tokens with the same names.</div>' : '') +
+    (rows || '<div class="muted lib-empty">No tokens files yet. Create one from the home page and publish it.</div>') +
+    (deps.length ? `<p class="muted">Also included, because the tokens file points at them: ${deps.map((d) => `${esc(d.name)} v${d.version}`).join(', ')}.</p>` : '');
   const footer = tokenFile() && !several ? `<button class="btn" data-stop="${tokenFile().fileId}">Stop using “${esc(tokenFile().name)}”</button><span class="spacer"></span><button class="btn" data-close>Done</button>` : '<button class="btn" data-close>Done</button>';
   const wrap = modal('Design tokens', body, footer);
   wrap.addEventListener('click', async (e) => {
@@ -650,14 +650,14 @@ export async function openLibrariesDialog() {
     const lib = linkedComps.get(f.id);
     const action = lib ? `<button class="btn" data-unlink-components="${f.id}">Unlink</button>`
       : `<button class="btn primary" data-link-components="${f.id}">Link</button>`;
-    const note = lib?.unmatchedTokens ? `<div class="muted">${lib.unmatchedTokens} token use${lib.unmatchedTokens === 1 ? '' : 's'} not in this file’s Sigma Tokens: those layers keep their colors</div>`
+    const note = lib?.unmatchedTokens ? `<div class="muted">${lib.unmatchedTokens} token use${lib.unmatchedTokens === 1 ? '' : 's'} not in this file’s tokens file: those layers keep their colors</div>`
       : lib?.tokens?.files?.length && !libraries().some((t) => lib.tokens.files.some((x) => x.fileId === t.fileId))
         ? `<div class="muted">Built with “${esc(lib.tokens.files[0].name)}”; its tokens are matched by name to this file’s</div>` : '';
     return libraryRow(COMPONENT_ICON, f.name, versionStatus(f.componentVersion, lib) + note, openBtn(f.id) + action);
   }).join('') + componentLibraries().filter((l) => !compFiles.some((f) => f.id === l.fileId)).map((l) =>
     libraryRow(COMPONENT_ICON, l.name, `<span class="muted">File archived or deleted · using v${l.version}</span>`, `<button class="btn" data-unlink-components="${l.fileId}">Unlink</button>`)).join('');
-  const body = '<p class="muted lib-intro">Component libraries are Sigma Design files that publish their components. Link one to use its components from Assets; changes arrive when it publishes a new version and you accept it.</p>' +
-    (compRows || '<div class="muted lib-empty">No other Sigma Design file has published components yet. Use <b>Publish components…</b> in a Sigma Design file’s main menu.</div>');
+  const body = '<p class="muted lib-intro">Component libraries are design files that publish their components. Link one to use its components from Assets; changes arrive when it publishes a new version and you accept it.</p>' +
+    (compRows || '<div class="muted lib-empty">No other design file has published components yet. Use <b>Publish components…</b> in a design file’s main menu.</div>');
   const wrap = modal('Component libraries', body);
   wrap.addEventListener('click', async (e) => {
     const b = e.target.closest('button');
@@ -673,7 +673,7 @@ export async function openLibrariesDialog() {
   });
 }
 
-// Design files: link Sigma Icons files, whose icons components can use.
+// Design files: link icons files, whose icons components can use.
 export async function openIconLibrariesDialog() {
   const files = (await listIconFiles()).filter(linkable);
   const linked = new Map(iconLibraries().map((l) => [l.fileId, l]));
@@ -685,8 +685,8 @@ export async function openIconLibrariesDialog() {
     return libraryRow(ICONS_ICON, f.name, versionStatus(f.tokenVersion, lib) + (lib ? `<span class="muted">${(lib.count ?? count(lib)).toLocaleString()} icons · ${count(lib)} used here</span>` : ''), openBtn(f.id) + action);
   }).join('') + iconLibraries().filter((l) => !files.some((f) => f.id === l.fileId)).map((l) =>
     libraryRow(ICONS_ICON, l.name, `<span class="muted">File archived or deleted · using v${l.version}</span>`, `<button class="btn" data-unlink-icons="${l.fileId}">Unlink</button>`)).join('');
-  const body = '<p class="muted lib-intro">Sigma Icons files hold icons imported from SVG. Link one to use its icons in this file’s components; changes arrive when it publishes a new version and you accept it.</p>' +
-    (rows || '<div class="muted lib-empty">No Sigma Icons files yet. Create one from the home page (<b>+ Sigma Icons</b>), import SVGs and publish it.</div>');
+  const body = '<p class="muted lib-intro">Icons files hold icons imported from SVG. Link one to use its icons in this file’s components; changes arrive when it publishes a new version and you accept it.</p>' +
+    (rows || '<div class="muted lib-empty">No icons files yet. Create one from the home page (<b>+ Icons file</b>), import SVGs and publish it.</div>');
   const wrap = modal('Icon libraries', body);
   wrap.addEventListener('click', async (e) => {
     const b = e.target.closest('button');
@@ -713,10 +713,10 @@ async function openLinkedTokenFilesDialog() {
     const status = dep ? `<span class="muted">Included with “${esc(dep.via)}” (v${dep.version}) · link it to choose the version yourself</span>` : versionStatus(f.tokenVersion, lib);
     return libraryRow(TOKEN_ICON, f.name, status, openBtn(f.id) + action);
   }).join('') + libraries().filter((l) => !tokenFiles.some((f) => f.id === l.fileId)).map((l) =>
-    libraryRow(TOKEN_ICON, l.name, `<span class="muted">Sigma Tokens file archived or deleted · using v${l.version}</span>`, `<button class="btn" data-unlink="${l.fileId}">Unlink</button>`)).join('');
-  const body = '<p class="muted lib-intro">Link other Sigma Tokens files to point this file’s tokens at theirs, e.g. brand colors that use core colors. When you publish, the Sigma Tokens files you point at go along, so design files resolve them too.</p>' +
-    (rows || '<div class="muted lib-empty">No other Sigma Tokens files yet. Create one from the home page and publish it.</div>');
-  const wrap = modal('Linked Sigma Tokens files', body);
+    libraryRow(TOKEN_ICON, l.name, `<span class="muted">Tokens file archived or deleted · using v${l.version}</span>`, `<button class="btn" data-unlink="${l.fileId}">Unlink</button>`)).join('');
+  const body = '<p class="muted lib-intro">Link other tokens files to point this file’s tokens at theirs, e.g. brand colors that use core colors. When you publish, the tokens files you point at go along, so design files resolve them too.</p>' +
+    (rows || '<div class="muted lib-empty">No other tokens files yet. Create one from the home page and publish it.</div>');
+  const wrap = modal('Linked tokens files', body);
   wrap.addEventListener('click', async (e) => {
     const b = e.target.closest('button');
     if (!b) return;
@@ -762,7 +762,7 @@ export async function moveLocalTokensMenu(anchor) {
   const files = (await listTokenFiles()).filter((f) => !isSampleFile(f)); // the sample tokens never change
   const r = anchor.getBoundingClientRect();
   showContextMenu(r.left, r.bottom + 4, [
-    { label: 'New Sigma Tokens file', action: () => moveLocal(null) },
+    { label: 'New tokens file', action: () => moveLocal(null) },
     ...(files.length ? ['-', ...files.map((f) => ({ label: f.name, action: () => moveLocal(f.id) }))] : []),
   ]);
 }
@@ -772,7 +772,7 @@ export async function moveLocalTokensMenu(anchor) {
 export async function migrateLegacyTokens(wasVersion) {
   if (wasVersion >= 3 || !localCollections().length || state.screen !== 'editor') return;
   await moveLocal(null);
-  toast(`Your design tokens now live in the Sigma Tokens file “${state.doc.name} tokens”, linked to this file.`);
+  toast(`Your design tokens now live in the tokens file “${state.doc.name} tokens”, linked to this file.`);
 }
 
 export const hasLibraries = () => libraries().length > 0;

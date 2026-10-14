@@ -18,9 +18,9 @@ Sigma's source. Format **1**.
 <project>/
   sigma.config.json            what the sync skill decided (see "sigma.config.json" below)
   .sigma/
-    tokens/<name>.sigma.json   Sigma Tokens files: design tokens
-    icons/<name>.sigma.json    Sigma Icons files: icons
-    design/<name>.sigma.json   Sigma Design files: components (a library) and pages
+    tokens/<name>.sigma.json   tokens files: design tokens
+    icons/<name>.sigma.json    icons files: icons
+    design/<name>.sigma.json   design files: components (a library) and pages
     changesets/<id>.json       proposed changes (Propose change), until they're merged
 ```
 
@@ -55,11 +55,11 @@ Every file starts with:
 
 | Key | In | Lists |
 | --- | --- | --- |
-| `tokens` | any file | Sigma Tokens files whose tokens it uses (a design file usually has one) |
-| `icons` | design files | Sigma Icons files whose icons its components use |
-| `components` | design files | Sigma Design files whose components it places (component libraries) |
+| `tokens` | any file | Tokens files whose tokens it uses (a design file usually has one) |
+| `icons` | Design files | Icons files whose icons its components use |
+| `components` | Design files | Design files whose components it places (component libraries) |
 
-## Sigma Tokens files
+## Tokens files
 
 ```json
 {
@@ -122,7 +122,7 @@ they change, by token id and their own mode ids:
   "overrides": { "accent": { "b-light": "#7C3AED", "b-dark": "#A78BFA" } } }
 ```
 
-## Sigma Icons files
+## Icons files
 
 ```json
 {
@@ -146,7 +146,7 @@ they change, by token id and their own mode ids:
 - `group` and `keywords` (comma-separated) are for finding icons; `source` credits an icon set and can hold
   its `licenseText`.
 
-## Sigma Design files
+## Design files
 
 ```json
 {
@@ -164,7 +164,7 @@ A page in a page group has `"group"`, the group's name (`"group": "Forms"`). A g
 other in `pages`; the pages list shows them under the group's name, and other pages stay where they are.
 
 A design file can also have `collections` (local tokens, like a tokens file's), but tokens belong in a
-Sigma Tokens file.
+Tokens file.
 
 ### Layers
 
@@ -179,7 +179,7 @@ Every layer has `id`, `type` and `name`, and is positioned by `x`, `y` (relative
 | `line` | a line of length `w` (use `strokes`) | no |
 | `text` | text: `text`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight` (% or null), `letterSpacing`, `textAlign`, `autoResize` (`width`, `height` or `fixed`), `textCase` (`upper`, `lower`, `title`), `truncate` and `maxLines` | no |
 | `image` | an image (`src`, a URL or data URL) | no |
-| `icon` | an icon from a Sigma Icons file: `iconId`; its color is its first fill; `iconStroke` sets an outline icon's stroke width | no |
+| `icon` | an icon from an icons file: `iconId`; its color is its first fill; `iconStroke` sets an outline icon's stroke width | no |
 | `component` | a main component (a frame others can place) | yes |
 | `componentSet` | variants: components named `Prop=Value, Prop2=Value` | yes (only components) |
 | `instance` | a placed component: `componentId` | no (see below) |

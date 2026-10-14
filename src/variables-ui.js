@@ -120,7 +120,7 @@ subscribe((kind) => {
 
 // This file's own collections are edited here. Collections of linked token files can be browsed (read-only);
 // they're edited in their own file.
-// The sidebar has two tabs when the file links Sigma Tokens files: 'linked' (their collections, read-only)
+// The sidebar has two tabs when the file links tokens files: 'linked' (their collections, read-only)
 // and 'local' (this file's own). null follows the selected collection; with no local collections, the
 // linked file's first collection is shown.
 let sideTab = null;
@@ -317,7 +317,7 @@ function inspector(col) {
     const { steps, value } = aliasChain(col, m.id, v);
     const parts = steps.map((st) => (st.missing ? '<span class="muted">Missing token</span>'
       : `<button class="link-chip" data-select-token="${st.id}" title="${esc(collectionLabel(st.collection))}">${esc(st.variable.name)}` +
-        `${isLibraryCollection(st.collection) ? `<span class="lib-tag">${esc(libraryOf(st.collection)?.name || 'Sigma Tokens')}</span>` : ''}</button>`));
+        `${isLibraryCollection(st.collection) ? `<span class="lib-tag">${esc(libraryOf(st.collection)?.name || 'Tokens file')}</span>` : ''}</button>`));
     parts.push(`<span class="inspector-value">${valuePreview(v.type, value)}</span>`);
     return `<div class="inspector-row"><span class="muted">${esc(m.name)}</span><span class="chain">${parts.join('<span class="chain-arrow">→</span>')}</span></div>`;
   };
@@ -418,7 +418,7 @@ function render() {
   const caret = searching ? document.activeElement.selectionStart : 0;
   const col = active();
   if (col && activeGroup && !findGroup(col, activeGroup)) activeGroup = null;
-  // The sidebar: tabs for the linked Sigma Tokens file(s) and this file's own (local) collections.
+  // The sidebar: tabs for the linked tokens file(s) and this file's own (local) collections.
   const design = state.doc?.kind !== 'tokens';
   const locals = collectionTree();
   const libFiles = new Map();
@@ -432,21 +432,21 @@ function render() {
   const linkedCount = [...libFiles.values()].reduce((n, f) => n + f.cols.length, 0);
   const single = libFiles.size === 1 ? [...libFiles.values()][0].lib : null;
   const tabButton = (key, label, count, title) => `<button class="vars-tab${tab === key ? ' active' : ''}" data-side-tab="${key}" title="${esc(`${title} · ${count} collection${count === 1 ? '' : 's'}`)}">${label}</button>`;
-  const linkedTab = tabButton('linked', esc(single?.name || 'Linked'), linkedCount, design ? 'The Sigma Tokens file this file uses (read-only)' : 'Sigma Tokens files this file links (read-only)');
+  const linkedTab = tabButton('linked', esc(single?.name || 'Linked'), linkedCount, design ? 'The tokens file this file uses (read-only)' : 'Tokens files this file links (read-only)');
   const localTab = tabButton('local', design ? 'Local' : 'This file', locals.length, design ? 'Tokens kept only in this file' : 'This file’s collections');
   const tabs = libFiles.size ? `<div class="vars-tabs" role="tablist">${design ? linkedTab + localTab : localTab + linkedTab}</div>` : '';
   const linkedPanel = () => [...libFiles.values()].map(({ lib, cols }) =>
-    `<div class="lib-file-bar" title="Edit these tokens in their own Sigma Tokens file">` +
-    `<span class="lib-file-meta">${libFiles.size > 1 ? `<b>${esc(lib?.name || 'Sigma Tokens')}</b> · ` : ''}v${lib?.version ?? '?'}${lib?.via ? ` · via ${esc(lib.via)}` : ''} · read-only</span>` +
+    `<div class="lib-file-bar" title="Edit these tokens in their own tokens file">` +
+    `<span class="lib-file-meta">${libFiles.size > 1 ? `<b>${esc(lib?.name || 'Tokens file')}</b> · ` : ''}v${lib?.version ?? '?'}${lib?.via ? ` · via ${esc(lib.via)}` : ''} · read-only</span>` +
     (lib?.fileId ? `<button class="link-btn" data-act="open-library" data-file="${lib.fileId}" title="Open it to edit these tokens">Open</button>` : '') + '</div>' +
     cols.map((c) => colRow(c, col, 0)).join('')).join('');
   const localPanel = () => locals.map(({ c, depth }) => colRow(c, col, depth)).join('') +
-    (design && !locals.length && libFiles.size ? '<div class="muted vars-side-note">No local tokens. Tokens usually live in the Sigma Tokens file; a local collection is just for this file.</div>' : '') +
+    (design && !locals.length && libFiles.size ? '<div class="muted vars-side-note">No local tokens. Tokens usually live in the tokens file; a local collection is just for this file.</div>' : '') +
     '<button class="vars-add" data-act="new-collection">+ New collection</button>';
   const sidebar = tabs + (tab === 'linked' ? linkedPanel() : localPanel());
   let main;
   if (!col && libFiles.size && design) {
-    main = '<div class="vars-empty"><div class="home-empty-title">No local tokens</div><p>Most files don’t need any: their tokens come from the Sigma Tokens file. Create a collection here for tokens only this file uses; you can move them to a Sigma Tokens file later.</p><button class="btn primary" data-act="new-collection">Create collection</button></div>';
+    main = '<div class="vars-empty"><div class="home-empty-title">No local tokens</div><p>Most files don’t need any: their tokens come from the tokens file. Create a collection here for tokens only this file uses; you can move them to a tokens file later.</p><button class="btn primary" data-act="new-collection">Create collection</button></div>';
   } else if (!col) {
     main = '<div class="vars-empty"><div class="home-empty-title">No design tokens yet</div><p>Design tokens store reusable colors, numbers, text and booleans. Create a collection to start.</p><button class="btn primary" data-act="new-collection">Create collection</button></div>';
   } else {
@@ -491,13 +491,13 @@ function render() {
       ? `<div class="muted vars-none">${scope ? 'No tokens in this group yet. Drag tokens here or create one.' : 'No tokens match the search or filter.'}</div>`
       : '<div class="muted vars-none">No tokens in this collection yet.</div>';
     main = `<div class="vars-toolbar"><div class="vars-title">` +
-      (ro ? `<span class="vars-col-name static">${esc(col.name)}</span><span class="ext-badge lib" title="From ${esc(lib?.name || 'a Sigma Tokens file')} v${lib?.version ?? '?'}${lib?.via ? ` (via ${esc(lib.via)})` : ''}. Edit these tokens in that file.">Read-only</span>`
+      (ro ? `<span class="vars-col-name static">${esc(col.name)}</span><span class="ext-badge lib" title="From ${esc(lib?.name || 'a tokens file')} v${lib?.version ?? '?'}${lib?.via ? ` (via ${esc(lib.via)})` : ''}. Edit these tokens in that file.">Read-only</span>`
         : `<input class="vars-col-name" data-col-name="${col.id}" value="${esc(col.name)}" spellcheck="false">`) +
       (ext ? `<span class="ext-badge" title="Inherits tokens and modes from ${esc(parent ? collectionLabel(parent) : 'a missing collection')}">Extends ${esc(parent ? collectionLabel(parent) : '?')}</span>` : '') + '</div>' +
       `<div class="vars-actions"><input type="search" class="vars-search" data-search placeholder="Search tokens" value="${esc(query)}" spellcheck="false">` +
       `<select class="select" data-type-filter title="Filter by type"><option value="">All types</option>${Object.entries(VAR_TYPES).map(([t, l]) => `<option value="${t}" ${t === typeFilter ? 'selected' : ''}>${l}</option>`).join('')}</select>` +
       `<button class="btn" data-act="extend" title="Create a collection that inherits this one and overrides only some values">Extend</button>` +
-      (ro ? (lib ? `<button class="btn" data-act="open-library" data-file="${lib.fileId}">Open Sigma Tokens file</button>` : '') : '<button class="btn" data-act="delete-collection">Delete</button>') + '</div></div>' +
+      (ro ? (lib ? `<button class="btn" data-act="open-library" data-file="${lib.fileId}">Open tokens file</button>` : '') : '<button class="btn" data-act="delete-collection">Delete</button>') + '</div></div>' +
       (ext ? '<div class="vars-hint">Greyed values are inherited. Edit a value to override it for this collection; ↺ resets it. Add tokens and modes in the root collection.</div>' : '') +
       `<div class="vars-work"><div class="vars-table">${groupHeading(col, scope)}${head}${body || empty}</div>${inspector(col)}${resizerHTML('vars-inspector')}</div>` +
       (ext || ro ? '' : '<div class="vars-footer"><button class="btn" data-act="new-variable">+ Create token</button></div>');
@@ -505,7 +505,7 @@ function render() {
   rendering = true; // replacing the HTML blurs a focused field; that's not the user finishing an edit
   modal.querySelector('.vars-modal').innerHTML =
     (inline ? '' : `<div class="modal-head">Design tokens<span class="head-actions">` +
-      (localCollections().length ? '<button class="btn" data-act="move-to-file" title="Move these tokens into a Sigma Tokens file and link it">Move to Sigma Tokens…</button>' : '') +
+      (localCollections().length ? '<button class="btn" data-act="move-to-file" title="Move these tokens into a tokens file and link it">Move to tokens file…</button>' : '') +
       `<button class="icon-btn" data-close>${icons.close}</button></span></div>`) +
     `<div class="vars-body">${resizerHTML('vars-side')}<aside class="vars-side">${sidebar}</aside>` +
     `<section class="vars-main">${main}</section></div>`;

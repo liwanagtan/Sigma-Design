@@ -930,7 +930,7 @@ function pagesBuild(dir) {
   const from = resolve(flags.from);
   const manifest = JSON.parse(readFileSync(join(from, 'manifest.json'), 'utf8'));
   const spec = JSON.parse(readFileSync(join(from, 'pages.json'), 'utf8'));
-  if (!spec.file) fail('pages.json needs "file": the Sigma Design file to build (.sigma/design/<name>.sigma.json)');
+  if (!spec.file) fail('pages.json needs "file": the design file to build (.sigma/design/<name>.sigma.json)');
   const files = Object.fromEntries(Object.entries(readProject(root).files).map(([p, t]) => [p, JSON.parse(t)]));
   const libPath = manifest.library;
   const lib = files[libPath];
@@ -1248,7 +1248,7 @@ function report(dir) {
     name: file.name, path, doc: fromProjectFile(structuredClone(file), { path, resolve: resolveFile }).doc,
     editedAt: statSync(join(root, path)).mtimeMs,
   }));
-  if (!design.length) fail('no Sigma Design files in this project');
+  if (!design.length) fail('no design files in this project');
   const r = useReport(design, { since: flags.days ? Date.now() - Number(flags.days) * 86400000 : null, handoff: !!flags.handoff });
   out(json ? r : formatUseReport(r));
 }

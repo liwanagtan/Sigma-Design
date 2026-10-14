@@ -99,7 +99,7 @@ function sampleBanner() {
   showBanner('Sample file: try anything. Nothing is saved; it resets when you reopen it.', 'Duplicate to keep changes', async () => {
     const copy = await duplicateCurrent();
     if (!copy) return;
-    window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'Made a copy of your changes in Sigma Design' }));
+    window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'Made a copy of your changes in Design' }));
     openFile(copy);
   }, [{ label: 'Dismiss', action: () => hideBanner() }]);
 }

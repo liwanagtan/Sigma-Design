@@ -142,11 +142,11 @@ export function toProjectFile(doc, { pathOf = () => null } = {}) {
   const warnings = [];
   const file = { format: FORMAT, kind, name: doc.name || 'Untitled' };
   const uses = {};
-  const tokenLinks = usesOf(doc.libraries, pathOf, warnings, 'Sigma Tokens');
+  const tokenLinks = usesOf(doc.libraries, pathOf, warnings, 'tokens file');
   if (tokenLinks.length) uses.tokens = tokenLinks;
   if (kind === 'design') {
     const comps = usesOf(doc.componentLibraries, pathOf, warnings, 'components');
-    const icons = usesOf(doc.iconLibraries, pathOf, warnings, 'Sigma Icons');
+    const icons = usesOf(doc.iconLibraries, pathOf, warnings, 'icons file');
     if (comps.length) uses.components = comps;
     if (icons.length) uses.icons = icons;
   }
@@ -218,7 +218,7 @@ export function fromProjectFile(file, { resolve = () => null, path = null } = {}
     else return r;
     return null;
   };
-  // Sigma Tokens files used, with the Sigma Tokens files they use in turn (aliases can point into them).
+  // Tokens files used, with the tokens files they use in turn (aliases can point into them).
   const tokenEntry = (p, seen = new Set()) => {
     const r = linked(p, 'tokens');
     if (!r) return null;

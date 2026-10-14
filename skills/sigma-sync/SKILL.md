@@ -100,7 +100,7 @@ Sigma reads CSS variables and DTCG sources itself, and any other stack through t
 yourself, write them as a DTCG tokens.json in a temporary file (outside the repo), following
 `reference/tokens.md`, and pass `--from /tmp/<name>.tokens.json`.
 
-Either way the tool merges into the Sigma Tokens file: values come from the code; ids, descriptions,
+Either way the tool merges into the tokens file: values come from the code; ids, descriptions,
 groups and order stay; new tokens get ids from their names; tokens only in Sigma are kept (listed as
 `only in Sigma`) unless you pass `--prune` (only do that if the person wants Sigma to match the code
 exactly). It prints what was added, changed and skipped. Look at the skipped list and say why each was

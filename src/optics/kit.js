@@ -4,7 +4,7 @@
 import { createNode, makePaint } from '../store.js';
 import { DEFAULT_LAYOUT } from '../layout.js';
 
-// An Optics Icon's id (Optics Icons are Lucide icons, from Sigma Icons).
+// An Optics Icon's id (Optics Icons are Lucide icons, from the sample icons).
 export const I = (name, filled = false) => `optics-${name}${filled ? '-filled' : ''}`;
 
 // The building blocks, bound to the Optics tokens in `collections` (throws if a token is missing).

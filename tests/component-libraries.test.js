@@ -101,7 +101,7 @@ test('component libraries: re-measured text and moving a component are not unpub
   eq(diffComponents(before, [comp]).changed, ['Tag']);
 });
 
-test('component libraries: components follow the using file’s Sigma Tokens, matched by token name, in every mode', () => {
+test('component libraries: components follow the using file’s tokens file, matched by token name, in every mode', () => {
   const L = 'l', D = 'd';
   // The library was built with "Brand A"; this file uses "Brand B": same token names, other ids and values.
   const tokenFile = (prefix, light, dark) => ({

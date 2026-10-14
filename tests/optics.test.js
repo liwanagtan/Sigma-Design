@@ -51,8 +51,8 @@ test('optics: the tokens are complete, every one with a CSS variable', async () 
   ok(all.length > 200, `${all.length} tokens`);
   ok(all.every((v) => v.codeSyntax.web.startsWith('--optics-')));
   ok(OPTICS_ICONS.every((id) => icons.some((x) => x.id === id)), 'every icon Optics uses is in Optics Icons');
-  ok(icons.length === sample.icons.length && icons.every((x) => x.id.startsWith('optics-')), 'Optics Icons: every Sigma Icons icon, with Optics ids');
-  ok(sample.icons.length > 1800, `Sigma Icons is the whole Lucide set (${sample.icons.length})`);
+  ok(icons.length === sample.icons.length && icons.every((x) => x.id.startsWith('optics-')), 'Optics Icons: every sample icon, with Optics ids');
+  ok(sample.icons.length > 1800, `The sample icons are the whole Lucide set (${sample.icons.length})`);
 });
 
 test('optics: Optics Components validate, use tokens for every value, and every component is Ready', async () => {
@@ -116,7 +116,7 @@ test('optics: no accessibility errors in Optics Components or Foundations (Light
   eq(errorsIn(found), []);
   eq(auditDocument(found).groups.map((g) => `${g.kind} ${JSON.stringify(g.value)} ×${g.layers.length} (${g.layers.slice(0, 3).map((l) => l.name).join(', ')})`), [], 'Foundations: no one-off values either');
   eq(found.pages.map((p) => p.name), ['Color', 'Typography', 'Spacing', 'Radius', 'Elevation', 'Motion', 'Icons']);
-  // Every icon in both files is an Optics Icon (none from Sigma Icons).
+  // Every icon in both files is an Optics Icon (none from the sample icons).
   const iconIds = new Set();
   for (const d of [comps, found]) for (const pg of d.pages) walk(pg.children, (n) => {
     if (n.iconId) iconIds.add(n.iconId);

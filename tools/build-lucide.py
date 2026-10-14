@@ -6,7 +6,7 @@
 Reads, for one pinned version of lucide-static: icon-nodes.json (the shapes of every icon), tags.json
 (search keywords) and LICENSE from jsDelivr, the icons' categories from lucide.dev, and the category
 titles from the Lucide repository. Each icon's group is its first category; its other categories go into
-its keywords. Sigma loads the result when you choose + Sigma Icons ▾ → Lucide.
+its keywords. Sigma loads the result for the sample icons and Add Lucide icons.
 """
 import json
 import sys

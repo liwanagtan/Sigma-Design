@@ -276,7 +276,7 @@ export function createNode(type, props = {}) {
   if (type === 'group') Object.assign(base, { fill: null, children: [] });
   if (type === 'line') Object.assign(base, { fill: null, stroke: '#000000', h: 0 });
   if (type === 'image') Object.assign(base, { fill: null, src: '' });
-  // An icon from a linked Sigma Icons file, in its fill color; iconStroke (outline icons) in the icon's units.
+  // An icon from a linked icons file, in its fill color; iconStroke (outline icons) in the icon's units.
   if (type === 'icon') Object.assign(base, { fill: '#1E1E1E', w: 24, h: 24, iconId: null, lockAspect: true });
   if (type === 'text') {
     Object.assign(base, {
@@ -431,7 +431,7 @@ export function commit() {
     return;
   }
   if (lastSnapshot) past.push({ doc: lastSnapshot, selection: [...state.selection] });
-  // Up to 200 steps, and fewer for big files (a Sigma Icons file with a whole icon set) so undo stays
+  // Up to 200 steps, and fewer for big files (an icons file with a whole icon set) so undo stays
   // within about 100 MB.
   while (past.length > 200 || (past.length > 10 && past.reduce((n, e) => n + e.doc.length, 0) > UNDO_CHARS)) past.shift();
   future = [];
