@@ -9,7 +9,7 @@ import { createNode, uid, makePaint } from './store.js';
 import { DEFAULT_LAYOUT } from './layout.js';
 import { sampleIconId } from './sample-icons.js';
 
-export const WELCOME_VERSION = 37;
+export const WELCOME_VERSION = 38;
 // The sample icons the guide uses (outline unless marked filled).
 const GUIDE_ICONS = ['plus', 'search', 'pencil', 'copy', 'share-2', 'trash', 'settings', 'user', 'log-out', 'star', 'heart', 'bookmark', 'bell'];
 export const WELCOME_ICONS = [...GUIDE_ICONS.map((n) => sampleIconId(n)), ...['star', 'heart', 'bookmark', 'bell'].map((n) => sampleIconId(n, true))];
@@ -185,6 +185,10 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'Layers and Assets are on the left; the thin column at the far left has this file’s tokens and libraries. The right panel shows what you’ve selected.',
       'The Σ menu (top of the thin column at the far left, with Home under it) has your files, export, version history, tokens, libraries and the keyboard shortcuts (press ?).',
       'Back to files (Σ menu) goes to the files home, where this file and its tokens are in the Welcome to Sigma folder. Deleted files wait in the Archive until you delete them forever.',
+    ] },
+    { h: 'Import a Figma design', p: [
+      'Choose Import on the files home or Import file… in the Σ menu, then select a local .fig file. It opens as a saved design you can edit. You can also drop .fig files onto the files home.',
+      'Frames, text and basic shapes remain editable. Instances become editable frames and vectors use SVG artwork. The Figma import report in the Σ menu explains any simplified features.',
     ] },
     { h: 'Pages in this file', bullets: [
       '2 Canvas basics: tools, selecting, organizing',

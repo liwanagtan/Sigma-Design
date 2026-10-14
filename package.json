@@ -31,7 +31,8 @@
     "start": "node bin/sigma-design.mjs standalone",
     "build:welcome": "node tools/design-system/build.mjs",
     "build:pages": "node tools/design-system/build-pages.mjs",
-    "test:node": "node --test tools/test/*.test.mjs"
+    "test:node": "node --test tools/test/*.test.mjs",
+    "build:figma": "node tools/figma/build.mjs"
   },
   "engines": {
     "node": ">=18"
@@ -44,5 +45,8 @@
     "ai",
     "agents"
   ],
-  "license": "SEE LICENSE IN LICENSE"
+  "license": "SEE LICENSE IN LICENSE",
+  "devDependencies": {
+    "openfig-core": "0.4.1"
+  }
 }

@@ -1,4 +1,5 @@
 import { normalizeGroups } from './token-groups.js';
+import { serializeDocument, deserializeDocument } from './document-storage.js';
 import { keepTogether } from './page-groups.js';
 import { mul, inv, translate, rotate, angleOf, normAngle, cornersOf, aabb, round } from './geom.js';
 
@@ -403,7 +404,7 @@ let future = [];
 let lastSnapshot = null;
 let saveTimer = null;
 
-const snapshot = () => JSON.stringify(state.doc);
+const snapshot = () => serializeDocument(state.doc);
 const UNDO_CHARS = 50_000_000; // characters, 2 bytes each
 
 let readOnlyHintAt = 0;
@@ -420,7 +421,7 @@ export function commit() {
   if (snap === lastSnapshot) return;
   if (state.readOnly || state.viewOnly) {
     // Viewing an older version, or a Welcome to Sigma file: put back whatever was changed.
-    state.doc = JSON.parse(lastSnapshot);
+    state.doc = deserializeDocument(lastSnapshot);
     state.editingTextId = null;
     reindex();
     state.selection = state.selection.filter((id) => getNode(id));
@@ -436,7 +437,8 @@ export function commit() {
   if (lastSnapshot) past.push({ doc: lastSnapshot, selection: [...state.selection] });
   // Up to 200 steps, and fewer for big files (an icons file with a whole icon set) so undo stays
   // within about 100 MB.
-  while (past.length > 200 || (past.length > 10 && past.reduce((n, e) => n + e.doc.length, 0) > UNDO_CHARS)) past.shift();
+  const minimum=state.doc.figmaImport ? 1 : 10;
+  while (past.length > 200 || (past.length > minimum && past.reduce((n, e) => n + e.doc.length, 0) > UNDO_CHARS)) past.shift();
   future = [];
   lastSnapshot = snap;
   scheduleSave({ edited: true });
@@ -444,7 +446,7 @@ export function commit() {
 }
 
 function restore(entry) {
-  state.doc = JSON.parse(entry.doc);
+  state.doc = deserializeDocument(entry.doc);
   lastSnapshot = entry.doc;
   state.editingTextId = null;
   reindex();

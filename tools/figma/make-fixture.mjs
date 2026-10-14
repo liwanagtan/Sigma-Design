@@ -1,0 +1,22 @@
+// Our small interoperability fixture: a binary .fig archive, not a renamed JSON file.
+import { createEmptyFigDoc, encodeFigParts, assembleCanvasFig, createFigZip, appendVectorPayloadToDocument } from 'openfig-core';
+import { deflateSync } from 'fflate';
+import { writeFileSync } from 'node:fs';
+const doc=createEmptyFigDoc();
+const g=id=>({sessionID:1,localID:id});
+const parent=(id,position='!')=>({guid:g(id),position});
+const solid=(r,g,b)=>({type:'SOLID',color:{r,g,b,a:1},opacity:1,visible:true});
+const transform=(x=0,y=0)=>({m00:1,m01:0,m02:x,m10:0,m11:1,m12:y});
+const node=(id,type,name,parentId,w,h,x=0,y=0,extra={})=>({guid:g(id),type,name,parentIndex:parent(parentId),size:{x:w,y:h},transform:transform(x,y),phase:'CREATED',visible:true,opacity:1,...extra});
+const page=node(1,'CANVAS','Landing page',0,0,0);page.parentIndex.guid={sessionID:0,localID:0};
+const artboard=node(2,'FRAME','Product card',1,640,420,80,80,{fillPaints:[solid(1,1,1)],cornerRadius:16,frameMaskDisabled:false});
+const title=node(3,'TEXT','Headline',2,540,70,40,40,{textData:{characters:'Imported from Figma'},fontName:{family:'Inter',style:'Bold',postscript:'Inter-Bold'},fontSize:32,textAlignHorizontal:'LEFT',fillPaints:[solid(.08,.1,.14)]});
+const body=node(4,'TEXT','Description',2,530,52,40,120,{textData:{characters:'Pages, frames, shapes and text stay editable in Sigma.'},fontName:{family:'Inter',style:'Regular',postscript:'Inter-Regular'},fontSize:18,fillPaints:[solid(.35,.4,.45)]});body.parentIndex.position='#';
+const button=node(5,'ROUNDED_RECTANGLE','Action button',2,200,52,40,250,{cornerRadius:8,fillPaints:[solid(.05,.6,1)]});button.parentIndex.position='$';
+const caption=node(6,'TEXT','Button label',2,176,28,52,262,{textData:{characters:'Start designing'},fontName:{family:'Inter',style:'SemiBold',postscript:'Inter-SemiBold'},fontSize:18,fillPaints:[solid(1,1,1)]});caption.parentIndex.position='%';
+const shape=node(7,'ELLIPSE','Accent',2,80,80,500,245,{fillPaints:[solid(.58,.28,1)]});shape.parentIndex.position='&';
+const vector=node(8,'VECTOR','Triangle',2,40,40,530,50,{fillPaints:[solid(.58,.28,1)],...appendVectorPayloadToDocument(doc,{width:40,height:40,fillPaths:[{svgPath:'M0 40 L20 0 L40 40 Z',windingRule:'NONZERO'}]})});vector.parentIndex.position='\'';
+doc.message.nodeChanges=doc.message.nodeChanges.filter(n=>n.type==='DOCUMENT');
+doc.message.nodeChanges.push(page,artboard,title,body,button,caption,shape,vector);
+const parts=encodeFigParts(doc), canvasFig=assembleCanvasFig({...parts,messageCompressed:deflateSync(parts.messageRaw)});
+writeFileSync(new URL('../../tests/fixtures/figma-basic.fig',import.meta.url),createFigZip({canvasFig,meta:{file_name:'Figma import demo'}}));

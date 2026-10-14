@@ -1381,3 +1381,11 @@ Part C's accounts and roles still need one.
   design files that use them after publishing, as today.
 
 Welcome files now support temporary edits (2026-10-14). Leaving a file or refreshing reloads the stored original; autosave, pending recovery and thumbnail writes skip built-in samples. Make an editable copy preserves the current session.
+
+## Local Figma .fig import — implemented (2026-10-14)
+
+Import and files-home drop accept binary `.fig` archives and open the resulting design in the editor. A local worker decodes the embedded Kiwi schema with pinned openfig-core and its MIT dependencies. Pages, ordered layers, frames, text, shapes and component definitions are editable; instances are detached, and vectors/complex fills use embedded SVG artwork. A saved import report lists simplifications. This is an import path, not a lossless Figma round trip: layout rules, style/variable links, mixed typography, masks and some transforms/effects still need conversion work. Fixtures cover a genuine Figma export and an authored binary design, worker/storage integration, invalid files and oversize rejection.
+
+Large Figma import memory handling: File/Blob input is read in the worker, and the result is transferred as bounded UTF-8 chunks instead of cloning a giant object graph. Input size is capped at 128 MB, expanded ZIP entries at 256 MB, embedded artwork at 64 MB, and the transferred result at 256 MB after sharing repeated long strings. Repeated artwork is stored once in the transfer source table and restored across layers; it is reused and unrelated archive entries are skipped. Large-file support remains dependent on document complexity; oversize designs receive instructions to export fewer pages rather than a raw clone/out-of-memory error.
+
+Imported Figma files persist with shared-source byte chunks in IndexedDB and version history. Undo snapshots use the same encoding, with a tighter history budget for large Figma files. Verified the user-supplied 21 MB, 12-page design through worker conversion, browser storage, and reopening in the Design Editor.

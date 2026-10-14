@@ -1,3 +1,4 @@
+import { encodeDocumentRecord, decodeDocumentRecord } from './document-storage.js';
 // Minimal promise wrapper around IndexedDB.
 // Stores: `files` holds small metadata records (listed by the files home),
 //         `docs` holds full documents, loaded only when a file is opened,
@@ -62,9 +63,11 @@ async function updateFile(id, update) {
       if (--pending) return;
       if (!meta) return;
       exists = true;
-      const out = update(meta, rec);
-      if (out?.meta) files.put(out.meta);
-      if (out?.doc) docs.put(out.doc);
+      try {
+        const out = update(meta, decodeDocumentRecord(rec));
+        if (out?.meta) files.put(out.meta);
+        if (out?.doc) docs.put(encodeDocumentRecord(out.doc));
+      } catch(error) {tx.abort();reject(error);}
     };
     files.get(id).onsuccess = (e) => { meta = e.target.result; ready(); };
     docs.get(id).onsuccess = (e) => { rec = e.target.result; ready(); };
@@ -77,15 +80,15 @@ async function updateFile(id, update) {
 export const db = {
   updateFile,
 
-  get: (store, id) => transact(store, 'readonly', (tx) => tx.objectStore(store).get(id)),
-  getAll: (store) => transact(store, 'readonly', (tx) => tx.objectStore(store).getAll()),
-  put: (store, value) => transact(store, 'readwrite', (tx) => tx.objectStore(store).put(value)),
+  get: async (store, id) => {const value=await transact(store, 'readonly', (tx) => tx.objectStore(store).get(id));return store==='docs' ? decodeDocumentRecord(value) : value;},
+  getAll: async (store) => {const values=await transact(store, 'readonly', (tx) => tx.objectStore(store).getAll());return store==='docs' ? values.map(decodeDocumentRecord) : values;},
+  put: (store, value) => {const record=store==='docs' ? encodeDocumentRecord(value) : value;return transact(store, 'readwrite', (tx) => tx.objectStore(store).put(record));},
 
   // Write a file's metadata and document atomically.
-  putFile: (meta, docRecord) => transact(['files', 'docs'], 'readwrite', (tx) => {
-    tx.objectStore('docs').put(docRecord);
+  putFile: (meta, docRecord) => {const record=encodeDocumentRecord(docRecord);return transact(['files', 'docs'], 'readwrite', (tx) => {
+    tx.objectStore('docs').put(record);
     return tx.objectStore('files').put(meta);
-  }),
+  });},
 
   deleteFile: (id) => transact(['files', 'docs', 'versions'], 'readwrite', (tx) => {
     const docs = tx.objectStore('docs');
@@ -102,14 +105,14 @@ export const db = {
 
   versionsOf: (fileId) => transact('versions', 'readonly', (tx) => tx.objectStore('versions').index('fileId').getAll(fileId)),
   // Only while the file exists (no orphaned versions from a save that raced with a delete).
-  putVersion: (record, doc) => transact(['files', 'versions', 'docs'], 'readwrite', (tx) => {
+  putVersion: (record, doc) => {const stored=doc && encodeDocumentRecord({id:`v:${record.id}`,doc});return transact(['files', 'versions', 'docs'], 'readwrite', (tx) => {
     tx.objectStore('files').getKey(record.fileId).onsuccess = (e) => {
       if (e.target.result === undefined) return;
-      if (doc) tx.objectStore('docs').put({ id: `v:${record.id}`, doc });
+      if (stored) tx.objectStore('docs').put(stored);
       tx.objectStore('versions').put(record);
     };
-  }),
-  versionDoc: async (id) => (await transact('docs', 'readonly', (tx) => tx.objectStore('docs').get(`v:${id}`)))?.doc || null,
+  });},
+  versionDoc: async (id) => decodeDocumentRecord(await transact('docs', 'readonly', (tx) => tx.objectStore('docs').get(`v:${id}`)))?.doc || null,
   deleteVersions: (ids) => transact(['versions', 'docs'], 'readwrite', (tx) => {
     for (const id of ids) {
       tx.objectStore('versions').delete(id);

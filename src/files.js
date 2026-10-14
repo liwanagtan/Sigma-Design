@@ -321,11 +321,20 @@ export async function downloadFile(id) {
 }
 
 // Import files as new files: Sigma design or token files (.sigma.json), or design tokens in the W3C
-// format (tokens.json), which become a token file. Returns the new ids.
+// format (tokens.json), which become a token file; .fig files become design files. Returns new ids.
 export async function importFiles(fileList) {
-  const ids = [];
+  const ids = [], figReports = [];
   for (const f of fileList) {
     try {
+      if (/\.fig$/i.test(f.name)) {
+        toast(`Importing ${f.name}…`);
+        const { readFigmaFile } = await import('./figma-import-file.js');
+        const { doc, report } = await readFigmaFile(f);
+        ids.push(await createFile(doc));
+        figReports.push(report);
+        if (report.warnings.length) toast('Figma file imported. Review simplified features in Σ → Figma import report.');
+        continue;
+      }
       const json = JSON.parse(await f.text());
       const name = f.name.replace(/(\.sigma|\.tokens)?\.json$/i, ''); // the name you see in Finder wins
       let doc = json;
@@ -345,6 +354,7 @@ export async function importFiles(fileList) {
       toast(`Couldn't import ${f.name}: ${err.message}`);
     }
   }
+  if (ids.length === 1 && figReports[0]?.warnings.length) window.dispatchEvent(new CustomEvent('sigma:figma-imported', {detail:figReports[0]}));
   return ids;
 }
 
@@ -352,9 +362,10 @@ export function pickFilesToImport() {
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.json,application/json';
+    input.accept = '.fig,.json,application/json';
     input.multiple = true;
     input.onchange = async () => resolve(await importFiles([...input.files]));
+    input.oncancel = () => resolve([]);
     input.click();
   });
 }

@@ -129,6 +129,10 @@ function syncWelcomeAppearance({ initial = false } = {}) {
   if (initial) forgetUndo();
 }
 window.addEventListener('sigma:appearance', () => syncWelcomeAppearance());
+window.addEventListener('sigma:figma-imported', async event => {
+  const { showFigmaImportReport } = await import('./figma-import-ui.js');
+  showFigmaImportReport(event.detail);
+});
 
 // ---------- screens ----------
 // `discard`: drop unsaved local changes instead of writing them (reloading another tab's version).

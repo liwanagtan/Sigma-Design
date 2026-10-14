@@ -112,7 +112,7 @@ export function initHome(el) {
       <div id="home-notice"></div>
       <div id="home-files"></div>
     </main>
-    <div class="home-drop" id="home-drop" hidden><div>Drop <b>.sigma.json</b> or <b>tokens.json</b> files to import them</div></div>`;
+    <div class="home-drop" id="home-drop" hidden><div>Drop <b>.fig</b>, <b>.sigma.json</b> or <b>tokens.json</b> files to import them</div></div>`;
 
   root.querySelector('.home-nav').addEventListener('click', (e) => {
     const b = e.target.closest('[data-section]');
@@ -222,8 +222,8 @@ export function initHome(el) {
     depth = 0;
     drop.hidden = true;
     if (projectMode()) return toast('In a project, Sigma files live in its .sigma/ folder: add them there (or have the sync skill import tokens and icons).');
-    const files = [...e.dataTransfer.files].filter((f) => /\.json$/i.test(f.name) || f.type === 'application/json');
-    if (!files.length) return toast('Only .sigma.json and tokens.json files can be imported here.');
+    const files = [...e.dataTransfer.files].filter((f) => /\.(json|fig)$/i.test(f.name) || f.type === 'application/json');
+    if (!files.length) return toast('Import .fig, .sigma.json or tokens.json files here.');
     afterImport(await importFiles(files));
   });
 
@@ -494,7 +494,8 @@ async function openWelcome() {
 function afterImport(ids) {
   if (!ids.length) return;
   toast(ids.length === 1 ? 'Imported 1 file' : `Imported ${ids.length} files`);
-  renderHome();
+  if (ids.length === 1) openFile(ids[0]);
+  else renderHome();
 }
 
 async function fileMenu(id, x, y) {
@@ -503,7 +504,7 @@ async function fileMenu(id, x, y) {
     { label: 'Open', action: () => openFile(id) },
     { label: 'Open in new tab', action: () => window.open(fileHref(id), '_blank') },
     '-',
-    // Welcome to Sigma's files are for looking at: no renaming or archiving, and a copy is yours to edit.
+    // Built-in originals cannot be renamed or archived from the home; their open sessions are editable.
     ...(sample ? [] : [{ label: 'Rename', action: () => startRename(id) }]),
     { label: sample ? 'Make an editable copy' : 'Duplicate', action: async () => {
       await duplicateFile(id);

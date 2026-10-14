@@ -64,6 +64,14 @@ between tabs. The editor canvas follows the app appearance too. Interface appear
 
 Select fields use a subtle outline and Sigma’s themed dropdown menu, with keyboard navigation and selected-option checks.
 
+## Import Figma files
+
+Use **Import** on the files home or **Σ → Import file…** in the editor, or drop a `.fig` file onto the files home. A single imported file opens directly in the Design Editor and saves as a normal Sigma design file. Parsing happens locally in a browser worker; no Figma login or upload is needed. The input limit is 128 MB. Compressed file size is not a guarantee of successful import: archives are capped at 256 MB expanded, embedded artwork at 64 MB, and the converted design transfer at 256 MB after deduplicating repeated artwork. Large or image-heavy files may need to be exported as smaller sets of pages. Import results use transferable byte chunks and a shared source table: repeated image/vector sources are sent once and reused across layers, so their occurrences do not multiply the transfer budget. The UI does not clone a huge worker object graph. Imported Figma documents use the same shared-source encoding in IndexedDB, version history, and undo snapshots to avoid repeating embedded artwork during saving and opening.
+
+Pages, frames, groups, basic shapes and text become editable Sigma layers. Component definitions are imported; instances are detached into editable frames. Vector paths and image/linear/radial-gradient fills are embedded as SVG artwork. Layout positions are preserved, but Figma auto-layout rules, variable/style links, mixed text formatting, masks, unusual transforms and unsupported effects may be simplified. **Σ → Figma import report…** lists the changes; the report also appears after an import needing review. Fonts must be available in the browser for matching typography.
+
+The pinned browser parser is [openfig-core](https://github.com/OpenFig-org/openfig-core). Rebuild its vendored modules with `npm ci` then `npm run build:figma`; license notices are in `src/vendor/figma-parser.NOTICE.txt`.
+
 ## Features
 
 - **Files home:**
@@ -71,7 +79,7 @@ Select fields use a subtle outline and Sigma’s themed dropdown menu, with keyb
   - Recents shows all kinds; the **Design**, **Tokens** and **Icons** sections show one kind each, and the **Welcome to Sigma** folder holds Sigma's sample files, with a note on what the folder is for and a description on each file
   - lists every file saved in this browser, with thumbnails (Tokens files show a palette of their colors) and "Edited … ago"
   - has Recents and All files views, search, sorting, and a grid or list layout
-  - lets you rename, duplicate, download and archive files from the card menu, or import `.sigma.json` files by dragging them onto the page
+  - lets you rename, duplicate, download and archive files from the card menu, or import `.fig`, `.sigma.json` and `tokens.json` files by dragging them onto the page
   - **Archive:** deleting a file (**Move to Archive**) is a soft delete. The file leaves Recents, the file lists and library pickers but keeps everything, version history included. The **Archive** section lists archived files with **Restore**, **Download** and **Delete forever…**, and **Empty Archive…** clears it; only those two erase files, after asking. Opening an archived file's link shows it in the Archive, and a tab that has it open stops saving
   - gives each file its own link (`#/file/<id>`), so back/forward, bookmarks and "open in new tab" work
 - **Infinite canvas:** pan by scrolling or Space-dragging, zoom with ⌘-scroll or pinch, ⇧0 / ⇧1 / ⇧2

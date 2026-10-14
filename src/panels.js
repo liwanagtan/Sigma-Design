@@ -118,6 +118,7 @@ function initFileHeader() {
       } },
       { label: 'Open Welcome to Sigma', action: async () => openFile(await welcomeFile()) },
       { label: 'Download a copy (.sigma.json)', action: saveFile },
+      ...(state.doc?.figmaImport ? [{label:'Figma import report…', action:()=>import('./figma-import-ui.js').then(m=>m.showFigmaImportReport(state.doc.figmaImport))}] : []),
       '-',
       { label: 'Place image…', shortcut: '⇧⌘K', action: () => pickImages() },
       { label: sel.length ? 'Export selection as PNG' : 'Export page as PNG', shortcut: '⇧⌘E', action: () => exportNodes(sel.length ? sel : page().children, { format: 'png', scale: 2 }) },
