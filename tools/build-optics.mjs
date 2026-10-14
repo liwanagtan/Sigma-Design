@@ -2,7 +2,7 @@
 // Write Optics (Phase 36), the working design system that ships with Sigma, as a project (examples/optics/.sigma/…),
 // in the project format:
 //   node tools/build-optics.mjs
-// Optics Tokens, Optics Icons (the Sigma Icons set with Optics ids), Optics Foundations and Optics Components,
+// Optics Tokens, Optics Icons (the sample icons with Optics ids), Optics Foundations and Optics Components,
 // built by the same code that adds Optics in the browser (src/optics-tokens.js, src/optics.js). They must pass
 // `sigma-design check` (CI runs it on every example). Open them with: npx sigma-design dev examples/optics
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';

@@ -188,7 +188,7 @@ export function nodeSVG(n, opts = {}) {
       break;
     }
     case 'icon': {
-      // The top visible fill is the icon's color. An icon that isn't available (its Sigma Icons file was
+      // The top visible fill is the icon's color. An icon that isn't available (its icons file was
       // unlinked) shows as a dashed box.
       const icon = findIcon(n.iconId);
       const p = visiblePaints(n.fills).at(-1);

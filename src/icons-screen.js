@@ -1,6 +1,6 @@
-// The screen for Sigma Icons files: no canvas. Icons are grouped in a grid with a search; the inspector on
+// The screen for icons files: no canvas. Icons are grouped in a grid with a search; the inspector on
 // the right edits the selected icons' names, groups, keywords and style. Icons come in as SVG files
-// (picked, dropped or pasted) and are published as versions for Sigma Design files to use.
+// (picked, dropped or pasted) and are published as versions for design files to use.
 import { state, commit, subscribe, undo, redo } from './store.js';
 import { openHistory, openSaveVersionDialog } from './history.js';
 import { goHome, isCurrentSample } from './files.js';
@@ -34,8 +34,8 @@ export function initIconsScreen(el) {
   root = el;
   el.innerHTML = `${railHTML('icons')}<div class="screen-main">
     <header class="tokens-header">
-      <input class="file-name tokens-file-name icons-file-name" spellcheck="false" aria-label="Sigma Icons file name">
-      <span class="kind-badge tokens-kind icons-kind">Sigma Icons</span>
+      <input class="file-name tokens-file-name icons-file-name" spellcheck="false" aria-label="Icons file name">
+      <span class="kind-badge tokens-kind icons-kind">Icons</span>
       <div class="tokens-header-actions">
         <button class="project-status" data-project-status hidden></button>
         <span class="publish-status" data-publish-status></span>
@@ -219,7 +219,7 @@ function pickSVGs() {
 
 async function importSVGFiles(files) {
   const svgs = files.filter((f) => /\.svg$/i.test(f.name) || f.type === 'image/svg+xml');
-  if (!svgs.length) return toast('Only .svg files can be added to Sigma Icons.');
+  if (!svgs.length) return toast('Only .svg files can be added to an icons file.');
   importSVGTexts(await Promise.all(svgs.map(async (f) => ({ text: await f.text(), name: iconNameFrom(f.name) }))));
 }
 
@@ -287,7 +287,7 @@ async function renameGroup(from, style) {
 async function deleteIcons(ids) {
   ids = ids.filter((id) => byId(id));
   if (!ids.length) return;
-  if (ids.length > 1 && !(await ask('Sigma Design files that use them keep them until they accept the next published version. ⌘Z undoes it.', { title: `Delete ${ids.length} icons?`, ok: `Delete ${ids.length} icons`, danger: true }))) return;
+  if (ids.length > 1 && !(await ask('Design files that use them keep them until they accept the next published version. ⌘Z undoes it.', { title: `Delete ${ids.length} icons?`, ok: `Delete ${ids.length} icons`, danger: true }))) return;
   state.doc.icons = list().filter((i) => !ids.includes(i.id));
   commit();
   setSelection([]);
@@ -444,11 +444,11 @@ function renderInspector() {
     const credit = src ? `<div class="icons-source"><b>${esc(src.name)} ${esc(src.version)}</b> · ${esc(src.license)} License<br>` +
       `<a href="${esc(src.url)}" target="_blank" rel="noopener">${esc(src.url.replace(/^https?:\/\//, ''))}</a> · <button class="link-btn" data-license>License</button>` +
       `${src.note ? `<div class="muted">${esc(src.note)}</div>` : ''}</div>` : '';
-    el.innerHTML = `<div class="inspector-title">Sigma Icons</div>${credit}
+    el.innerHTML = `<div class="inspector-title">Icons file</div>${credit}
       <p class="muted icons-help">${list().length ? `${plural(list().length, 'icon')} in ${plural(groups.length, 'group')}: ${outline} outline, ${list().length - outline} filled.` : 'No icons yet.'}</p>
       <p class="muted icons-help">Import SVGs, drop them anywhere here, or paste SVG code (⌘V). Icons go into the group you have open. Re-importing an icon with the same name, group and style updates it.</p>
       <p class="muted icons-help">Colors are removed on import: an icon takes the color of the layer that shows it. Outline icons keep their stroke width, which components can change.</p>
-      <p class="muted icons-help">Publish to let Sigma Design files use these icons in components.</p>
+      <p class="muted icons-help">Publish to let design files use these icons in components.</p>
       <button class="btn wide" data-import>${uiIcons.plus} Import SVGs</button>`;
     return;
   }
@@ -486,7 +486,7 @@ function renderInspector() {
 const sig = (icons) => JSON.stringify(icons || []);
 const hasUnpublishedChanges = () => sig(list()) !== sig(state.doc?.published?.icons);
 
-// Publishing makes the current icons a new numbered version. Sigma Design files that use this file see
+// Publishing makes the current icons a new numbered version. Design files that use this file see
 // the update and choose when to accept it.
 function openPublishDialog() {
   if (isCurrentSample()) return toast('A sample file can’t be published: it isn’t saved. Duplicate it to publish your own.');
@@ -495,7 +495,7 @@ function openPublishDialog() {
   const group = (label, items) => (items.length ? `<div class="diff-group"><div class="diff-label">${label} (${items.length})</div>${items.slice(0, 10).map((n) => `<div>${esc(n)}</div>`).join('')}${items.length > 10 ? `<div class="muted">and ${items.length - 10} more</div>` : ''}</div>` : '');
   const next = (pub?.version || 0) + 1;
   const wrap = modal(`Publish ${esc(state.doc.name)}`,
-    `<p class="muted">This becomes version ${next}. Sigma Design files that use these icons will be offered the update.</p>
+    `<p class="muted">This becomes version ${next}. Design files that use these icons will be offered the update.</p>
     ${group('Added', d.added) + group('Changed', d.changed) + group('Removed', d.removed) || '<div class="muted">No changes since the last version.</div>'}
     <label class="inspector-label">Notes (optional)</label>
     <textarea class="desc publish-notes" rows="3" placeholder="What changed and why?"></textarea>`,

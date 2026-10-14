@@ -1,0 +1,1440 @@
+{
+  "format": 1,
+  "kind": "tokens",
+  "name": "Sample tokens",
+  "collections": [
+    {
+      "id": "m270o4h7",
+      "name": "Primitives",
+      "defaultModeId": "9rsmi4jk",
+      "groups": [
+        {
+          "id": "v3g5mepd",
+          "name": "color",
+          "description": "The raw palette. Designs should use the Semantic tokens, which point here.",
+          "parentId": null
+        },
+        {
+          "id": "l8abuykd",
+          "name": "gray",
+          "description": "Neutrals for text, surfaces and borders.",
+          "parentId": "v3g5mepd"
+        },
+        { "id": "7anv5bjt", "name": "blue", "parentId": "v3g5mepd" },
+        { "id": "h5w9iv8q", "name": "violet", "parentId": "v3g5mepd" },
+        { "id": "ip63fj3c", "name": "green", "parentId": "v3g5mepd" },
+        { "id": "clx4qjrl", "name": "amber", "parentId": "v3g5mepd" },
+        { "id": "ufwxlcjp", "name": "red", "parentId": "v3g5mepd" },
+        {
+          "id": "49bcy3p6",
+          "name": "alpha",
+          "description": "Colors with opacity, for shadows, overlays and scrims.",
+          "parentId": "v3g5mepd"
+        },
+        {
+          "id": "blvubas3",
+          "name": "space",
+          "description": "A 4-point spacing scale: the name is the number of 4px steps.",
+          "parentId": null
+        },
+        {
+          "id": "64q01w7z",
+          "name": "layout",
+          "description": "The column grid pages are laid out on. Its gutter and margin come from the spacing scale.",
+          "parentId": null
+        },
+        { "id": "k2vm5kfh", "name": "radius", "description": "Corner radii.", "parentId": null },
+        { "id": "zgcdwggf", "name": "border-width", "parentId": null },
+        {
+          "id": "zmf7rkuq",
+          "name": "font",
+          "description": "Type primitives. The Typography collection combines them into text styles.",
+          "parentId": null
+        },
+        { "id": "vlntl8fj", "name": "family", "parentId": "zmf7rkuq" },
+        { "id": "88kcw6p7", "name": "size", "parentId": "zmf7rkuq" },
+        { "id": "e9z5xqr4", "name": "weight", "parentId": "zmf7rkuq" },
+        {
+          "id": "3v4x697d",
+          "name": "line-height",
+          "description": "Percent of the font size.",
+          "parentId": "zmf7rkuq"
+        },
+        { "id": "zul8dmgc", "name": "letter-spacing", "parentId": "zmf7rkuq" },
+        { "id": "5rsss9o2", "name": "opacity", "parentId": null },
+        {
+          "id": "n71x0k77",
+          "name": "motion",
+          "description": "Durations and easing curves for transitions and animations.",
+          "parentId": null
+        },
+        {
+          "id": "q3m6g2s5",
+          "name": "duration",
+          "description": "Short for small elements and short distances, longer for big ones.",
+          "parentId": "n71x0k77"
+        },
+        { "id": "opk9079f", "name": "easing", "parentId": "n71x0k77" },
+        {
+          "id": "8w0fe3uz",
+          "name": "content",
+          "description": "Text that appears in products.",
+          "parentId": null
+        }
+      ],
+      "modes": [{ "id": "9rsmi4jk", "name": "Value" }],
+      "variables": [
+        {
+          "id": "dupapfd8",
+          "type": "color",
+          "name": "color/gray/0",
+          "groupId": "l8abuykd",
+          "valuesByMode": { "9rsmi4jk": "#FFFFFF" }
+        },
+        {
+          "id": "bnc2uzf5",
+          "type": "color",
+          "name": "color/gray/50",
+          "groupId": "l8abuykd",
+          "valuesByMode": { "9rsmi4jk": "#F7F7F8" }
+        },
+        {
+          "id": "2d3byfv4",
+          "type": "color",
+          "name": "color/gray/100",
+          "groupId": "l8abuykd",
+          "valuesByMode": { "9rsmi4jk": "#EEEFF1" }
+        },
+        {
+          "id": "55qe7j7z",
+          "type": "color",
+          "name": "color/gray/200",
+          "groupId": "l8abuykd",
+          "valuesByMode": { "9rsmi4jk": "#DCDEE3" }
+        },
+        {
+          "id": "5rxewx4b",
+          "type": "color",
+          "name": "color/gray/300",
+          "groupId": "l8abuykd",
+          "valuesByMode": { "9rsmi4jk": "#BFC3CB" }
+        },
+        {
+          "id": "i2lyi7hk",
+          "type": "color",
+          "name": "color/gray/400",
+          "groupId": "l8abuykd",
+          "valuesByMode": { "9rsmi4jk": "#9AA0AB" }
+        },
+        {
+          "id": "vcha84au",
+          "type": "color",
+          "name": "color/gray/500",
+          "groupId": "l8abuykd",
+          "valuesByMode": { "9rsmi4jk": "#767D8A" }
+        },
+        {
+          "id": "536g08dk",
+          "type": "color",
+          "name": "color/gray/600",
+          "groupId": "l8abuykd",
+          "valuesByMode": { "9rsmi4jk": "#5A616D" }
+        },
+        {
+          "id": "gzmuwqxw",
+          "type": "color",
+          "name": "color/gray/700",
+          "groupId": "l8abuykd",
+          "valuesByMode": { "9rsmi4jk": "#434852" }
+        },
+        {
+          "id": "weg1qwpu",
+          "type": "color",
+          "name": "color/gray/800",
+          "groupId": "l8abuykd",
+          "valuesByMode": { "9rsmi4jk": "#2C3038" }
+        },
+        {
+          "id": "e74xd0rt",
+          "type": "color",
+          "name": "color/gray/900",
+          "groupId": "l8abuykd",
+          "valuesByMode": { "9rsmi4jk": "#1A1D22" }
+        },
+        {
+          "id": "dkhrf5y8",
+          "type": "color",
+          "name": "color/gray/1000",
+          "groupId": "l8abuykd",
+          "valuesByMode": { "9rsmi4jk": "#0E1013" }
+        },
+        {
+          "id": "l887qnom",
+          "type": "color",
+          "name": "color/blue/100",
+          "groupId": "7anv5bjt",
+          "valuesByMode": { "9rsmi4jk": "#E5F3FF" }
+        },
+        {
+          "id": "lhvicjjp",
+          "type": "color",
+          "name": "color/blue/200",
+          "groupId": "7anv5bjt",
+          "valuesByMode": { "9rsmi4jk": "#BDE0FF" }
+        },
+        {
+          "id": "17itewoz",
+          "type": "color",
+          "name": "color/blue/300",
+          "groupId": "7anv5bjt",
+          "valuesByMode": { "9rsmi4jk": "#85C6FF" }
+        },
+        {
+          "id": "cw7jizj3",
+          "type": "color",
+          "name": "color/blue/400",
+          "groupId": "7anv5bjt",
+          "valuesByMode": { "9rsmi4jk": "#47A8FF" }
+        },
+        {
+          "id": "c8uyqupy",
+          "type": "color",
+          "name": "color/blue/500",
+          "groupId": "7anv5bjt",
+          "valuesByMode": { "9rsmi4jk": "#0D99FF" }
+        },
+        {
+          "id": "ueuojfv4",
+          "type": "color",
+          "name": "color/blue/600",
+          "groupId": "7anv5bjt",
+          "valuesByMode": { "9rsmi4jk": "#007BE5" }
+        },
+        {
+          "id": "y0pgg9qj",
+          "type": "color",
+          "name": "color/blue/700",
+          "groupId": "7anv5bjt",
+          "valuesByMode": { "9rsmi4jk": "#0062B8" }
+        },
+        {
+          "id": "2amnzlft",
+          "type": "color",
+          "name": "color/blue/800",
+          "groupId": "7anv5bjt",
+          "valuesByMode": { "9rsmi4jk": "#004A8A" }
+        },
+        {
+          "id": "r3hw94du",
+          "type": "color",
+          "name": "color/violet/100",
+          "groupId": "h5w9iv8q",
+          "valuesByMode": { "9rsmi4jk": "#F1E8FF" }
+        },
+        {
+          "id": "9u1sq38f",
+          "type": "color",
+          "name": "color/violet/300",
+          "groupId": "h5w9iv8q",
+          "valuesByMode": { "9rsmi4jk": "#C9A3FF" }
+        },
+        {
+          "id": "4qpa3bvi",
+          "type": "color",
+          "name": "color/violet/400",
+          "groupId": "h5w9iv8q",
+          "valuesByMode": { "9rsmi4jk": "#B07AFF" }
+        },
+        {
+          "id": "ill0vaas",
+          "type": "color",
+          "name": "color/violet/500",
+          "groupId": "h5w9iv8q",
+          "valuesByMode": { "9rsmi4jk": "#9747FF" }
+        },
+        {
+          "id": "glmcc5h4",
+          "type": "color",
+          "name": "color/violet/600",
+          "groupId": "h5w9iv8q",
+          "valuesByMode": { "9rsmi4jk": "#7B2EE6" }
+        },
+        {
+          "id": "5zwpccp8",
+          "type": "color",
+          "name": "color/violet/700",
+          "groupId": "h5w9iv8q",
+          "valuesByMode": { "9rsmi4jk": "#6020BF" }
+        },
+        {
+          "id": "x5medpa4",
+          "type": "color",
+          "name": "color/violet/800",
+          "groupId": "h5w9iv8q",
+          "valuesByMode": { "9rsmi4jk": "#3F1580" }
+        },
+        {
+          "id": "o99ng5am",
+          "type": "color",
+          "name": "color/green/100",
+          "groupId": "ip63fj3c",
+          "valuesByMode": { "9rsmi4jk": "#E3F9EA" }
+        },
+        {
+          "id": "5lu98hei",
+          "type": "color",
+          "name": "color/green/400",
+          "groupId": "ip63fj3c",
+          "valuesByMode": { "9rsmi4jk": "#3DCB7E" }
+        },
+        {
+          "id": "xlq3op6a",
+          "type": "color",
+          "name": "color/green/500",
+          "groupId": "ip63fj3c",
+          "valuesByMode": { "9rsmi4jk": "#14AE5C" }
+        },
+        {
+          "id": "6mdl4xa9",
+          "type": "color",
+          "name": "color/green/700",
+          "groupId": "ip63fj3c",
+          "valuesByMode": { "9rsmi4jk": "#0A6E39" }
+        },
+        {
+          "id": "gzhqve3e",
+          "type": "color",
+          "name": "color/amber/100",
+          "groupId": "clx4qjrl",
+          "valuesByMode": { "9rsmi4jk": "#FFF4D6" }
+        },
+        {
+          "id": "5vk07pph",
+          "type": "color",
+          "name": "color/amber/400",
+          "groupId": "clx4qjrl",
+          "valuesByMode": { "9rsmi4jk": "#FFC933" }
+        },
+        {
+          "id": "3dp5khzy",
+          "type": "color",
+          "name": "color/amber/500",
+          "groupId": "clx4qjrl",
+          "valuesByMode": { "9rsmi4jk": "#FFB800" }
+        },
+        {
+          "id": "qz1x5htr",
+          "type": "color",
+          "name": "color/amber/700",
+          "groupId": "clx4qjrl",
+          "valuesByMode": { "9rsmi4jk": "#9E6A00" }
+        },
+        {
+          "id": "k2cp6ftj",
+          "type": "color",
+          "name": "color/red/100",
+          "groupId": "ufwxlcjp",
+          "valuesByMode": { "9rsmi4jk": "#FFE8E6" }
+        },
+        {
+          "id": "ga32ju7x",
+          "type": "color",
+          "name": "color/red/400",
+          "groupId": "ufwxlcjp",
+          "valuesByMode": { "9rsmi4jk": "#FF7559" }
+        },
+        {
+          "id": "as0g3m7f",
+          "type": "color",
+          "name": "color/red/500",
+          "groupId": "ufwxlcjp",
+          "valuesByMode": { "9rsmi4jk": "#F24822" }
+        },
+        {
+          "id": "vitn0sjs",
+          "type": "color",
+          "name": "color/red/700",
+          "groupId": "ufwxlcjp",
+          "valuesByMode": { "9rsmi4jk": "#A82A12" }
+        },
+        {
+          "id": "fyhqeseg",
+          "type": "color",
+          "name": "color/alpha/black-10",
+          "groupId": "49bcy3p6",
+          "valuesByMode": { "9rsmi4jk": "#0000001A" }
+        },
+        {
+          "id": "k684hnsw",
+          "type": "color",
+          "name": "color/alpha/black-40",
+          "groupId": "49bcy3p6",
+          "valuesByMode": { "9rsmi4jk": "#00000066" }
+        },
+        {
+          "id": "xbb91684",
+          "type": "color",
+          "name": "color/alpha/white-10",
+          "groupId": "49bcy3p6",
+          "valuesByMode": { "9rsmi4jk": "#FFFFFF1A" }
+        },
+        {
+          "id": "poznluz9",
+          "type": "color",
+          "name": "color/alpha/white-60",
+          "groupId": "49bcy3p6",
+          "valuesByMode": { "9rsmi4jk": "#FFFFFF99" }
+        },
+        {
+          "id": "jzm73ird",
+          "type": "number",
+          "name": "space/0",
+          "groupId": "blvubas3",
+          "valuesByMode": { "9rsmi4jk": 0 }
+        },
+        {
+          "id": "0c4me7x8",
+          "type": "number",
+          "name": "space/1",
+          "groupId": "blvubas3",
+          "valuesByMode": { "9rsmi4jk": 4 }
+        },
+        {
+          "id": "p1ji5oam",
+          "type": "number",
+          "name": "space/2",
+          "groupId": "blvubas3",
+          "valuesByMode": { "9rsmi4jk": 8 }
+        },
+        {
+          "id": "62dc3026",
+          "type": "number",
+          "name": "space/3",
+          "groupId": "blvubas3",
+          "valuesByMode": { "9rsmi4jk": 12 }
+        },
+        {
+          "id": "ntvq024y",
+          "type": "number",
+          "name": "space/4",
+          "groupId": "blvubas3",
+          "valuesByMode": { "9rsmi4jk": 16 }
+        },
+        {
+          "id": "1chekmlf",
+          "type": "number",
+          "name": "space/5",
+          "groupId": "blvubas3",
+          "valuesByMode": { "9rsmi4jk": 20 }
+        },
+        {
+          "id": "al7a1jn5",
+          "type": "number",
+          "name": "space/6",
+          "groupId": "blvubas3",
+          "valuesByMode": { "9rsmi4jk": 24 }
+        },
+        {
+          "id": "utjxyjp2",
+          "type": "number",
+          "name": "space/8",
+          "groupId": "blvubas3",
+          "valuesByMode": { "9rsmi4jk": 32 }
+        },
+        {
+          "id": "c43l0fjb",
+          "type": "number",
+          "name": "space/10",
+          "groupId": "blvubas3",
+          "valuesByMode": { "9rsmi4jk": 40 }
+        },
+        {
+          "id": "ew06j5uo",
+          "type": "number",
+          "name": "space/12",
+          "groupId": "blvubas3",
+          "valuesByMode": { "9rsmi4jk": 48 }
+        },
+        {
+          "id": "qiysyajo",
+          "type": "number",
+          "name": "space/16",
+          "groupId": "blvubas3",
+          "valuesByMode": { "9rsmi4jk": 64 }
+        },
+        {
+          "id": "2edj4ie8",
+          "type": "number",
+          "name": "layout/columns",
+          "groupId": "64q01w7z",
+          "valuesByMode": { "9rsmi4jk": 12 }
+        },
+        {
+          "id": "hj0qebyl",
+          "type": "number",
+          "name": "layout/gutter",
+          "groupId": "64q01w7z",
+          "valuesByMode": { "9rsmi4jk": { "alias": "al7a1jn5" } }
+        },
+        {
+          "id": "k6m2hdm1",
+          "type": "number",
+          "name": "layout/margin",
+          "groupId": "64q01w7z",
+          "valuesByMode": { "9rsmi4jk": { "alias": "utjxyjp2" } }
+        },
+        {
+          "id": "326bmliv",
+          "type": "number",
+          "name": "radius/none",
+          "groupId": "k2vm5kfh",
+          "valuesByMode": { "9rsmi4jk": 0 }
+        },
+        {
+          "id": "ssont1mc",
+          "type": "number",
+          "name": "radius/sm",
+          "groupId": "k2vm5kfh",
+          "valuesByMode": { "9rsmi4jk": 4 }
+        },
+        {
+          "id": "9hl8tk0z",
+          "type": "number",
+          "name": "radius/md",
+          "groupId": "k2vm5kfh",
+          "valuesByMode": { "9rsmi4jk": 8 }
+        },
+        {
+          "id": "q0nf208w",
+          "type": "number",
+          "name": "radius/lg",
+          "groupId": "k2vm5kfh",
+          "valuesByMode": { "9rsmi4jk": 12 }
+        },
+        {
+          "id": "wkk6a19q",
+          "type": "number",
+          "name": "radius/xl",
+          "groupId": "k2vm5kfh",
+          "valuesByMode": { "9rsmi4jk": 16 }
+        },
+        {
+          "id": "tfd46sdz",
+          "type": "number",
+          "name": "radius/full",
+          "groupId": "k2vm5kfh",
+          "valuesByMode": { "9rsmi4jk": 9999 }
+        },
+        {
+          "id": "qt16i8mz",
+          "type": "number",
+          "name": "border-width/thin",
+          "groupId": "zgcdwggf",
+          "valuesByMode": { "9rsmi4jk": 1 }
+        },
+        {
+          "id": "som878nv",
+          "type": "number",
+          "name": "border-width/thick",
+          "groupId": "zgcdwggf",
+          "valuesByMode": { "9rsmi4jk": 2 }
+        },
+        {
+          "id": "sy9svvyq",
+          "type": "string",
+          "name": "font/family/sans",
+          "groupId": "vlntl8fj",
+          "valuesByMode": { "9rsmi4jk": "Inter" }
+        },
+        {
+          "id": "leetco0v",
+          "type": "string",
+          "name": "font/family/mono",
+          "groupId": "vlntl8fj",
+          "valuesByMode": { "9rsmi4jk": "JetBrains Mono" }
+        },
+        {
+          "id": "umnoed21",
+          "type": "string",
+          "name": "font/family/display",
+          "groupId": "vlntl8fj",
+          "valuesByMode": { "9rsmi4jk": "Space Grotesk" }
+        },
+        {
+          "id": "ld7506ji",
+          "type": "number",
+          "name": "font/size/xs",
+          "groupId": "88kcw6p7",
+          "valuesByMode": { "9rsmi4jk": 12 }
+        },
+        {
+          "id": "sd8ro5g6",
+          "type": "number",
+          "name": "font/size/sm",
+          "groupId": "88kcw6p7",
+          "valuesByMode": { "9rsmi4jk": 14 }
+        },
+        {
+          "id": "2bqtl671",
+          "type": "number",
+          "name": "font/size/md",
+          "groupId": "88kcw6p7",
+          "valuesByMode": { "9rsmi4jk": 16 }
+        },
+        {
+          "id": "dm99fykn",
+          "type": "number",
+          "name": "font/size/lg",
+          "groupId": "88kcw6p7",
+          "valuesByMode": { "9rsmi4jk": 20 }
+        },
+        {
+          "id": "l94to8sq",
+          "type": "number",
+          "name": "font/size/xl",
+          "groupId": "88kcw6p7",
+          "valuesByMode": { "9rsmi4jk": 24 }
+        },
+        {
+          "id": "zmuhlq6s",
+          "type": "number",
+          "name": "font/size/2xl",
+          "groupId": "88kcw6p7",
+          "valuesByMode": { "9rsmi4jk": 32 }
+        },
+        {
+          "id": "5nq2tdy5",
+          "type": "number",
+          "name": "font/size/3xl",
+          "groupId": "88kcw6p7",
+          "valuesByMode": { "9rsmi4jk": 40 }
+        },
+        {
+          "id": "9zo6y473",
+          "type": "number",
+          "name": "font/weight/regular",
+          "groupId": "e9z5xqr4",
+          "valuesByMode": { "9rsmi4jk": 400 }
+        },
+        {
+          "id": "s9et7j9o",
+          "type": "number",
+          "name": "font/weight/medium",
+          "groupId": "e9z5xqr4",
+          "valuesByMode": { "9rsmi4jk": 500 }
+        },
+        {
+          "id": "tl38c15r",
+          "type": "number",
+          "name": "font/weight/semibold",
+          "groupId": "e9z5xqr4",
+          "valuesByMode": { "9rsmi4jk": 600 }
+        },
+        {
+          "id": "yl3p4v9p",
+          "type": "number",
+          "name": "font/weight/bold",
+          "groupId": "e9z5xqr4",
+          "valuesByMode": { "9rsmi4jk": 700 }
+        },
+        {
+          "id": "gtoypa0a",
+          "type": "number",
+          "name": "font/line-height/tight",
+          "groupId": "3v4x697d",
+          "valuesByMode": { "9rsmi4jk": 120 }
+        },
+        {
+          "id": "1cuz32ai",
+          "type": "number",
+          "name": "font/line-height/normal",
+          "groupId": "3v4x697d",
+          "valuesByMode": { "9rsmi4jk": 150 }
+        },
+        {
+          "id": "v2i2yr95",
+          "type": "number",
+          "name": "font/letter-spacing/tight",
+          "groupId": "zul8dmgc",
+          "valuesByMode": { "9rsmi4jk": -0.5 }
+        },
+        {
+          "id": "icysvc57",
+          "type": "number",
+          "name": "font/letter-spacing/normal",
+          "groupId": "zul8dmgc",
+          "valuesByMode": { "9rsmi4jk": 0 }
+        },
+        {
+          "id": "dc725o58",
+          "type": "number",
+          "name": "font/letter-spacing/wide",
+          "groupId": "zul8dmgc",
+          "valuesByMode": { "9rsmi4jk": 0.5 }
+        },
+        {
+          "id": "tyawrxu8",
+          "type": "number",
+          "name": "opacity/disabled",
+          "description": "Opacity of disabled controls, in percent.",
+          "groupId": "5rsss9o2",
+          "valuesByMode": { "9rsmi4jk": 40 }
+        },
+        {
+          "id": "blve2jmp",
+          "type": "duration",
+          "name": "motion/duration/fast",
+          "groupId": "q3m6g2s5",
+          "valuesByMode": { "9rsmi4jk": 100 }
+        },
+        {
+          "id": "fo3jipzu",
+          "type": "duration",
+          "name": "motion/duration/normal",
+          "groupId": "q3m6g2s5",
+          "valuesByMode": { "9rsmi4jk": 200 }
+        },
+        {
+          "id": "lagjn14f",
+          "type": "duration",
+          "name": "motion/duration/slow",
+          "groupId": "q3m6g2s5",
+          "valuesByMode": { "9rsmi4jk": 300 }
+        },
+        {
+          "id": "w1smodi9",
+          "type": "easing",
+          "name": "motion/easing/standard",
+          "description": "Most transitions.",
+          "groupId": "opk9079f",
+          "valuesByMode": { "9rsmi4jk": [0.2, 0, 0, 1] }
+        },
+        {
+          "id": "ojwjbxyj",
+          "type": "easing",
+          "name": "motion/easing/enter",
+          "description": "Elements coming into view.",
+          "groupId": "opk9079f",
+          "valuesByMode": { "9rsmi4jk": [0, 0, 0, 1] }
+        },
+        {
+          "id": "1as6qfg4",
+          "type": "easing",
+          "name": "motion/easing/exit",
+          "description": "Elements leaving the view.",
+          "groupId": "opk9079f",
+          "valuesByMode": { "9rsmi4jk": [0.3, 0, 1, 1] }
+        },
+        {
+          "id": "dasaf8cj",
+          "type": "string",
+          "name": "content/product-name",
+          "groupId": "8w0fe3uz",
+          "valuesByMode": { "9rsmi4jk": "Sigma" }
+        },
+        {
+          "id": "yqw876tw",
+          "type": "string",
+          "name": "content/tagline",
+          "groupId": "8w0fe3uz",
+          "valuesByMode": { "9rsmi4jk": "Design on an infinite canvas" }
+        },
+        {
+          "id": "x4blicoa",
+          "type": "boolean",
+          "name": "rounded-corners",
+          "description": "A top-level token: no group needed.",
+          "valuesByMode": { "9rsmi4jk": true }
+        }
+      ]
+    },
+    {
+      "id": "snsjqa92",
+      "name": "Semantic",
+      "defaultModeId": "sm6x7eq5",
+      "groups": [
+        {
+          "id": "bcjrqd38",
+          "name": "surface",
+          "description": "Backgrounds, from the page up.",
+          "parentId": null
+        },
+        { "id": "5rh70wsk", "name": "text", "parentId": null },
+        { "id": "tjjf8i75", "name": "border", "parentId": null },
+        {
+          "id": "0jm26s7f",
+          "name": "accent",
+          "description": "The brand color and its states. Brand B changes only these.",
+          "parentId": null
+        },
+        { "id": "pg3mlb15", "name": "status", "description": "Feedback colors.", "parentId": null },
+        { "id": "tw8ncvph", "name": "success", "parentId": "pg3mlb15" },
+        { "id": "g2lzc73t", "name": "warning", "parentId": "pg3mlb15" },
+        { "id": "qieonyl1", "name": "danger", "parentId": "pg3mlb15" },
+        {
+          "id": "4jx6gena",
+          "name": "elevation",
+          "description": "Shadows that lift surfaces off the page; darker in Dark mode, where light shadows don’t show.",
+          "parentId": null
+        }
+      ],
+      "modes": [{ "id": "sm6x7eq5", "name": "Light" }, { "id": "y3aurt7j", "name": "Dark" }],
+      "variables": [
+        {
+          "id": "f6zllbnd",
+          "type": "color",
+          "name": "surface/page",
+          "groupId": "bcjrqd38",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "bnc2uzf5" },
+            "y3aurt7j": { "alias": "dkhrf5y8" }
+          }
+        },
+        {
+          "id": "f76adrzt",
+          "type": "color",
+          "name": "surface/default",
+          "groupId": "bcjrqd38",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "dupapfd8" },
+            "y3aurt7j": { "alias": "e74xd0rt" }
+          }
+        },
+        {
+          "id": "jsqnxwyu",
+          "type": "color",
+          "name": "surface/raised",
+          "description": "Cards, menus and popovers.",
+          "groupId": "bcjrqd38",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "dupapfd8" },
+            "y3aurt7j": { "alias": "weg1qwpu" }
+          }
+        },
+        {
+          "id": "4g1qjpyg",
+          "type": "color",
+          "name": "surface/sunken",
+          "groupId": "bcjrqd38",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "2d3byfv4" },
+            "y3aurt7j": { "alias": "dkhrf5y8" }
+          }
+        },
+        {
+          "id": "rrf5skmz",
+          "type": "color",
+          "name": "surface/overlay",
+          "description": "The scrim behind dialogs.",
+          "groupId": "bcjrqd38",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "k684hnsw" },
+            "y3aurt7j": { "alias": "k684hnsw" }
+          }
+        },
+        {
+          "id": "ovbzu0xo",
+          "type": "color",
+          "name": "text/primary",
+          "contrastWith": ["f76adrzt", "jsqnxwyu"],
+          "groupId": "5rh70wsk",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "e74xd0rt" },
+            "y3aurt7j": { "alias": "dupapfd8" }
+          }
+        },
+        {
+          "id": "5biqh6p5",
+          "type": "color",
+          "name": "text/secondary",
+          "contrastWith": ["f76adrzt", "jsqnxwyu"],
+          "groupId": "5rh70wsk",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "536g08dk" },
+            "y3aurt7j": { "alias": "i2lyi7hk" }
+          }
+        },
+        {
+          "id": "87pdlniu",
+          "type": "color",
+          "name": "text/disabled",
+          "groupId": "5rh70wsk",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "i2lyi7hk" },
+            "y3aurt7j": { "alias": "536g08dk" }
+          }
+        },
+        {
+          "id": "cmfzbs4b",
+          "type": "color",
+          "name": "text/link",
+          "groupId": "5rh70wsk",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "ueuojfv4" },
+            "y3aurt7j": { "alias": "cw7jizj3" }
+          }
+        },
+        {
+          "id": "gftwd1fv",
+          "type": "color",
+          "name": "text/on-accent",
+          "description": "Text on accent backgrounds.",
+          "contrastWith": ["xrdvb6ci", "ks8mubu4"],
+          "groupId": "5rh70wsk",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "dupapfd8" },
+            "y3aurt7j": { "alias": "dupapfd8" }
+          }
+        },
+        {
+          "id": "yyiqisbr",
+          "type": "color",
+          "name": "border/default",
+          "groupId": "tjjf8i75",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "55qe7j7z" },
+            "y3aurt7j": { "alias": "gzmuwqxw" }
+          }
+        },
+        {
+          "id": "y7etshy7",
+          "type": "color",
+          "name": "border/strong",
+          "groupId": "tjjf8i75",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "i2lyi7hk" },
+            "y3aurt7j": { "alias": "vcha84au" }
+          }
+        },
+        {
+          "id": "b6j7hy3z",
+          "type": "color",
+          "name": "border/focus",
+          "groupId": "tjjf8i75",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "c8uyqupy" },
+            "y3aurt7j": { "alias": "cw7jizj3" }
+          }
+        },
+        {
+          "id": "xrdvb6ci",
+          "type": "color",
+          "name": "accent/default",
+          "groupId": "0jm26s7f",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "c8uyqupy" },
+            "y3aurt7j": { "alias": "cw7jizj3" }
+          }
+        },
+        {
+          "id": "ks8mubu4",
+          "type": "color",
+          "name": "accent/hover",
+          "groupId": "0jm26s7f",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "ueuojfv4" },
+            "y3aurt7j": { "alias": "17itewoz" }
+          }
+        },
+        {
+          "id": "qsz6je3q",
+          "type": "color",
+          "name": "accent/pressed",
+          "groupId": "0jm26s7f",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "y0pgg9qj" },
+            "y3aurt7j": { "alias": "lhvicjjp" }
+          }
+        },
+        {
+          "id": "y70br9o1",
+          "type": "color",
+          "name": "accent/subtle",
+          "groupId": "0jm26s7f",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "l887qnom" },
+            "y3aurt7j": { "alias": "2amnzlft" }
+          }
+        },
+        {
+          "id": "omc5guha",
+          "type": "color",
+          "name": "status/success/default",
+          "groupId": "tw8ncvph",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "xlq3op6a" },
+            "y3aurt7j": { "alias": "5lu98hei" }
+          }
+        },
+        {
+          "id": "bqruoqoi",
+          "type": "color",
+          "name": "status/success/subtle",
+          "groupId": "tw8ncvph",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "o99ng5am" },
+            "y3aurt7j": { "alias": "6mdl4xa9" }
+          }
+        },
+        {
+          "id": "0oamzj2n",
+          "type": "color",
+          "name": "status/warning/default",
+          "groupId": "g2lzc73t",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "3dp5khzy" },
+            "y3aurt7j": { "alias": "5vk07pph" }
+          }
+        },
+        {
+          "id": "uessgctu",
+          "type": "color",
+          "name": "status/warning/subtle",
+          "groupId": "g2lzc73t",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "gzhqve3e" },
+            "y3aurt7j": { "alias": "qz1x5htr" }
+          }
+        },
+        {
+          "id": "6cgczr4r",
+          "type": "color",
+          "name": "status/danger/default",
+          "groupId": "qieonyl1",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "as0g3m7f" },
+            "y3aurt7j": { "alias": "ga32ju7x" }
+          }
+        },
+        {
+          "id": "j9v8w1ba",
+          "type": "color",
+          "name": "status/danger/subtle",
+          "groupId": "qieonyl1",
+          "valuesByMode": {
+            "sm6x7eq5": { "alias": "k2cp6ftj" },
+            "y3aurt7j": { "alias": "vitn0sjs" }
+          }
+        },
+        {
+          "id": "50i0qexb",
+          "type": "shadow",
+          "name": "elevation/raised",
+          "description": "Cards and other raised surfaces.",
+          "groupId": "4jx6gena",
+          "valuesByMode": {
+            "sm6x7eq5": { "blur": 8, "color": { "alias": "fyhqeseg" }, "spread": 0, "x": 0, "y": 2 },
+            "y3aurt7j": { "blur": 8, "color": { "alias": "k684hnsw" }, "spread": 0, "x": 0, "y": 2 }
+          }
+        },
+        {
+          "id": "7yz519xf",
+          "type": "shadow",
+          "name": "elevation/overlay",
+          "description": "Menus, popovers and dialogs.",
+          "groupId": "4jx6gena",
+          "valuesByMode": {
+            "sm6x7eq5": {
+              "blur": 32,
+              "color": { "alias": "fyhqeseg" },
+              "spread": -4,
+              "x": 0,
+              "y": 12
+            },
+            "y3aurt7j": {
+              "blur": 32,
+              "color": { "alias": "k684hnsw" },
+              "spread": -4,
+              "x": 0,
+              "y": 12
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "kmhtez6n",
+      "name": "Brand B",
+      "defaultModeId": "jt7aji5b",
+      "extends": "snsjqa92",
+      "modes": [
+        { "id": "jt7aji5b", "name": "Light", "parentModeId": "sm6x7eq5" },
+        { "id": "w4r2u5hv", "name": "Dark", "parentModeId": "y3aurt7j" }
+      ],
+      "overrides": {
+        "ks8mubu4": { "jt7aji5b": { "alias": "glmcc5h4" }, "w4r2u5hv": { "alias": "9u1sq38f" } },
+        "qsz6je3q": { "jt7aji5b": { "alias": "5zwpccp8" }, "w4r2u5hv": { "alias": "9u1sq38f" } },
+        "xrdvb6ci": { "jt7aji5b": { "alias": "ill0vaas" }, "w4r2u5hv": { "alias": "4qpa3bvi" } },
+        "y70br9o1": { "jt7aji5b": { "alias": "r3hw94du" }, "w4r2u5hv": { "alias": "x5medpa4" } }
+      },
+      "variables": []
+    },
+    {
+      "id": "c8f4kaxz",
+      "name": "Typography",
+      "defaultModeId": "fcp8n09e",
+      "groups": [
+        { "id": "wm4e1f6h", "name": "heading", "parentId": null },
+        { "id": "6fvoq2yx", "name": "body", "parentId": null },
+        { "id": "ep99iysw", "name": "label", "parentId": null }
+      ],
+      "modes": [{ "id": "fcp8n09e", "name": "Default" }],
+      "variables": [
+        {
+          "id": "tlsmg9mz",
+          "type": "typography",
+          "name": "heading/display",
+          "description": "Hero titles.",
+          "groupId": "wm4e1f6h",
+          "valuesByMode": {
+            "fcp8n09e": {
+              "fontFamily": { "alias": "umnoed21" },
+              "fontSize": { "alias": "5nq2tdy5" },
+              "fontWeight": { "alias": "yl3p4v9p" },
+              "letterSpacing": { "alias": "v2i2yr95" },
+              "lineHeight": { "alias": "gtoypa0a" }
+            }
+          }
+        },
+        {
+          "id": "9pv3bx2e",
+          "type": "typography",
+          "name": "heading/h1",
+          "groupId": "wm4e1f6h",
+          "valuesByMode": {
+            "fcp8n09e": {
+              "fontFamily": { "alias": "sy9svvyq" },
+              "fontSize": { "alias": "zmuhlq6s" },
+              "fontWeight": { "alias": "yl3p4v9p" },
+              "letterSpacing": { "alias": "v2i2yr95" },
+              "lineHeight": { "alias": "gtoypa0a" }
+            }
+          }
+        },
+        {
+          "id": "4583pk81",
+          "type": "typography",
+          "name": "heading/h2",
+          "groupId": "wm4e1f6h",
+          "valuesByMode": {
+            "fcp8n09e": {
+              "fontFamily": { "alias": "sy9svvyq" },
+              "fontSize": { "alias": "l94to8sq" },
+              "fontWeight": { "alias": "tl38c15r" },
+              "letterSpacing": { "alias": "icysvc57" },
+              "lineHeight": { "alias": "gtoypa0a" }
+            }
+          }
+        },
+        {
+          "id": "ojrk7lg5",
+          "type": "typography",
+          "name": "heading/h3",
+          "groupId": "wm4e1f6h",
+          "valuesByMode": {
+            "fcp8n09e": {
+              "fontFamily": { "alias": "sy9svvyq" },
+              "fontSize": { "alias": "dm99fykn" },
+              "fontWeight": { "alias": "tl38c15r" },
+              "letterSpacing": { "alias": "icysvc57" },
+              "lineHeight": { "alias": "1cuz32ai" }
+            }
+          }
+        },
+        {
+          "id": "refxyqaf",
+          "type": "typography",
+          "name": "body/default",
+          "groupId": "6fvoq2yx",
+          "valuesByMode": {
+            "fcp8n09e": {
+              "fontFamily": { "alias": "sy9svvyq" },
+              "fontSize": { "alias": "2bqtl671" },
+              "fontWeight": { "alias": "9zo6y473" },
+              "letterSpacing": { "alias": "icysvc57" },
+              "lineHeight": { "alias": "1cuz32ai" }
+            }
+          }
+        },
+        {
+          "id": "7j4wsxyq",
+          "type": "typography",
+          "name": "body/small",
+          "groupId": "6fvoq2yx",
+          "valuesByMode": {
+            "fcp8n09e": {
+              "fontFamily": { "alias": "sy9svvyq" },
+              "fontSize": { "alias": "sd8ro5g6" },
+              "fontWeight": { "alias": "9zo6y473" },
+              "letterSpacing": { "alias": "icysvc57" },
+              "lineHeight": { "alias": "1cuz32ai" }
+            }
+          }
+        },
+        {
+          "id": "p4lntya4",
+          "type": "typography",
+          "name": "body/strong",
+          "groupId": "6fvoq2yx",
+          "valuesByMode": {
+            "fcp8n09e": {
+              "fontFamily": { "alias": "sy9svvyq" },
+              "fontSize": { "alias": "2bqtl671" },
+              "fontWeight": { "alias": "tl38c15r" },
+              "letterSpacing": { "alias": "icysvc57" },
+              "lineHeight": { "alias": "1cuz32ai" }
+            }
+          }
+        },
+        {
+          "id": "l3hwr53a",
+          "type": "typography",
+          "name": "label/default",
+          "description": "Buttons and form labels.",
+          "groupId": "ep99iysw",
+          "valuesByMode": {
+            "fcp8n09e": {
+              "fontFamily": { "alias": "sy9svvyq" },
+              "fontSize": { "alias": "sd8ro5g6" },
+              "fontWeight": { "alias": "s9et7j9o" },
+              "letterSpacing": { "alias": "dc725o58" },
+              "lineHeight": { "alias": "1cuz32ai" }
+            }
+          }
+        },
+        {
+          "id": "dikqga4r",
+          "type": "typography",
+          "name": "label/small",
+          "groupId": "ep99iysw",
+          "valuesByMode": {
+            "fcp8n09e": {
+              "fontFamily": { "alias": "sy9svvyq" },
+              "fontSize": { "alias": "ld7506ji" },
+              "fontWeight": { "alias": "s9et7j9o" },
+              "letterSpacing": { "alias": "dc725o58" },
+              "lineHeight": { "alias": "1cuz32ai" }
+            }
+          }
+        },
+        {
+          "id": "8px3iv81",
+          "type": "typography",
+          "name": "code",
+          "valuesByMode": {
+            "fcp8n09e": {
+              "fontFamily": { "alias": "leetco0v" },
+              "fontSize": { "alias": "sd8ro5g6" },
+              "fontWeight": { "alias": "9zo6y473" },
+              "letterSpacing": { "alias": "icysvc57" },
+              "lineHeight": { "alias": "1cuz32ai" }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "je4m7f8i",
+      "name": "Components",
+      "defaultModeId": "ved3hezr",
+      "groups": [
+        {
+          "id": "s1n9tgz6",
+          "name": "button",
+          "description": "Button tokens point at Semantic tokens, which point at Primitives.",
+          "parentId": null
+        },
+        { "id": "qyp3ldwh", "name": "primary", "parentId": "s1n9tgz6" },
+        { "id": "ibqgmd22", "name": "secondary", "parentId": "s1n9tgz6" },
+        { "id": "kmx0wlcd", "name": "input", "parentId": null },
+        { "id": "pmkedqh8", "name": "card", "parentId": null }
+      ],
+      "modes": [{ "id": "ved3hezr", "name": "Default" }],
+      "variables": [
+        {
+          "id": "14dae9u5",
+          "type": "color",
+          "name": "button/primary/background",
+          "groupId": "qyp3ldwh",
+          "valuesByMode": { "ved3hezr": { "alias": "xrdvb6ci" } }
+        },
+        {
+          "id": "3xnuxjf5",
+          "type": "color",
+          "name": "button/primary/background-hover",
+          "groupId": "qyp3ldwh",
+          "valuesByMode": { "ved3hezr": { "alias": "ks8mubu4" } }
+        },
+        {
+          "id": "xhy3fn0w",
+          "type": "color",
+          "name": "button/primary/background-pressed",
+          "groupId": "qyp3ldwh",
+          "valuesByMode": { "ved3hezr": { "alias": "qsz6je3q" } }
+        },
+        {
+          "id": "liyv5b8n",
+          "type": "color",
+          "name": "button/primary/text",
+          "groupId": "qyp3ldwh",
+          "valuesByMode": { "ved3hezr": { "alias": "gftwd1fv" } }
+        },
+        {
+          "id": "wp0gvd34",
+          "type": "color",
+          "name": "button/secondary/background",
+          "groupId": "ibqgmd22",
+          "valuesByMode": { "ved3hezr": { "alias": "f76adrzt" } }
+        },
+        {
+          "id": "ew23bx09",
+          "type": "color",
+          "name": "button/secondary/border",
+          "groupId": "ibqgmd22",
+          "valuesByMode": { "ved3hezr": { "alias": "y7etshy7" } }
+        },
+        {
+          "id": "v0d4cmfr",
+          "type": "color",
+          "name": "button/secondary/text",
+          "groupId": "ibqgmd22",
+          "valuesByMode": { "ved3hezr": { "alias": "ovbzu0xo" } }
+        },
+        {
+          "id": "q9l3om5u",
+          "type": "number",
+          "name": "button/radius",
+          "groupId": "s1n9tgz6",
+          "valuesByMode": { "ved3hezr": { "alias": "9hl8tk0z" } }
+        },
+        {
+          "id": "38q6odu7",
+          "type": "number",
+          "name": "button/padding-x",
+          "groupId": "s1n9tgz6",
+          "valuesByMode": { "ved3hezr": { "alias": "ntvq024y" } }
+        },
+        {
+          "id": "6eyxjtoq",
+          "type": "number",
+          "name": "button/padding-y",
+          "groupId": "s1n9tgz6",
+          "valuesByMode": { "ved3hezr": { "alias": "p1ji5oam" } }
+        },
+        {
+          "id": "tspmre97",
+          "type": "number",
+          "name": "button/gap",
+          "groupId": "s1n9tgz6",
+          "valuesByMode": { "ved3hezr": { "alias": "p1ji5oam" } }
+        },
+        {
+          "id": "gqbgl36o",
+          "type": "typography",
+          "name": "button/label",
+          "groupId": "s1n9tgz6",
+          "valuesByMode": { "ved3hezr": { "alias": "l3hwr53a" } }
+        },
+        {
+          "id": "y9scxaak",
+          "type": "duration",
+          "name": "button/transition-duration",
+          "description": "Hover and press feedback.",
+          "groupId": "s1n9tgz6",
+          "valuesByMode": { "ved3hezr": { "alias": "blve2jmp" } }
+        },
+        {
+          "id": "guq1kzjh",
+          "type": "easing",
+          "name": "button/transition-easing",
+          "groupId": "s1n9tgz6",
+          "valuesByMode": { "ved3hezr": { "alias": "w1smodi9" } }
+        },
+        {
+          "id": "idj8g9sq",
+          "type": "color",
+          "name": "input/background",
+          "groupId": "kmx0wlcd",
+          "valuesByMode": { "ved3hezr": { "alias": "f76adrzt" } }
+        },
+        {
+          "id": "sjf0fs1j",
+          "type": "color",
+          "name": "input/border",
+          "groupId": "kmx0wlcd",
+          "valuesByMode": { "ved3hezr": { "alias": "yyiqisbr" } }
+        },
+        {
+          "id": "4lzkckis",
+          "type": "color",
+          "name": "input/border-focus",
+          "groupId": "kmx0wlcd",
+          "valuesByMode": { "ved3hezr": { "alias": "b6j7hy3z" } }
+        },
+        {
+          "id": "5j6rlf5m",
+          "type": "color",
+          "name": "input/text",
+          "groupId": "kmx0wlcd",
+          "valuesByMode": { "ved3hezr": { "alias": "ovbzu0xo" } }
+        },
+        {
+          "id": "7t7567is",
+          "type": "color",
+          "name": "input/placeholder",
+          "groupId": "kmx0wlcd",
+          "valuesByMode": { "ved3hezr": { "alias": "5biqh6p5" } }
+        },
+        {
+          "id": "uyvp6i5k",
+          "type": "number",
+          "name": "input/radius",
+          "groupId": "kmx0wlcd",
+          "valuesByMode": { "ved3hezr": { "alias": "ssont1mc" } }
+        },
+        {
+          "id": "rilalnkn",
+          "type": "number",
+          "name": "input/padding",
+          "groupId": "kmx0wlcd",
+          "valuesByMode": { "ved3hezr": { "alias": "62dc3026" } }
+        },
+        {
+          "id": "l6pefuph",
+          "type": "color",
+          "name": "card/background",
+          "groupId": "pmkedqh8",
+          "valuesByMode": { "ved3hezr": { "alias": "jsqnxwyu" } }
+        },
+        {
+          "id": "m36mhf0c",
+          "type": "color",
+          "name": "card/border",
+          "groupId": "pmkedqh8",
+          "valuesByMode": { "ved3hezr": { "alias": "yyiqisbr" } }
+        },
+        {
+          "id": "kzuokd4s",
+          "type": "shadow",
+          "name": "card/shadow",
+          "groupId": "pmkedqh8",
+          "valuesByMode": { "ved3hezr": { "alias": "50i0qexb" } }
+        },
+        {
+          "id": "adfjiuao",
+          "type": "number",
+          "name": "card/radius",
+          "groupId": "pmkedqh8",
+          "valuesByMode": { "ved3hezr": { "alias": "q0nf208w" } }
+        },
+        {
+          "id": "liw29axp",
+          "type": "number",
+          "name": "card/padding",
+          "groupId": "pmkedqh8",
+          "valuesByMode": { "ved3hezr": { "alias": "al7a1jn5" } }
+        }
+      ]
+    }
+  ]
+}

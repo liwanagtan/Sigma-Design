@@ -18,8 +18,8 @@ export function initTokensScreen(el) {
   root = el;
   el.innerHTML = `${railHTML('tokens')}<div class="screen-main">
     <header class="tokens-header">
-      <input class="file-name tokens-file-name" spellcheck="false" aria-label="Sigma Tokens file name">
-      <span class="kind-badge tokens-kind">Sigma Tokens</span>
+      <input class="file-name tokens-file-name" spellcheck="false" aria-label="Tokens file name">
+      <span class="kind-badge tokens-kind">Tokens</span>
       <div class="tokens-header-actions">
         <button class="project-status" data-project-status hidden></button>
         <span class="publish-status" data-publish-status></span>
@@ -31,7 +31,7 @@ export function initTokensScreen(el) {
     <div class="tokens-editor"></div></div>`;
   el.querySelector('[data-rail-home]').addEventListener('click', goHome);
   registerRailTools('tokens', [
-    { id: 'linked', label: 'Linked Sigma Tokens files', icon: RAIL_TOOL_ICONS.linked, open: () => openLibrariesDialog(), state: () => {
+    { id: 'linked', label: 'Linked tokens files', icon: RAIL_TOOL_ICONS.linked, open: () => openLibrariesDialog(), state: () => {
       const l = libraries();
       return { detail: l.length ? l.map((x) => `${x.name} v${x.version}`).join(', ') : 'None linked: point this file’s tokens at another file’s, e.g. brand colors that use core colors', badge: l.length || null };
     } },
@@ -153,7 +153,7 @@ const hasUnpublishedChanges = () => JSON.stringify(current()) !== JSON.stringify
 // see "Token updates available" and choose when to accept it.
 function openPublishDialog() {
   if (isCurrentSample()) {
-    return window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'The sample Sigma Tokens can’t be published: it isn’t saved. Duplicate it (banner above) to publish your own.' }));
+    return window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'The sample tokens can’t be published: it isn’t saved. Duplicate it (banner above) to publish your own.' }));
   }
   const pub = state.doc.published;
   const d = diffCollections(pub?.collections || [], current());
@@ -165,9 +165,9 @@ function openPublishDialog() {
   wrap.className = 'modal-backdrop';
   wrap.innerHTML = `<div class="modal lib-modal"><div class="modal-head">Publish ${esc(state.doc.name)}<button class="icon-btn" data-close>${icons.close}</button></div>
     <div class="lib-body">
-      <p class="muted">This becomes version ${(pub?.version || 0) + 1}. Sigma Design files that use this file will be offered the update.</p>
-      ${list('Added', d.added) + list('Changed', d.changed) + list('Removed', d.removed) + list('Sigma Tokens files it points at', depChanges) || '<div class="muted">No changes since the last version.</div>'}
-      ${deps.length ? `<p class="muted">Includes the tokens it points at from ${deps.map((x) => `${esc(x.name)} v${x.version}`).join(', ')}, so Sigma Design files resolve them.</p>` : ''}
+      <p class="muted">This becomes version ${(pub?.version || 0) + 1}. Design files that use this file will be offered the update.</p>
+      ${list('Added', d.added) + list('Changed', d.changed) + list('Removed', d.removed) + list('Tokens files it points at', depChanges) || '<div class="muted">No changes since the last version.</div>'}
+      ${deps.length ? `<p class="muted">Includes the tokens it points at from ${deps.map((x) => `${esc(x.name)} v${x.version}`).join(', ')}, so design files resolve them.</p>` : ''}
       <label class="inspector-label">Notes (optional)</label>
       <textarea class="desc publish-notes" rows="3" placeholder="What changed and why?"></textarea>
     </div>

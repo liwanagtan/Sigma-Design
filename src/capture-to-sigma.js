@@ -5,7 +5,7 @@
 // flow becomes a vertical auto layout when its children stack, using their most common spacing). Borders,
 // outlines, radii, shadows, opacity and text styles become Sigma properties. Values written with var(--x)
 // are bound to the token whose code name is --x (inherited properties like color look up the tree). SVG
-// that matches an icon of the project's Sigma Icons file becomes an icon layer. Everything approximated is
+// that matches an icon of the project's icons file becomes an icon layer. Everything approximated is
 // listed in `notes`.
 import { parseColorValue, parseCSSValue } from './token-sync.js';
 import { formatVariantName, parseVariantName } from './components.js';
@@ -65,7 +65,7 @@ function convert(node, ctx, parent, ancestors, path) {
   const bind = (path2, codeName, type) => {
     const t = codeName && ctx.tokens.get(codeName);
     if (!t) {
-      if (codeName) ctx.notes.push(`${name}: ${codeName} isn’t a token in the Sigma Tokens file, so its value was used`);
+      if (codeName) ctx.notes.push(`${name}: ${codeName} isn’t a token in the tokens file, so its value was used`);
       return false;
     }
     if (type && t.type !== type) return false;
@@ -114,7 +114,7 @@ function convert(node, ctx, parent, ancestors, path) {
       if (Object.keys(bindings).length) icon.bindings = bindings;
       return icon;
     }
-    ctx.notes.push(`${name}: an SVG that isn’t in the Sigma Icons file was left out (import it as an icon first)`);
+    ctx.notes.push(`${name}: an SVG that isn’t in the icons file was left out (import it as an icon first)`);
     return null;
   }
   // ---- an image: an icon when it's one of the project's icon files ----

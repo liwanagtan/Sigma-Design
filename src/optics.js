@@ -21,7 +21,7 @@ import { buildOverlays } from './optics/overlays.js';
 export const OPTICS_FOUNDATIONS_NAME = 'Optics Foundations';
 export const OPTICS_COMPONENTS_NAME = 'Optics Components';
 export const OPTICS_ICONS_NAME = 'Optics Icons';
-// The icons Optics' components use (all in Sigma Icons, so in Optics Icons; a test keeps this list complete).
+// The icons Optics' components use (all in the sample icons, so in Optics Icons; a test keeps this list complete).
 export const OPTICS_ICON_NAMES = [
   'arrow-down', 'arrow-left', 'arrow-up-down', 'calendar', 'chart-column', 'check', 'chevron-down', 'chevron-left', 'chevron-right', 'chevron-up', 'circle-alert', 'circle-check', 'circle-question-mark', 'copy', 'ellipsis', 'eye', 'house', 'image', 'inbox', 'info', 'loader', 'mail', 'minus', 'palette', 'pencil', 'play', 'plus', 'search', 'settings', 'share-2', 'star', 'store', 'tag', 'trash', 'triangle-alert', 'truck', 'upload', 'users', 'x',
 ];
@@ -29,11 +29,11 @@ export const OPTICS_ICONS = OPTICS_ICON_NAMES.map((n) => I(n));
 // The categories, in the order the Overview lists them.
 export const OPTICS_CATEGORIES = ['Actions', 'Feedback and status', 'Forms', 'Layout and structure', 'Lists and tables', 'Media and visuals', 'Navigation', 'Overlays', 'Typography and content', 'Utilities'];
 
-/** Optics Icons: a Sigma Icons file made from the Sigma Icons sample's icons (the whole Lucide set, outline and filled), published v1. */
+/** Optics Icons: an icons file made from the sample icons (the whole Lucide set, outline and filled), published v1. */
 export function opticsIconsDocument(sampleIcons, source = null) {
   const doc = newIconsDocument(OPTICS_ICONS_NAME);
   doc.icons = sampleIcons.map((icon) => ({ ...structuredClone(icon), id: I(icon.name, icon.style === 'filled') }));
-  if (source) doc.source = { ...structuredClone(source), note: 'Optics’ icons: the whole Lucide set from Sigma Icons, outline and filled.' };
+  if (source) doc.source = { ...structuredClone(source), note: 'Optics’ icons: the whole Lucide set, outline and filled.' };
   doc.published = { version: 1, publishedAt: Date.now(), notes: 'Optics Icons v1', icons: structuredClone(doc.icons) };
   return doc;
 }
@@ -252,7 +252,7 @@ export function opticsFoundationsDocument(collections, { icons = [] } = {}) {
     box('frame', 'Icons', { dir: 'horizontal', gap: '200' }, list.slice(0, SHOWN).map(tileOf)),
   ]));
   const total = icons.filter((x) => x.style === 'outline').length;
-  const iconSheet = sheet('Icons', `Optics Icons is the whole Lucide set from Sigma Icons: ${total.toLocaleString()} outline icons, 24px with a 2px stroke, colored with the icon tokens. Here are some from each group; open Optics Icons to see and search them all. Pick icons people already know, and name icon-only controls for screen readers.`,
+  const iconSheet = sheet('Icons', `Optics Icons is the whole Lucide set: ${total.toLocaleString()} outline icons, 24px with a 2px stroke, colored with the icon tokens. Here are some from each group; open Optics Icons to see and search them all. Pick icons people already know, and name icon-only controls for screen readers.`,
     iconRows.length ? [section('Icon tile', [tile]), section('Optics Icons', iconRows)] : [para('None', 'Optics Icons couldn’t be made, so this page has no icons.', 'text/secondary', 'body/md')]);
 
   const pages = [

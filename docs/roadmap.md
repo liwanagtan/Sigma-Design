@@ -2,6 +2,11 @@
 
 Status: **Every phase is done: Phases 1–14, Part D (15–19), Part E (20–30), Part F (31–35) Part G (36–37, Optics) and Part H (38–39: page groups, the file tools rail)**, and the small and medium items from the "Later" and "Follow-ups" lists. Drawing icons is no longer planned (icons come from icon libraries); vector layers and the pen tool come back in Part J, for Figma files.
 
+**Names:** the file kinds are now **design**, **tokens** and **icons** files (they were "Sigma Design", "Sigma
+Tokens" and "Sigma Icons" files), and the sample files are **Guide**, **Sample tokens** and **Sample icons**. Sigma
+is the tool's name (the Σ, Welcome to Sigma, `.sigma.json`, `sigma-design`). Sections below written before the
+change keep the old names.
+
 **What's next, in order:**
 
 1. **Finalize the project:** Optics is in (Phases 36–37: every Polaris component, a page each), as files of your own. What's still open: plugins and automation (Part D, "Later": large, needs an API design first) and what needs a backend (real sharing in Part C; the hosted team service in Part E). The license files are in (see "Open source").

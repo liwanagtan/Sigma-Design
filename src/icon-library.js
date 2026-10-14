@@ -1,11 +1,11 @@
-// Icon libraries: Sigma Icons files hold icons imported from SVG (a free icon set, for example). An icon is
+// Icon libraries: icons files hold icons imported from SVG (a free icon set, for example). An icon is
 // data, not a component: { id, name, group, keywords, viewBox, style, strokeWidth, cap, join, body }.
 //   style  'outline' (drawn with strokes, like Lucide) or 'filled' (drawn with fills, like Material). A
 //          filled icon with a strokeWidth also gets an outline that wide (filled versions of outline
 //          icons keep their size and their open lines that way)
 //   body   the icon's shapes as SVG markup, cleaned on import: only plain shapes and their geometry are
 //          kept, and every color becomes currentColor, so the layer that shows an icon decides its color
-// A Sigma Icons file publishes versions ({ version, publishedAt, notes, icons }) that Sigma Design files link.
+// An icons file publishes versions ({ version, publishedAt, notes, icons }) that design files link.
 import { uid, state, walk } from './store.js';
 
 export const ICON_STYLES = { outline: 'Outline', filled: 'Filled' };
@@ -229,7 +229,7 @@ export function diffIcons(before = [], after = []) {
 }
 
 // ---------- free icon sets ----------
-// Icon sets Sigma can create a Sigma Icons file from (built by tools/build-lucide.py).
+// Icon sets Sigma can create an icons file from (built by tools/build-lucide.py).
 export const ICON_SETS = [
   { id: 'lucide', name: 'Lucide', file: new URL('../icon-sets/lucide.json', import.meta.url).href, note: 'Outline icons, ISC License' },
 ];
@@ -241,7 +241,7 @@ export async function loadIconSet(set) {
   return res.json();
 }
 
-// A Sigma Icons file holding an icon set, already published (v1). Icon ids come from the set's icon
+// An icons file holding an icon set, already published (v1). Icon ids come from the set's icon
 // names (lucide-arrow-right), so they stay the same in a later version of the set.
 export function iconSetDocument(set, data) {
   const doc = newIconsDocument(data.name);
@@ -254,8 +254,8 @@ export function iconSetDocument(set, data) {
   return doc;
 }
 
-// ---------- icons in Sigma Design files ----------
-// A Sigma Design file links Sigma Icons files: doc.iconLibraries = [{ fileId, name, version, count, icons }],
+// ---------- icons in design files ----------
+// A design file links icons files: doc.iconLibraries = [{ fileId, name, version, count, icons }],
 // where icons are copies of just the icons the file uses (from the version it accepted), so a big set
 // (Lucide has ~1,900) doesn't make every file that links it big. The whole set is read from the Sigma
 // Icons file when the picker opens (libraryIconCache). Icon layers ({ type: 'icon', iconId, iconStroke })
@@ -266,7 +266,7 @@ const indexOf = (list) => {
   return indexes.get(list);
 };
 
-// Published icons of linked Sigma Icons files, as last read: fileId → { version, icons }.
+// Published icons of linked icons files, as last read: fileId → { version, icons }.
 export const libraryIconCache = new Map();
 
 export function findIcon(id, doc = state.doc) {
@@ -283,7 +283,7 @@ export function findIcon(id, doc = state.doc) {
   return null;
 }
 
-// The Sigma Icons file an icon comes from (in this file's links), or null.
+// The icons file an icon comes from (in this file's links), or null.
 export const iconLibraryOf = (id, doc = state.doc) => (doc?.iconLibraries || []).find((l) =>
   indexOf(l.icons || []).has(id) || indexOf(libraryIconCache.get(l.fileId)?.icons || []).has(id)) || null;
 

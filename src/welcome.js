@@ -1,7 +1,7 @@
 // "Welcome to Sigma": the file a new user starts with. Each page pairs a short guide with live examples,
 // and everything in it is built from the sample tokens (sample-tokens.js), which it links as its Sigma
-// Tokens file, and the sample icons (sample-icons.js), its Sigma Icons file. It replaces the old sample
-// design file.
+// Tokens file, and the sample icons (sample-icons.js), its icons file. It replaces the old sample
+// Design file.
 //
 // Bump WELCOME_VERSION whenever the content changes: "Open Welcome to Sigma" then makes a fresh copy
 // instead of reopening an older one.
@@ -9,14 +9,14 @@ import { createNode, uid, makePaint } from './store.js';
 import { DEFAULT_LAYOUT } from './layout.js';
 import { sampleIconId } from './sample-icons.js';
 
-export const WELCOME_VERSION = 9;
+export const WELCOME_VERSION = 10;
 // The sample icons the guide uses (outline unless marked filled).
 const GUIDE_ICONS = ['plus', 'search', 'pencil', 'copy', 'share-2', 'trash', 'settings', 'user', 'log-out', 'star', 'heart', 'bookmark', 'bell'];
 export const WELCOME_ICONS = [...GUIDE_ICONS.map((n) => sampleIconId(n)), ...['star', 'heart', 'bookmark', 'bell'].map((n) => sampleIconId(n, true))];
-// The files home keeps the guide and its tokens in a "Welcome to Sigma" folder, as "Sigma Design" and
-// "Sigma Tokens".
+// The files home keeps the guide and its tokens in a "Welcome to Sigma" folder, as "Guide" and
+// "Sample tokens".
 export const WELCOME_FOLDER = 'Welcome to Sigma';
-export const WELCOME_NAME = 'Sigma Design';
+export const WELCOME_NAME = 'Guide';
 
 const autoLayout = (props) => ({ ...DEFAULT_LAYOUT, ...props });
 
@@ -169,19 +169,19 @@ export function welcomeDocument(collections, { icons = null } = {}) {
   // ---------- 1. Start here ----------
   const start = guide('Start here · 1 of 10', 'Welcome to Sigma', 'Sigma is a design tool for building a design system and designing with it, right in your browser. Your files are saved in this browser; nothing leaves it unless you download or export it.', [
     { h: 'Three kinds of file', bullets: [
-      'Sigma Design files have a canvas: pages, frames, components and layouts. This file is one.',
-      'Sigma Tokens files hold design tokens (colors, spacing, type, shadows, motion) and have no canvas. They’re published for Sigma Design files to use.',
-      'Sigma Icons files hold icons imported from SVG (from a free set like Lucide), for components to use. No canvas either.',
+      'Design files have a canvas: pages, frames, components and layouts. This file is one.',
+      'Tokens files hold design tokens (colors, spacing, type, shadows, motion) and have no canvas. They’re published for design files to use.',
+      'Icons files hold icons imported from SVG (from a free set like Lucide), for components to use. No canvas either.',
     ] },
     { h: 'How they connect', p: [
-      'This file uses the Sigma Tokens and Sigma Icons files next to it in the Welcome to Sigma folder on the files home. Every color, size, text style and shadow here comes from one of its tokens, so switching a mode or a brand restyles everything at once.',
-      'When a Sigma Tokens or Sigma Icons file publishes a new version, the Sigma Design files that use it are offered the update.',
+      'This file uses the sample tokens and sample icons next to it in the Welcome to Sigma folder on the files home. Every color, size, text style and shadow here comes from one of its tokens, so switching a mode or a brand restyles everything at once.',
+      'When a tokens or icons file publishes a new version, the design files that use it are offered the update.',
     ] },
     { h: 'A complete design system: Optics', p: [
-      'Your files also have Optics, a design system made in Sigma and inspired by Shopify’s Polaris: Optics Tokens (in Sigma Tokens), Optics Icons (in Sigma Icons), and Optics Foundations and Optics Components (in Sigma Design), with color, type, spacing, elevation, motion, icons and documented, ready components. They’re yours to change. Link Optics Tokens and Optics Components from your own files to design with them; Add Optics design system, in the Welcome to Sigma folder, adds them again.',
+      'Your files also have Optics, a design system made in Sigma and inspired by Shopify’s Polaris: Optics Tokens (in Tokens), Optics Icons (in Icons), and Optics Foundations and Optics Components (in Design), with color, type, spacing, elevation, motion, icons and documented, ready components. They’re yours to change. Link Optics Tokens and Optics Components from your own files to design with them; Add Optics design system, in the Welcome to Sigma folder, adds them again.',
     ] },
     { h: 'Find your way', bullets: [
-      'Layers and Assets are on the left. The right panel shows what you’ve selected, or this file’s tokens and libraries when nothing is.',
+      'Layers and Assets are on the left; the thin column at the far left has this file’s tokens and libraries. The right panel shows what you’ve selected.',
       'The Σ menu (top of the thin column at the far left, with Home under it) has your files, export, version history, tokens, libraries and the keyboard shortcuts (press ?).',
       'Back to files (Σ menu) goes to the files home, where this file and its tokens are in the Welcome to Sigma folder. Deleted files wait in the Archive until you delete them forever.',
     ] },
@@ -193,24 +193,24 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       '6 Style: fills, effects, text styles, text case',
       '7 Quality checks: contrast, token audit, deprecation',
       '8 Libraries and versions: publishing, updates, history',
-      '9 Sigma Tokens: how token files work',
-      '10 Sigma Icons: icon sets, and icons in components',
+      '9 Tokens files: how tokens files work',
+      '10 Icons files: icon sets, and icons in components',
     ] },
   ]);
   start.parts.push(tryIt('Pick a page in the Pages list on the left. Each one has a guide like this and examples to try on the right. This file is a playground: change anything, nothing is saved, and it’s back to the original the next time you open it. Duplicate to keep changes (in the banner) makes it your own.'));
-  const tokensBox = stack('Sigma Tokens', 'vertical', { gap: P('space/2'), padding: P('space/6'), fill: S('surface/default'), radius: P('radius/lg'), stroke: S('border/strong'), width: 300 }, [
-    text('Kind', 'Sigma Tokens file', S('text/link'), T('label/default'), { textCase: 'upper' }),
-    text('Name', 'Sigma Tokens', S('text/primary'), T('heading/h3')),
+  const tokensBox = stack('Sample tokens', 'vertical', { gap: P('space/2'), padding: P('space/6'), fill: S('surface/default'), radius: P('radius/lg'), stroke: S('border/strong'), width: 300 }, [
+    text('Kind', 'Tokens file', S('text/link'), T('label/default'), { textCase: 'upper' }),
+    text('Name', 'Sample tokens', S('text/primary'), T('heading/h3')),
     para('Primitives → Semantic → Components, in Light and Dark, with a Brand B extension.', { typo: T('body/small'), color: S('text/secondary') }),
   ]);
-  const designBox = stack('Sigma Design', 'vertical', { gap: P('space/2'), padding: P('space/6'), fill: S('surface/default'), radius: P('radius/lg'), stroke: S('border/strong'), width: 300 }, [
-    text('Kind', 'Sigma Design file', S('text/link'), T('label/default'), { textCase: 'upper' }),
+  const designBox = stack('Guide', 'vertical', { gap: P('space/2'), padding: P('space/6'), fill: S('surface/default'), radius: P('radius/lg'), stroke: S('border/strong'), width: 300 }, [
+    text('Kind', 'Design file', S('text/link'), T('label/default'), { textCase: 'upper' }),
     text('Name', `${WELCOME_NAME} (this file)`, S('text/primary'), T('heading/h3')),
     para('Pages, components and layouts whose colors, sizes and text styles are those tokens.', { typo: T('body/small'), color: S('text/secondary') }),
   ]);
-  const iconsBox = stack('Sigma Icons', 'vertical', { gap: P('space/2'), padding: P('space/6'), fill: S('surface/default'), radius: P('radius/lg'), stroke: S('border/strong'), width: 300 }, [
-    text('Kind', 'Sigma Icons file', S('text/link'), T('label/default'), { textCase: 'upper' }),
-    text('Name', 'Sigma Icons', S('text/primary'), T('heading/h3')),
+  const iconsBox = stack('Sample icons', 'vertical', { gap: P('space/2'), padding: P('space/6'), fill: S('surface/default'), radius: P('radius/lg'), stroke: S('border/strong'), width: 300 }, [
+    text('Kind', 'Icons file', S('text/link'), T('label/default'), { textCase: 'upper' }),
+    text('Name', 'Sample icons', S('text/primary'), T('heading/h3')),
     para('The whole Lucide set, about 1,900 icons, outline and filled, in groups.', { typo: T('body/small'), color: S('text/secondary') }),
   ]);
   const arrow = stack('Publish and use', 'vertical', { gap: P('space/1'), props: { layout: autoLayout({ mode: 'vertical', alignC: 'center' }) } }, [
@@ -317,7 +317,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     ] },
     { h: 'Share and retire', bullets: [
       'Assets → ⓘ opens a component in the playground to try its properties before inserting it.',
-      'Publish components (Σ menu) to use them in other Sigma Design files as a library.',
+      'Publish components (Σ menu) to use them in other design files as a library.',
       'A component’s ⋯ → Deprecate hides it from Assets while its instances keep working.',
     ] },
   ]);
@@ -339,8 +339,8 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'An extension like Brand B changes only some tokens (the accent). Pick it in the same place to re-skin a design.',
     ] },
     { h: 'This file’s tokens', bullets: [
-      'The file tools rail (the thin column at the far left) has this file’s Sigma Tokens file: hover the first button to see it, click it to change it. Files with the same token names are interchangeable.',
-      'Browse design tokens… (Σ menu, or the rail) shows them all: this file’s local tokens (most files have none) and the Sigma Tokens file’s, read-only. Local tokens can move to a Sigma Tokens file later.',
+      'The file tools rail (the thin column at the far left) has this file’s tokens file: hover the first button to see it, click it to change it. Files with the same token names are interchangeable.',
+      'Browse design tokens… (Σ menu, or the rail) shows them all: this file’s local tokens (most files have none) and the tokens file’s, read-only. Local tokens can move to a tokens file later.',
       'Audit design tokens… finds the values that don’t use a token yet. See page 7.',
     ] },
   ]);
@@ -408,7 +408,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
   const qualityGuide = guide('Quality checks · 7 of 10', 'Quality checks', 'Sigma helps keep a design accessible and on-system.', [
     { h: 'Contrast', bullets: [
       'Select one text layer: the Fill section shows its contrast with what’s behind it and its WCAG level. AA needs 4.5:1 (3:1 for large text), AAA 7:1.',
-      'In a Sigma Tokens file, a color token’s inspector checks it against the colors it’s used with, in every mode.',
+      'In a tokens file, a color token’s inspector checks it against the colors it’s used with, in every mode.',
     ] },
     { h: 'Token audit', bullets: [
       'Audit design tokens… (Σ menu, or the rail) lists every color, text style, spacing, radius and shadow that doesn’t use a token, with the token that matches.',
@@ -436,21 +436,21 @@ export function welcomeDocument(collections, { icons = null } = {}) {
 
   // ---------- 8. Libraries and versions ----------
   const libGuide = guide('Libraries and versions · 8 of 10', 'Libraries and versions', 'Design systems change. Sigma publishes changes as numbered versions, lets the files that use them decide when to update, and keeps a history of every file.', [
-    { h: 'Sigma Tokens as a library', bullets: [
-      'Publish… in a Sigma Tokens file creates a version (v1, v2…) with notes and a list of what changed.',
-      'Sigma Design files that use it get a banner when a new version is out; they review it and accept it.',
-      'Sigma Tokens files can link other Sigma Tokens files (a Brand file pointing at a Core file).',
+    { h: 'Tokens files as libraries', bullets: [
+      'Publish… in a tokens file creates a version (v1, v2…) with notes and a list of what changed.',
+      'Design files that use it get a banner when a new version is out; they review it and accept it.',
+      'Tokens files can link other tokens files (a Brand file pointing at a Core file).',
     ] },
     { h: 'Component libraries', bullets: [
       'Publish components… (Σ menu) publishes this file’s components.',
-      'Component libraries… in another Sigma Design file links it; its components then appear in Assets.',
+      'Component libraries… in another design file links it; its components then appear in Assets.',
     ] },
     { h: 'Version history', keys: [['⌥⌘S', 'Save a named version']], bullets: [
       'Every file autosaves versions as you work. Show version history (Σ menu) to view one, restore it, or duplicate it as a new file.',
     ] },
     { h: 'Moving files', bullets: [
       'Download a copy (.sigma.json) and Import file… move files between browsers.',
-      'A Sigma Tokens file exports tokens.json (W3C Design Tokens) and CSS variables, and imports tokens.json.',
+      'A tokens file exports tokens.json (W3C Design Tokens) and CSS variables, and imports tokens.json.',
       'Move to Archive (on the files home) is a soft delete; restore from the Archive.',
     ] },
   ]);
@@ -461,14 +461,14 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     para(body, { typo: T('body/small'), color: S('text/secondary') }),
   ]);
   const flow = example('Releasing a change', 600, 0, [row('Steps', [
-    step(1, 'Edit', 'Change tokens in the Sigma Tokens file.'),
+    step(1, 'Edit', 'Change tokens in the tokens file.'),
     step(2, 'Publish', 'Publish… creates v2 with notes.'),
     step(3, 'Review', 'Files using it see “v2 available”.'),
     step(4, 'Accept', 'Accepting updates every layer that uses those tokens.'),
   ], P('space/3'), 'start')]);
 
-  // ---------- 9. Sigma Tokens ----------
-  const tokGuide = guide('Sigma Tokens · 9 of 10', 'Sigma Tokens', 'A Sigma Tokens file is a design system’s values, with no canvas. Open Sigma Tokens in the Welcome to Sigma folder (on the files home) to explore the one this file uses.', [
+  // ---------- 9. Tokens files ----------
+  const tokGuide = guide('Tokens files · 9 of 10', 'Tokens files', 'A tokens file is a design system’s values, with no canvas. Open Sample tokens in the Welcome to Sigma folder (on the files home) to explore the one this file uses.', [
     { h: 'Structure', bullets: [
       'Collections hold groups and tokens (Collection → Group → Tokens), with descriptions.',
       'Three levels work well: Primitives (raw values: color/blue/500), Semantic (what they mean: accent/default) and Components (where they’re used: button/primary/background).',
@@ -486,7 +486,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'Export tokens.json (W3C format) and CSS variables for code; import tokens.json from other tools.',
     ] },
   ]);
-  tokGuide.parts.push(tryIt('Select a swatch on the right: its fill is a primitive token. Back to files → Welcome to Sigma → Sigma Tokens shows them all.'));
+  tokGuide.parts.push(tryIt('Select a swatch on the right: its fill is a primitive token. Back to files → Welcome to Sigma → Sample tokens shows them all.'));
   const swatchRow = (hue, steps) => row(hue, [
     stack('Label', 'vertical', { width: 64, gap: P('space/1') }, [text('Hue', hue, S('text/secondary'), T('code'))]),
     ...steps.map((s) => createNode('rect', {
@@ -513,15 +513,15 @@ export function welcomeDocument(collections, { icons = null } = {}) {
   ]);
   const radii = example('Primitives: radius', 1040, 480, [row('Radii', ['none', 'sm', 'md', 'lg', 'xl', 'full'].map(radiusSample), P('space/4'))]);
 
-  // ---------- 10. Sigma Icons ----------
-  const iconsGuide = guide('Sigma Icons · 10 of 10', 'Sigma Icons', 'Icons are a library of their own: a Sigma Icons file holds them, and components pick from it. Open Sigma Icons in the Welcome to Sigma folder to explore the one this file uses.', [
-    { h: 'A Sigma Icons file', bullets: [
+  // ---------- 10. Icons files ----------
+  const iconsGuide = guide('Icons files · 10 of 10', 'Icons files', 'Icons are a library of their own: an icons file holds them, and components pick from it. Open Sample icons in the Welcome to Sigma folder to explore the one this file uses.', [
+    { h: 'An icons file', bullets: [
       'Import SVGs from any free set (Lucide, Tabler, Heroicons, Phosphor, Material Symbols), drop them in, or paste SVG code. Colors are removed: an icon takes the color of the layer that shows it.',
-      'Icons are outline or filled, in groups, with keywords for search. Publish… makes them available to Sigma Design files.',
-      'Sigma Icons, in the Welcome to Sigma folder, is the whole Lucide set: about 1,900 icons. Link it from Icon libraries, or use Optics Icons, the same icons as a file of your own.',
+      'Icons are outline or filled, in groups, with keywords for search. Publish… makes them available to design files.',
+      'Sample icons, in the Welcome to Sigma folder, is the whole Lucide set: about 1,900 icons. Link it from Icon libraries, or use Optics Icons, the same icons as a file of your own.',
     ] },
     { h: 'Icons in components', bullets: [
-      'Icon libraries… (Σ menu) links a Sigma Icons file. A file keeps copies of only the icons it uses.',
+      'Icon libraries… (Σ menu) links an icons file. A file keeps copies of only the icons it uses.',
       'Select a main component, or a layer in one, then + in the Icon section (or right-click → Insert icon…).',
       'An icon’s color is its fill, which can use a color token; outline icons also have a stroke width. Swap icon… changes it.',
     ] },
@@ -596,7 +596,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     iconPage.push(mains, iconButtons, menu);
     iconColumns.push([iconButtons, menu]);
   } else {
-    iconPage.push(example('Sigma Icons', 600, 0, [para('The sample Sigma Icons couldn’t be made, so this page has no examples. Add Lucide icons, on the Sigma Icons page of the files home, adds the Lucide set.', { typo: T('body/small') })], { width: 360 }));
+    iconPage.push(example('Sample icons', 600, 0, [para('The sample icons couldn’t be made, so this page has no examples. Add Lucide icons, on the Icons page of the files home, adds the Lucide set.', { typo: T('body/small') })], { width: 360 }));
   }
 
   // ---------- pages ----------
@@ -611,8 +611,8 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     page('6 Style', [guideFrame(styleGuide), typeScale, elevation, cases], [[elevation, cases]]),
     page('7 Quality checks', [guideFrame(qualityGuide), contrast, oneOffs], [[contrast, oneOffs]]),
     page('8 Libraries and versions', [guideFrame(libGuide), flow]),
-    page('9 Sigma Tokens', [guideFrame(tokGuide), palette, spacing, radii], [[palette, spacing], [palette, radii]]),
-    page('10 Sigma Icons', iconPage, iconColumns),
+    page('9 Tokens files', [guideFrame(tokGuide), palette, spacing, radii], [[palette, spacing], [palette, radii]]),
+    page('10 Icons files', iconPage, iconColumns),
   ].map((pg, i) => inGroup(i < 4 ? 'Get started' : i < 8 ? 'Design systems' : 'Sample files', pg));
   return { name: WELCOME_NAME, pages, currentPageId: pages[0].id };
 }

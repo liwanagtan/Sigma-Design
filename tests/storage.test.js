@@ -5,6 +5,8 @@ import {
   welcomeFile, createTokenFileWith, sampleTokenFile, sampleIconFile, appendToTokenFile, archiveFile, restoreFile, listArchivedFiles, listTokenFiles,
 } from '../src/files.js';
 import { sampleTokenDocument } from '../src/sample-tokens.js';
+import { sampleIconsDocument, SAMPLE_ICONS_VERSION } from '../src/sample-icons.js';
+import { loadIconSet, ICON_SETS } from '../src/icon-library.js';
 import { WELCOME_VERSION } from '../src/welcome.js';
 import { db } from '../src/db.js';
 
@@ -75,7 +77,7 @@ test('storage: Welcome to Sigma is reused, and links the sample tokens, skipping
     eq((await loadFile(a)).meta.welcome, WELCOME_VERSION);
     eq([(await sampleTokenFile()).id], await linked(a)); // Sample token file opens the same one
     const icons = (await loadFile(a)).doc.iconLibraries?.[0];
-    ok(icons && (await loadFile(icons.fileId)).meta.sample, 'links the sample Sigma Icons');
+    ok(icons && (await loadFile(icons.fileId)).meta.sample, 'links the sample icons');
     eq((await sampleIconFile()).id, icons.fileId, 'which is reused');
     // (In a browser's first Welcome to Sigma, Optics comes too, with Optics Tokens: not a sample.)
     const newTokenFiles = (await listFiles()).filter((f) => !before.has(f.id) && f.kind === 'tokens' && !f.optics);
@@ -97,6 +99,27 @@ test('storage: Welcome to Sigma is reused, and links the sample tokens, skipping
   }
 });
 
+test('storage: sample files from before keep going, renamed: Sigma Tokens → Sample tokens, Sigma Icons → Sample icons', async () => {
+  const before = new Set((await listFiles()).map((f) => f.id));
+  const archivedBefore = new Set((await listArchivedFiles()).map((f) => f.id));
+  try {
+    // The sample icons, named as before: reused, and renamed (in the list and in the file).
+    const doc = sampleIconsDocument(await loadIconSet(ICON_SETS.find((s) => s.id === 'lucide')));
+    doc.name = 'Sigma Icons';
+    const iconsId = await createFile(doc, {}, { sample: true, sampleIcons: SAMPLE_ICONS_VERSION });
+    const icons = await sampleIconFile();
+    eq([icons.id, icons.name, (await loadFile(iconsId)).meta.name, (await loadFile(iconsId)).doc.name], [iconsId, 'Sample icons', 'Sample icons', 'Sample icons']);
+    // The sample tokens, named as before: a new guide reuses them, renamed, and links them by the new name.
+    for (const f of await listFiles()) if (f.welcome) await archiveFile(f.id);
+    const old = await createTokenFileWith('Sigma Tokens', sampleTokenDocument().collections, 'Before', { meta: { sample: true } });
+    const guide = await loadFile(await welcomeFile());
+    eq([guide.meta.name, guide.doc.libraries[0].fileId, guide.doc.libraries[0].name, (await loadFile(old.id)).meta.name], ['Guide', old.id, 'Sample tokens', 'Sample tokens']);
+  } finally {
+    for (const f of [...await listFiles(), ...await listArchivedFiles()]) if (!before.has(f.id) && !archivedBefore.has(f.id)) await deleteFile(f.id);
+    for (const f of await listArchivedFiles()) if (before.has(f.id) && !archivedBefore.has(f.id)) await restoreFile(f.id);
+  }
+});
+
 test('storage: deleting moves a file to the Archive; it can be restored, and only Delete forever erases it', async () => {
   const id = await createFile(sampleDoc());
   const tokens = await createTokenFileWith('Archive test tokens (temporary)', sampleTokenDocument().collections, 'x');
@@ -106,7 +129,7 @@ test('storage: deleting moves a file to the Archive; it can be restored, and onl
     ok((await listArchivedFiles()).some((f) => f.id === id), 'in the Archive');
     ok(await loadFile(id), 'still stored, with its document');
     await archiveFile(tokens.id);
-    ok(!(await listTokenFiles()).some((f) => f.id === tokens.id), 'archived Sigma Tokens files aren’t offered as libraries');
+    ok(!(await listTokenFiles()).some((f) => f.id === tokens.id), 'archived tokens files aren’t offered as libraries');
     ok(await restoreFile(id), 'restored');
     ok(await exists(id), 'back in the file lists');
     eq((await loadFile(id)).meta.archivedAt, undefined);
@@ -144,7 +167,7 @@ test('storage: a sample file (Welcome to Sigma) can be edited while open but is 
     } catch {
       refused = true;
     }
-    ok(refused, 'tokens can’t be moved into the sample Sigma Tokens');
+    ok(refused, 'tokens can’t be moved into the sample tokens');
   } finally {
     setCurrentFile(null);
     state.screen = 'home';

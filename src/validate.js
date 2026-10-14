@@ -39,7 +39,7 @@ function checkValue(type, value, say) {
   if (type === 'easing' && !parseEasing(value)) return say('should be a cubic Bézier curve [x1, y1, x2, y2] with x1 and x2 between 0 and 1');
 }
 
-// The Sigma Tokens files a file can use: its own and, in turn, the ones those use. [{ path, file }]
+// The tokens files a file can use: its own and, in turn, the ones those use. [{ path, file }]
 function tokenFilesOf(file, files, seen = new Set()) {
   const out = [];
   for (const p of file.uses?.tokens || []) {
@@ -77,7 +77,7 @@ export function validateFile(file, { path = '(file)', files = {} } = {}) {
       error(`uses.${key}`, 'should be a list of project paths');
       continue;
     }
-    if (file.kind !== 'design' && key !== 'tokens') error(`uses.${key}`, `a ${file.kind} file can only use Sigma Tokens files`);
+    if (file.kind !== 'design' && key !== 'tokens') error(`uses.${key}`, `a ${file.kind} file can only use tokens files`);
     list.forEach((p, i) => {
       const at = `uses.${key}[${i}]`;
       if (typeof p !== 'string') return error(at, 'should be a project path like ".sigma/tokens/core.sigma.json"');
@@ -92,7 +92,7 @@ export function validateFile(file, { path = '(file)', files = {} } = {}) {
   const tokens = new Map(); // id → { type, name, where }
   const localCols = Array.isArray(file.collections) ? file.collections : [];
   if (file.collections !== undefined && !Array.isArray(file.collections)) error('collections', 'should be a list of collections');
-  if (file.kind === 'tokens' && !Array.isArray(file.collections)) error('collections', 'is missing (a Sigma Tokens file holds collections)');
+  if (file.kind === 'tokens' && !Array.isArray(file.collections)) error('collections', 'is missing (a tokens file holds collections)');
   const used = tokenFilesOf(file, files);
   const colsById = new Map();
   for (const { path: p, file: f } of used) {
@@ -208,7 +208,7 @@ export function validateFile(file, { path = '(file)', files = {} } = {}) {
 
   // ---------- icons ----------
   if (file.kind === 'icons') {
-    if (!Array.isArray(file.icons)) error('icons', 'is missing (a Sigma Icons file holds icons)');
+    if (!Array.isArray(file.icons)) error('icons', 'is missing (an icons file holds icons)');
     const ids = new Set();
     (file.icons || []).forEach((icon, i) => {
       const at = `icons[${i}] (“${icon?.name}”)`;
@@ -233,7 +233,7 @@ export function validateFile(file, { path = '(file)', files = {} } = {}) {
 
   // ---------- design ----------
   if (file.kind === 'design') {
-    if (!Array.isArray(file.pages)) error('pages', 'is missing (a Sigma Design file has pages)');
+    if (!Array.isArray(file.pages)) error('pages', 'is missing (a design file has pages)');
     // Components this file can place: its own and those of the component libraries it uses.
     const components = new Map(); // id → { node, props }
     const iconIds = new Set();
@@ -282,7 +282,7 @@ export function validateFile(file, { path = '(file)', files = {} } = {}) {
           continue;
         }
         const t = tokens.get(vid);
-        if (!t) error(`${where}.bindings.${bpath}`, `uses token ${vid}, which isn’t in this file or the Sigma Tokens files it uses`);
+        if (!t) error(`${where}.bindings.${bpath}`, `uses token ${vid}, which isn’t in this file or the tokens files it uses`);
         else if (t.type !== want) error(`${where}.bindings.${bpath}`, `uses “${t.name}”, a ${t.type} token; ${bpath} needs a ${want} token`);
       }
       for (const [prop, pid] of Object.entries(n.propRefs || {})) {
@@ -317,7 +317,7 @@ export function validateFile(file, { path = '(file)', files = {} } = {}) {
       }
       if (n.type === 'icon') {
         if (!n.iconId) error(`${where}.iconId`, 'is missing');
-        else if (!iconIds.has(n.iconId)) error(`${where}.iconId`, `${n.iconId} isn’t in the Sigma Icons files this file uses`);
+        else if (!iconIds.has(n.iconId)) error(`${where}.iconId`, `${n.iconId} isn’t in the icons files this file uses`);
         if (!comp) warn(where, 'icon layers go inside main components');
       }
       if (n.type === 'instance') {

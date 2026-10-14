@@ -110,7 +110,7 @@ function initFileHeader() {
     showContextMenu(r.right + 4, r.top, [
       { label: 'Back to files', action: goHome },
       '-',
-      { label: 'New Sigma Design file', action: async () => openFile(await createFile(blankDocument())) },
+      { label: 'New design file', action: async () => openFile(await createFile(blankDocument())) },
       { label: 'Import file…', action: async () => {
         const [id] = await pickFilesToImport();
         if (id) openFile(id);
@@ -1316,7 +1316,7 @@ function buildProps() {
       (info.outline ? (inInstance ? `<fieldset class="readonly" disabled>${numField('iconStroke', '', nodes, { icon: '<span class="mini" title="Stroke width">≡</span>' })}</fieldset>`
         : `<div class="grid2">${numField('iconStroke', '', nodes, { icon: '<span class="mini" title="Stroke width (in the icon’s units)">≡</span>' })}<span></span></div>`) : ''));
   } else if (canInsertIcon()) {
-    html += section('Icon', '', '<button class="icon-btn" data-action="insert-icon" title="Add an icon from a Sigma Icons file">' + icons.plus + '</button>');
+    html += section('Icon', '', '<button class="icon-btn" data-action="insert-icon" title="Add an icon from an icons file">' + icons.plus + '</button>');
   }
 
   // Text

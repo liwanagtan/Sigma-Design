@@ -1,6 +1,6 @@
 # Icons
 
-A project's icons map to a Sigma Icons file: each icon is named after its file (or component), in a group
+A project's icons map to an icons file: each icon is named after its file (or component), in a group
 named after its folder relative to the icon folder (`src/assets/icons/arrows/arrow-right.svg` → group
 `arrows`, name `arrow-right`).
 
@@ -13,7 +13,7 @@ Record them in `sigma.config.json`:
 
 `output` is how the project keeps icons: `svg` (files), `react`, `vue`, `svelte` (components), `sprite`
 (one SVG with symbols) or `other`. An icon package (`lucide-react`, `@heroicons/react`) isn't the
-project's own: link its set instead (Sigma's **Add Lucide icons**, on the Sigma Icons page when there are none yet, makes a Lucide file) and only sync icons the
+project's own: link its set instead (Sigma's **Add Lucide icons**, on the Icons page when there are none yet, makes a Lucide file) and only sync icons the
 project adds itself.
 
 ## SVG files (`output: "svg"`)

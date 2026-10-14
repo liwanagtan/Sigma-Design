@@ -206,7 +206,7 @@ export function planInit(root, detected, { version = '0.1.0' } = {}) {
         found.push(`tokens: ${o.path} (${o.format}, for the agent)`);
       } else {
         found.push('tokens: none found (CSS variables on :root, a tokens.json, a theme)');
-        forAgent.push('No design tokens found. If the project has them somewhere Sigma doesn’t look, ask your coding agent to set them up with the sigma-sync skill; or create a Sigma Tokens file in Sigma.');
+        forAgent.push('No design tokens found. If the project has them somewhere Sigma doesn’t look, ask your coding agent to set them up with the sigma-sync skill; or create a tokens file in Sigma.');
       }
     } else if (detected.tokens.other.length) {
       for (const o of detected.tokens.other) found.push(`  also ${o.format} in ${o.path}: if it holds design tokens too, ask your coding agent to add it`);

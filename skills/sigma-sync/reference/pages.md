@@ -1,6 +1,6 @@
 # Pages
 
-A project's pages become a Sigma Design file (`.sigma/design/<name>.sigma.json`): one Sigma page per app
+A project's pages become a design file (`.sigma/design/<name>.sigma.json`): one Sigma page per app
 route, with one frame per breakpoint, built from instances of the library's components wherever the
 page uses them. Build the library first (`reference/components.md`): pages are made of its components.
 

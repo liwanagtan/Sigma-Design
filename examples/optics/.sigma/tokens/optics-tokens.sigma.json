@@ -4,2228 +4,2228 @@
   "name": "Optics Tokens",
   "collections": [
     {
-      "id": "fpifodvf",
+      "id": "834fiy9i",
       "name": "Primitives",
-      "defaultModeId": "vfxip1lt",
+      "defaultModeId": "6uyj8zfn",
       "groups": [
         {
-          "id": "wubmw2rb",
+          "id": "4rddd9tv",
           "name": "color",
           "description": "The raw palette, in steps from light (50) to dark (900). Designs use Semantic tokens, which point here.",
           "parentId": null
         },
         {
-          "id": "e0k02t9o",
+          "id": "7z15g7kb",
           "name": "gray",
           "description": "Neutrals: text, surfaces and borders.",
-          "parentId": "wubmw2rb"
+          "parentId": "4rddd9tv"
         },
         {
-          "id": "4mlc6fay",
+          "id": "060gfbvv",
           "name": "brand",
           "description": "Optics indigo: primary actions, selection and focus.",
-          "parentId": "wubmw2rb"
+          "parentId": "4rddd9tv"
         },
         {
-          "id": "ofgovp2g",
+          "id": "kztby7tw",
           "name": "red",
           "description": "Critical: errors and destructive actions.",
-          "parentId": "wubmw2rb"
+          "parentId": "4rddd9tv"
         },
-        { "id": "szz13tgn", "name": "green", "description": "Success.", "parentId": "wubmw2rb" },
+        { "id": "jqtucquh", "name": "green", "description": "Success.", "parentId": "4rddd9tv" },
         {
-          "id": "usk7k0sg",
+          "id": "t5wnak7q",
           "name": "orange",
           "description": "Warning: something needs attention soon.",
-          "parentId": "wubmw2rb"
+          "parentId": "4rddd9tv"
         },
         {
-          "id": "33da9ilh",
+          "id": "4djcfatz",
           "name": "yellow",
           "description": "Caution: worth knowing, not urgent.",
-          "parentId": "wubmw2rb"
+          "parentId": "4rddd9tv"
         },
-        { "id": "0laim0c3", "name": "azure", "description": "Info.", "parentId": "wubmw2rb" },
+        { "id": "rom8rwai", "name": "azure", "description": "Info.", "parentId": "4rddd9tv" },
         {
-          "id": "pblwqo7z",
+          "id": "azv039hq",
           "name": "purple",
           "description": "Magic: suggestions and AI.",
-          "parentId": "wubmw2rb"
+          "parentId": "4rddd9tv"
         },
         {
-          "id": "bqrulpix",
+          "id": "4wvodl4z",
           "name": "alpha",
           "description": "Colors with opacity: overlays, hover washes and shadows.",
-          "parentId": "wubmw2rb"
+          "parentId": "4rddd9tv"
         },
         {
-          "id": "kqn1tc5c",
+          "id": "jyzhnc0k",
           "name": "space",
           "description": "Spacing on a 4px grid: the step is in hundredths of 4px (100 = 4px, 400 = 16px).",
           "parentId": null
         },
         {
-          "id": "0tzwk317",
+          "id": "sl6sc8gw",
           "name": "font",
           "description": "Type primitives. The Typography collection combines them into text styles.",
           "parentId": null
         },
-        { "id": "a7frcxit", "name": "family", "parentId": "0tzwk317" },
+        { "id": "mt45vgd8", "name": "family", "parentId": "sl6sc8gw" },
         {
-          "id": "vz969ddg",
+          "id": "cauk5zpb",
           "name": "size",
           "description": "Font sizes in px; the step is in hundredths of 4px (350 = 14px).",
-          "parentId": "0tzwk317"
+          "parentId": "sl6sc8gw"
         },
-        { "id": "h74lipj4", "name": "weight", "parentId": "0tzwk317" },
+        { "id": "hhqiznjh", "name": "weight", "parentId": "sl6sc8gw" },
         {
-          "id": "9n0vv153",
+          "id": "3qqjjjuh",
           "name": "line-height",
           "description": "Line heights in percent of the font size.",
-          "parentId": "0tzwk317"
+          "parentId": "sl6sc8gw"
         },
-        { "id": "2zj9fs1w", "name": "letter-spacing", "parentId": "0tzwk317" },
+        { "id": "edrmtul0", "name": "letter-spacing", "parentId": "sl6sc8gw" },
         {
-          "id": "1894rz1v",
+          "id": "tvqytand",
           "name": "radius",
           "description": "Corner radii; the step is in hundredths of 4px (200 = 8px).",
           "parentId": null
         },
-        { "id": "2y84b5n4", "name": "border-width", "parentId": null },
+        { "id": "lk6sxjoy", "name": "border-width", "parentId": null },
         {
-          "id": "2g9ptf7l",
+          "id": "yyb642v9",
           "name": "motion",
           "description": "How things move: durations and easing curves.",
           "parentId": null
         },
         {
-          "id": "tsl2ayye",
+          "id": "7fmew4l7",
           "name": "duration",
           "description": "Short for small changes (hover), longer for big ones (a dialog opening).",
-          "parentId": "2g9ptf7l"
+          "parentId": "yyb642v9"
         },
-        { "id": "597g7e9v", "name": "easing", "parentId": "2g9ptf7l" }
+        { "id": "k0a07tio", "name": "easing", "parentId": "yyb642v9" }
       ],
-      "modes": [{ "id": "vfxip1lt", "name": "Value" }],
+      "modes": [{ "id": "6uyj8zfn", "name": "Value" }],
       "variables": [
         {
-          "id": "us3e0b7k",
+          "id": "xqafeiev",
           "type": "color",
           "name": "color/gray/0",
           "codeSyntax": { "web": "--optics-color-gray-0" },
-          "groupId": "e0k02t9o",
-          "valuesByMode": { "vfxip1lt": "#FFFFFF" }
+          "groupId": "7z15g7kb",
+          "valuesByMode": { "6uyj8zfn": "#FFFFFF" }
         },
         {
-          "id": "ziw6w6in",
+          "id": "u2zn7o35",
           "type": "color",
           "name": "color/gray/50",
           "codeSyntax": { "web": "--optics-color-gray-50" },
-          "groupId": "e0k02t9o",
-          "valuesByMode": { "vfxip1lt": "#F7F7F7" }
+          "groupId": "7z15g7kb",
+          "valuesByMode": { "6uyj8zfn": "#F7F7F7" }
         },
         {
-          "id": "vg1rldnv",
+          "id": "otx34h4q",
           "type": "color",
           "name": "color/gray/100",
           "codeSyntax": { "web": "--optics-color-gray-100" },
-          "groupId": "e0k02t9o",
-          "valuesByMode": { "vfxip1lt": "#F1F1F1" }
+          "groupId": "7z15g7kb",
+          "valuesByMode": { "6uyj8zfn": "#F1F1F1" }
         },
         {
-          "id": "ftn9luhd",
+          "id": "qdt06k1c",
           "type": "color",
           "name": "color/gray/200",
           "codeSyntax": { "web": "--optics-color-gray-200" },
-          "groupId": "e0k02t9o",
-          "valuesByMode": { "vfxip1lt": "#E3E3E3" }
+          "groupId": "7z15g7kb",
+          "valuesByMode": { "6uyj8zfn": "#E3E3E3" }
         },
         {
-          "id": "vwbfaamd",
+          "id": "kkcv3yjt",
           "type": "color",
           "name": "color/gray/300",
           "codeSyntax": { "web": "--optics-color-gray-300" },
-          "groupId": "e0k02t9o",
-          "valuesByMode": { "vfxip1lt": "#D4D4D4" }
+          "groupId": "7z15g7kb",
+          "valuesByMode": { "6uyj8zfn": "#D4D4D4" }
         },
         {
-          "id": "l1t2iwhr",
+          "id": "cw3sau8r",
           "type": "color",
           "name": "color/gray/400",
           "codeSyntax": { "web": "--optics-color-gray-400" },
-          "groupId": "e0k02t9o",
-          "valuesByMode": { "vfxip1lt": "#B5B5B5" }
+          "groupId": "7z15g7kb",
+          "valuesByMode": { "6uyj8zfn": "#B5B5B5" }
         },
         {
-          "id": "0v172lzn",
+          "id": "pgd4pm7v",
           "type": "color",
           "name": "color/gray/500",
           "codeSyntax": { "web": "--optics-color-gray-500" },
-          "groupId": "e0k02t9o",
-          "valuesByMode": { "vfxip1lt": "#8A8A8A" }
+          "groupId": "7z15g7kb",
+          "valuesByMode": { "6uyj8zfn": "#8A8A8A" }
         },
         {
-          "id": "q7egy60g",
+          "id": "ubfav5cc",
           "type": "color",
           "name": "color/gray/600",
           "codeSyntax": { "web": "--optics-color-gray-600" },
-          "groupId": "e0k02t9o",
-          "valuesByMode": { "vfxip1lt": "#616161" }
+          "groupId": "7z15g7kb",
+          "valuesByMode": { "6uyj8zfn": "#616161" }
         },
         {
-          "id": "cg9sfgnh",
+          "id": "0a7mp9d9",
           "type": "color",
           "name": "color/gray/700",
           "codeSyntax": { "web": "--optics-color-gray-700" },
-          "groupId": "e0k02t9o",
-          "valuesByMode": { "vfxip1lt": "#4A4A4A" }
+          "groupId": "7z15g7kb",
+          "valuesByMode": { "6uyj8zfn": "#4A4A4A" }
         },
         {
-          "id": "xnjupwes",
+          "id": "z0iahbbo",
           "type": "color",
           "name": "color/gray/800",
           "codeSyntax": { "web": "--optics-color-gray-800" },
-          "groupId": "e0k02t9o",
-          "valuesByMode": { "vfxip1lt": "#303030" }
+          "groupId": "7z15g7kb",
+          "valuesByMode": { "6uyj8zfn": "#303030" }
         },
         {
-          "id": "pv7kr1ha",
+          "id": "yldmsyry",
           "type": "color",
           "name": "color/gray/900",
           "codeSyntax": { "web": "--optics-color-gray-900" },
-          "groupId": "e0k02t9o",
-          "valuesByMode": { "vfxip1lt": "#1F1F1F" }
+          "groupId": "7z15g7kb",
+          "valuesByMode": { "6uyj8zfn": "#1F1F1F" }
         },
         {
-          "id": "jl6dxbnn",
+          "id": "iem5oism",
           "type": "color",
           "name": "color/gray/950",
           "codeSyntax": { "web": "--optics-color-gray-950" },
-          "groupId": "e0k02t9o",
-          "valuesByMode": { "vfxip1lt": "#171717" }
+          "groupId": "7z15g7kb",
+          "valuesByMode": { "6uyj8zfn": "#171717" }
         },
         {
-          "id": "zyvjox1i",
+          "id": "bs895rwq",
           "type": "color",
           "name": "color/gray/1000",
           "codeSyntax": { "web": "--optics-color-gray-1000" },
-          "groupId": "e0k02t9o",
-          "valuesByMode": { "vfxip1lt": "#0C0C0C" }
+          "groupId": "7z15g7kb",
+          "valuesByMode": { "6uyj8zfn": "#0C0C0C" }
         },
         {
-          "id": "f0b5maq9",
+          "id": "hf44i9rw",
           "type": "color",
           "name": "color/brand/50",
           "codeSyntax": { "web": "--optics-color-brand-50" },
-          "groupId": "4mlc6fay",
-          "valuesByMode": { "vfxip1lt": "#EEF0FF" }
+          "groupId": "060gfbvv",
+          "valuesByMode": { "6uyj8zfn": "#EEF0FF" }
         },
         {
-          "id": "djtrryns",
+          "id": "nt1vjpi0",
           "type": "color",
           "name": "color/brand/100",
           "codeSyntax": { "web": "--optics-color-brand-100" },
-          "groupId": "4mlc6fay",
-          "valuesByMode": { "vfxip1lt": "#E0E4FF" }
+          "groupId": "060gfbvv",
+          "valuesByMode": { "6uyj8zfn": "#E0E4FF" }
         },
         {
-          "id": "i2sdrkfl",
+          "id": "gu6viyuk",
           "type": "color",
           "name": "color/brand/200",
           "codeSyntax": { "web": "--optics-color-brand-200" },
-          "groupId": "4mlc6fay",
-          "valuesByMode": { "vfxip1lt": "#C4CBFF" }
+          "groupId": "060gfbvv",
+          "valuesByMode": { "6uyj8zfn": "#C4CBFF" }
         },
         {
-          "id": "kmdn2bl6",
+          "id": "8u57bu90",
           "type": "color",
           "name": "color/brand/300",
           "codeSyntax": { "web": "--optics-color-brand-300" },
-          "groupId": "4mlc6fay",
-          "valuesByMode": { "vfxip1lt": "#9DA8FF" }
+          "groupId": "060gfbvv",
+          "valuesByMode": { "6uyj8zfn": "#9DA8FF" }
         },
         {
-          "id": "3gea8mab",
+          "id": "pk3hqwiq",
           "type": "color",
           "name": "color/brand/400",
           "codeSyntax": { "web": "--optics-color-brand-400" },
-          "groupId": "4mlc6fay",
-          "valuesByMode": { "vfxip1lt": "#7383F8" }
+          "groupId": "060gfbvv",
+          "valuesByMode": { "6uyj8zfn": "#7383F8" }
         },
         {
-          "id": "gxn64vei",
+          "id": "bclyhwes",
           "type": "color",
           "name": "color/brand/500",
           "codeSyntax": { "web": "--optics-color-brand-500" },
-          "groupId": "4mlc6fay",
-          "valuesByMode": { "vfxip1lt": "#4F63EC" }
+          "groupId": "060gfbvv",
+          "valuesByMode": { "6uyj8zfn": "#4F63EC" }
         },
         {
-          "id": "ugt5byh0",
+          "id": "cs49m9hm",
           "type": "color",
           "name": "color/brand/600",
           "codeSyntax": { "web": "--optics-color-brand-600" },
-          "groupId": "4mlc6fay",
-          "valuesByMode": { "vfxip1lt": "#3549D6" }
+          "groupId": "060gfbvv",
+          "valuesByMode": { "6uyj8zfn": "#3549D6" }
         },
         {
-          "id": "03aqqfxu",
+          "id": "aq8obx3c",
           "type": "color",
           "name": "color/brand/700",
           "codeSyntax": { "web": "--optics-color-brand-700" },
-          "groupId": "4mlc6fay",
-          "valuesByMode": { "vfxip1lt": "#2A3AB0" }
+          "groupId": "060gfbvv",
+          "valuesByMode": { "6uyj8zfn": "#2A3AB0" }
         },
         {
-          "id": "ddmhqx3g",
+          "id": "0s5ufyj7",
           "type": "color",
           "name": "color/brand/800",
           "codeSyntax": { "web": "--optics-color-brand-800" },
-          "groupId": "4mlc6fay",
-          "valuesByMode": { "vfxip1lt": "#212E8A" }
+          "groupId": "060gfbvv",
+          "valuesByMode": { "6uyj8zfn": "#212E8A" }
         },
         {
-          "id": "9rmsykzz",
+          "id": "dklrhjol",
           "type": "color",
           "name": "color/brand/900",
           "codeSyntax": { "web": "--optics-color-brand-900" },
-          "groupId": "4mlc6fay",
-          "valuesByMode": { "vfxip1lt": "#18205E" }
+          "groupId": "060gfbvv",
+          "valuesByMode": { "6uyj8zfn": "#18205E" }
         },
         {
-          "id": "ob5nw7vb",
+          "id": "pdwj6fp9",
           "type": "color",
           "name": "color/red/50",
           "codeSyntax": { "web": "--optics-color-red-50" },
-          "groupId": "ofgovp2g",
-          "valuesByMode": { "vfxip1lt": "#FFF1EF" }
+          "groupId": "kztby7tw",
+          "valuesByMode": { "6uyj8zfn": "#FFF1EF" }
         },
         {
-          "id": "swsnbge4",
+          "id": "5s9ktrns",
           "type": "color",
           "name": "color/red/100",
           "codeSyntax": { "web": "--optics-color-red-100" },
-          "groupId": "ofgovp2g",
-          "valuesByMode": { "vfxip1lt": "#FFE2DE" }
+          "groupId": "kztby7tw",
+          "valuesByMode": { "6uyj8zfn": "#FFE2DE" }
         },
         {
-          "id": "vlx1h62p",
+          "id": "nsqivpuc",
           "type": "color",
           "name": "color/red/200",
           "codeSyntax": { "web": "--optics-color-red-200" },
-          "groupId": "ofgovp2g",
-          "valuesByMode": { "vfxip1lt": "#FFC5BD" }
+          "groupId": "kztby7tw",
+          "valuesByMode": { "6uyj8zfn": "#FFC5BD" }
         },
         {
-          "id": "xpybncvs",
+          "id": "t2qffc7j",
           "type": "color",
           "name": "color/red/300",
           "codeSyntax": { "web": "--optics-color-red-300" },
-          "groupId": "ofgovp2g",
-          "valuesByMode": { "vfxip1lt": "#FF9C8F" }
+          "groupId": "kztby7tw",
+          "valuesByMode": { "6uyj8zfn": "#FF9C8F" }
         },
         {
-          "id": "f27eb67g",
+          "id": "fp26lsl7",
           "type": "color",
           "name": "color/red/400",
           "codeSyntax": { "web": "--optics-color-red-400" },
-          "groupId": "ofgovp2g",
-          "valuesByMode": { "vfxip1lt": "#F86A57" }
+          "groupId": "kztby7tw",
+          "valuesByMode": { "6uyj8zfn": "#F86A57" }
         },
         {
-          "id": "2r49sww7",
+          "id": "bntlpa0x",
           "type": "color",
           "name": "color/red/500",
           "codeSyntax": { "web": "--optics-color-red-500" },
-          "groupId": "ofgovp2g",
-          "valuesByMode": { "vfxip1lt": "#E5432E" }
+          "groupId": "kztby7tw",
+          "valuesByMode": { "6uyj8zfn": "#E5432E" }
         },
         {
-          "id": "0qh1t1mb",
+          "id": "lkuwtasm",
           "type": "color",
           "name": "color/red/600",
           "codeSyntax": { "web": "--optics-color-red-600" },
-          "groupId": "ofgovp2g",
-          "valuesByMode": { "vfxip1lt": "#C4291B" }
+          "groupId": "kztby7tw",
+          "valuesByMode": { "6uyj8zfn": "#C4291B" }
         },
         {
-          "id": "2rfkq1ey",
+          "id": "jkw5m6z7",
           "type": "color",
           "name": "color/red/700",
           "codeSyntax": { "web": "--optics-color-red-700" },
-          "groupId": "ofgovp2g",
-          "valuesByMode": { "vfxip1lt": "#A01F13" }
+          "groupId": "kztby7tw",
+          "valuesByMode": { "6uyj8zfn": "#A01F13" }
         },
         {
-          "id": "txke9j62",
+          "id": "v94asxt2",
           "type": "color",
           "name": "color/red/800",
           "codeSyntax": { "web": "--optics-color-red-800" },
-          "groupId": "ofgovp2g",
-          "valuesByMode": { "vfxip1lt": "#7A180F" }
+          "groupId": "kztby7tw",
+          "valuesByMode": { "6uyj8zfn": "#7A180F" }
         },
         {
-          "id": "4ysc0mo8",
+          "id": "u3ge0rir",
           "type": "color",
           "name": "color/red/900",
           "codeSyntax": { "web": "--optics-color-red-900" },
-          "groupId": "ofgovp2g",
-          "valuesByMode": { "vfxip1lt": "#4D0F09" }
+          "groupId": "kztby7tw",
+          "valuesByMode": { "6uyj8zfn": "#4D0F09" }
         },
         {
-          "id": "1mlxsmh1",
+          "id": "jd9fn4fg",
           "type": "color",
           "name": "color/green/50",
           "codeSyntax": { "web": "--optics-color-green-50" },
-          "groupId": "szz13tgn",
-          "valuesByMode": { "vfxip1lt": "#EDFAF2" }
+          "groupId": "jqtucquh",
+          "valuesByMode": { "6uyj8zfn": "#EDFAF2" }
         },
         {
-          "id": "jyk6wixx",
+          "id": "9e3o5oym",
           "type": "color",
           "name": "color/green/100",
           "codeSyntax": { "web": "--optics-color-green-100" },
-          "groupId": "szz13tgn",
-          "valuesByMode": { "vfxip1lt": "#D6F5E2" }
+          "groupId": "jqtucquh",
+          "valuesByMode": { "6uyj8zfn": "#D6F5E2" }
         },
         {
-          "id": "fosv0y7c",
+          "id": "m9sdf3da",
           "type": "color",
           "name": "color/green/200",
           "codeSyntax": { "web": "--optics-color-green-200" },
-          "groupId": "szz13tgn",
-          "valuesByMode": { "vfxip1lt": "#A9EAC3" }
+          "groupId": "jqtucquh",
+          "valuesByMode": { "6uyj8zfn": "#A9EAC3" }
         },
         {
-          "id": "2w17q919",
+          "id": "hdib5cz8",
           "type": "color",
           "name": "color/green/300",
           "codeSyntax": { "web": "--optics-color-green-300" },
-          "groupId": "szz13tgn",
-          "valuesByMode": { "vfxip1lt": "#6FD89D" }
+          "groupId": "jqtucquh",
+          "valuesByMode": { "6uyj8zfn": "#6FD89D" }
         },
         {
-          "id": "i5rc9kf0",
+          "id": "jil0uf3t",
           "type": "color",
           "name": "color/green/400",
           "codeSyntax": { "web": "--optics-color-green-400" },
-          "groupId": "szz13tgn",
-          "valuesByMode": { "vfxip1lt": "#36BF76" }
+          "groupId": "jqtucquh",
+          "valuesByMode": { "6uyj8zfn": "#36BF76" }
         },
         {
-          "id": "kk1mwzia",
+          "id": "vuad68yr",
           "type": "color",
           "name": "color/green/500",
           "codeSyntax": { "web": "--optics-color-green-500" },
-          "groupId": "szz13tgn",
-          "valuesByMode": { "vfxip1lt": "#17A05C" }
+          "groupId": "jqtucquh",
+          "valuesByMode": { "6uyj8zfn": "#17A05C" }
         },
         {
-          "id": "soiqbc6g",
+          "id": "ahkrdhxq",
           "type": "color",
           "name": "color/green/600",
           "codeSyntax": { "web": "--optics-color-green-600" },
-          "groupId": "szz13tgn",
-          "valuesByMode": { "vfxip1lt": "#0D8049" }
+          "groupId": "jqtucquh",
+          "valuesByMode": { "6uyj8zfn": "#0D8049" }
         },
         {
-          "id": "ol2g2h9v",
+          "id": "ok0z20vf",
           "type": "color",
           "name": "color/green/700",
           "codeSyntax": { "web": "--optics-color-green-700" },
-          "groupId": "szz13tgn",
-          "valuesByMode": { "vfxip1lt": "#0B6B3C" }
+          "groupId": "jqtucquh",
+          "valuesByMode": { "6uyj8zfn": "#0B6B3C" }
         },
         {
-          "id": "cfnro353",
+          "id": "hc2dk0q2",
           "type": "color",
           "name": "color/green/800",
           "codeSyntax": { "web": "--optics-color-green-800" },
-          "groupId": "szz13tgn",
-          "valuesByMode": { "vfxip1lt": "#0A4F2E" }
+          "groupId": "jqtucquh",
+          "valuesByMode": { "6uyj8zfn": "#0A4F2E" }
         },
         {
-          "id": "yrymkev6",
+          "id": "gjaq8ugl",
           "type": "color",
           "name": "color/green/900",
           "codeSyntax": { "web": "--optics-color-green-900" },
-          "groupId": "szz13tgn",
-          "valuesByMode": { "vfxip1lt": "#07331E" }
+          "groupId": "jqtucquh",
+          "valuesByMode": { "6uyj8zfn": "#07331E" }
         },
         {
-          "id": "p7obrh2h",
+          "id": "bau39jkz",
           "type": "color",
           "name": "color/orange/50",
           "codeSyntax": { "web": "--optics-color-orange-50" },
-          "groupId": "usk7k0sg",
-          "valuesByMode": { "vfxip1lt": "#FFF4EB" }
+          "groupId": "t5wnak7q",
+          "valuesByMode": { "6uyj8zfn": "#FFF4EB" }
         },
         {
-          "id": "jds1gept",
+          "id": "jo9v4a4q",
           "type": "color",
           "name": "color/orange/100",
           "codeSyntax": { "web": "--optics-color-orange-100" },
-          "groupId": "usk7k0sg",
-          "valuesByMode": { "vfxip1lt": "#FFE6D1" }
+          "groupId": "t5wnak7q",
+          "valuesByMode": { "6uyj8zfn": "#FFE6D1" }
         },
         {
-          "id": "am1vdgvu",
+          "id": "lig47iz7",
           "type": "color",
           "name": "color/orange/200",
           "codeSyntax": { "web": "--optics-color-orange-200" },
-          "groupId": "usk7k0sg",
-          "valuesByMode": { "vfxip1lt": "#FFC9A0" }
+          "groupId": "t5wnak7q",
+          "valuesByMode": { "6uyj8zfn": "#FFC9A0" }
         },
         {
-          "id": "hqbk7cff",
+          "id": "7xnr47ip",
           "type": "color",
           "name": "color/orange/300",
           "codeSyntax": { "web": "--optics-color-orange-300" },
-          "groupId": "usk7k0sg",
-          "valuesByMode": { "vfxip1lt": "#FFA666" }
+          "groupId": "t5wnak7q",
+          "valuesByMode": { "6uyj8zfn": "#FFA666" }
         },
         {
-          "id": "19gxp59p",
+          "id": "wpdy93je",
           "type": "color",
           "name": "color/orange/400",
           "codeSyntax": { "web": "--optics-color-orange-400" },
-          "groupId": "usk7k0sg",
-          "valuesByMode": { "vfxip1lt": "#FA8231" }
+          "groupId": "t5wnak7q",
+          "valuesByMode": { "6uyj8zfn": "#FA8231" }
         },
         {
-          "id": "ohpl77rg",
+          "id": "squuuoe2",
           "type": "color",
           "name": "color/orange/500",
           "codeSyntax": { "web": "--optics-color-orange-500" },
-          "groupId": "usk7k0sg",
-          "valuesByMode": { "vfxip1lt": "#E5680F" }
+          "groupId": "t5wnak7q",
+          "valuesByMode": { "6uyj8zfn": "#E5680F" }
         },
         {
-          "id": "7s5kugly",
+          "id": "tflk14b4",
           "type": "color",
           "name": "color/orange/600",
           "codeSyntax": { "web": "--optics-color-orange-600" },
-          "groupId": "usk7k0sg",
-          "valuesByMode": { "vfxip1lt": "#BF5208" }
+          "groupId": "t5wnak7q",
+          "valuesByMode": { "6uyj8zfn": "#BF5208" }
         },
         {
-          "id": "c6zm0u5k",
+          "id": "tv4739co",
           "type": "color",
           "name": "color/orange/700",
           "codeSyntax": { "web": "--optics-color-orange-700" },
-          "groupId": "usk7k0sg",
-          "valuesByMode": { "vfxip1lt": "#8F3E06" }
+          "groupId": "t5wnak7q",
+          "valuesByMode": { "6uyj8zfn": "#8F3E06" }
         },
         {
-          "id": "naaxnld6",
+          "id": "e7q832d2",
           "type": "color",
           "name": "color/orange/800",
           "codeSyntax": { "web": "--optics-color-orange-800" },
-          "groupId": "usk7k0sg",
-          "valuesByMode": { "vfxip1lt": "#6B2E05" }
+          "groupId": "t5wnak7q",
+          "valuesByMode": { "6uyj8zfn": "#6B2E05" }
         },
         {
-          "id": "d78qvyoa",
+          "id": "rda12njk",
           "type": "color",
           "name": "color/orange/900",
           "codeSyntax": { "web": "--optics-color-orange-900" },
-          "groupId": "usk7k0sg",
-          "valuesByMode": { "vfxip1lt": "#451D03" }
+          "groupId": "t5wnak7q",
+          "valuesByMode": { "6uyj8zfn": "#451D03" }
         },
         {
-          "id": "oh2z3g4j",
+          "id": "d8mx40pf",
           "type": "color",
           "name": "color/yellow/50",
           "codeSyntax": { "web": "--optics-color-yellow-50" },
-          "groupId": "33da9ilh",
-          "valuesByMode": { "vfxip1lt": "#FFFAE6" }
+          "groupId": "4djcfatz",
+          "valuesByMode": { "6uyj8zfn": "#FFFAE6" }
         },
         {
-          "id": "bb4zgg19",
+          "id": "j8z08dgl",
           "type": "color",
           "name": "color/yellow/100",
           "codeSyntax": { "web": "--optics-color-yellow-100" },
-          "groupId": "33da9ilh",
-          "valuesByMode": { "vfxip1lt": "#FFF2C2" }
+          "groupId": "4djcfatz",
+          "valuesByMode": { "6uyj8zfn": "#FFF2C2" }
         },
         {
-          "id": "ha34t2ox",
+          "id": "xnhgba9v",
           "type": "color",
           "name": "color/yellow/200",
           "codeSyntax": { "web": "--optics-color-yellow-200" },
-          "groupId": "33da9ilh",
-          "valuesByMode": { "vfxip1lt": "#FFE38A" }
+          "groupId": "4djcfatz",
+          "valuesByMode": { "6uyj8zfn": "#FFE38A" }
         },
         {
-          "id": "ifwxl5qe",
+          "id": "b2ff3ffj",
           "type": "color",
           "name": "color/yellow/300",
           "codeSyntax": { "web": "--optics-color-yellow-300" },
-          "groupId": "33da9ilh",
-          "valuesByMode": { "vfxip1lt": "#FFD04D" }
+          "groupId": "4djcfatz",
+          "valuesByMode": { "6uyj8zfn": "#FFD04D" }
         },
         {
-          "id": "337lcp3v",
+          "id": "96sa1mgq",
           "type": "color",
           "name": "color/yellow/400",
           "codeSyntax": { "web": "--optics-color-yellow-400" },
-          "groupId": "33da9ilh",
-          "valuesByMode": { "vfxip1lt": "#F5B915" }
+          "groupId": "4djcfatz",
+          "valuesByMode": { "6uyj8zfn": "#F5B915" }
         },
         {
-          "id": "u4cmz6hp",
+          "id": "83xmrrvc",
           "type": "color",
           "name": "color/yellow/500",
           "codeSyntax": { "web": "--optics-color-yellow-500" },
-          "groupId": "33da9ilh",
-          "valuesByMode": { "vfxip1lt": "#D99E00" }
+          "groupId": "4djcfatz",
+          "valuesByMode": { "6uyj8zfn": "#D99E00" }
         },
         {
-          "id": "igknkrgo",
+          "id": "29ix18zo",
           "type": "color",
           "name": "color/yellow/600",
           "codeSyntax": { "web": "--optics-color-yellow-600" },
-          "groupId": "33da9ilh",
-          "valuesByMode": { "vfxip1lt": "#A87A00" }
+          "groupId": "4djcfatz",
+          "valuesByMode": { "6uyj8zfn": "#A87A00" }
         },
         {
-          "id": "04oj6di4",
+          "id": "qtmtv30e",
           "type": "color",
           "name": "color/yellow/700",
           "codeSyntax": { "web": "--optics-color-yellow-700" },
-          "groupId": "33da9ilh",
-          "valuesByMode": { "vfxip1lt": "#7A5800" }
+          "groupId": "4djcfatz",
+          "valuesByMode": { "6uyj8zfn": "#7A5800" }
         },
         {
-          "id": "42dog0m8",
+          "id": "zspka4x7",
           "type": "color",
           "name": "color/yellow/800",
           "codeSyntax": { "web": "--optics-color-yellow-800" },
-          "groupId": "33da9ilh",
-          "valuesByMode": { "vfxip1lt": "#5C4200" }
+          "groupId": "4djcfatz",
+          "valuesByMode": { "6uyj8zfn": "#5C4200" }
         },
         {
-          "id": "fgifyemt",
+          "id": "9ywh7is5",
           "type": "color",
           "name": "color/yellow/900",
           "codeSyntax": { "web": "--optics-color-yellow-900" },
-          "groupId": "33da9ilh",
-          "valuesByMode": { "vfxip1lt": "#3D2C00" }
+          "groupId": "4djcfatz",
+          "valuesByMode": { "6uyj8zfn": "#3D2C00" }
         },
         {
-          "id": "shxwm29i",
+          "id": "r34qbhmy",
           "type": "color",
           "name": "color/azure/50",
           "codeSyntax": { "web": "--optics-color-azure-50" },
-          "groupId": "0laim0c3",
-          "valuesByMode": { "vfxip1lt": "#EBF6FF" }
+          "groupId": "rom8rwai",
+          "valuesByMode": { "6uyj8zfn": "#EBF6FF" }
         },
         {
-          "id": "gxh2neby",
+          "id": "qf4f8eie",
           "type": "color",
           "name": "color/azure/100",
           "codeSyntax": { "web": "--optics-color-azure-100" },
-          "groupId": "0laim0c3",
-          "valuesByMode": { "vfxip1lt": "#D4ECFF" }
+          "groupId": "rom8rwai",
+          "valuesByMode": { "6uyj8zfn": "#D4ECFF" }
         },
         {
-          "id": "3iz44u6c",
+          "id": "rn55z2sv",
           "type": "color",
           "name": "color/azure/200",
           "codeSyntax": { "web": "--optics-color-azure-200" },
-          "groupId": "0laim0c3",
-          "valuesByMode": { "vfxip1lt": "#A8D8FF" }
+          "groupId": "rom8rwai",
+          "valuesByMode": { "6uyj8zfn": "#A8D8FF" }
         },
         {
-          "id": "3f9927zu",
+          "id": "kh4q2f64",
           "type": "color",
           "name": "color/azure/300",
           "codeSyntax": { "web": "--optics-color-azure-300" },
-          "groupId": "0laim0c3",
-          "valuesByMode": { "vfxip1lt": "#6DBDFF" }
+          "groupId": "rom8rwai",
+          "valuesByMode": { "6uyj8zfn": "#6DBDFF" }
         },
         {
-          "id": "c62rthf1",
+          "id": "yyo62qky",
           "type": "color",
           "name": "color/azure/400",
           "codeSyntax": { "web": "--optics-color-azure-400" },
-          "groupId": "0laim0c3",
-          "valuesByMode": { "vfxip1lt": "#2E9CF5" }
+          "groupId": "rom8rwai",
+          "valuesByMode": { "6uyj8zfn": "#2E9CF5" }
         },
         {
-          "id": "89x9oj1w",
+          "id": "fgnlvx2w",
           "type": "color",
           "name": "color/azure/500",
           "codeSyntax": { "web": "--optics-color-azure-500" },
-          "groupId": "0laim0c3",
-          "valuesByMode": { "vfxip1lt": "#0A80DB" }
+          "groupId": "rom8rwai",
+          "valuesByMode": { "6uyj8zfn": "#0A80DB" }
         },
         {
-          "id": "bq87gyns",
+          "id": "46u3mhqz",
           "type": "color",
           "name": "color/azure/600",
           "codeSyntax": { "web": "--optics-color-azure-600" },
-          "groupId": "0laim0c3",
-          "valuesByMode": { "vfxip1lt": "#0066B3" }
+          "groupId": "rom8rwai",
+          "valuesByMode": { "6uyj8zfn": "#0066B3" }
         },
         {
-          "id": "e0swq7i3",
+          "id": "j1t1cerg",
           "type": "color",
           "name": "color/azure/700",
           "codeSyntax": { "web": "--optics-color-azure-700" },
-          "groupId": "0laim0c3",
-          "valuesByMode": { "vfxip1lt": "#00528F" }
+          "groupId": "rom8rwai",
+          "valuesByMode": { "6uyj8zfn": "#00528F" }
         },
         {
-          "id": "mwq5gmbu",
+          "id": "5vkupytj",
           "type": "color",
           "name": "color/azure/800",
           "codeSyntax": { "web": "--optics-color-azure-800" },
-          "groupId": "0laim0c3",
-          "valuesByMode": { "vfxip1lt": "#003D6B" }
+          "groupId": "rom8rwai",
+          "valuesByMode": { "6uyj8zfn": "#003D6B" }
         },
         {
-          "id": "f7jkiq9z",
+          "id": "71q4qo5g",
           "type": "color",
           "name": "color/azure/900",
           "codeSyntax": { "web": "--optics-color-azure-900" },
-          "groupId": "0laim0c3",
-          "valuesByMode": { "vfxip1lt": "#002847" }
+          "groupId": "rom8rwai",
+          "valuesByMode": { "6uyj8zfn": "#002847" }
         },
         {
-          "id": "f6eawup2",
+          "id": "1y7o1oxw",
           "type": "color",
           "name": "color/purple/50",
           "codeSyntax": { "web": "--optics-color-purple-50" },
-          "groupId": "pblwqo7z",
-          "valuesByMode": { "vfxip1lt": "#F6F1FF" }
+          "groupId": "azv039hq",
+          "valuesByMode": { "6uyj8zfn": "#F6F1FF" }
         },
         {
-          "id": "16fu53er",
+          "id": "36m62vw6",
           "type": "color",
           "name": "color/purple/100",
           "codeSyntax": { "web": "--optics-color-purple-100" },
-          "groupId": "pblwqo7z",
-          "valuesByMode": { "vfxip1lt": "#ECE2FF" }
+          "groupId": "azv039hq",
+          "valuesByMode": { "6uyj8zfn": "#ECE2FF" }
         },
         {
-          "id": "jnfo9kke",
+          "id": "rhyxp8d5",
           "type": "color",
           "name": "color/purple/200",
           "codeSyntax": { "web": "--optics-color-purple-200" },
-          "groupId": "pblwqo7z",
-          "valuesByMode": { "vfxip1lt": "#D8C4FF" }
+          "groupId": "azv039hq",
+          "valuesByMode": { "6uyj8zfn": "#D8C4FF" }
         },
         {
-          "id": "gnudt9w3",
+          "id": "643gfbm3",
           "type": "color",
           "name": "color/purple/300",
           "codeSyntax": { "web": "--optics-color-purple-300" },
-          "groupId": "pblwqo7z",
-          "valuesByMode": { "vfxip1lt": "#BC9BFF" }
+          "groupId": "azv039hq",
+          "valuesByMode": { "6uyj8zfn": "#BC9BFF" }
         },
         {
-          "id": "ywuuywfa",
+          "id": "1hd3j3i1",
           "type": "color",
           "name": "color/purple/400",
           "codeSyntax": { "web": "--optics-color-purple-400" },
-          "groupId": "pblwqo7z",
-          "valuesByMode": { "vfxip1lt": "#9D6DFC" }
+          "groupId": "azv039hq",
+          "valuesByMode": { "6uyj8zfn": "#9D6DFC" }
         },
         {
-          "id": "scv3ctxe",
+          "id": "04pr2hoj",
           "type": "color",
           "name": "color/purple/500",
           "codeSyntax": { "web": "--optics-color-purple-500" },
-          "groupId": "pblwqo7z",
-          "valuesByMode": { "vfxip1lt": "#8048EB" }
+          "groupId": "azv039hq",
+          "valuesByMode": { "6uyj8zfn": "#8048EB" }
         },
         {
-          "id": "d6ha2je8",
+          "id": "8594epqe",
           "type": "color",
           "name": "color/purple/600",
           "codeSyntax": { "web": "--optics-color-purple-600" },
-          "groupId": "pblwqo7z",
-          "valuesByMode": { "vfxip1lt": "#6A31D1" }
+          "groupId": "azv039hq",
+          "valuesByMode": { "6uyj8zfn": "#6A31D1" }
         },
         {
-          "id": "eouufgmt",
+          "id": "bouxrzfb",
           "type": "color",
           "name": "color/purple/700",
           "codeSyntax": { "web": "--optics-color-purple-700" },
-          "groupId": "pblwqo7z",
-          "valuesByMode": { "vfxip1lt": "#5524AB" }
+          "groupId": "azv039hq",
+          "valuesByMode": { "6uyj8zfn": "#5524AB" }
         },
         {
-          "id": "jlq6a2xw",
+          "id": "6huohl7x",
           "type": "color",
           "name": "color/purple/800",
           "codeSyntax": { "web": "--optics-color-purple-800" },
-          "groupId": "pblwqo7z",
-          "valuesByMode": { "vfxip1lt": "#401B80" }
+          "groupId": "azv039hq",
+          "valuesByMode": { "6uyj8zfn": "#401B80" }
         },
         {
-          "id": "8gmna1gj",
+          "id": "6853o5b9",
           "type": "color",
           "name": "color/purple/900",
           "codeSyntax": { "web": "--optics-color-purple-900" },
-          "groupId": "pblwqo7z",
-          "valuesByMode": { "vfxip1lt": "#2A1255" }
+          "groupId": "azv039hq",
+          "valuesByMode": { "6uyj8zfn": "#2A1255" }
         },
         {
-          "id": "9apeta3j",
+          "id": "nr7nup6f",
           "type": "color",
           "name": "color/alpha/transparent",
           "codeSyntax": { "web": "--optics-color-alpha-transparent" },
-          "groupId": "bqrulpix",
-          "valuesByMode": { "vfxip1lt": "#00000000" }
+          "groupId": "4wvodl4z",
+          "valuesByMode": { "6uyj8zfn": "#00000000" }
         },
         {
-          "id": "k1nhqgg7",
+          "id": "hvpu6nox",
           "type": "color",
           "name": "color/alpha/black-5",
           "codeSyntax": { "web": "--optics-color-alpha-black-5" },
-          "groupId": "bqrulpix",
-          "valuesByMode": { "vfxip1lt": "#0000000D" }
+          "groupId": "4wvodl4z",
+          "valuesByMode": { "6uyj8zfn": "#0000000D" }
         },
         {
-          "id": "iv4b8unk",
+          "id": "t1zncxt2",
           "type": "color",
           "name": "color/alpha/black-10",
           "codeSyntax": { "web": "--optics-color-alpha-black-10" },
-          "groupId": "bqrulpix",
-          "valuesByMode": { "vfxip1lt": "#0000001A" }
+          "groupId": "4wvodl4z",
+          "valuesByMode": { "6uyj8zfn": "#0000001A" }
         },
         {
-          "id": "d47ct376",
+          "id": "enr17iw3",
           "type": "color",
           "name": "color/alpha/black-15",
           "codeSyntax": { "web": "--optics-color-alpha-black-15" },
-          "groupId": "bqrulpix",
-          "valuesByMode": { "vfxip1lt": "#00000026" }
+          "groupId": "4wvodl4z",
+          "valuesByMode": { "6uyj8zfn": "#00000026" }
         },
         {
-          "id": "cvlhs9k5",
+          "id": "9xft7vpt",
           "type": "color",
           "name": "color/alpha/black-20",
           "codeSyntax": { "web": "--optics-color-alpha-black-20" },
-          "groupId": "bqrulpix",
-          "valuesByMode": { "vfxip1lt": "#00000033" }
+          "groupId": "4wvodl4z",
+          "valuesByMode": { "6uyj8zfn": "#00000033" }
         },
         {
-          "id": "bay4c7oo",
+          "id": "zlxsf4c2",
           "type": "color",
           "name": "color/alpha/black-30",
           "codeSyntax": { "web": "--optics-color-alpha-black-30" },
-          "groupId": "bqrulpix",
-          "valuesByMode": { "vfxip1lt": "#0000004D" }
+          "groupId": "4wvodl4z",
+          "valuesByMode": { "6uyj8zfn": "#0000004D" }
         },
         {
-          "id": "zyqpzdb4",
+          "id": "g5wj8l8t",
           "type": "color",
           "name": "color/alpha/black-50",
           "codeSyntax": { "web": "--optics-color-alpha-black-50" },
-          "groupId": "bqrulpix",
-          "valuesByMode": { "vfxip1lt": "#00000080" }
+          "groupId": "4wvodl4z",
+          "valuesByMode": { "6uyj8zfn": "#00000080" }
         },
         {
-          "id": "0m7glej0",
+          "id": "ivu0jnn5",
           "type": "color",
           "name": "color/alpha/white-10",
           "codeSyntax": { "web": "--optics-color-alpha-white-10" },
-          "groupId": "bqrulpix",
-          "valuesByMode": { "vfxip1lt": "#FFFFFF1A" }
+          "groupId": "4wvodl4z",
+          "valuesByMode": { "6uyj8zfn": "#FFFFFF1A" }
         },
         {
-          "id": "bk82x5kq",
+          "id": "pj2zbtz3",
           "type": "color",
           "name": "color/alpha/white-20",
           "codeSyntax": { "web": "--optics-color-alpha-white-20" },
-          "groupId": "bqrulpix",
-          "valuesByMode": { "vfxip1lt": "#FFFFFF33" }
+          "groupId": "4wvodl4z",
+          "valuesByMode": { "6uyj8zfn": "#FFFFFF33" }
         },
         {
-          "id": "uklxb5y6",
+          "id": "a48wkgv5",
           "type": "number",
           "name": "space/0",
           "codeSyntax": { "web": "--optics-space-0" },
-          "groupId": "kqn1tc5c",
-          "valuesByMode": { "vfxip1lt": 0 }
+          "groupId": "jyzhnc0k",
+          "valuesByMode": { "6uyj8zfn": 0 }
         },
         {
-          "id": "3vfvzpzr",
+          "id": "sjgagura",
           "type": "number",
           "name": "space/025",
           "codeSyntax": { "web": "--optics-space-025" },
-          "groupId": "kqn1tc5c",
-          "valuesByMode": { "vfxip1lt": 1 }
+          "groupId": "jyzhnc0k",
+          "valuesByMode": { "6uyj8zfn": 1 }
         },
         {
-          "id": "ndajalnu",
+          "id": "z8ln3874",
           "type": "number",
           "name": "space/050",
           "codeSyntax": { "web": "--optics-space-050" },
-          "groupId": "kqn1tc5c",
-          "valuesByMode": { "vfxip1lt": 2 }
+          "groupId": "jyzhnc0k",
+          "valuesByMode": { "6uyj8zfn": 2 }
         },
         {
-          "id": "8o2mlr38",
+          "id": "wvb2xf0z",
           "type": "number",
           "name": "space/100",
           "codeSyntax": { "web": "--optics-space-100" },
-          "groupId": "kqn1tc5c",
-          "valuesByMode": { "vfxip1lt": 4 }
+          "groupId": "jyzhnc0k",
+          "valuesByMode": { "6uyj8zfn": 4 }
         },
         {
-          "id": "etmrrncy",
+          "id": "atkn4pg2",
           "type": "number",
           "name": "space/150",
           "codeSyntax": { "web": "--optics-space-150" },
-          "groupId": "kqn1tc5c",
-          "valuesByMode": { "vfxip1lt": 6 }
+          "groupId": "jyzhnc0k",
+          "valuesByMode": { "6uyj8zfn": 6 }
         },
         {
-          "id": "4fqmamfj",
+          "id": "l4vjj8du",
           "type": "number",
           "name": "space/200",
           "codeSyntax": { "web": "--optics-space-200" },
-          "groupId": "kqn1tc5c",
-          "valuesByMode": { "vfxip1lt": 8 }
+          "groupId": "jyzhnc0k",
+          "valuesByMode": { "6uyj8zfn": 8 }
         },
         {
-          "id": "pgnzitan",
+          "id": "rqy0hdsu",
           "type": "number",
           "name": "space/300",
           "codeSyntax": { "web": "--optics-space-300" },
-          "groupId": "kqn1tc5c",
-          "valuesByMode": { "vfxip1lt": 12 }
+          "groupId": "jyzhnc0k",
+          "valuesByMode": { "6uyj8zfn": 12 }
         },
         {
-          "id": "r5bo9oox",
+          "id": "zl4buvko",
           "type": "number",
           "name": "space/400",
           "codeSyntax": { "web": "--optics-space-400" },
-          "groupId": "kqn1tc5c",
-          "valuesByMode": { "vfxip1lt": 16 }
+          "groupId": "jyzhnc0k",
+          "valuesByMode": { "6uyj8zfn": 16 }
         },
         {
-          "id": "uxitazee",
+          "id": "4wrr7j8p",
           "type": "number",
           "name": "space/500",
           "codeSyntax": { "web": "--optics-space-500" },
-          "groupId": "kqn1tc5c",
-          "valuesByMode": { "vfxip1lt": 20 }
+          "groupId": "jyzhnc0k",
+          "valuesByMode": { "6uyj8zfn": 20 }
         },
         {
-          "id": "wviqfxh7",
+          "id": "kf5anf2p",
           "type": "number",
           "name": "space/600",
           "codeSyntax": { "web": "--optics-space-600" },
-          "groupId": "kqn1tc5c",
-          "valuesByMode": { "vfxip1lt": 24 }
+          "groupId": "jyzhnc0k",
+          "valuesByMode": { "6uyj8zfn": 24 }
         },
         {
-          "id": "1a3d6t7l",
+          "id": "dl9orkn9",
           "type": "number",
           "name": "space/800",
           "codeSyntax": { "web": "--optics-space-800" },
-          "groupId": "kqn1tc5c",
-          "valuesByMode": { "vfxip1lt": 32 }
+          "groupId": "jyzhnc0k",
+          "valuesByMode": { "6uyj8zfn": 32 }
         },
         {
-          "id": "05dvamd4",
+          "id": "35ytfnvk",
           "type": "number",
           "name": "space/1000",
           "codeSyntax": { "web": "--optics-space-1000" },
-          "groupId": "kqn1tc5c",
-          "valuesByMode": { "vfxip1lt": 40 }
+          "groupId": "jyzhnc0k",
+          "valuesByMode": { "6uyj8zfn": 40 }
         },
         {
-          "id": "05cdlt1g",
+          "id": "i2p7lsbm",
           "type": "number",
           "name": "space/1200",
           "codeSyntax": { "web": "--optics-space-1200" },
-          "groupId": "kqn1tc5c",
-          "valuesByMode": { "vfxip1lt": 48 }
+          "groupId": "jyzhnc0k",
+          "valuesByMode": { "6uyj8zfn": 48 }
         },
         {
-          "id": "h8gq2160",
+          "id": "11tjcxsc",
           "type": "number",
           "name": "space/1600",
           "codeSyntax": { "web": "--optics-space-1600" },
-          "groupId": "kqn1tc5c",
-          "valuesByMode": { "vfxip1lt": 64 }
+          "groupId": "jyzhnc0k",
+          "valuesByMode": { "6uyj8zfn": 64 }
         },
         {
-          "id": "kiwim2pu",
+          "id": "pg0o5n1c",
           "type": "string",
           "name": "font/family/sans",
           "codeSyntax": { "web": "--optics-font-family-sans" },
-          "groupId": "a7frcxit",
-          "valuesByMode": { "vfxip1lt": "Inter" }
+          "groupId": "mt45vgd8",
+          "valuesByMode": { "6uyj8zfn": "Inter" }
         },
         {
-          "id": "vt38psx8",
+          "id": "runflebk",
           "type": "string",
           "name": "font/family/mono",
           "codeSyntax": { "web": "--optics-font-family-mono" },
-          "groupId": "a7frcxit",
-          "valuesByMode": { "vfxip1lt": "JetBrains Mono" }
+          "groupId": "mt45vgd8",
+          "valuesByMode": { "6uyj8zfn": "JetBrains Mono" }
         },
         {
-          "id": "kpbchjq7",
+          "id": "nnq2joa9",
           "type": "number",
           "name": "font/size/300",
           "codeSyntax": { "web": "--optics-font-size-300" },
-          "groupId": "vz969ddg",
-          "valuesByMode": { "vfxip1lt": 12 }
+          "groupId": "cauk5zpb",
+          "valuesByMode": { "6uyj8zfn": 12 }
         },
         {
-          "id": "5ip1q4xu",
+          "id": "2iqzark9",
           "type": "number",
           "name": "font/size/350",
           "codeSyntax": { "web": "--optics-font-size-350" },
-          "groupId": "vz969ddg",
-          "valuesByMode": { "vfxip1lt": 14 }
+          "groupId": "cauk5zpb",
+          "valuesByMode": { "6uyj8zfn": 14 }
         },
         {
-          "id": "crtbimhe",
+          "id": "bejrdp2k",
           "type": "number",
           "name": "font/size/400",
           "codeSyntax": { "web": "--optics-font-size-400" },
-          "groupId": "vz969ddg",
-          "valuesByMode": { "vfxip1lt": 16 }
+          "groupId": "cauk5zpb",
+          "valuesByMode": { "6uyj8zfn": 16 }
         },
         {
-          "id": "oapii84j",
+          "id": "y2svsbr9",
           "type": "number",
           "name": "font/size/500",
           "codeSyntax": { "web": "--optics-font-size-500" },
-          "groupId": "vz969ddg",
-          "valuesByMode": { "vfxip1lt": 20 }
+          "groupId": "cauk5zpb",
+          "valuesByMode": { "6uyj8zfn": 20 }
         },
         {
-          "id": "5nxu2ma6",
+          "id": "l7f4idm6",
           "type": "number",
           "name": "font/size/600",
           "codeSyntax": { "web": "--optics-font-size-600" },
-          "groupId": "vz969ddg",
-          "valuesByMode": { "vfxip1lt": 24 }
+          "groupId": "cauk5zpb",
+          "valuesByMode": { "6uyj8zfn": 24 }
         },
         {
-          "id": "vhedeivj",
+          "id": "wcdo6cpe",
           "type": "number",
           "name": "font/size/750",
           "codeSyntax": { "web": "--optics-font-size-750" },
-          "groupId": "vz969ddg",
-          "valuesByMode": { "vfxip1lt": 30 }
+          "groupId": "cauk5zpb",
+          "valuesByMode": { "6uyj8zfn": 30 }
         },
         {
-          "id": "s7d583a9",
+          "id": "twbf6siv",
           "type": "number",
           "name": "font/size/900",
           "codeSyntax": { "web": "--optics-font-size-900" },
-          "groupId": "vz969ddg",
-          "valuesByMode": { "vfxip1lt": 36 }
+          "groupId": "cauk5zpb",
+          "valuesByMode": { "6uyj8zfn": 36 }
         },
         {
-          "id": "j92mbplw",
+          "id": "05zfvge3",
           "type": "number",
           "name": "font/weight/regular",
           "codeSyntax": { "web": "--optics-font-weight-regular" },
-          "groupId": "h74lipj4",
-          "valuesByMode": { "vfxip1lt": 400 }
+          "groupId": "hhqiznjh",
+          "valuesByMode": { "6uyj8zfn": 400 }
         },
         {
-          "id": "53lbqbln",
+          "id": "yoc7fn24",
           "type": "number",
           "name": "font/weight/medium",
           "codeSyntax": { "web": "--optics-font-weight-medium" },
-          "groupId": "h74lipj4",
-          "valuesByMode": { "vfxip1lt": 500 }
+          "groupId": "hhqiznjh",
+          "valuesByMode": { "6uyj8zfn": 500 }
         },
         {
-          "id": "e0i0a9z8",
+          "id": "fs2eoc9n",
           "type": "number",
           "name": "font/weight/semibold",
           "codeSyntax": { "web": "--optics-font-weight-semibold" },
-          "groupId": "h74lipj4",
-          "valuesByMode": { "vfxip1lt": 600 }
+          "groupId": "hhqiznjh",
+          "valuesByMode": { "6uyj8zfn": 600 }
         },
         {
-          "id": "osh7vgt5",
+          "id": "iebcccdq",
           "type": "number",
           "name": "font/weight/bold",
           "codeSyntax": { "web": "--optics-font-weight-bold" },
-          "groupId": "h74lipj4",
-          "valuesByMode": { "vfxip1lt": 700 }
+          "groupId": "hhqiznjh",
+          "valuesByMode": { "6uyj8zfn": 700 }
         },
         {
-          "id": "zt7zo6b6",
+          "id": "7oq94ks4",
           "type": "number",
           "name": "font/line-height/120",
           "codeSyntax": { "web": "--optics-font-line-height-120" },
-          "groupId": "9n0vv153",
-          "valuesByMode": { "vfxip1lt": 120 }
+          "groupId": "3qqjjjuh",
+          "valuesByMode": { "6uyj8zfn": 120 }
         },
         {
-          "id": "jrztrpkq",
+          "id": "cc9dfexj",
           "type": "number",
           "name": "font/line-height/125",
           "codeSyntax": { "web": "--optics-font-line-height-125" },
-          "groupId": "9n0vv153",
-          "valuesByMode": { "vfxip1lt": 125 }
+          "groupId": "3qqjjjuh",
+          "valuesByMode": { "6uyj8zfn": 125 }
         },
         {
-          "id": "w9qpok3z",
+          "id": "5vhyqfuc",
           "type": "number",
           "name": "font/line-height/133",
           "codeSyntax": { "web": "--optics-font-line-height-133" },
-          "groupId": "9n0vv153",
-          "valuesByMode": { "vfxip1lt": 133 }
+          "groupId": "3qqjjjuh",
+          "valuesByMode": { "6uyj8zfn": 133 }
         },
         {
-          "id": "42fz4c42",
+          "id": "rwnuqiho",
           "type": "number",
           "name": "font/line-height/143",
           "codeSyntax": { "web": "--optics-font-line-height-143" },
-          "groupId": "9n0vv153",
-          "valuesByMode": { "vfxip1lt": 143 }
+          "groupId": "3qqjjjuh",
+          "valuesByMode": { "6uyj8zfn": 143 }
         },
         {
-          "id": "fxgpwf53",
+          "id": "7eginpjn",
           "type": "number",
           "name": "font/line-height/150",
           "codeSyntax": { "web": "--optics-font-line-height-150" },
-          "groupId": "9n0vv153",
-          "valuesByMode": { "vfxip1lt": 150 }
+          "groupId": "3qqjjjuh",
+          "valuesByMode": { "6uyj8zfn": 150 }
         },
         {
-          "id": "4y5gwqb5",
+          "id": "gin9yi53",
           "type": "number",
           "name": "font/letter-spacing/dense",
           "codeSyntax": { "web": "--optics-font-letter-spacing-dense" },
-          "groupId": "2zj9fs1w",
-          "valuesByMode": { "vfxip1lt": -0.2 }
+          "groupId": "edrmtul0",
+          "valuesByMode": { "6uyj8zfn": -0.2 }
         },
         {
-          "id": "mkefu7es",
+          "id": "86zbiknk",
           "type": "number",
           "name": "font/letter-spacing/normal",
           "codeSyntax": { "web": "--optics-font-letter-spacing-normal" },
-          "groupId": "2zj9fs1w",
-          "valuesByMode": { "vfxip1lt": 0 }
+          "groupId": "edrmtul0",
+          "valuesByMode": { "6uyj8zfn": 0 }
         },
         {
-          "id": "yi3nagul",
+          "id": "60zdhd7f",
           "type": "number",
           "name": "radius/0",
           "codeSyntax": { "web": "--optics-radius-0" },
-          "groupId": "1894rz1v",
-          "valuesByMode": { "vfxip1lt": 0 }
+          "groupId": "tvqytand",
+          "valuesByMode": { "6uyj8zfn": 0 }
         },
         {
-          "id": "ba65h3z5",
+          "id": "2v5oqjmt",
           "type": "number",
           "name": "radius/100",
           "codeSyntax": { "web": "--optics-radius-100" },
-          "groupId": "1894rz1v",
-          "valuesByMode": { "vfxip1lt": 4 }
+          "groupId": "tvqytand",
+          "valuesByMode": { "6uyj8zfn": 4 }
         },
         {
-          "id": "ohh5xtbc",
+          "id": "knnhqyik",
           "type": "number",
           "name": "radius/150",
           "codeSyntax": { "web": "--optics-radius-150" },
-          "groupId": "1894rz1v",
-          "valuesByMode": { "vfxip1lt": 6 }
+          "groupId": "tvqytand",
+          "valuesByMode": { "6uyj8zfn": 6 }
         },
         {
-          "id": "zldrnppt",
+          "id": "fhimixxj",
           "type": "number",
           "name": "radius/200",
           "codeSyntax": { "web": "--optics-radius-200" },
-          "groupId": "1894rz1v",
-          "valuesByMode": { "vfxip1lt": 8 }
+          "groupId": "tvqytand",
+          "valuesByMode": { "6uyj8zfn": 8 }
         },
         {
-          "id": "ttizawmf",
+          "id": "36tz3ngc",
           "type": "number",
           "name": "radius/300",
           "codeSyntax": { "web": "--optics-radius-300" },
-          "groupId": "1894rz1v",
-          "valuesByMode": { "vfxip1lt": 12 }
+          "groupId": "tvqytand",
+          "valuesByMode": { "6uyj8zfn": 12 }
         },
         {
-          "id": "mvgtcey3",
+          "id": "lkt5knm5",
           "type": "number",
           "name": "radius/400",
           "codeSyntax": { "web": "--optics-radius-400" },
-          "groupId": "1894rz1v",
-          "valuesByMode": { "vfxip1lt": 16 }
+          "groupId": "tvqytand",
+          "valuesByMode": { "6uyj8zfn": 16 }
         },
         {
-          "id": "dddp6nh5",
+          "id": "koua6ysk",
           "type": "number",
           "name": "radius/500",
           "codeSyntax": { "web": "--optics-radius-500" },
-          "groupId": "1894rz1v",
-          "valuesByMode": { "vfxip1lt": 20 }
+          "groupId": "tvqytand",
+          "valuesByMode": { "6uyj8zfn": 20 }
         },
         {
-          "id": "4pbvlcux",
+          "id": "wcwzsvdb",
           "type": "number",
           "name": "radius/full",
           "codeSyntax": { "web": "--optics-radius-full" },
-          "groupId": "1894rz1v",
-          "valuesByMode": { "vfxip1lt": 9999 }
+          "groupId": "tvqytand",
+          "valuesByMode": { "6uyj8zfn": 9999 }
         },
         {
-          "id": "o9yj4vmt",
+          "id": "523mp0s1",
           "type": "number",
           "name": "border-width/025",
           "codeSyntax": { "web": "--optics-border-width-025" },
-          "groupId": "2y84b5n4",
-          "valuesByMode": { "vfxip1lt": 1 }
+          "groupId": "lk6sxjoy",
+          "valuesByMode": { "6uyj8zfn": 1 }
         },
         {
-          "id": "tk2z5bx6",
+          "id": "9uedlfum",
           "type": "number",
           "name": "border-width/050",
           "codeSyntax": { "web": "--optics-border-width-050" },
-          "groupId": "2y84b5n4",
-          "valuesByMode": { "vfxip1lt": 2 }
+          "groupId": "lk6sxjoy",
+          "valuesByMode": { "6uyj8zfn": 2 }
         },
         {
-          "id": "ubh6k2gx",
+          "id": "9i0p0l2q",
           "type": "number",
           "name": "border-width/100",
           "codeSyntax": { "web": "--optics-border-width-100" },
-          "groupId": "2y84b5n4",
-          "valuesByMode": { "vfxip1lt": 4 }
+          "groupId": "lk6sxjoy",
+          "valuesByMode": { "6uyj8zfn": 4 }
         },
         {
-          "id": "67pmu56y",
+          "id": "qkzlyorb",
           "type": "duration",
           "name": "motion/duration/0",
           "codeSyntax": { "web": "--optics-motion-duration-0" },
-          "groupId": "tsl2ayye",
-          "valuesByMode": { "vfxip1lt": 0 }
+          "groupId": "7fmew4l7",
+          "valuesByMode": { "6uyj8zfn": 0 }
         },
         {
-          "id": "flcwczn9",
+          "id": "36b3zafy",
           "type": "duration",
           "name": "motion/duration/50",
           "codeSyntax": { "web": "--optics-motion-duration-50" },
-          "groupId": "tsl2ayye",
-          "valuesByMode": { "vfxip1lt": 50 }
+          "groupId": "7fmew4l7",
+          "valuesByMode": { "6uyj8zfn": 50 }
         },
         {
-          "id": "3l0jxzxn",
+          "id": "4qowczlq",
           "type": "duration",
           "name": "motion/duration/100",
           "codeSyntax": { "web": "--optics-motion-duration-100" },
-          "groupId": "tsl2ayye",
-          "valuesByMode": { "vfxip1lt": 100 }
+          "groupId": "7fmew4l7",
+          "valuesByMode": { "6uyj8zfn": 100 }
         },
         {
-          "id": "jx7izrwo",
+          "id": "yn3veb69",
           "type": "duration",
           "name": "motion/duration/150",
           "codeSyntax": { "web": "--optics-motion-duration-150" },
-          "groupId": "tsl2ayye",
-          "valuesByMode": { "vfxip1lt": 150 }
+          "groupId": "7fmew4l7",
+          "valuesByMode": { "6uyj8zfn": 150 }
         },
         {
-          "id": "znf73pnu",
+          "id": "0wyo0ru9",
           "type": "duration",
           "name": "motion/duration/200",
           "codeSyntax": { "web": "--optics-motion-duration-200" },
-          "groupId": "tsl2ayye",
-          "valuesByMode": { "vfxip1lt": 200 }
+          "groupId": "7fmew4l7",
+          "valuesByMode": { "6uyj8zfn": 200 }
         },
         {
-          "id": "gzct8972",
+          "id": "fuz6jeib",
           "type": "duration",
           "name": "motion/duration/250",
           "codeSyntax": { "web": "--optics-motion-duration-250" },
-          "groupId": "tsl2ayye",
-          "valuesByMode": { "vfxip1lt": 250 }
+          "groupId": "7fmew4l7",
+          "valuesByMode": { "6uyj8zfn": 250 }
         },
         {
-          "id": "fpov2x1c",
+          "id": "rrw5as4r",
           "type": "duration",
           "name": "motion/duration/300",
           "codeSyntax": { "web": "--optics-motion-duration-300" },
-          "groupId": "tsl2ayye",
-          "valuesByMode": { "vfxip1lt": 300 }
+          "groupId": "7fmew4l7",
+          "valuesByMode": { "6uyj8zfn": 300 }
         },
         {
-          "id": "6g8qt2xk",
+          "id": "yxgs71a0",
           "type": "duration",
           "name": "motion/duration/400",
           "codeSyntax": { "web": "--optics-motion-duration-400" },
-          "groupId": "tsl2ayye",
-          "valuesByMode": { "vfxip1lt": 400 }
+          "groupId": "7fmew4l7",
+          "valuesByMode": { "6uyj8zfn": 400 }
         },
         {
-          "id": "itbq0cln",
+          "id": "doh9tzh5",
           "type": "duration",
           "name": "motion/duration/500",
           "codeSyntax": { "web": "--optics-motion-duration-500" },
-          "groupId": "tsl2ayye",
-          "valuesByMode": { "vfxip1lt": 500 }
+          "groupId": "7fmew4l7",
+          "valuesByMode": { "6uyj8zfn": 500 }
         },
         {
-          "id": "gghjg9p9",
+          "id": "3ly54tlu",
           "type": "easing",
           "name": "motion/easing/ease",
           "description": "Most transitions.",
           "codeSyntax": { "web": "--optics-motion-easing-ease" },
-          "groupId": "597g7e9v",
-          "valuesByMode": { "vfxip1lt": [0.25, 0.1, 0.25, 1] }
+          "groupId": "k0a07tio",
+          "valuesByMode": { "6uyj8zfn": [0.25, 0.1, 0.25, 1] }
         },
         {
-          "id": "4nk7ea3n",
+          "id": "fywlpzsd",
           "type": "easing",
           "name": "motion/easing/ease-in",
           "description": "Elements leaving the view.",
           "codeSyntax": { "web": "--optics-motion-easing-ease-in" },
-          "groupId": "597g7e9v",
-          "valuesByMode": { "vfxip1lt": [0.42, 0, 1, 1] }
+          "groupId": "k0a07tio",
+          "valuesByMode": { "6uyj8zfn": [0.42, 0, 1, 1] }
         },
         {
-          "id": "1sh6q39q",
+          "id": "hapykozf",
           "type": "easing",
           "name": "motion/easing/ease-out",
           "description": "Elements coming into view.",
           "codeSyntax": { "web": "--optics-motion-easing-ease-out" },
-          "groupId": "597g7e9v",
-          "valuesByMode": { "vfxip1lt": [0, 0, 0.58, 1] }
+          "groupId": "k0a07tio",
+          "valuesByMode": { "6uyj8zfn": [0, 0, 0.58, 1] }
         },
         {
-          "id": "ewo3k6oc",
+          "id": "1ehedqf3",
           "type": "easing",
           "name": "motion/easing/ease-in-out",
           "description": "Elements moving within the view.",
           "codeSyntax": { "web": "--optics-motion-easing-ease-in-out" },
-          "groupId": "597g7e9v",
-          "valuesByMode": { "vfxip1lt": [0.42, 0, 0.58, 1] }
+          "groupId": "k0a07tio",
+          "valuesByMode": { "6uyj8zfn": [0.42, 0, 0.58, 1] }
         },
         {
-          "id": "codmw3pq",
+          "id": "3m5jr9ch",
           "type": "easing",
           "name": "motion/easing/linear",
           "description": "Spinners and progress.",
           "codeSyntax": { "web": "--optics-motion-easing-linear" },
-          "groupId": "597g7e9v",
-          "valuesByMode": { "vfxip1lt": [0, 0, 1, 1] }
+          "groupId": "k0a07tio",
+          "valuesByMode": { "6uyj8zfn": [0, 0, 1, 1] }
         }
       ]
     },
     {
-      "id": "tiz2sgl2",
+      "id": "jpq1huie",
       "name": "Semantic",
-      "defaultModeId": "7a01pyvh",
+      "defaultModeId": "1t557tl8",
       "groups": [
         {
-          "id": "sq6atopd",
+          "id": "ybgylhdk",
           "name": "bg",
           "description": "Backgrounds: the page, surfaces on it, and fills for controls.",
           "parentId": null
         },
         {
-          "id": "su0mlk6w",
+          "id": "yz41925f",
           "name": "surface",
           "description": "Cards, panels and inputs: what content sits on.",
-          "parentId": "sq6atopd"
+          "parentId": "ybgylhdk"
         },
         {
-          "id": "7m76qel4",
+          "id": "2rues5cd",
           "name": "fill",
           "description": "Fills for controls: buttons, badges, checkboxes.",
-          "parentId": "sq6atopd"
+          "parentId": "ybgylhdk"
         },
-        { "id": "c5meuz39", "name": "text", "description": "Text, by role.", "parentId": null },
+        { "id": "aa2r508e", "name": "text", "description": "Text, by role.", "parentId": null },
         {
-          "id": "rqbpbjg6",
+          "id": "dug817kq",
           "name": "border",
           "description": "Borders and dividers.",
           "parentId": null
         },
-        { "id": "7h7xd0g6", "name": "icon", "description": "Icons, by role.", "parentId": null },
+        { "id": "82fs7qa7", "name": "icon", "description": "Icons, by role.", "parentId": null },
         {
-          "id": "dyhszafg",
+          "id": "e13806w9",
           "name": "shadow",
           "description": "Elevation: 100 sits on the page, 600 floats above everything. Darker in Dark mode, where light shadows don’t show.",
           "parentId": null
         }
       ],
-      "modes": [{ "id": "7a01pyvh", "name": "Light" }, { "id": "7xw5todm", "name": "Dark" }],
+      "modes": [{ "id": "1t557tl8", "name": "Light" }, { "id": "86juaoke", "name": "Dark" }],
       "variables": [
         {
-          "id": "3fxrhnh4",
+          "id": "1bgrgenz",
           "type": "color",
           "name": "bg/page",
           "description": "The page behind everything.",
           "codeSyntax": { "web": "--optics-bg-page" },
-          "groupId": "sq6atopd",
+          "groupId": "ybgylhdk",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "vg1rldnv" },
-            "7xw5todm": { "alias": "jl6dxbnn" }
+            "1t557tl8": { "alias": "otx34h4q" },
+            "86juaoke": { "alias": "iem5oism" }
           }
         },
         {
-          "id": "gqftr1ft",
+          "id": "4rqx7nl9",
           "type": "color",
           "name": "bg/surface/default",
           "codeSyntax": { "web": "--optics-bg-surface-default" },
-          "groupId": "su0mlk6w",
+          "groupId": "yz41925f",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "us3e0b7k" },
-            "7xw5todm": { "alias": "pv7kr1ha" }
+            "1t557tl8": { "alias": "xqafeiev" },
+            "86juaoke": { "alias": "yldmsyry" }
           }
         },
         {
-          "id": "qvp34jlg",
+          "id": "z770vuqj",
           "type": "color",
           "name": "bg/surface/hover",
           "codeSyntax": { "web": "--optics-bg-surface-hover" },
-          "groupId": "su0mlk6w",
+          "groupId": "yz41925f",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "ziw6w6in" },
-            "7xw5todm": { "alias": "xnjupwes" }
+            "1t557tl8": { "alias": "u2zn7o35" },
+            "86juaoke": { "alias": "z0iahbbo" }
           }
         },
         {
-          "id": "0npu7t87",
+          "id": "51txqolt",
           "type": "color",
           "name": "bg/surface/active",
           "codeSyntax": { "web": "--optics-bg-surface-active" },
-          "groupId": "su0mlk6w",
+          "groupId": "yz41925f",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "vg1rldnv" },
-            "7xw5todm": { "alias": "cg9sfgnh" }
+            "1t557tl8": { "alias": "otx34h4q" },
+            "86juaoke": { "alias": "0a7mp9d9" }
           }
         },
         {
-          "id": "ybikbkpn",
+          "id": "kmpsx1tr",
           "type": "color",
           "name": "bg/surface/secondary",
           "description": "A surface set back from the default one.",
           "codeSyntax": { "web": "--optics-bg-surface-secondary" },
-          "groupId": "su0mlk6w",
+          "groupId": "yz41925f",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "ziw6w6in" },
-            "7xw5todm": { "alias": "xnjupwes" }
+            "1t557tl8": { "alias": "u2zn7o35" },
+            "86juaoke": { "alias": "z0iahbbo" }
           }
         },
         {
-          "id": "k89dldct",
+          "id": "1rz6z8rz",
           "type": "color",
           "name": "bg/surface/tertiary",
           "codeSyntax": { "web": "--optics-bg-surface-tertiary" },
-          "groupId": "su0mlk6w",
+          "groupId": "yz41925f",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "vg1rldnv" },
-            "7xw5todm": { "alias": "cg9sfgnh" }
+            "1t557tl8": { "alias": "otx34h4q" },
+            "86juaoke": { "alias": "0a7mp9d9" }
           }
         },
         {
-          "id": "ofitt59g",
+          "id": "03pdarab",
           "type": "color",
           "name": "bg/surface/disabled",
           "codeSyntax": { "web": "--optics-bg-surface-disabled" },
-          "groupId": "su0mlk6w",
+          "groupId": "yz41925f",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "k1nhqgg7" },
-            "7xw5todm": { "alias": "0m7glej0" }
+            "1t557tl8": { "alias": "hvpu6nox" },
+            "86juaoke": { "alias": "ivu0jnn5" }
           }
         },
         {
-          "id": "dh23oazd",
+          "id": "8qaorbi9",
           "type": "color",
           "name": "bg/surface/selected",
           "codeSyntax": { "web": "--optics-bg-surface-selected" },
-          "groupId": "su0mlk6w",
+          "groupId": "yz41925f",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "f0b5maq9" },
-            "7xw5todm": { "alias": "9rmsykzz" }
+            "1t557tl8": { "alias": "hf44i9rw" },
+            "86juaoke": { "alias": "dklrhjol" }
           }
         },
         {
-          "id": "i2nmpz6a",
+          "id": "8u2hbyo5",
           "type": "color",
           "name": "bg/surface/inverse",
           "description": "Tooltips and toasts: the opposite of the page.",
           "codeSyntax": { "web": "--optics-bg-surface-inverse" },
-          "groupId": "su0mlk6w",
+          "groupId": "yz41925f",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "pv7kr1ha" },
-            "7xw5todm": { "alias": "ziw6w6in" }
+            "1t557tl8": { "alias": "yldmsyry" },
+            "86juaoke": { "alias": "u2zn7o35" }
           }
         },
         {
-          "id": "y49htnqe",
+          "id": "g9fmghg2",
           "type": "color",
           "name": "bg/surface/critical",
           "description": "Tinted surface for critical messages.",
           "codeSyntax": { "web": "--optics-bg-surface-critical" },
-          "groupId": "su0mlk6w",
+          "groupId": "yz41925f",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "ob5nw7vb" },
-            "7xw5todm": { "alias": "4ysc0mo8" }
+            "1t557tl8": { "alias": "pdwj6fp9" },
+            "86juaoke": { "alias": "u3ge0rir" }
           }
         },
         {
-          "id": "becr2q1z",
+          "id": "xcy0q3ff",
           "type": "color",
           "name": "bg/surface/success",
           "description": "Tinted surface for success messages.",
           "codeSyntax": { "web": "--optics-bg-surface-success" },
-          "groupId": "su0mlk6w",
+          "groupId": "yz41925f",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "1mlxsmh1" },
-            "7xw5todm": { "alias": "yrymkev6" }
+            "1t557tl8": { "alias": "jd9fn4fg" },
+            "86juaoke": { "alias": "gjaq8ugl" }
           }
         },
         {
-          "id": "ddzbq5rr",
+          "id": "4tf7l6ag",
           "type": "color",
           "name": "bg/surface/warning",
           "description": "Tinted surface for warning messages.",
           "codeSyntax": { "web": "--optics-bg-surface-warning" },
-          "groupId": "su0mlk6w",
+          "groupId": "yz41925f",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "p7obrh2h" },
-            "7xw5todm": { "alias": "d78qvyoa" }
+            "1t557tl8": { "alias": "bau39jkz" },
+            "86juaoke": { "alias": "rda12njk" }
           }
         },
         {
-          "id": "w4jjviqh",
+          "id": "wszxcvfb",
           "type": "color",
           "name": "bg/surface/caution",
           "description": "Tinted surface for caution messages.",
           "codeSyntax": { "web": "--optics-bg-surface-caution" },
-          "groupId": "su0mlk6w",
+          "groupId": "yz41925f",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "oh2z3g4j" },
-            "7xw5todm": { "alias": "fgifyemt" }
+            "1t557tl8": { "alias": "d8mx40pf" },
+            "86juaoke": { "alias": "9ywh7is5" }
           }
         },
         {
-          "id": "6j09fztp",
+          "id": "actok1ss",
           "type": "color",
           "name": "bg/surface/info",
           "description": "Tinted surface for info messages.",
           "codeSyntax": { "web": "--optics-bg-surface-info" },
-          "groupId": "su0mlk6w",
+          "groupId": "yz41925f",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "shxwm29i" },
-            "7xw5todm": { "alias": "f7jkiq9z" }
+            "1t557tl8": { "alias": "r34qbhmy" },
+            "86juaoke": { "alias": "71q4qo5g" }
           }
         },
         {
-          "id": "py4hpcsu",
+          "id": "onbagp8f",
           "type": "color",
           "name": "bg/surface/magic",
           "description": "Tinted surface for magic messages.",
           "codeSyntax": { "web": "--optics-bg-surface-magic" },
-          "groupId": "su0mlk6w",
+          "groupId": "yz41925f",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "f6eawup2" },
-            "7xw5todm": { "alias": "8gmna1gj" }
+            "1t557tl8": { "alias": "1y7o1oxw" },
+            "86juaoke": { "alias": "6853o5b9" }
           }
         },
         {
-          "id": "j0ibkoji",
+          "id": "xqn5slzb",
           "type": "color",
           "name": "bg/fill/default",
           "description": "Secondary buttons.",
           "codeSyntax": { "web": "--optics-bg-fill-default" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "us3e0b7k" },
-            "7xw5todm": { "alias": "xnjupwes" }
+            "1t557tl8": { "alias": "xqafeiev" },
+            "86juaoke": { "alias": "z0iahbbo" }
           }
         },
         {
-          "id": "lp91c0xt",
+          "id": "lelhuuj9",
           "type": "color",
           "name": "bg/fill/hover",
           "codeSyntax": { "web": "--optics-bg-fill-hover" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "ziw6w6in" },
-            "7xw5todm": { "alias": "cg9sfgnh" }
+            "1t557tl8": { "alias": "u2zn7o35" },
+            "86juaoke": { "alias": "0a7mp9d9" }
           }
         },
         {
-          "id": "f9jsrxnu",
+          "id": "bu4ymjby",
           "type": "color",
           "name": "bg/fill/active",
           "codeSyntax": { "web": "--optics-bg-fill-active" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "vg1rldnv" },
-            "7xw5todm": { "alias": "q7egy60g" }
+            "1t557tl8": { "alias": "otx34h4q" },
+            "86juaoke": { "alias": "ubfav5cc" }
           }
         },
         {
-          "id": "j1ofxnep",
+          "id": "fyrqt6lj",
           "type": "color",
           "name": "bg/fill/disabled",
           "codeSyntax": { "web": "--optics-bg-fill-disabled" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "vg1rldnv" },
-            "7xw5todm": { "alias": "xnjupwes" }
+            "1t557tl8": { "alias": "otx34h4q" },
+            "86juaoke": { "alias": "z0iahbbo" }
           }
         },
         {
-          "id": "rqzcs6s6",
+          "id": "dtcsptvl",
           "type": "color",
           "name": "bg/fill/transparent",
           "description": "Tertiary and plain buttons: no fill until hovered.",
           "codeSyntax": { "web": "--optics-bg-fill-transparent" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "9apeta3j" },
-            "7xw5todm": { "alias": "9apeta3j" }
+            "1t557tl8": { "alias": "nr7nup6f" },
+            "86juaoke": { "alias": "nr7nup6f" }
           }
         },
         {
-          "id": "37qlcj5l",
+          "id": "d333j7qb",
           "type": "color",
           "name": "bg/fill/transparent-hover",
           "codeSyntax": { "web": "--optics-bg-fill-transparent-hover" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "k1nhqgg7" },
-            "7xw5todm": { "alias": "0m7glej0" }
+            "1t557tl8": { "alias": "hvpu6nox" },
+            "86juaoke": { "alias": "ivu0jnn5" }
           }
         },
         {
-          "id": "n1qfbxcc",
+          "id": "y5jqo6ug",
           "type": "color",
           "name": "bg/fill/transparent-active",
           "codeSyntax": { "web": "--optics-bg-fill-transparent-active" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "iv4b8unk" },
-            "7xw5todm": { "alias": "bk82x5kq" }
+            "1t557tl8": { "alias": "t1zncxt2" },
+            "86juaoke": { "alias": "pj2zbtz3" }
           }
         },
         {
-          "id": "ql15dsp6",
+          "id": "nm2kpbhf",
           "type": "color",
           "name": "bg/fill/brand",
           "description": "Primary buttons and selected controls.",
           "codeSyntax": { "web": "--optics-bg-fill-brand" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "ugt5byh0" },
-            "7xw5todm": { "alias": "gxn64vei" }
+            "1t557tl8": { "alias": "cs49m9hm" },
+            "86juaoke": { "alias": "bclyhwes" }
           }
         },
         {
-          "id": "m4xwtd75",
+          "id": "jqq11wph",
           "type": "color",
           "name": "bg/fill/brand-hover",
           "codeSyntax": { "web": "--optics-bg-fill-brand-hover" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "03aqqfxu" },
-            "7xw5todm": { "alias": "ugt5byh0" }
+            "1t557tl8": { "alias": "aq8obx3c" },
+            "86juaoke": { "alias": "cs49m9hm" }
           }
         },
         {
-          "id": "4p31b0w4",
+          "id": "dby29dqn",
           "type": "color",
           "name": "bg/fill/brand-active",
           "codeSyntax": { "web": "--optics-bg-fill-brand-active" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "ddmhqx3g" },
-            "7xw5todm": { "alias": "03aqqfxu" }
+            "1t557tl8": { "alias": "0s5ufyj7" },
+            "86juaoke": { "alias": "aq8obx3c" }
           }
         },
         {
-          "id": "uea14f15",
+          "id": "pwwi7yc7",
           "type": "color",
           "name": "bg/fill/critical",
           "description": "Destructive buttons.",
           "codeSyntax": { "web": "--optics-bg-fill-critical" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "0qh1t1mb" },
-            "7xw5todm": { "alias": "0qh1t1mb" }
+            "1t557tl8": { "alias": "lkuwtasm" },
+            "86juaoke": { "alias": "lkuwtasm" }
           }
         },
         {
-          "id": "3aosrk9p",
+          "id": "9lj1ehhb",
           "type": "color",
           "name": "bg/fill/critical-hover",
           "codeSyntax": { "web": "--optics-bg-fill-critical-hover" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "2rfkq1ey" },
-            "7xw5todm": { "alias": "2rfkq1ey" }
+            "1t557tl8": { "alias": "jkw5m6z7" },
+            "86juaoke": { "alias": "jkw5m6z7" }
           }
         },
         {
-          "id": "lwibd406",
+          "id": "ji9cpoxm",
           "type": "color",
           "name": "bg/fill/critical-active",
           "codeSyntax": { "web": "--optics-bg-fill-critical-active" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "txke9j62" },
-            "7xw5todm": { "alias": "txke9j62" }
+            "1t557tl8": { "alias": "v94asxt2" },
+            "86juaoke": { "alias": "v94asxt2" }
           }
         },
         {
-          "id": "met1kffu",
+          "id": "ikggnfb0",
           "type": "color",
           "name": "bg/fill/neutral",
           "description": "Neutral badges.",
           "codeSyntax": { "web": "--optics-bg-fill-neutral" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "vg1rldnv" },
-            "7xw5todm": { "alias": "xnjupwes" }
+            "1t557tl8": { "alias": "otx34h4q" },
+            "86juaoke": { "alias": "z0iahbbo" }
           }
         },
         {
-          "id": "5167g73s",
+          "id": "8xlatx46",
           "type": "color",
           "name": "bg/fill/success",
           "description": "Badges for success.",
           "codeSyntax": { "web": "--optics-bg-fill-success" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "jyk6wixx" },
-            "7xw5todm": { "alias": "cfnro353" }
+            "1t557tl8": { "alias": "9e3o5oym" },
+            "86juaoke": { "alias": "hc2dk0q2" }
           }
         },
         {
-          "id": "7rtagrbh",
+          "id": "szha9qy5",
           "type": "color",
           "name": "bg/fill/warning",
           "description": "Badges for warning.",
           "codeSyntax": { "web": "--optics-bg-fill-warning" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "jds1gept" },
-            "7xw5todm": { "alias": "naaxnld6" }
+            "1t557tl8": { "alias": "jo9v4a4q" },
+            "86juaoke": { "alias": "e7q832d2" }
           }
         },
         {
-          "id": "wqmosppu",
+          "id": "vtpr5283",
           "type": "color",
           "name": "bg/fill/caution",
           "description": "Badges for caution.",
           "codeSyntax": { "web": "--optics-bg-fill-caution" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "bb4zgg19" },
-            "7xw5todm": { "alias": "42dog0m8" }
+            "1t557tl8": { "alias": "j8z08dgl" },
+            "86juaoke": { "alias": "zspka4x7" }
           }
         },
         {
-          "id": "ttelulhs",
+          "id": "kl7hcft9",
           "type": "color",
           "name": "bg/fill/info",
           "description": "Badges for info.",
           "codeSyntax": { "web": "--optics-bg-fill-info" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "gxh2neby" },
-            "7xw5todm": { "alias": "mwq5gmbu" }
+            "1t557tl8": { "alias": "qf4f8eie" },
+            "86juaoke": { "alias": "5vkupytj" }
           }
         },
         {
-          "id": "68slmy8t",
+          "id": "bj6esu4a",
           "type": "color",
           "name": "bg/fill/magic",
           "description": "Badges for magic.",
           "codeSyntax": { "web": "--optics-bg-fill-magic" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "16fu53er" },
-            "7xw5todm": { "alias": "jlq6a2xw" }
+            "1t557tl8": { "alias": "36m62vw6" },
+            "86juaoke": { "alias": "6huohl7x" }
           }
         },
         {
-          "id": "4wnooiiz",
+          "id": "o5q6aex8",
           "type": "color",
           "name": "bg/fill/critical-subtle",
           "description": "Badges for critical.",
           "codeSyntax": { "web": "--optics-bg-fill-critical-subtle" },
-          "groupId": "7m76qel4",
+          "groupId": "2rues5cd",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "swsnbge4" },
-            "7xw5todm": { "alias": "txke9j62" }
+            "1t557tl8": { "alias": "5s9ktrns" },
+            "86juaoke": { "alias": "v94asxt2" }
           }
         },
         {
-          "id": "yu8awbas",
+          "id": "vbc70fa3",
           "type": "color",
           "name": "text/default",
           "codeSyntax": { "web": "--optics-text-default" },
-          "groupId": "c5meuz39",
+          "groupId": "aa2r508e",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "pv7kr1ha" },
-            "7xw5todm": { "alias": "ziw6w6in" }
+            "1t557tl8": { "alias": "yldmsyry" },
+            "86juaoke": { "alias": "u2zn7o35" }
           }
         },
         {
-          "id": "imt3rifq",
+          "id": "3k1dl2d4",
           "type": "color",
           "name": "text/secondary",
           "description": "Help text and supporting copy.",
           "codeSyntax": { "web": "--optics-text-secondary" },
-          "groupId": "c5meuz39",
+          "groupId": "aa2r508e",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "q7egy60g" },
-            "7xw5todm": { "alias": "l1t2iwhr" }
+            "1t557tl8": { "alias": "ubfav5cc" },
+            "86juaoke": { "alias": "cw3sau8r" }
           }
         },
         {
-          "id": "uwnsqvib",
+          "id": "otm3xg46",
           "type": "color",
           "name": "text/disabled",
           "codeSyntax": { "web": "--optics-text-disabled" },
-          "groupId": "c5meuz39",
+          "groupId": "aa2r508e",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "l1t2iwhr" },
-            "7xw5todm": { "alias": "q7egy60g" }
+            "1t557tl8": { "alias": "cw3sau8r" },
+            "86juaoke": { "alias": "ubfav5cc" }
           }
         },
         {
-          "id": "vfct8ow8",
+          "id": "fh8vp6tx",
           "type": "color",
           "name": "text/link",
           "codeSyntax": { "web": "--optics-text-link" },
-          "groupId": "c5meuz39",
+          "groupId": "aa2r508e",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "03aqqfxu" },
-            "7xw5todm": { "alias": "kmdn2bl6" }
+            "1t557tl8": { "alias": "aq8obx3c" },
+            "86juaoke": { "alias": "8u57bu90" }
           }
         },
         {
-          "id": "kml6cmbk",
+          "id": "l041solw",
           "type": "color",
           "name": "text/link-hover",
           "codeSyntax": { "web": "--optics-text-link-hover" },
-          "groupId": "c5meuz39",
+          "groupId": "aa2r508e",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "ddmhqx3g" },
-            "7xw5todm": { "alias": "i2sdrkfl" }
+            "1t557tl8": { "alias": "0s5ufyj7" },
+            "86juaoke": { "alias": "gu6viyuk" }
           }
         },
         {
-          "id": "uhlkc09l",
+          "id": "dea3p03m",
           "type": "color",
           "name": "text/on-fill",
           "description": "Text on brand and critical fills.",
           "codeSyntax": { "web": "--optics-text-on-fill" },
-          "groupId": "c5meuz39",
+          "groupId": "aa2r508e",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "us3e0b7k" },
-            "7xw5todm": { "alias": "us3e0b7k" }
+            "1t557tl8": { "alias": "xqafeiev" },
+            "86juaoke": { "alias": "xqafeiev" }
           }
         },
         {
-          "id": "12yi70hp",
+          "id": "ztsvr1uy",
           "type": "color",
           "name": "text/inverse",
           "description": "Text on inverse surfaces.",
           "codeSyntax": { "web": "--optics-text-inverse" },
-          "groupId": "c5meuz39",
+          "groupId": "aa2r508e",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "ziw6w6in" },
-            "7xw5todm": { "alias": "pv7kr1ha" }
+            "1t557tl8": { "alias": "u2zn7o35" },
+            "86juaoke": { "alias": "yldmsyry" }
           }
         },
         {
-          "id": "6r7ob6le",
+          "id": "wlj04fea",
           "type": "color",
           "name": "text/critical",
           "description": "Text for critical messages, on their tinted surface or the default one.",
           "codeSyntax": { "web": "--optics-text-critical" },
-          "groupId": "c5meuz39",
+          "groupId": "aa2r508e",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "2rfkq1ey" },
-            "7xw5todm": { "alias": "xpybncvs" }
+            "1t557tl8": { "alias": "jkw5m6z7" },
+            "86juaoke": { "alias": "t2qffc7j" }
           }
         },
         {
-          "id": "vnjbukix",
+          "id": "vyly30es",
           "type": "color",
           "name": "text/success",
           "description": "Text for success messages, on their tinted surface or the default one.",
           "codeSyntax": { "web": "--optics-text-success" },
-          "groupId": "c5meuz39",
+          "groupId": "aa2r508e",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "ol2g2h9v" },
-            "7xw5todm": { "alias": "2w17q919" }
+            "1t557tl8": { "alias": "ok0z20vf" },
+            "86juaoke": { "alias": "hdib5cz8" }
           }
         },
         {
-          "id": "k5pwz9r2",
+          "id": "idq4z0g5",
           "type": "color",
           "name": "text/warning",
           "description": "Text for warning messages, on their tinted surface or the default one.",
           "codeSyntax": { "web": "--optics-text-warning" },
-          "groupId": "c5meuz39",
+          "groupId": "aa2r508e",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "c6zm0u5k" },
-            "7xw5todm": { "alias": "hqbk7cff" }
+            "1t557tl8": { "alias": "tv4739co" },
+            "86juaoke": { "alias": "7xnr47ip" }
           }
         },
         {
-          "id": "b9zn4c5p",
+          "id": "zoskxyt3",
           "type": "color",
           "name": "text/caution",
           "description": "Text for caution messages, on their tinted surface or the default one.",
           "codeSyntax": { "web": "--optics-text-caution" },
-          "groupId": "c5meuz39",
+          "groupId": "aa2r508e",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "04oj6di4" },
-            "7xw5todm": { "alias": "ifwxl5qe" }
+            "1t557tl8": { "alias": "qtmtv30e" },
+            "86juaoke": { "alias": "b2ff3ffj" }
           }
         },
         {
-          "id": "1tw0z035",
+          "id": "u3pcloif",
           "type": "color",
           "name": "text/info",
           "description": "Text for info messages, on their tinted surface or the default one.",
           "codeSyntax": { "web": "--optics-text-info" },
-          "groupId": "c5meuz39",
+          "groupId": "aa2r508e",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "e0swq7i3" },
-            "7xw5todm": { "alias": "3f9927zu" }
+            "1t557tl8": { "alias": "j1t1cerg" },
+            "86juaoke": { "alias": "kh4q2f64" }
           }
         },
         {
-          "id": "2ix89d4d",
+          "id": "jnpm0pnw",
           "type": "color",
           "name": "text/magic",
           "description": "Text for magic messages, on their tinted surface or the default one.",
           "codeSyntax": { "web": "--optics-text-magic" },
-          "groupId": "c5meuz39",
+          "groupId": "aa2r508e",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "eouufgmt" },
-            "7xw5todm": { "alias": "gnudt9w3" }
+            "1t557tl8": { "alias": "bouxrzfb" },
+            "86juaoke": { "alias": "643gfbm3" }
           }
         },
         {
-          "id": "0l8ao02d",
+          "id": "xabnl9sl",
           "type": "color",
           "name": "border/default",
           "description": "Cards and dividers.",
           "codeSyntax": { "web": "--optics-border-default" },
-          "groupId": "rqbpbjg6",
+          "groupId": "dug817kq",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "ftn9luhd" },
-            "7xw5todm": { "alias": "xnjupwes" }
+            "1t557tl8": { "alias": "qdt06k1c" },
+            "86juaoke": { "alias": "z0iahbbo" }
           }
         },
         {
-          "id": "6me6h9xl",
+          "id": "t3l503an",
           "type": "color",
           "name": "border/strong",
           "description": "Inputs and checkboxes: 3:1 against the surface.",
           "codeSyntax": { "web": "--optics-border-strong" },
-          "groupId": "rqbpbjg6",
+          "groupId": "dug817kq",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "0v172lzn" },
-            "7xw5todm": { "alias": "0v172lzn" }
+            "1t557tl8": { "alias": "pgd4pm7v" },
+            "86juaoke": { "alias": "pgd4pm7v" }
           }
         },
         {
-          "id": "uc8zt8v5",
+          "id": "979yidhs",
           "type": "color",
           "name": "border/hover",
           "codeSyntax": { "web": "--optics-border-hover" },
-          "groupId": "rqbpbjg6",
+          "groupId": "dug817kq",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "q7egy60g" },
-            "7xw5todm": { "alias": "l1t2iwhr" }
+            "1t557tl8": { "alias": "ubfav5cc" },
+            "86juaoke": { "alias": "cw3sau8r" }
           }
         },
         {
-          "id": "5hhmz7fs",
+          "id": "u4wwh42j",
           "type": "color",
           "name": "border/disabled",
           "codeSyntax": { "web": "--optics-border-disabled" },
-          "groupId": "rqbpbjg6",
+          "groupId": "dug817kq",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "ftn9luhd" },
-            "7xw5todm": { "alias": "xnjupwes" }
+            "1t557tl8": { "alias": "qdt06k1c" },
+            "86juaoke": { "alias": "z0iahbbo" }
           }
         },
         {
-          "id": "wqk4lmoc",
+          "id": "si3xjplx",
           "type": "color",
           "name": "border/focus",
           "description": "The focus ring of every control.",
           "codeSyntax": { "web": "--optics-border-focus" },
-          "groupId": "rqbpbjg6",
+          "groupId": "dug817kq",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "gxn64vei" },
-            "7xw5todm": { "alias": "kmdn2bl6" }
+            "1t557tl8": { "alias": "bclyhwes" },
+            "86juaoke": { "alias": "8u57bu90" }
           }
         },
         {
-          "id": "u08jz00w",
+          "id": "578aywq7",
           "type": "color",
           "name": "border/brand",
           "codeSyntax": { "web": "--optics-border-brand" },
-          "groupId": "rqbpbjg6",
+          "groupId": "dug817kq",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "ugt5byh0" },
-            "7xw5todm": { "alias": "3gea8mab" }
+            "1t557tl8": { "alias": "cs49m9hm" },
+            "86juaoke": { "alias": "pk3hqwiq" }
           }
         },
         {
-          "id": "o3gkc89o",
+          "id": "36ceoqu0",
           "type": "color",
           "name": "border/critical",
           "codeSyntax": { "web": "--optics-border-critical" },
-          "groupId": "rqbpbjg6",
+          "groupId": "dug817kq",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "2r49sww7" },
-            "7xw5todm": { "alias": "f27eb67g" }
+            "1t557tl8": { "alias": "bntlpa0x" },
+            "86juaoke": { "alias": "fp26lsl7" }
           }
         },
         {
-          "id": "nch58gio",
+          "id": "z2x5ff7f",
           "type": "color",
           "name": "border/success",
           "codeSyntax": { "web": "--optics-border-success" },
-          "groupId": "rqbpbjg6",
+          "groupId": "dug817kq",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "kk1mwzia" },
-            "7xw5todm": { "alias": "i5rc9kf0" }
+            "1t557tl8": { "alias": "vuad68yr" },
+            "86juaoke": { "alias": "jil0uf3t" }
           }
         },
         {
-          "id": "1oycqkmd",
+          "id": "vg65xcfd",
           "type": "color",
           "name": "border/warning",
           "codeSyntax": { "web": "--optics-border-warning" },
-          "groupId": "rqbpbjg6",
+          "groupId": "dug817kq",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "ohpl77rg" },
-            "7xw5todm": { "alias": "19gxp59p" }
+            "1t557tl8": { "alias": "squuuoe2" },
+            "86juaoke": { "alias": "wpdy93je" }
           }
         },
         {
-          "id": "ya5ci4z8",
+          "id": "af6cvm64",
           "type": "color",
           "name": "border/caution",
           "codeSyntax": { "web": "--optics-border-caution" },
-          "groupId": "rqbpbjg6",
+          "groupId": "dug817kq",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "u4cmz6hp" },
-            "7xw5todm": { "alias": "337lcp3v" }
+            "1t557tl8": { "alias": "83xmrrvc" },
+            "86juaoke": { "alias": "96sa1mgq" }
           }
         },
         {
-          "id": "809lpcnc",
+          "id": "eu2hntmp",
           "type": "color",
           "name": "border/info",
           "codeSyntax": { "web": "--optics-border-info" },
-          "groupId": "rqbpbjg6",
+          "groupId": "dug817kq",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "89x9oj1w" },
-            "7xw5todm": { "alias": "c62rthf1" }
+            "1t557tl8": { "alias": "fgnlvx2w" },
+            "86juaoke": { "alias": "yyo62qky" }
           }
         },
         {
-          "id": "abz7pqrl",
+          "id": "5c1yqmra",
           "type": "color",
           "name": "border/magic",
           "codeSyntax": { "web": "--optics-border-magic" },
-          "groupId": "rqbpbjg6",
+          "groupId": "dug817kq",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "scv3ctxe" },
-            "7xw5todm": { "alias": "ywuuywfa" }
+            "1t557tl8": { "alias": "04pr2hoj" },
+            "86juaoke": { "alias": "1hd3j3i1" }
           }
         },
         {
-          "id": "w4pds6sp",
+          "id": "eiilngcq",
           "type": "color",
           "name": "icon/default",
           "codeSyntax": { "web": "--optics-icon-default" },
-          "groupId": "7h7xd0g6",
+          "groupId": "82fs7qa7",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "cg9sfgnh" },
-            "7xw5todm": { "alias": "vwbfaamd" }
+            "1t557tl8": { "alias": "0a7mp9d9" },
+            "86juaoke": { "alias": "kkcv3yjt" }
           }
         },
         {
-          "id": "vpu06xck",
+          "id": "f71n6q0z",
           "type": "color",
           "name": "icon/secondary",
           "codeSyntax": { "web": "--optics-icon-secondary" },
-          "groupId": "7h7xd0g6",
+          "groupId": "82fs7qa7",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "0v172lzn" },
-            "7xw5todm": { "alias": "l1t2iwhr" }
+            "1t557tl8": { "alias": "pgd4pm7v" },
+            "86juaoke": { "alias": "cw3sau8r" }
           }
         },
         {
-          "id": "v6hcqjz5",
+          "id": "gqa442s7",
           "type": "color",
           "name": "icon/disabled",
           "codeSyntax": { "web": "--optics-icon-disabled" },
-          "groupId": "7h7xd0g6",
+          "groupId": "82fs7qa7",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "l1t2iwhr" },
-            "7xw5todm": { "alias": "q7egy60g" }
+            "1t557tl8": { "alias": "cw3sau8r" },
+            "86juaoke": { "alias": "ubfav5cc" }
           }
         },
         {
-          "id": "b7civaa3",
+          "id": "19ejyxlf",
           "type": "color",
           "name": "icon/on-fill",
           "codeSyntax": { "web": "--optics-icon-on-fill" },
-          "groupId": "7h7xd0g6",
+          "groupId": "82fs7qa7",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "us3e0b7k" },
-            "7xw5todm": { "alias": "us3e0b7k" }
+            "1t557tl8": { "alias": "xqafeiev" },
+            "86juaoke": { "alias": "xqafeiev" }
           }
         },
         {
-          "id": "84niujay",
+          "id": "hovebgiz",
           "type": "color",
           "name": "icon/inverse",
           "codeSyntax": { "web": "--optics-icon-inverse" },
-          "groupId": "7h7xd0g6",
+          "groupId": "82fs7qa7",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "ziw6w6in" },
-            "7xw5todm": { "alias": "pv7kr1ha" }
+            "1t557tl8": { "alias": "u2zn7o35" },
+            "86juaoke": { "alias": "yldmsyry" }
           }
         },
         {
-          "id": "rdx76ydr",
+          "id": "c6gqxqmp",
           "type": "color",
           "name": "icon/brand",
           "codeSyntax": { "web": "--optics-icon-brand" },
-          "groupId": "7h7xd0g6",
+          "groupId": "82fs7qa7",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "ugt5byh0" },
-            "7xw5todm": { "alias": "kmdn2bl6" }
+            "1t557tl8": { "alias": "cs49m9hm" },
+            "86juaoke": { "alias": "8u57bu90" }
           }
         },
         {
-          "id": "3fdrje3x",
+          "id": "os0myful",
           "type": "color",
           "name": "icon/critical",
           "codeSyntax": { "web": "--optics-icon-critical" },
-          "groupId": "7h7xd0g6",
+          "groupId": "82fs7qa7",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "0qh1t1mb" },
-            "7xw5todm": { "alias": "f27eb67g" }
+            "1t557tl8": { "alias": "lkuwtasm" },
+            "86juaoke": { "alias": "fp26lsl7" }
           }
         },
         {
-          "id": "2w211iha",
+          "id": "wdkninz6",
           "type": "color",
           "name": "icon/success",
           "codeSyntax": { "web": "--optics-icon-success" },
-          "groupId": "7h7xd0g6",
+          "groupId": "82fs7qa7",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "soiqbc6g" },
-            "7xw5todm": { "alias": "i5rc9kf0" }
+            "1t557tl8": { "alias": "ahkrdhxq" },
+            "86juaoke": { "alias": "jil0uf3t" }
           }
         },
         {
-          "id": "ny9sjghs",
+          "id": "a4fr9twq",
           "type": "color",
           "name": "icon/warning",
           "codeSyntax": { "web": "--optics-icon-warning" },
-          "groupId": "7h7xd0g6",
+          "groupId": "82fs7qa7",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "7s5kugly" },
-            "7xw5todm": { "alias": "19gxp59p" }
+            "1t557tl8": { "alias": "tflk14b4" },
+            "86juaoke": { "alias": "wpdy93je" }
           }
         },
         {
-          "id": "04beu6b6",
+          "id": "tl1qaq86",
           "type": "color",
           "name": "icon/caution",
           "codeSyntax": { "web": "--optics-icon-caution" },
-          "groupId": "7h7xd0g6",
+          "groupId": "82fs7qa7",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "igknkrgo" },
-            "7xw5todm": { "alias": "337lcp3v" }
+            "1t557tl8": { "alias": "29ix18zo" },
+            "86juaoke": { "alias": "96sa1mgq" }
           }
         },
         {
-          "id": "b2bnnay7",
+          "id": "h5skflw9",
           "type": "color",
           "name": "icon/info",
           "codeSyntax": { "web": "--optics-icon-info" },
-          "groupId": "7h7xd0g6",
+          "groupId": "82fs7qa7",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "bq87gyns" },
-            "7xw5todm": { "alias": "c62rthf1" }
+            "1t557tl8": { "alias": "46u3mhqz" },
+            "86juaoke": { "alias": "yyo62qky" }
           }
         },
         {
-          "id": "4mdujjk3",
+          "id": "2hxcxil4",
           "type": "color",
           "name": "icon/magic",
           "codeSyntax": { "web": "--optics-icon-magic" },
-          "groupId": "7h7xd0g6",
+          "groupId": "82fs7qa7",
           "valuesByMode": {
-            "7a01pyvh": { "alias": "d6ha2je8" },
-            "7xw5todm": { "alias": "ywuuywfa" }
+            "1t557tl8": { "alias": "8594epqe" },
+            "86juaoke": { "alias": "1hd3j3i1" }
           }
         },
         {
-          "id": "t80b5g3r",
+          "id": "chtkta4t",
           "type": "shadow",
           "name": "shadow/100",
           "codeSyntax": { "web": "--optics-shadow-100" },
-          "groupId": "dyhszafg",
+          "groupId": "e13806w9",
           "valuesByMode": {
-            "7a01pyvh": { "blur": 0, "color": { "alias": "k1nhqgg7" }, "spread": 0, "x": 0, "y": 1 },
-            "7xw5todm": { "blur": 0, "color": { "alias": "bay4c7oo" }, "spread": 0, "x": 0, "y": 1 }
+            "1t557tl8": { "blur": 0, "color": { "alias": "hvpu6nox" }, "spread": 0, "x": 0, "y": 1 },
+            "86juaoke": { "blur": 0, "color": { "alias": "zlxsf4c2" }, "spread": 0, "x": 0, "y": 1 }
           }
         },
         {
-          "id": "kf3fxjhn",
+          "id": "i0bxzlkc",
           "type": "shadow",
           "name": "shadow/200",
           "codeSyntax": { "web": "--optics-shadow-200" },
-          "groupId": "dyhszafg",
+          "groupId": "e13806w9",
           "valuesByMode": {
-            "7a01pyvh": { "blur": 2, "color": { "alias": "iv4b8unk" }, "spread": 0, "x": 0, "y": 1 },
-            "7xw5todm": { "blur": 2, "color": { "alias": "bay4c7oo" }, "spread": 0, "x": 0, "y": 1 }
+            "1t557tl8": { "blur": 2, "color": { "alias": "t1zncxt2" }, "spread": 0, "x": 0, "y": 1 },
+            "86juaoke": { "blur": 2, "color": { "alias": "zlxsf4c2" }, "spread": 0, "x": 0, "y": 1 }
           }
         },
         {
-          "id": "bm4jwccz",
+          "id": "dujwavu4",
           "type": "shadow",
           "name": "shadow/300",
           "codeSyntax": { "web": "--optics-shadow-300" },
-          "groupId": "dyhszafg",
+          "groupId": "e13806w9",
           "valuesByMode": {
-            "7a01pyvh": {
+            "1t557tl8": {
               "blur": 6,
-              "color": { "alias": "d47ct376" },
+              "color": { "alias": "enr17iw3" },
               "spread": -2,
               "x": 0,
               "y": 4
             },
-            "7xw5todm": {
+            "86juaoke": {
               "blur": 6,
-              "color": { "alias": "zyqpzdb4" },
+              "color": { "alias": "g5wj8l8t" },
               "spread": -2,
               "x": 0,
               "y": 4
@@ -2233,22 +2233,22 @@
           }
         },
         {
-          "id": "spw82iho",
+          "id": "0x2qri30",
           "type": "shadow",
           "name": "shadow/400",
           "codeSyntax": { "web": "--optics-shadow-400" },
-          "groupId": "dyhszafg",
+          "groupId": "e13806w9",
           "valuesByMode": {
-            "7a01pyvh": {
+            "1t557tl8": {
               "blur": 16,
-              "color": { "alias": "d47ct376" },
+              "color": { "alias": "enr17iw3" },
               "spread": -4,
               "x": 0,
               "y": 8
             },
-            "7xw5todm": {
+            "86juaoke": {
               "blur": 16,
-              "color": { "alias": "zyqpzdb4" },
+              "color": { "alias": "g5wj8l8t" },
               "spread": -4,
               "x": 0,
               "y": 8
@@ -2256,22 +2256,22 @@
           }
         },
         {
-          "id": "n6hz2mu2",
+          "id": "wqdyfhi5",
           "type": "shadow",
           "name": "shadow/500",
           "codeSyntax": { "web": "--optics-shadow-500" },
-          "groupId": "dyhszafg",
+          "groupId": "e13806w9",
           "valuesByMode": {
-            "7a01pyvh": {
+            "1t557tl8": {
               "blur": 20,
-              "color": { "alias": "cvlhs9k5" },
+              "color": { "alias": "9xft7vpt" },
               "spread": -8,
               "x": 0,
               "y": 12
             },
-            "7xw5todm": {
+            "86juaoke": {
               "blur": 20,
-              "color": { "alias": "zyqpzdb4" },
+              "color": { "alias": "g5wj8l8t" },
               "spread": -8,
               "x": 0,
               "y": 12
@@ -2279,22 +2279,22 @@
           }
         },
         {
-          "id": "ewt50foh",
+          "id": "89tu8mgf",
           "type": "shadow",
           "name": "shadow/600",
           "codeSyntax": { "web": "--optics-shadow-600" },
-          "groupId": "dyhszafg",
+          "groupId": "e13806w9",
           "valuesByMode": {
-            "7a01pyvh": {
+            "1t557tl8": {
               "blur": 20,
-              "color": { "alias": "bay4c7oo" },
+              "color": { "alias": "zlxsf4c2" },
               "spread": -8,
               "x": 0,
               "y": 20
             },
-            "7xw5todm": {
+            "86juaoke": {
               "blur": 20,
-              "color": { "alias": "zyqpzdb4" },
+              "color": { "alias": "g5wj8l8t" },
               "spread": -8,
               "x": 0,
               "y": 20
@@ -2304,233 +2304,233 @@
       ]
     },
     {
-      "id": "c7mv4f8m",
+      "id": "cs4flbha",
       "name": "Typography",
-      "defaultModeId": "agnwoodd",
+      "defaultModeId": "65pae8m7",
       "groups": [
         {
-          "id": "4fpfoiyh",
+          "id": "uu3k0sy9",
           "name": "heading",
           "description": "Titles, from page titles (2xl) to card titles (sm).",
           "parentId": null
         },
         {
-          "id": "zdzvwqq0",
+          "id": "xpvpo3rz",
           "name": "body",
           "description": "Running text and controls.",
           "parentId": null
         }
       ],
-      "modes": [{ "id": "agnwoodd", "name": "Default" }],
+      "modes": [{ "id": "65pae8m7", "name": "Default" }],
       "variables": [
         {
-          "id": "69022a29",
+          "id": "rcjitpzp",
           "type": "typography",
           "name": "heading/2xl",
           "codeSyntax": { "web": "--optics-heading-2xl" },
-          "groupId": "4fpfoiyh",
+          "groupId": "uu3k0sy9",
           "valuesByMode": {
-            "agnwoodd": {
-              "fontFamily": { "alias": "kiwim2pu" },
-              "fontSize": { "alias": "s7d583a9" },
-              "fontWeight": { "alias": "osh7vgt5" },
-              "letterSpacing": { "alias": "4y5gwqb5" },
-              "lineHeight": { "alias": "zt7zo6b6" }
+            "65pae8m7": {
+              "fontFamily": { "alias": "pg0o5n1c" },
+              "fontSize": { "alias": "twbf6siv" },
+              "fontWeight": { "alias": "iebcccdq" },
+              "letterSpacing": { "alias": "gin9yi53" },
+              "lineHeight": { "alias": "7oq94ks4" }
             }
           }
         },
         {
-          "id": "ljxyi4ej",
+          "id": "fjtq0pvx",
           "type": "typography",
           "name": "heading/xl",
           "codeSyntax": { "web": "--optics-heading-xl" },
-          "groupId": "4fpfoiyh",
+          "groupId": "uu3k0sy9",
           "valuesByMode": {
-            "agnwoodd": {
-              "fontFamily": { "alias": "kiwim2pu" },
-              "fontSize": { "alias": "vhedeivj" },
-              "fontWeight": { "alias": "osh7vgt5" },
-              "letterSpacing": { "alias": "4y5gwqb5" },
-              "lineHeight": { "alias": "w9qpok3z" }
+            "65pae8m7": {
+              "fontFamily": { "alias": "pg0o5n1c" },
+              "fontSize": { "alias": "wcdo6cpe" },
+              "fontWeight": { "alias": "iebcccdq" },
+              "letterSpacing": { "alias": "gin9yi53" },
+              "lineHeight": { "alias": "5vhyqfuc" }
             }
           }
         },
         {
-          "id": "tgvgmr5b",
+          "id": "glcos4fa",
           "type": "typography",
           "name": "heading/lg",
           "codeSyntax": { "web": "--optics-heading-lg" },
-          "groupId": "4fpfoiyh",
+          "groupId": "uu3k0sy9",
           "valuesByMode": {
-            "agnwoodd": {
-              "fontFamily": { "alias": "kiwim2pu" },
-              "fontSize": { "alias": "5nxu2ma6" },
-              "fontWeight": { "alias": "e0i0a9z8" },
-              "letterSpacing": { "alias": "4y5gwqb5" },
-              "lineHeight": { "alias": "w9qpok3z" }
+            "65pae8m7": {
+              "fontFamily": { "alias": "pg0o5n1c" },
+              "fontSize": { "alias": "l7f4idm6" },
+              "fontWeight": { "alias": "fs2eoc9n" },
+              "letterSpacing": { "alias": "gin9yi53" },
+              "lineHeight": { "alias": "5vhyqfuc" }
             }
           }
         },
         {
-          "id": "uohl4vzl",
+          "id": "hthfkeov",
           "type": "typography",
           "name": "heading/md",
           "codeSyntax": { "web": "--optics-heading-md" },
-          "groupId": "4fpfoiyh",
+          "groupId": "uu3k0sy9",
           "valuesByMode": {
-            "agnwoodd": {
-              "fontFamily": { "alias": "kiwim2pu" },
-              "fontSize": { "alias": "oapii84j" },
-              "fontWeight": { "alias": "e0i0a9z8" },
-              "letterSpacing": { "alias": "mkefu7es" },
-              "lineHeight": { "alias": "zt7zo6b6" }
+            "65pae8m7": {
+              "fontFamily": { "alias": "pg0o5n1c" },
+              "fontSize": { "alias": "y2svsbr9" },
+              "fontWeight": { "alias": "fs2eoc9n" },
+              "letterSpacing": { "alias": "86zbiknk" },
+              "lineHeight": { "alias": "7oq94ks4" }
             }
           }
         },
         {
-          "id": "dvxymkez",
+          "id": "bbq8bxen",
           "type": "typography",
           "name": "heading/sm",
           "codeSyntax": { "web": "--optics-heading-sm" },
-          "groupId": "4fpfoiyh",
+          "groupId": "uu3k0sy9",
           "valuesByMode": {
-            "agnwoodd": {
-              "fontFamily": { "alias": "kiwim2pu" },
-              "fontSize": { "alias": "crtbimhe" },
-              "fontWeight": { "alias": "e0i0a9z8" },
-              "letterSpacing": { "alias": "mkefu7es" },
-              "lineHeight": { "alias": "fxgpwf53" }
+            "65pae8m7": {
+              "fontFamily": { "alias": "pg0o5n1c" },
+              "fontSize": { "alias": "bejrdp2k" },
+              "fontWeight": { "alias": "fs2eoc9n" },
+              "letterSpacing": { "alias": "86zbiknk" },
+              "lineHeight": { "alias": "7eginpjn" }
             }
           }
         },
         {
-          "id": "z7072xzm",
+          "id": "q094gt2g",
           "type": "typography",
           "name": "heading/xs",
           "codeSyntax": { "web": "--optics-heading-xs" },
-          "groupId": "4fpfoiyh",
+          "groupId": "uu3k0sy9",
           "valuesByMode": {
-            "agnwoodd": {
-              "fontFamily": { "alias": "kiwim2pu" },
-              "fontSize": { "alias": "5ip1q4xu" },
-              "fontWeight": { "alias": "e0i0a9z8" },
-              "letterSpacing": { "alias": "mkefu7es" },
-              "lineHeight": { "alias": "42fz4c42" }
+            "65pae8m7": {
+              "fontFamily": { "alias": "pg0o5n1c" },
+              "fontSize": { "alias": "2iqzark9" },
+              "fontWeight": { "alias": "fs2eoc9n" },
+              "letterSpacing": { "alias": "86zbiknk" },
+              "lineHeight": { "alias": "rwnuqiho" }
             }
           }
         },
         {
-          "id": "fr3f0wm9",
+          "id": "isrv4gd2",
           "type": "typography",
           "name": "body/lg",
           "codeSyntax": { "web": "--optics-body-lg" },
-          "groupId": "zdzvwqq0",
+          "groupId": "xpvpo3rz",
           "valuesByMode": {
-            "agnwoodd": {
-              "fontFamily": { "alias": "kiwim2pu" },
-              "fontSize": { "alias": "crtbimhe" },
-              "fontWeight": { "alias": "j92mbplw" },
-              "letterSpacing": { "alias": "mkefu7es" },
-              "lineHeight": { "alias": "fxgpwf53" }
+            "65pae8m7": {
+              "fontFamily": { "alias": "pg0o5n1c" },
+              "fontSize": { "alias": "bejrdp2k" },
+              "fontWeight": { "alias": "05zfvge3" },
+              "letterSpacing": { "alias": "86zbiknk" },
+              "lineHeight": { "alias": "7eginpjn" }
             }
           }
         },
         {
-          "id": "vs0qxqd4",
+          "id": "l96cof7p",
           "type": "typography",
           "name": "body/md",
           "description": "The default: most text and controls.",
           "codeSyntax": { "web": "--optics-body-md" },
-          "groupId": "zdzvwqq0",
+          "groupId": "xpvpo3rz",
           "valuesByMode": {
-            "agnwoodd": {
-              "fontFamily": { "alias": "kiwim2pu" },
-              "fontSize": { "alias": "5ip1q4xu" },
-              "fontWeight": { "alias": "j92mbplw" },
-              "letterSpacing": { "alias": "mkefu7es" },
-              "lineHeight": { "alias": "42fz4c42" }
+            "65pae8m7": {
+              "fontFamily": { "alias": "pg0o5n1c" },
+              "fontSize": { "alias": "2iqzark9" },
+              "fontWeight": { "alias": "05zfvge3" },
+              "letterSpacing": { "alias": "86zbiknk" },
+              "lineHeight": { "alias": "rwnuqiho" }
             }
           }
         },
         {
-          "id": "12zcp160",
+          "id": "fud6e6zh",
           "type": "typography",
           "name": "body/md-medium",
           "description": "Button labels and emphasis.",
           "codeSyntax": { "web": "--optics-body-md-medium" },
-          "groupId": "zdzvwqq0",
+          "groupId": "xpvpo3rz",
           "valuesByMode": {
-            "agnwoodd": {
-              "fontFamily": { "alias": "kiwim2pu" },
-              "fontSize": { "alias": "5ip1q4xu" },
-              "fontWeight": { "alias": "53lbqbln" },
-              "letterSpacing": { "alias": "mkefu7es" },
-              "lineHeight": { "alias": "42fz4c42" }
+            "65pae8m7": {
+              "fontFamily": { "alias": "pg0o5n1c" },
+              "fontSize": { "alias": "2iqzark9" },
+              "fontWeight": { "alias": "yoc7fn24" },
+              "letterSpacing": { "alias": "86zbiknk" },
+              "lineHeight": { "alias": "rwnuqiho" }
             }
           }
         },
         {
-          "id": "i8enm7md",
+          "id": "cz1az7ov",
           "type": "typography",
           "name": "body/md-semibold",
           "codeSyntax": { "web": "--optics-body-md-semibold" },
-          "groupId": "zdzvwqq0",
+          "groupId": "xpvpo3rz",
           "valuesByMode": {
-            "agnwoodd": {
-              "fontFamily": { "alias": "kiwim2pu" },
-              "fontSize": { "alias": "5ip1q4xu" },
-              "fontWeight": { "alias": "e0i0a9z8" },
-              "letterSpacing": { "alias": "mkefu7es" },
-              "lineHeight": { "alias": "42fz4c42" }
+            "65pae8m7": {
+              "fontFamily": { "alias": "pg0o5n1c" },
+              "fontSize": { "alias": "2iqzark9" },
+              "fontWeight": { "alias": "fs2eoc9n" },
+              "letterSpacing": { "alias": "86zbiknk" },
+              "lineHeight": { "alias": "rwnuqiho" }
             }
           }
         },
         {
-          "id": "lmvhh7t4",
+          "id": "15lc7ufq",
           "type": "typography",
           "name": "body/sm",
           "description": "Captions and help text.",
           "codeSyntax": { "web": "--optics-body-sm" },
-          "groupId": "zdzvwqq0",
+          "groupId": "xpvpo3rz",
           "valuesByMode": {
-            "agnwoodd": {
-              "fontFamily": { "alias": "kiwim2pu" },
-              "fontSize": { "alias": "kpbchjq7" },
-              "fontWeight": { "alias": "j92mbplw" },
-              "letterSpacing": { "alias": "mkefu7es" },
-              "lineHeight": { "alias": "w9qpok3z" }
+            "65pae8m7": {
+              "fontFamily": { "alias": "pg0o5n1c" },
+              "fontSize": { "alias": "nnq2joa9" },
+              "fontWeight": { "alias": "05zfvge3" },
+              "letterSpacing": { "alias": "86zbiknk" },
+              "lineHeight": { "alias": "5vhyqfuc" }
             }
           }
         },
         {
-          "id": "s66np7x1",
+          "id": "igmlckaz",
           "type": "typography",
           "name": "body/sm-medium",
           "description": "Badges.",
           "codeSyntax": { "web": "--optics-body-sm-medium" },
-          "groupId": "zdzvwqq0",
+          "groupId": "xpvpo3rz",
           "valuesByMode": {
-            "agnwoodd": {
-              "fontFamily": { "alias": "kiwim2pu" },
-              "fontSize": { "alias": "kpbchjq7" },
-              "fontWeight": { "alias": "53lbqbln" },
-              "letterSpacing": { "alias": "mkefu7es" },
-              "lineHeight": { "alias": "w9qpok3z" }
+            "65pae8m7": {
+              "fontFamily": { "alias": "pg0o5n1c" },
+              "fontSize": { "alias": "nnq2joa9" },
+              "fontWeight": { "alias": "yoc7fn24" },
+              "letterSpacing": { "alias": "86zbiknk" },
+              "lineHeight": { "alias": "5vhyqfuc" }
             }
           }
         },
         {
-          "id": "zhgsunqu",
+          "id": "vikb5j0r",
           "type": "typography",
           "name": "code",
           "codeSyntax": { "web": "--optics-code" },
           "valuesByMode": {
-            "agnwoodd": {
-              "fontFamily": { "alias": "vt38psx8" },
-              "fontSize": { "alias": "5ip1q4xu" },
-              "fontWeight": { "alias": "j92mbplw" },
-              "letterSpacing": { "alias": "mkefu7es" },
-              "lineHeight": { "alias": "42fz4c42" }
+            "65pae8m7": {
+              "fontFamily": { "alias": "runflebk" },
+              "fontSize": { "alias": "2iqzark9" },
+              "fontWeight": { "alias": "05zfvge3" },
+              "letterSpacing": { "alias": "86zbiknk" },
+              "lineHeight": { "alias": "rwnuqiho" }
             }
           }
         }

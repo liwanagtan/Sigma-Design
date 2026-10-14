@@ -62,7 +62,7 @@ function project(adapter = ADAPTER) {
   git(dir, 'commit', '-qm', 'base');
   return dir;
 }
-// A designer's change in Sigma: a token's value in the Sigma Tokens file.
+// A designer's change in Sigma: a token's value in the tokens file.
 function changeInSigma(dir, name, value) {
   const path = join(dir, '.sigma/tokens/app.sigma.json');
   const file = JSON.parse(readFileSync(path, 'utf8'));

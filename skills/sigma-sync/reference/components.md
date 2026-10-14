@@ -106,7 +106,7 @@ npx sigma-design library build <project> --from <project>/.sigma/captures [--dry
 It creates the library file, or rebuilds the components named in the manifest in place (others are kept;
 components that grew move what's below them down). Flex containers become auto layout; stacked blocks
 become columns (unevenly spaced ones nest, so each spacing is kept); values written with `var(--x)` are
-bound to the token whose code name is `--x`; SVGs that match an icon in the project's Sigma Icons file
+bound to the token whose code name is `--x`; SVGs that match an icon in the project's icons file
 become icon layers. It prints notes for everything it approximated. Read each note and either fix the
 cause (an icon not imported, a token missing) or say why it's fine.
 

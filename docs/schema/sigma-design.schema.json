@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Sigma Design file",
+  "title": "Design file",
   "description": "Pages, components and layouts. See docs/schema/README.md.",
   "type": "object",
   "required": [
@@ -30,7 +30,7 @@
             "type": "string",
             "pattern": "\\.sigma\\.json$"
           },
-          "description": "Project paths of Sigma Tokens files"
+          "description": "Project paths of tokens files"
         },
         "icons": {
           "type": "array",
@@ -38,7 +38,7 @@
             "type": "string",
             "pattern": "\\.sigma\\.json$"
           },
-          "description": "Project paths of Sigma Tokens files"
+          "description": "Project paths of tokens files"
         },
         "components": {
           "type": "array",
@@ -46,14 +46,14 @@
             "type": "string",
             "pattern": "\\.sigma\\.json$"
           },
-          "description": "Project paths of Sigma Tokens files"
+          "description": "Project paths of tokens files"
         }
       },
       "additionalProperties": false
     },
     "collections": {
       "type": "array",
-      "description": "Local tokens (same shape as in a Sigma Tokens file)"
+      "description": "Local tokens (same shape as in a tokens file)"
     },
     "pages": {
       "type": "array",
