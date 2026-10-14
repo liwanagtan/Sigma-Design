@@ -91,3 +91,46 @@ test('Sigma component sets: padded boundaries hug variants and resize with their
   applyLayouts();
   eq(set.w, before+40, 'hug responds to changed variant width');
 });
+
+test('Sigma system: Foundation dependencies update component geometry and labelled reference modes stay fixed',async()=> {
+  const {applyLayouts}=await import('../src/layout.js');
+  const {applyWelcomeAppearance}=await import('../src/welcome-appearance.js');
+  const t=sigmaTokenDocument(), foundation=t.collections.find(c=>c.name==='Foundations');
+  ok(foundation.variables.some(v=>v.name==='height/30'),'height scale exists');
+  const componentTokens=t.collections.find(c=>c.name==='UI components');
+  ok(componentTokens.variables.find(v=>v.name==='btn/padding-x').valuesByMode[componentTokens.modes[0].id].alias,'button padding aliases Foundations');
+  const d=sigmaComponentsDocument(t.collections);d.variables={collections:t.collections};loadDocument(d);resolveVariables();applyLayouts();
+  const button=state.doc.pages.find(p=>p.name==='Button').children.find(n=>n.type==='componentSet').children[0];
+  const spacing=foundation.variables.find(v=>v.name==='spacing/8');
+  for(const mode of foundation.modes) spacing.valuesByMode[mode.id]=32;
+  resolveVariables();applyLayouts();eq(button.layout.pl,32);eq(button.layout.pr,32);
+  const fd=sigmaFoundationsDocument(t.collections);fd.variables={collections:t.collections};loadDocument(fd);resolveVariables();
+  const dark=state.doc.pages.find(p=>p.group==='Dark'&&p.name==='color');
+  applyWelcomeAppearance(state.doc,t.collections,'light');resolveVariables();
+  eq(dark.children.find(n=>n.type==='frame').fills[0].color,'#1A1A1A','reference surface also stays Dark');
+  eq(dark.children.find(n=>n.type==='frame').children.find(n=>n.type==='rect'&&n.name==='color/panel').fills[0].color,'#242424');
+  const labelPage=state.doc.pages.find(p=>p.name==='spacing');
+  ok(labelPage.children.find(n=>n.type==='frame').children.some(n=>n.type==='text'&&n.text==='32'&&n.bindings.text===spacing.id),'value labels stay linked');
+});
+
+test('Sigma controls: current dropdown states, shared items, shadow and dark checkbox match the system',async()=> {
+  const {syncInstances}=await import('../src/components.js');
+  const t=sigmaTokenDocument(),d=sigmaComponentsDocument(t.collections);d.variables={collections:t.collections};loadDocument(d);syncInstances();resolveVariables();
+  const mains=name=>state.doc.pages.find(p=>p.name===name).children.find(n=>n.type==='componentSet').children;
+  const item=mains('Dropdown item');
+  eq(item.find(n=>n.name==='State=Hover').fills[0].color,'#F5F5F5');
+  eq(item.find(n=>n.name==='State=Default').h,30);
+  eq(item.find(n=>n.name==='State=Selected').fills[0].color,'#F2F9FF');
+  ok(item.some(n=>n.name==='State=Disabled'));
+  const select=mains('Select');eq(select[0].layout.pl,8);eq(select[0].layout.pr,28);
+  eq(select.find(n=>n.name==='State=Focus').strokes[0].color,'#0D99FF');
+  ok(select[0].children.some(n=>n.type==='icon'&&n.iconId==='sigma-ui-selectChevron'));
+  const menu=mains('Dropdown menu')[0];eq(menu.children.length,4);
+  eq(menu.children.map(n=>n.children[0].text),['Copy','Paste','Duplicate','Delete'],'shared variant properties reach nested item instances');
+  ok(menu.children.every(n=>n.type==='instance'&&n.componentId===item[0].id));
+  const segment=mains('Segmented item').find(n=>n.name==='State=Selected');eq(segment.effects[0].spread,1);eq(segment.effects[0].color,'#E6E6E6');
+  eq(menu.effects[0].y,8);eq(menu.effects[0].blur,24);
+  const pg=state.doc.pages.find(p=>p.name==='Checkbox row');
+  pg.modes=Object.fromEntries(t.collections.map(c=>[c.id,c.modes.find(m=>m.name==='Dark').id]));resolveVariables();
+  eq(mains('Checkbox row')[0].children[0].fills[0].color,'#242424');
+});

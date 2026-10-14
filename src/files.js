@@ -8,10 +8,10 @@ import { buildSVG, download, toast } from './io.js';
 import { libraryEntry } from './variables.js';
 import { welcomeDocument, WELCOME_VERSION, WELCOME_ICONS } from './welcome.js';
 import { newIconsDocument, sanitizeIcons, iconMarkup, usedIconIds, ICON_SETS, loadIconSet } from './icon-library.js';
-import { sampleIconsDocument, SAMPLE_ICONS_NAME, SAMPLE_ICONS_VERSION, sampleIconId } from './sample-icons.js';
+import { sampleIconsDocument, lucideIconsDocument, SAMPLE_ICONS_NAME, SAMPLE_ICONS_VERSION, sigmaUIIcons } from './sample-icons.js';
 import { sigmaPagesDocument, SIGMA_PAGES_VERSION } from './sigma-pages.js';
 import { opticsTokenDocument } from './optics-tokens.js';
-import { opticsComponentsDocument, opticsFoundationsDocument, opticsIconsDocument, OPTICS_ICON_NAMES } from './optics.js';
+import { opticsComponentsDocument, opticsFoundationsDocument, opticsIconsDocument } from './optics.js';
 
 // The sample files (the guide, its sample tokens and its sample icons) live in the files home's Welcome to
 // Sigma folder rather than with your own files.
@@ -85,7 +85,7 @@ async function setUpWelcomeFolder() {
 }
 
 import { sampleTokenDocument } from './sample-tokens.js';
-import { sigmaTokenDocument, sigmaFoundationsDocument, sigmaComponentsDocument, SIGMA_SYSTEM_VERSION } from './sigma-design-system.js';
+import { sigmaTokenDocument, sigmaFoundationsDocument, sigmaComponentsDocument, SIGMA_SYSTEM_VERSION, sigmaTokenSignature } from './sigma-design-system.js';
 import { importTokens } from './tokens-io.js';
 
 const TAB_ID = uid();
@@ -454,10 +454,7 @@ export async function sampleTokenFile() {
   const candidates = (await listTokenFiles()).filter(m => m.sample && m.sigmaSystem === SIGMA_SYSTEM_VERSION);
   for (const meta of candidates) {
     const published = (await loadPublished(meta.id))?.published;
-    if (published && expected.every(c => {
-      const actual = published.collections.find(x => x.name === c.name);
-      return actual && actual.variables.length === c.variables.length && actual.modes.map(m => m.name).join(',') === 'Light,Dark' && c.variables.every(v => actual.variables.some(x => x.name === v.name && x.type === v.type));
-    })) return { id: meta.id, name: meta.name, published };
+    if(published && sigmaTokenSignature(published.collections)===sigmaTokenSignature(expected)) return { id: meta.id, name: meta.name, published };
   }
   const { name, collections } = sigmaTokenDocument();
   return createTokenFileWith(name, collections, 'Sigma interface tokens; Light and Dark from styles.css.', { meta: { sample: true, sigmaSystem: SIGMA_SYSTEM_VERSION } });
@@ -471,7 +468,9 @@ export async function sampleIconFile() {
     const published = (await loadPublishedIcons(meta.id))?.published;
     if (!published) continue;
     const ids = new Set(published.icons.map((x) => x.id));
-    if (![...WELCOME_ICONS, ...OPTICS_ICON_NAMES.map((n) => sampleIconId(n))].every((id) => ids.has(id))) continue; // icons the guide or Optics use are missing
+    if(published.icons.length!==sigmaUIIcons().length) continue;
+    if(!sigmaUIIcons().every(expected=>{const actual=published.icons.find(i=>i.id===expected.id);return actual&&['body','viewBox','style','strokeWidth','cap','join'].every(k=>actual[k]===expected[k]);})) continue;
+    if (![...sigmaUIIcons().map(i=>i.id), ...WELCOME_ICONS].every((id) => ids.has(id))) continue; // icons the guide or Optics use are missing
     if ([PREVIOUS_SAMPLE_NAMES.icons, 'Sample icons'].includes(meta.name)) {
       // Earlier built-in names become Icons in place; keep the same file and icon IDs.
       await db.updateFile(meta.id, (m, rec) => ({ meta: { ...m, name: SAMPLE_ICONS_NAME }, doc: rec && { ...rec, doc: { ...rec.doc, name: SAMPLE_ICONS_NAME } } }));
@@ -482,7 +481,7 @@ export async function sampleIconFile() {
   }
   let doc;
   try {
-    doc = sampleIconsDocument(await loadIconSet(ICON_SETS.find((s) => s.id === 'lucide')));
+    doc = sampleIconsDocument();
   } catch (err) {
     console.warn('Could not make the sample icons', err);
     return null;
@@ -559,7 +558,8 @@ async function opticsFiles(icons) {
   // Optics Icons: the sample icons as Optics' own file (with Lucide's license and credit).
   let opticsIcons = null;
   if (icons) {
-    const doc = opticsIconsDocument(icons.published.icons, (await loadFile(icons.id))?.doc.source || null);
+    const lucide=lucideIconsDocument(await loadIconSet(ICON_SETS.find(s=>s.id==='lucide')));
+    const doc=opticsIconsDocument(lucide.icons,lucide.source);
     opticsIcons = { id: await createFile(doc, {}, meta), name: doc.name, published: doc.published };
   }
   const link = (doc) => {

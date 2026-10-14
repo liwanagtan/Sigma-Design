@@ -1,12 +1,19 @@
-// The sample icons file ("Icons" in the Welcome to Sigma folder): the whole Lucide set
-// (https://lucide.dev, ISC License, about 1,900 icons), with filled versions of some shapes so it shows both
-// styles. The icons the guide uses are in groups of their own (Actions, Arrows, Status…); the rest are in
-// Lucide's categories. The Welcome to Sigma guide links it and uses its icons in components; Optics Icons is
-// made from it.
-export const SAMPLE_ICONS_VERSION = 2; // 2: the whole Lucide set (1: a selection of 72 icons)
-import { newIconsDocument, sanitizeIcons } from './icon-library.js';
+// Welcome Icons publishes only Sigma’s own interface glyphs. Lucide is separate for Optics.
+export const SAMPLE_ICONS_VERSION = 5; // 5: Sigma glyphs only
+import { icons as uiIcons, componentSetSymbol } from './icons.js';
+import { newIconsDocument, sanitizeIcons, parseSVGIcon } from './icon-library.js';
 
 export const SAMPLE_ICONS_NAME = 'Icons';
+export const sigmaIconId = name => `sigma-ui-${name}`;
+export function sigmaUIIcons() {
+  return Object.entries({...Object.fromEntries(Object.entries(uiIcons).filter(([name])=>name!=='logo')),componentSet:`<svg viewBox="0 0 12 12" fill="currentColor">${componentSetSymbol}</svg>`}).map(([name,svg])=>{
+    const attrs=svg.match(/^<svg([^>]*)>/)[1];
+    const fill=/fill="([^"]*)"/.exec(attrs)?.[1]||'none';
+    const stroke=/stroke="([^"]*)"/.exec(attrs)?.[1]||'none';
+    const wrapped=svg.replace(/(<svg[^>]*>)([\s\S]*)(<\/svg>)/,`$1<g fill="${fill}" stroke="${stroke}">$2</g>$3`);
+    return {...parseSVGIcon(wrapped,{name,group:'Sigma UI'}),id:sigmaIconId(name)};
+  });
+}
 
 // The guide's groups → Lucide icon names (outline). Every other Lucide icon keeps its Lucide category.
 const OUTLINE = {
@@ -32,7 +39,7 @@ const FILLED = {
 export const sampleIconId = (name, filled = false) => `sigma-${name}${filled ? '-filled' : ''}`;
 
 // The sample icons document from the Lucide data (icon-sets/lucide.json), published as v1.
-export function sampleIconsDocument(lucide) {
+export function lucideIconsDocument(lucide) {
   const byName = new Map(lucide.icons.map(([name, category, keywords, body]) => [name, { category, keywords, body }]));
   const icons = [];
   const push = (name, group, style) => {
@@ -55,8 +62,16 @@ export function sampleIconsDocument(lucide) {
   doc.icons = sanitizeIcons(icons);
   doc.source = {
     name: 'Lucide', version: lucide.version, url: lucide.url, license: lucide.license, licenseText: lucide.licenseText,
-    note: 'The whole Lucide set. The filled versions are Lucide shapes, filled.',
+    note: 'Lucide catalogue for Optics, including filled shape variants.',
   };
   doc.published = { version: 1, publishedAt: Date.now(), notes: 'Icons', icons: structuredClone(doc.icons) };
+  return doc;
+}
+
+export function sampleIconsDocument() {
+  const doc=newIconsDocument(SAMPLE_ICONS_NAME);
+  doc.icons=sanitizeIcons(sigmaUIIcons());
+  doc.source={name:'Sigma UI',version:String(SAMPLE_ICONS_VERSION),url:'https://github.com/liwanagtan/Sigma-Design',license:'Project license (LICENSE)',note:'Glyphs from Sigma’s own interface. The multicolor brand mark remains separate.'};
+  doc.published={version:1,publishedAt:Date.now(),notes:'Sigma UI glyphs',icons:structuredClone(doc.icons)};
   return doc;
 }

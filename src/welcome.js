@@ -7,12 +7,12 @@
 // instead of reopening an older one.
 import { createNode, uid, makePaint } from './store.js';
 import { DEFAULT_LAYOUT } from './layout.js';
-import { sampleIconId } from './sample-icons.js';
+import { sigmaIconId } from './sample-icons.js';
 
-export const WELCOME_VERSION = 38;
+export const WELCOME_VERSION = 46;
 // The sample icons the guide uses (outline unless marked filled).
-const GUIDE_ICONS = ['plus', 'search', 'pencil', 'copy', 'share-2', 'trash', 'settings', 'user', 'log-out', 'star', 'heart', 'bookmark', 'bell'];
-export const WELCOME_ICONS = [...GUIDE_ICONS.map((n) => sampleIconId(n)), ...['star', 'heart', 'bookmark', 'bell'].map((n) => sampleIconId(n, true))];
+const GUIDE_ICONS=['plus','eye','text','rect','link','close','appearance','home','move','hand','frame'];
+export const WELCOME_ICONS=GUIDE_ICONS.map(sigmaIconId);
 // The files home keeps the guide and its tokens in a "Welcome to Sigma" folder, as "Guide" and
 // "Tokens".
 export const WELCOME_FOLDER = 'Welcome to Sigma';
@@ -523,7 +523,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     { h: 'An icons file', bullets: [
       'Import SVGs from any free set (Lucide, Tabler, Heroicons, Phosphor, Material Symbols), drop them in, or paste SVG code. Colors are removed: an icon takes the color of the layer that shows it.',
       'Icons are outline or filled, in groups, with keywords for search. Publish… makes them available to design files.',
-      'Icons, in the Welcome to Sigma folder, is the whole Lucide set: about 1,900 icons. Link it from Icon libraries, or use Optics Icons, the same icons as a file of your own.',
+      'Icons, in the Welcome to Sigma folder, contains only Sigma’s own interface glyphs. Link it from Icon libraries. Lucide remains available separately through Add Lucide icons; Optics has its own Lucide library.',
     ] },
     { h: 'Icons in components', bullets: [
       'Icon libraries… (Σ menu) links an icons file. A file keeps copies of only the icons it uses.',
@@ -535,8 +535,8 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'Instances choose only the icon: its size, color and stroke stay the main component’s.',
     ] },
   ]);
-  iconsGuide.parts.push(tryIt('Select one of the icon buttons on the right: its Icon property shows its icon, and only the Actions icons are offered. choose another icon, or change the main Icon button’s color token: every instance follows.'));
-  const I = sampleIconId;
+  iconsGuide.parts.push(tryIt('Select one of the icon buttons on the right: its Icon property shows its icon, and only Sigma UI glyphs are offered. choose another icon, or change the main Icon button’s color token: every instance follows.'));
+  const I = sigmaIconId;
   const iconLayer = (name, iconId, colorVar, size, props = {}) => createNode('icon', {
     name, iconId, w: size, h: size, ...props, fills: [makePaint('#000000')], bindings: { 'fills.0.color': colorVar },
   });
@@ -546,10 +546,10 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     const iconProp = uid();
     const iconButton = createNode('component', {
       name: 'Icon button', w: 40, h: 40, clip: false,
-      description: 'A square button with only an icon. Its Icon property offers the Actions icons.',
+      description: 'A square button with only an icon. Its Icon property offers Sigma UI glyphs.',
       layout: autoLayout({ mode: 'horizontal', alignP: 'center', alignC: 'center' }), sizingH: 'hug', sizingV: 'hug',
       fills: [makePaint('#000000')], bindings: { 'fills.0.color': C('button/primary/background'), radius: C('button/radius'), ...pad(P('space/2')) },
-      props: { [iconProp]: { name: 'Icon', type: 'icon', default: I('plus'), groups: ['Actions'] } },
+      props: { [iconProp]: { name: 'Icon', type: 'icon', default: I('plus'), groups: ['Sigma UI'] } },
       children: [iconLayer('Icon', I('plus'), C('button/primary/text'), 20, { propRefs: { iconId: iconProp } })],
     });
     const menuIcon = uid(), menuLabel = uid();
@@ -558,41 +558,41 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       description: 'A row in a menu: an icon (any icon) and a label.',
       layout: autoLayout({ mode: 'horizontal', alignC: 'center' }), sizingH: 'fixed', sizingV: 'hug',
       fills: [makePaint('#000000')], bindings: { 'fills.0.color': S('surface/default'), radius: P('radius/sm'), 'layout.gap': P('space/3'), ...pad(P('space/2')) },
-      props: { [menuIcon]: { name: 'Icon', type: 'icon', default: I('settings') }, [menuLabel]: { name: 'Label', type: 'text', default: 'Settings' } },
+      props: { [menuIcon]: { name: 'Icon', type: 'icon', default: I('appearance') }, [menuLabel]: { name: 'Label', type: 'text', default: 'Settings' } },
       children: [
-        iconLayer('Icon', I('settings'), S('text/secondary'), 16, { propRefs: { iconId: menuIcon } }),
+        iconLayer('Icon', I('appearance'), S('text/secondary'), 16, { propRefs: { iconId: menuIcon } }),
         text('Label', 'Settings', S('text/primary'), T('body/default'), { propRefs: { text: menuLabel } }),
       ],
     });
     const rating = createNode('component', {
-      name: 'Rating', w: 140, h: 24, clip: false,
-      description: 'Filled and outline stars together: the two styles of the same icon.',
+      name: 'Tool glyphs', w: 140, h: 24, clip: false,
+      description: 'Sigma’s filled Move glyph and outline Hand glyph.',
       layout: autoLayout({ mode: 'horizontal', alignC: 'center' }), sizingH: 'hug', sizingV: 'hug', fills: [],
       bindings: { 'layout.gap': P('space/1') },
       children: [1, 2, 3, 4, 5].map((k) => k <= 3
-        ? iconLayer(`Star ${k}`, I('star', true), P('color/amber/500'), 20)
-        : iconLayer(`Star ${k}`, I('star'), S('text/secondary'), 20)),
+        ? iconLayer(`Tool ${k}`, I('move'), P('color/amber/500'), 20)
+        : iconLayer(`Tool ${k}`, I('hand'), S('text/secondary'), 20)),
     });
     const inst = (main, propValues) => createNode('instance', { name: main.name, componentId: main.id, w: main.w, h: main.h, overrides: {}, children: [], propValues });
     const iconButtons = example('Icon buttons', 1040, 0, [
-      row('Buttons', ['search', 'pencil', 'copy', 'share-2', 'trash'].map((n) => inst(iconButton, { [iconProp]: I(n) })), P('space/2')),
+      row('Buttons', ['eye', 'text', 'rect', 'link', 'close'].map((n) => inst(iconButton, { [iconProp]: I(n) })), P('space/2')),
     ], { note: 'Instances of Icon button, each with its own icon.' });
     const menu = example('Menu', 1040, 200, [
       stack('Items', 'vertical', { gap: P('space/1') }, [
-        inst(menuItem, { [menuIcon]: I('user'), [menuLabel]: 'Profile' }),
-        inst(menuItem, { [menuIcon]: I('settings'), [menuLabel]: 'Settings' }),
-        inst(menuItem, { [menuIcon]: I('log-out'), [menuLabel]: 'Log out' }),
+        inst(menuItem, { [menuIcon]: I('home'), [menuLabel]: 'Profile' }),
+        inst(menuItem, { [menuIcon]: I('appearance'), [menuLabel]: 'Settings' }),
+        inst(menuItem, { [menuIcon]: I('close'), [menuLabel]: 'Log out' }),
       ]),
     ], { note: 'The Menu item’s icon and label are properties.' });
     // Outline and filled versions side by side, as a component (icons live in components).
     const pairs = createNode('component', {
       name: 'Icon styles', w: 200, h: 24, clip: false,
-      description: 'The same icons in the outline and the filled style.',
+      description: 'Sigma’s own glyphs in different token-bound colors.',
       layout: autoLayout({ mode: 'horizontal', alignC: 'center' }), sizingH: 'hug', sizingV: 'hug', fills: [],
       bindings: { 'layout.gap': P('space/3') },
-      children: ['heart', 'bookmark', 'bell'].flatMap((n) => [
-        iconLayer(`${n} outline`, I(n), S('text/primary'), 24),
-        iconLayer(`${n} filled`, I(n, true), S('accent/default'), 24),
+      children: ['hand', 'frame', 'appearance'].flatMap((n) => [
+        iconLayer(`${n} default`, I(n), S('text/primary'), 24),
+        iconLayer(`${n} accent`, I(n), S('accent/default'), 24),
       ]),
     });
     const mains = example('Components', 600, 0, [iconButton, menuItem, rating, pairs], {

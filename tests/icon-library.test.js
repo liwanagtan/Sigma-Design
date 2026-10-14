@@ -267,7 +267,7 @@ test('icons: search ranks the exact name first, then names that start with it', 
 });
 
 // ---------- the sample icons and the guide's icons page ----------
-import { sampleIconsDocument, sampleIconId } from '../src/sample-icons.js';
+import { sampleIconsDocument, lucideIconsDocument, sampleIconId, sigmaIconId } from '../src/sample-icons.js';
 import { welcomeDocument, WELCOME_ICONS } from '../src/welcome.js';
 import { sampleTokenDocument } from '../src/sample-tokens.js';
 import { snapshotForLibrary, resolveVariables } from '../src/variables.js';
@@ -276,13 +276,13 @@ import { loadIconSet } from '../src/icon-library.js';
 
 test('Sample icons: the whole Lucide set, outline and filled, the guide’s icons in its groups', async () => {
   const lucide = await loadIconSet(ICON_SETS[0]);
-  const doc = sampleIconsDocument(lucide);
+  const doc = lucideIconsDocument(lucide);
   const ids = new Set(doc.icons.map((i) => i.id));
-  eq(doc.icons.filter((i) => i.style === 'outline').length, lucide.icons.length, 'every Lucide icon');
+  eq(doc.icons.filter((i) => i.style === 'outline' && i.group !== 'Sigma UI').length, lucide.icons.length, 'every Lucide icon');
   eq(ids.size, doc.icons.length, 'no icon twice');
   eq(doc.icons.find((i) => i.id === sampleIconId('trash')).group, 'Actions', 'the guide’s icons keep its groups');
   eq(doc.icons.find((i) => i.id === sampleIconId('pizza')).group, 'Food & beverage', 'the rest keep Lucide’s categories');
-  ok(WELCOME_ICONS.every((id) => ids.has(id)), 'the guide’s icons are there');
+  ok(WELCOME_ICONS.every(id=>sampleIconsDocument().icons.some(i=>i.id===id)), 'guide uses Sigma glyphs');
   ok(doc.icons.some((i) => i.style === 'filled') && doc.icons.some((i) => i.style === 'outline'), 'both styles');
   const heart = doc.icons.find((i) => i.id === sampleIconId('heart', true));
   eq([heart.name, heart.group, heart.style, heart.strokeWidth], ['heart', 'Social', 'filled', 2]);
@@ -309,6 +309,6 @@ test('Welcome to Sigma: the Icons files page’s components and instances show s
   const buttons = pg.children.find((n) => n.name === 'Icon buttons');
   const used = [];
   walk(buttons.children, (n) => void (n.type === 'icon' && used.push(n.iconId)));
-  eq(used, ['search', 'pencil', 'copy', 'share-2', 'trash'].map((n) => sampleIconId(n)), 'each instance chose its icon');
+  eq(used, ['eye','text','rect','link','close'].map(sigmaIconId), 'each instance chose its icon');
   ok(layers.every((n) => /^#[0-9A-F]{6}/i.test(n.fills[0].color)), 'colors come from tokens');
 });

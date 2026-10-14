@@ -5,6 +5,8 @@ const s16 = (body) =>
   `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
 
 export const icons = {
+  appearance: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5a5.5 5.5 0 0 1 0 11z" fill="currentColor" stroke="none"/></svg>',
+  selectChevron: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 4.5 3 3 3-3"/></svg>',
   move: s('<path d="M7 4.5l10.5 6-4.6 1.4 2.9 5.1-1.7 1-2.9-5.1L7.5 16z" fill="currentColor" stroke="none"/>'),
   hand: s('<path d="M8.5 12V6.5a1.25 1.25 0 0 1 2.5 0V11m0-5.5V5a1.25 1.25 0 0 1 2.5 0v6m0-5a1.25 1.25 0 0 1 2.5 0v5.5m0-3a1.25 1.25 0 0 1 2.5 0V14a6 6 0 0 1-6 6h-1a6 6 0 0 1-4.6-2.2l-3-3.6a1.3 1.3 0 0 1 2-1.7L8.5 14"/>'),
   frame: s('<path d="M8 4v16M16 4v16M4 8h16M4 16h16"/>'),

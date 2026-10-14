@@ -4,7 +4,7 @@ import { state, loadDocument, walk } from '../src/store.js';
 import { libraryEntry } from '../src/variables.js';
 import { layOutDocument } from '../src/lay-out.js';
 import { loadIconSet, ICON_SETS, usedIconIds, newIconsDocument } from '../src/icon-library.js';
-import { sampleIconsDocument } from '../src/sample-icons.js';
+import { lucideIconsDocument } from '../src/sample-icons.js';
 import { opticsTokenDocument } from '../src/optics-tokens.js';
 import { opticsComponentsDocument, opticsFoundationsDocument, opticsIconsDocument, OPTICS_ICONS, OPTICS_CATEGORIES } from '../src/optics.js';
 import { auditDocument } from '../src/audit.js';
@@ -20,7 +20,7 @@ let built = null;
 async function optics() {
   if (built) return built;
   const tokens = opticsTokenDocument();
-  const sample = sampleIconsDocument(await loadIconSet(ICON_SETS.find((s) => s.id === 'lucide')));
+  const sample = lucideIconsDocument(await loadIconSet(ICON_SETS.find((s) => s.id === 'lucide')));
   const icons = opticsIconsDocument(sample.icons, sample.source).icons;
   const published = { version: 1, collections: tokens.collections };
   const link = (doc) => {

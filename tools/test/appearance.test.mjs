@@ -1,3 +1,4 @@
+import { icons } from '../../src/icons.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -20,11 +21,11 @@ test('appearance bootstrap restores a valid preference before styles and tolerat
 
 test('Auto follows live system changes; explicit preferences stay fixed and sync between tabs', () => {
   const source = readFileSync(new URL('../../src/appearance.js', import.meta.url), 'utf8')
-    .replace(/^import .*;\n/, '').replace(/export /g, '');
+    .replace(/^import .*;\n/gm, '').replace(/export /g, '');
   const document = { documentElement:{dataset:{appearance:'auto'}}, querySelectorAll:()=>[], addEventListener:()=>{} };
   const handlers = {}, saved = [];
   const system = {matches:false, addEventListener:(type, handler)=>{handlers.system=handler;}};
-  const context = {document, window:{matchMedia:()=>system, addEventListener:(type, handler)=>{handlers[type]=handler;},dispatchEvent:()=>{}},
+  const context = {icons, document, window:{matchMedia:()=>system, addEventListener:(type, handler)=>{handlers[type]=handler;},dispatchEvent:()=>{}},
     localStorage:{setItem:(key,value)=>saved.push(value)}, CustomEvent:class {}};
   runInNewContext(source, context);
   handlers.system({matches:true});

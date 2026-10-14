@@ -377,3 +377,7 @@ Free to use, change and build with, as long as you don't sell Sigma itself and y
 License 2.0 with the Commons Clause (`LICENSE`). Keep the `NOTICE` file with any copy or derived work. Because
 selling it isn't allowed, Sigma is *source-available* rather than OSI "open source". Third-party parts keep
 their own licenses (Lucide's icons: ISC; see `NOTICE`).
+
+### Welcome system synchronization
+
+Welcome Tokens now publish Foundation aliases for spacing, dimensions, radii, typography, and elevation, including CSS shorthand zero values. Components bind their layouts to those tokens and show explicit control states. Dropdown menus and segmented controls compose reusable item instances. Foundations retain labelled Light/Dark references on matching surfaces while the editor follows global appearance. Icons includes a Sigma UI group generated from the app glyphs, only; the multicolor brand mark remains separate from the monochrome icon library. Regeneration versions refresh existing Welcome files, and library reuse validates token values and Sigma icon content.

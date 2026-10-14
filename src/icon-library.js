@@ -289,8 +289,10 @@ export const iconLibraryOf = (id, doc = state.doc) => (doc?.iconLibraries || [])
 
 // Ids of the icons that layers (and component properties' defaults) in `nodes` use.
 export function usedIconIds(nodes) {
-  const ids = new Set();
+  const ids = new Set(),iconProps=new Set();
+  walk(nodes,n=>{for(const [id,def] of Object.entries(n.props||{}))if(def.type==='icon')iconProps.add(id);});
   walk(nodes, (n) => {
+    for(const [id,value] of Object.entries(n.propValues||{})) if(iconProps.has(id)&&typeof value==='string') ids.add(value);
     if (n.type === 'icon' && n.iconId) ids.add(n.iconId);
     for (const def of Object.values(n.props || {})) if (def.type === 'icon' && def.default) ids.add(def.default);
   });
