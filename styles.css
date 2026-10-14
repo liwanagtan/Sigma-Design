@@ -31,6 +31,8 @@ body.scrubbing, body.scrubbing * { cursor: ew-resize !important; user-select: no
 .rail-btn { position: relative; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 6px; color: var(--muted); }
 .rail-btn:hover { background: var(--hover); color: var(--text); }
 .rail-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.rail-tools { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.rail-logo { color: var(--text); }
 .rail-sep { width: 20px; height: 1px; background: var(--border); margin: 4px 0; }
 .rail-dot { position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: #f24822; box-shadow: 0 0 0 2px var(--panel); }
 .rail-badge { position: absolute; top: 2px; right: 1px; min-width: 14px; height: 14px; padding: 0 3px; box-sizing: border-box; border-radius: 7px; background: #9747ff; color: #fff; font-size: 9px; font-weight: 600; line-height: 14px; text-align: center; box-shadow: 0 0 0 2px var(--panel); }

@@ -99,11 +99,14 @@ export function renderToolbar() {
 
 // ---------- file header / main menu ----------
 function initFileHeader() {
-  $('#logo-btn').innerHTML = `${icons.logo}${icons.chevronDown}`;
+  // The Σ menu and Home are at the top of the file tools rail (rail.js); the menu opens beside it.
+  $('#logo-btn').innerHTML = icons.logo;
+  $('#home-btn').innerHTML = icons.home;
+  $('#home-btn').addEventListener('click', goHome);
   $('#logo-btn').addEventListener('click', (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     const sel = selectedNodes();
-    showContextMenu(r.left, r.bottom + 4, [
+    showContextMenu(r.right + 4, r.top, [
       { label: 'Back to files', action: goHome },
       '-',
       { label: 'New Sigma Design file', action: async () => openFile(await createFile(blankDocument())) },

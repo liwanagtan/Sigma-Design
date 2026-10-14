@@ -20,6 +20,7 @@ export const icons = {
   lock: s16('<rect x="4" y="7" width="8" height="6" rx="1"/><path d="M5.5 7V5.5a2.5 2.5 0 0 1 5 0V7"/>'),
   unlock: s16('<rect x="4" y="7" width="8" height="6" rx="1"/><path d="M5.5 7V5.5a2.5 2.5 0 0 1 4.9-.7"/>'),
   comment: s('<path d="M5 18.5V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H8.5z"/><path d="M9 9.5h6M9 12.5h4"/>'),
+  home: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l7-5.5L17 9"/><path d="M4.8 7.8V16.5h10.4V7.8"/><path d="M8.3 16.5v-4.5h3.4v4.5"/></svg>`,
   plus: s16('<path d="M8 3.5v9M3.5 8h9"/>'),
   minus: s16('<path d="M3.5 8h9"/>'),
   close: s16('<path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/>'),

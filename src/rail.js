@@ -1,4 +1,5 @@
-// The file tools rail: a thin column of icon buttons at the left edge of a design file, for what the file uses
+// The file tools rail: a thin column of icon buttons at the left edge of a design file. At the top, the Σ menu
+// and Home (panels.js sets them up); then the tools for what the file uses
 // (its Sigma Tokens file, its design tokens and their audit, its component and icon libraries). They used to
 // sit in the Design panel with nothing selected; here they're one click away and the Design panel is quieter.
 // Each opens the same dialog as before; a dot or a count says what's linked, and the tooltip says it in words.
@@ -51,7 +52,7 @@ const TOOLS = [
 ];
 
 export function initRail() {
-  const rail = document.getElementById('rail');
+  const rail = document.getElementById('rail-tools');
   rail.addEventListener('click', (e) => {
     const b = e.target.closest('[data-rail]');
     if (b) TOOLS.find((t) => t.id === b.dataset.rail)?.open();
@@ -61,7 +62,7 @@ export function initRail() {
 
 let last = '';
 export function renderRail() {
-  const rail = document.getElementById('rail');
+  const rail = document.getElementById('rail-tools');
   if (!rail || !state.doc) return;
   const html = TOOLS.map((t, i) => {
     const st = t.state();
