@@ -8,6 +8,7 @@ import { state, page, view, getNode, worldMatrix, ancestors, commit, emit, uid, 
 import { apply, inv } from './geom.js';
 import { toScreen, toWorld } from './render.js';
 import { hitPath, pickFromPath } from './hit.js';
+import { pageLabel } from './page-groups.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const AUTHOR_KEY = 'sigma.author';
@@ -193,7 +194,7 @@ export function openThread(id) {
 export function commentsListHTML() {
   const all = comments();
   const shown = all.filter((c) => showResolved || !c.resolved);
-  const pages = new Map((state.doc?.pages || []).map((p) => [p.id, p.name]));
+  const pages = new Map((state.doc?.pages || []).map((p) => [p.id, pageLabel(p)]));
   const head = `<div class="comments-head"><span class="muted">${all.filter((c) => !c.resolved).length} open</span>` +
     `<label class="check-row"><input type="checkbox" data-show-resolved ${showResolved ? 'checked' : ''}> Show resolved</label></div>`;
   if (!shown.length) return `${head}<div class="empty-hint">${all.length ? 'All comments are resolved.' : 'No comments yet. Press C (or the comment tool) and click a layer to comment on it.'}</div>`;

@@ -1,4 +1,5 @@
 import { normalizeGroups } from './token-groups.js';
+import { keepTogether } from './page-groups.js';
 import { mul, inv, translate, rotate, angleOf, normAngle, cornersOf, aabb, round } from './geom.js';
 
 // Where documents lived before the files home (Phase 1); read once for migration.
@@ -256,6 +257,8 @@ export function migrateDocument(doc) {
   const copies = [doc.published, ...(doc.libraries || []), ...(doc.libraries || []).flatMap((l) => l.dependencies || [])];
   for (const c of [...(doc.variables.collections || []), ...copies.flatMap((x) => x?.collections || [])]) normalizeGroups(c);
   for (const d of doc.published?.dependencies || []) for (const c of d.collections || []) normalizeGroups(c);
+  // Page groups: a group's pages together (a merge or a hand edit may have split them).
+  if (Array.isArray(doc.pages)) keepTogether(doc.pages);
   doc.version = DOC_VERSION;
   return doc;
 }

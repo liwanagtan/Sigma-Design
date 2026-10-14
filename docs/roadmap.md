@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Every phase is done: Phases 1–14, Part D (15–19), Part E (20–30), Part F (31–35) and Part G (36–37, Optics)**, and the small and medium items from the "Later" and "Follow-ups" lists. Drawing icons is no longer planned (icons come from icon libraries).
+Status: **Every phase is done: Phases 1–14, Part D (15–19), Part E (20–30), Part F (31–35) Part G (36–37, Optics) and Part H (38, page groups)**, and the small and medium items from the "Later" and "Follow-ups" lists. Drawing icons is no longer planned (icons come from icon libraries).
 
 **What's next, in order:**
 
@@ -410,7 +410,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 16: Accessibility checks and annotations (Part D; done after Phase 19)
 - [x] Phase 36: Optics, a working design system inspired by Polaris (Part G)
 - [x] Phase 37: Optics Components: every Polaris component, a page each (Part G)
-- [ ] Phase 38: Page groups (Part H)
+- [x] Phase 38: Page groups (Part H)
 
 ## Follow-ups
 
@@ -1092,3 +1092,24 @@ Components (87 pages) is the first to use it: its components grouped by category
 - **Done when:** groups can be made, renamed, collapsed, dragged, ungrouped and deleted with undo; they survive
   saving, the project format, branches and merge, and Duplicate; Optics Components opens grouped; tests cover the
   model, the list and the project format.
+- **What shipped:** `src/page-groups.js` (pure functions on the pages array: runs of grouped pages, keeping a
+  group's pages together, moving pages and groups, renaming, ungrouping, “Group / Page” labels, and the collapsed
+  groups per person and file in `localStorage`). Opening a document keeps groups together (`migrateDocument`),
+  so a merge or a hand edit can't leave a group split. The pages list (`panels.js`) shows a header per group
+  (chevron, name, page count; the group holding the open page reads darker), with its pages indented under it.
+  **+** opens New page (in the open page's group, after it) or New group (named in place), a page's menu has
+  Move to “…” for each group, Move to new group and Remove from group, and a group's menu has Rename group, New
+  page in group, Collapse and Expand all groups, Ungroup and Delete group and its pages. Pages and groups drag
+  (a page into a group on its header, or next to a page, joining that page's group; a group never into the
+  middle of another), with drop marks, and everything goes through commit, so undo works. More than 12 pages
+  show a filter (page and group names; Escape clears it). Pages are listed as “Group / Page” in the Do and
+  Don't picker, comments, the audit's toast, visual review and the Assets panel. The validator checks `group`
+  (text, or left out) and warns when a group is split; the JSON schema and `docs/schema/README.md` describe it.
+  Optics Components groups its 86 component pages by category (the Overview ungrouped, first), and the guide
+  (version 9) groups its ten pages into Get started, Design systems and Sample files, with a “Pages and page
+  groups” section on Canvas basics; `examples/optics/` and `examples/sample-project/` were rebuilt (0 errors,
+  0 warnings). `tests/page-groups.test.js` covers runs, keeping together (on load too), moving pages and groups,
+  renaming and ungrouping, the project format, the validator and a branch merge; the Optics test checks its
+  groups. Verified in the editor: Optics Components opens grouped; collapsing, Collapse all, the filter, dragging
+  a group and a page into a group, Move to new group with naming in place, and undo; the guide's groups and
+  Canvas basics page.

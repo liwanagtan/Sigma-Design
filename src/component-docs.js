@@ -11,6 +11,7 @@ import { isDeprecated } from './components.js';
 import { ROLES, checkAccessibility } from './a11y.js';
 import { slots } from './use-report.js';
 import { modal } from './libraries.js';
+import { pageLabel } from './page-groups.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 export const STATUSES = { draft: 'Draft', review: 'In review', ready: 'Ready' };
@@ -171,10 +172,10 @@ function exampleFrames() {
   for (const pg of state.doc.pages) walk(pg.children, (n) => void (n.docs && [...(n.docs.dos || []), ...(n.docs.donts || [])].forEach((id) => picked.add(id))));
   const isFrame = (n) => (n.type === 'frame' || n.type === 'group') && n.visible !== false;
   for (const pg of state.doc.pages) {
-    for (const n of pg.children) if (isFrame(n)) out.push({ id: n.id, label: `${n.name} (${pg.name})` });
+    for (const n of pg.children) if (isFrame(n)) out.push({ id: n.id, label: `${n.name} (${pageLabel(pg)})` });
     walk(pg.children, (n) => {
       if (pg.children.includes(n) || !isFrame(n)) return;
-      if (picked.has(n.id) || getParent(n.id)?.name === 'Examples') out.push({ id: n.id, label: `${n.name} (${pg.name})` });
+      if (picked.has(n.id) || getParent(n.id)?.name === 'Examples') out.push({ id: n.id, label: `${n.name} (${pageLabel(pg)})` });
     });
   }
   return out;

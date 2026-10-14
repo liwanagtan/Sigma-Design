@@ -9,7 +9,7 @@ import { createNode, uid, makePaint } from './store.js';
 import { DEFAULT_LAYOUT } from './layout.js';
 import { sampleIconId } from './sample-icons.js';
 
-export const WELCOME_VERSION = 8;
+export const WELCOME_VERSION = 9;
 // The sample icons the guide uses (outline unless marked filled).
 const GUIDE_ICONS = ['plus', 'search', 'pencil', 'copy', 'share-2', 'trash', 'settings', 'user', 'log-out', 'star', 'heart', 'bookmark', 'bell'];
 export const WELCOME_ICONS = [...GUIDE_ICONS.map((n) => sampleIconId(n)), ...['star', 'heart', 'bookmark', 'bell'].map((n) => sampleIconId(n, true))];
@@ -231,6 +231,11 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     ] },
     { h: 'Organize', keys: [['⌘G', 'Group'], ['⌥⌘G', 'Frame the selection'], ['⇧⌘G', 'Ungroup'], ['⌘R', 'Rename'], ['⇧⌘H', 'Hide or show'], ['⇧⌘L', 'Lock or unlock'], ['⌘] / ⌘[', 'Bring forward / send backward']] },
     { h: 'View', keys: [['⇧1', 'Zoom to fit'], ['⇧2', 'Zoom to selection'], ['⇧0', 'Zoom to 100%'], ['⌘-scroll', 'Zoom; scroll or Space-drag to pan'], ['⌃G', 'Show or hide layout grids']] },
+    { h: 'Pages and page groups', bullets: [
+      'Pages can be grouped (Figma can’t): this guide’s are, in Get started, Design systems and Sample files.',
+      '+ in Pages → New page or New group; right-click a page → Move to group. Click a group to fold it away.',
+      'Drag pages to reorder them, into or out of a group; drag a group to move it with its pages.',
+    ] },
   ]);
   basics.parts.push(tryIt('Select two shapes on the right and press ⌘G to group them, then ⇧H to flip the group. Double-click the text to edit it. ⌘Z undoes anything.'));
   const shape = (type, name, colorVar, props) => createNode(type, { name, ...props, fills: [makePaint('#000000')], bindings: { ...(props.bindings || {}), 'fills.0.color': colorVar } });
@@ -595,6 +600,8 @@ export function welcomeDocument(collections, { icons = null } = {}) {
   }
 
   // ---------- pages ----------
+  // Grouped (page groups), so the guide shows them.
+  const inGroup = (group, pg) => Object.assign(pg, { group });
   const pages = [
     page('1 Start here', [guideFrame(start), diagram]),
     page('2 Canvas basics', [guideFrame(basics), practice]),
@@ -606,7 +613,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     page('8 Libraries and versions', [guideFrame(libGuide), flow]),
     page('9 Sigma Tokens', [guideFrame(tokGuide), palette, spacing, radii], [[palette, spacing], [palette, radii]]),
     page('10 Sigma Icons', iconPage, iconColumns),
-  ];
+  ].map((pg, i) => inGroup(i < 4 ? 'Get started' : i < 8 ? 'Design systems' : 'Sample files', pg));
   return { name: WELCOME_NAME, pages, currentPageId: pages[0].id };
 }
 
