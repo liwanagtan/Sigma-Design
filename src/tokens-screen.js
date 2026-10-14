@@ -1,7 +1,8 @@
 // The screen for token files: no canvas, just the design token editor full-screen.
 import { state, commit, subscribe, undo, redo } from './store.js';
 import { openHistory, openSaveVersionDialog } from './history.js';
-import { openLibrariesDialog, publishDependencies } from './libraries.js';
+import { openLibrariesDialog, publishDependencies, libraries } from './libraries.js';
+import { railHTML, registerRailTools, renderRailTools, RAIL_TOOL_ICONS } from './rail.js';
 import { diffCollections, libraryCollections, dependencyChanges } from './variables.js';
 import { mountTokenEditor, unmountTokenEditor } from './variables-ui.js';
 import { goHome, isCurrentSample } from './files.js';
@@ -15,9 +16,8 @@ let root = null;
 
 export function initTokensScreen(el) {
   root = el;
-  el.innerHTML = `
+  el.innerHTML = `${railHTML('tokens')}<div class="screen-main">
     <header class="tokens-header">
-      <button class="logo-btn" data-tokens-menu title="Main menu">${icons.logo}${icons.chevronDown}</button>
       <input class="file-name tokens-file-name" spellcheck="false" aria-label="Sigma Tokens file name">
       <span class="kind-badge tokens-kind">Sigma Tokens</span>
       <div class="tokens-header-actions">
@@ -28,11 +28,21 @@ export function initTokensScreen(el) {
         <button class="icon-btn" data-redo title="Redo  ⇧⌘Z"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><path d="M11 3l3 3-3 3"/><path d="M14 6H6.5a4 4 0 0 0 0 8H9"/></svg></button>
       </div>
     </header>
-    <div class="tokens-editor"></div>`;
+    <div class="tokens-editor"></div></div>`;
+  el.querySelector('[data-rail-home]').addEventListener('click', goHome);
+  registerRailTools('tokens', [
+    { id: 'linked', label: 'Linked Sigma Tokens files', icon: RAIL_TOOL_ICONS.linked, open: () => openLibrariesDialog(), state: () => {
+      const l = libraries();
+      return { title: l.length ? `Linked Sigma Tokens files: ${l.map((x) => `${x.name} v${x.version}`).join(', ')}` : 'Linked Sigma Tokens files: point this file’s tokens at another file’s, e.g. brand colors that use core colors', badge: l.length || null };
+    } },
+    { id: 'import', label: 'Import tokens.json', icon: RAIL_TOOL_ICONS.import, sepBefore: true, open: importIntoThisFile, state: () => ({ title: 'Import tokens.json (W3C design tokens format) into this file' }) },
+    { id: 'export-json', label: 'Export tokens.json', icon: RAIL_TOOL_ICONS.export, open: exportJSONFile, state: () => ({ title: 'Export tokens.json (W3C design tokens format)' }) },
+    { id: 'export-css', label: 'Export CSS variables', icon: RAIL_TOOL_ICONS.code, open: exportCSSFile, state: () => ({ title: 'Export CSS variables (one per token, with each mode)' }) },
+  ]);
 
-  el.querySelector('[data-tokens-menu]').addEventListener('click', (e) => {
+  el.querySelector('[data-rail-menu]').addEventListener('click', (e) => {
     const r = e.currentTarget.getBoundingClientRect();
-    showContextMenu(r.left, r.bottom + 4, [
+    showContextMenu(r.right + 4, r.top, [
       { label: 'Back to files', action: goHome },
       '-',
       { label: 'Export tokens.json (W3C format)', action: exportJSONFile },
@@ -129,6 +139,7 @@ function renderHeader() {
     : dirty ? `<span class="status-chip warn">Unpublished changes · v${pub.version} live</span>`
       : `<span class="status-chip ok">v${pub.version} published</span>`;
   root.querySelector('[data-publish]').disabled = !!pub && !dirty;
+  renderRailTools(root.querySelector('.rail-tools'));
 }
 
 const current = () => state.doc?.variables?.collections || [];

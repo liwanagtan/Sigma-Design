@@ -1147,6 +1147,10 @@ design file, a click away from anywhere.
   pointing at the rail (Tokens in designs and Quality checks). The Σ menu still has all five. Verified in the
   editor: the rail on Optics Components (Optics Tokens in the tooltip, 1 icon library), each button opening
   its dialog, the Σ menu opening beside the rail, and Home going back to the files.
+- **Sigma Tokens and Sigma Icons files** have the rail too (`railHTML`, `registerRailTools`): the Σ menu and Home,
+  then Linked Sigma Tokens files, Import tokens.json, Export tokens.json and Export CSS variables for a token file,
+  and Import SVGs for an icon file. On narrow screens the rail stays (the side panels go), so the Σ menu is always
+  there.
 
 # Part I: AI inside the editor
 
