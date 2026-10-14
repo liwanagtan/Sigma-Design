@@ -56,8 +56,6 @@ body.col-resizing, body.col-resizing * { cursor: col-resize !important; user-sel
 #right { border-left: 1px solid var(--border); }
 
 .file-header { display: flex; align-items: center; gap: 4px; padding: 8px; border-bottom: 1px solid var(--border); }
-.logo-btn { display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 5px; color: var(--muted); }
-.logo-btn:hover { background: var(--hover); }
 .file-name { flex: 1; min-width: 0; border: 1px solid transparent; background: none; border-radius: 4px; padding: 5px 6px; font-weight: 600; font-size: 12px; outline: none; }
 .file-name:hover { border-color: var(--border); }
 .file-name:focus { border-color: var(--accent); }
@@ -288,9 +286,8 @@ kbd { font-family: inherit; color: var(--muted); }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
 @media (max-width: 760px) {
-  :root { --rail-w: 0px; }
-  #app { grid-template-columns: 0 0 1fr 0; }
-  #left, #right, #rail, #app > .col-resizer { display: none; }
+  #app { grid-template-columns: var(--rail-w) 0 1fr 0; }
+  #left, #right, #app > .col-resizer { display: none; }
 }
 
 /* ---------- files home ---------- */
@@ -509,7 +506,9 @@ fieldset.readonly .field-label { cursor: default; }
 .home-files.list .thumb-placeholder { transform: scale(1.4); }
 
 /* ---------- token file screen ---------- */
-.tokens-screen { position: fixed; inset: 0; display: flex; flex-direction: column; background: #fff; }
+.tokens-screen { position: fixed; inset: 0; display: grid; grid-template-columns: var(--rail-w) 1fr; background: #fff; }
+/* The file tools rail on the left (rail.js), the screen beside it. */
+.tokens-screen > .screen-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .tokens-header { display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 12px; border-bottom: 1px solid var(--border); flex: none; }
 .tokens-file-name { flex: 0 1 320px; }
 .tokens-kind { margin: 0; }

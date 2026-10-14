@@ -14,6 +14,7 @@ import {
 import { projectMenuItems } from './project-ui.js';
 import { ask, askText } from './dialogs.js';
 import { resizerHTML } from './columns.js';
+import { railHTML, registerRailTools, renderRailTools, RAIL_TOOL_ICONS } from './rail.js';
 
 let root = null;
 let selected = new Set(); // icon ids (this screen's own selection, not part of the document)
@@ -31,9 +32,8 @@ const typing = (t) => t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' ||
 
 export function initIconsScreen(el) {
   root = el;
-  el.innerHTML = `
+  el.innerHTML = `${railHTML('icons')}<div class="screen-main">
     <header class="tokens-header">
-      <button class="logo-btn" data-icons-menu title="Main menu">${uiIcons.logo}${uiIcons.chevronDown}</button>
       <input class="file-name tokens-file-name icons-file-name" spellcheck="false" aria-label="Sigma Icons file name">
       <span class="kind-badge tokens-kind icons-kind">Sigma Icons</span>
       <div class="tokens-header-actions">
@@ -56,11 +56,15 @@ export function initIconsScreen(el) {
         <div class="home-drop icons-drop" data-drop hidden><div>Drop <b>.svg</b> files to add them${'<span data-drop-group></span>'}</div></div>
       </main>
       <aside class="icons-inspector" data-inspector></aside>
-    </div>`;
+    </div></div>`;
+  el.querySelector('[data-rail-home]').addEventListener('click', goHome);
+  registerRailTools('icons', [
+    { id: 'import', label: 'Import SVGs', icon: RAIL_TOOL_ICONS.import, open: () => pickSVGs(), state: () => ({ title: `Import SVGs${groupFilter ? ` into “${groupFilter}”` : ''} (or drop .svg files on the grid)` }) },
+  ]);
 
-  el.querySelector('[data-icons-menu]').addEventListener('click', (e) => {
+  el.querySelector('[data-rail-menu]').addEventListener('click', (e) => {
     const r = e.currentTarget.getBoundingClientRect();
-    showContextMenu(r.left, r.bottom + 4, [
+    showContextMenu(r.right + 4, r.top, [
       { label: 'Back to files', action: goHome },
       '-',
       { label: 'Import SVGs…', action: pickSVGs },
@@ -389,6 +393,7 @@ function renderHeader() {
     : dirty ? `<span class="status-chip warn">Unpublished changes · v${pub.version} live</span>`
       : `<span class="status-chip ok">v${pub.version} published</span>`;
   root.querySelector('[data-publish]').disabled = (!!pub && !dirty) || !list().length;
+  renderRailTools(root.querySelector('.rail-tools'));
 }
 
 function renderGroups() {
