@@ -77,8 +77,9 @@ test('storage: Welcome to Sigma is reused, and links the sample tokens, skipping
     const icons = (await loadFile(a)).doc.iconLibraries?.[0];
     ok(icons && (await loadFile(icons.fileId)).meta.sample, 'links the sample Sigma Icons');
     eq((await sampleIconFile()).id, icons.fileId, 'which is reused');
-    const newTokenFiles = (await listFiles()).filter((f) => !before.has(f.id) && f.kind === 'tokens');
-    ok(newTokenFiles.length <= 1, 'at most one sample token file is created');
+    // (In a browser's first Welcome to Sigma, Optics comes too, with Optics Tokens: not a sample.)
+    const newTokenFiles = (await listFiles()).filter((f) => !before.has(f.id) && f.kind === 'tokens' && !f.optics);
+    ok(newTokenFiles.length <= 1, `at most one sample token file is created (${newTokenFiles.map((f) => f.name).join(', ')})`);
     // A newer sample token file without the Components collection can't back the sample, so it is skipped.
     const { name, collections } = sampleTokenDocument();
     const broken = await createTokenFileWith(name, collections.filter((c) => c.name !== 'Components'), 'Broken', { meta: { sample: true } });
