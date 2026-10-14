@@ -14,6 +14,7 @@ import {
   renderAssets, renderCommentsList,
 } from './panels.js';
 import { initRail, renderRail } from './rail.js';
+import { resizerHTML } from './columns.js';
 import { initComments, renderCommentPins } from './comments.js';
 import {
   initFiles, loadFile, setCurrentFile, closeCurrentFile, discardCurrentFile, saveNow, getCurrentFileId, goHome, fileKind, isArchived,
@@ -29,6 +30,7 @@ import { clearViewing, resetHistory } from './history.js';
 import { connectProject, saveToProject, project, syncOpenProjectFile } from './project.js';
 
 const appEl = document.getElementById('app');
+appEl.insertAdjacentHTML('beforeend', resizerHTML('left') + resizerHTML('right')); // drag a panel's edge to resize it
 const homeEl = document.getElementById('home');
 const tokensEl = document.getElementById('tokens');
 const iconsEl = document.getElementById('icons');

@@ -19,6 +19,7 @@ import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
 import { PLATFORMS, defaultTokenCode, setTokenCode } from './code-names.js';
 import { ask, isAsking } from './dialogs.js';
+import { resizerHTML } from './columns.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -498,7 +499,7 @@ function render() {
       `<button class="btn" data-act="extend" title="Create a collection that inherits this one and overrides only some values">Extend</button>` +
       (ro ? (lib ? `<button class="btn" data-act="open-library" data-file="${lib.fileId}">Open Sigma Tokens file</button>` : '') : '<button class="btn" data-act="delete-collection">Delete</button>') + '</div></div>' +
       (ext ? '<div class="vars-hint">Greyed values are inherited. Edit a value to override it for this collection; ↺ resets it. Add tokens and modes in the root collection.</div>' : '') +
-      `<div class="vars-work"><div class="vars-table">${groupHeading(col, scope)}${head}${body || empty}</div>${inspector(col)}</div>` +
+      `<div class="vars-work"><div class="vars-table">${groupHeading(col, scope)}${head}${body || empty}</div>${inspector(col)}${resizerHTML('vars-inspector')}</div>` +
       (ext || ro ? '' : '<div class="vars-footer"><button class="btn" data-act="new-variable">+ Create token</button></div>');
   }
   rendering = true; // replacing the HTML blurs a focused field; that's not the user finishing an edit
@@ -506,7 +507,7 @@ function render() {
     (inline ? '' : `<div class="modal-head">Design tokens<span class="head-actions">` +
       (localCollections().length ? '<button class="btn" data-act="move-to-file" title="Move these tokens into a Sigma Tokens file and link it">Move to Sigma Tokens…</button>' : '') +
       `<button class="icon-btn" data-close>${icons.close}</button></span></div>`) +
-    `<div class="vars-body"><aside class="vars-side">${sidebar}</aside>` +
+    `<div class="vars-body">${resizerHTML('vars-side')}<aside class="vars-side">${sidebar}</aside>` +
     `<section class="vars-main">${main}</section></div>`;
   rendering = false;
   if (searching) {

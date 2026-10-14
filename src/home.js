@@ -21,6 +21,7 @@ import { modal } from './libraries.js';
 import { icons } from './icons.js';
 import { toast } from './io.js';
 import { ask } from './dialogs.js';
+import { resizerHTML } from './columns.js';
 
 const PREFS_KEY = 'sigma.home.prefs';
 const KIND_ORDER = ['design', 'tokens', 'icons']; // the Welcome to Sigma folder: the guide, then its libraries
@@ -72,7 +73,7 @@ export function ago(t) {
 // ---------- setup ----------
 export function initHome(el) {
   root = el;
-  root.innerHTML = `
+  root.innerHTML = `${resizerHTML('home-side')}
     <aside class="home-side">
       <div class="home-brand">${icons.logo}<span>Sigma</span></div>
       <div class="home-project" id="home-project"></div>
