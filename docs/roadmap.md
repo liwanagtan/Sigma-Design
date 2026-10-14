@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Status: **Every phase is done: Phases 1–14, Part D (15–19), Part E (20–30), Part F (31–35) Part G (36–37, Optics) and Part H (38, page groups)**, and the small and medium items from the "Later" and "Follow-ups" lists. Drawing icons is no longer planned (icons come from icon libraries).
+Status: **Every phase is done: Phases 1–14, Part D (15–19), Part E (20–30), Part F (31–35) Part G (36–37, Optics) and Part H (38–39: page groups, the file tools rail)**, and the small and medium items from the "Later" and "Follow-ups" lists. Drawing icons is no longer planned (icons come from icon libraries).
 
 **What's next, in order:**
 
@@ -411,6 +411,7 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 36: Optics, a working design system inspired by Polaris (Part G)
 - [x] Phase 37: Optics Components: every Polaris component, a page each (Part G)
 - [x] Phase 38: Page groups (Part H)
+- [x] Phase 39: The file tools rail (Part H)
 
 ## Follow-ups
 
@@ -1113,3 +1114,21 @@ Components (87 pages) is the first to use it: its components grouped by category
   groups. Verified in the editor: Optics Components opens grouped; collapsing, Collapse all, the filter, dragging
   a group and a page into a group, Move to new group with naming in place, and undo; the guide's groups and
   Canvas basics page.
+
+## Phase 39: The file tools rail
+
+The Design panel with nothing selected was busy: the file's Sigma Tokens file, its tokens and their audit, and its
+component and icon libraries took most of it. They move to a thin rail of icon buttons at the left edge of a
+design file, a click away from anywhere.
+
+- **The rail:** five icon buttons, top to bottom: Change Sigma Tokens file, Browse design tokens, Audit design
+  tokens, then (after a divider) Component libraries and Icon libraries. Each opens the dialog the panel's
+  buttons opened. The tokens button has a red dot when the file has no Sigma Tokens file or several; the library
+  buttons show how many are linked; each tooltip says what's linked (“Sigma Tokens file: Optics Tokens v1”).
+- **The Design panel** with nothing selected keeps the frame presets, Components (publishing), Page and Export.
+- **What shipped:** `src/rail.js` (the buttons, their state and tooltips; re-rendered with the layers and the
+  panel, only when something changed), a 40px column in the editor's grid (`--rail-w`; hidden on narrow screens
+  with the panels), the three sections and their actions removed from `panels.js`, and the README and the guide
+  pointing at the rail (Tokens in designs and Quality checks). The Σ menu still has all five. Verified in the
+  editor: the rail on Optics Components (Optics Tokens in the tooltip, 1 icon library), and each button opening
+  its dialog.

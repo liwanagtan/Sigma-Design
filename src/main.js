@@ -13,6 +13,7 @@ import {
   initPanels, renderLayers, renderProps, renderPages, renderToolbar, renderZoomLabel, renderFileHeader, highlightLayerHover,
   renderAssets, renderCommentsList,
 } from './panels.js';
+import { initRail, renderRail } from './rail.js';
 import { initComments, renderCommentPins } from './comments.js';
 import {
   initFiles, loadFile, setCurrentFile, closeCurrentFile, discardCurrentFile, saveNow, getCurrentFileId, goHome, fileKind, isArchived,
@@ -76,6 +77,7 @@ function frame() {
     highlightLayerHover();
   }
   if (dirty.panels) renderProps();
+  if (dirty.layers || dirty.panels) renderRail();
   if (dirty.tool) {
     renderToolbar();
     refreshCursor();
@@ -277,6 +279,7 @@ addNormalizer(fixGroups);
 initTextEditor(canvas);
 setViewportElement(canvas);
 initPanels();
+initRail();
 initInteractions(canvas);
 initComments(canvas);
 initHome(homeEl);

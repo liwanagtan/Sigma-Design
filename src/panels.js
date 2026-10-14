@@ -23,8 +23,7 @@ import {
   componentPanel, onComponentClick, onComponentChange, bindPropertyDrag, propBinding, propMenuItems, openPlayground, APPLY_PROP_ICON,
 } from './component-ui.js';
 import {
-  libraries, componentLibraries, openLibrariesDialog, openPublishComponentsDialog, componentPublishStatus, openDesignTokensDialog,
-  iconLibraries, openIconLibrariesDialog, ICONS_ICON,
+  openLibrariesDialog, openPublishComponentsDialog, componentPublishStatus, openDesignTokensDialog, openIconLibrariesDialog,
 } from './libraries.js';
 import { openInsertIcon, openSwapIcon, canInsertIcon, iconLayerInfo } from './icon-ui.js';
 import { findIcon } from './icon-library.js';
@@ -836,7 +835,6 @@ function setMode(target, colId, modeId) {
 }
 
 // ---------- variable bindings ----------
-const TOKEN_ICON = '<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 1.2l5 2.9v5.8L7 12.8 2 9.9V4.1z"/><circle cx="7" cy="7" r="1.6"/></svg>';
 const VAR_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M6 1l4.3 2.5v5L6 11 1.7 8.5v-5z"/><circle cx="6" cy="6" r="1.4"/></svg>';
 
 // The variable all `nodes` bind at `path`: a variable, MIXED, or null when unbound.
@@ -1197,27 +1195,7 @@ function buildProps() {
       html += section('Frame', `<div class="presets">${FRAME_PRESETS.map(([name, w, h], i) =>
         `<button class="preset" data-preset="${i}"><span>${name}</span><span class="muted">${w}×${h}</span></button>`).join('')}</div>`);
     }
-    const locals = localCollections();
-    const vcount = locals.reduce((n, c) => n + c.variables.length, 0);
-    const libLine = (icon, l) => `<div class="lib-line"><span class="licon purple">${icon}</span><span class="link-name">${esc(l.name)}</span><span class="muted">v${l.version}</span></div>`;
-    // One token file for the design tokens, plus local tokens.
-    const tokens = libraries();
-    html += section('Design tokens',
-      (tokens.length ? tokens.map((l) => libLine(TOKEN_ICON, l)).join('') +
-        (tokens.length > 1 ? '<div class="warn">This file uses several Sigma Tokens files. Choose one in Design tokens.</div>' : '')
-        : '<div class="muted">Choose a Sigma Tokens file to use its design tokens in this file.</div>') +
-      `<button class="btn wide" data-action="open-design-tokens">${tokens.length ? 'Change Sigma Tokens file…' : 'Choose Sigma Tokens file…'}</button>` +
-      `<div class="muted">${vcount ? `${vcount} local token${vcount === 1 ? '' : 's'} in this file` : 'No local tokens in this file.'}</div>` +
-      '<button class="btn wide" data-action="open-variables" title="This file’s local tokens and the Sigma Tokens file it uses">Browse design tokens</button>' +
-      '<button class="btn wide" data-action="audit" title="Find colors, text styles, spacing, radii and shadows that don’t use tokens">Audit design tokens…</button>');
-    const comps = componentLibraries();
-    html += section('Component libraries',
-      (comps.length ? comps.map((l) => libLine(COMPONENT_LIB_ICON, l)).join('') : '<div class="muted">Link Sigma Design files that publish components to use them from Assets.</div>') +
-      '<button class="btn wide" data-action="open-libraries">Manage component libraries…</button>');
-    const iconLibs = iconLibraries();
-    html += section('Icon libraries',
-      (iconLibs.length ? iconLibs.map((l) => libLine(ICONS_ICON.replace(/16/g, '12'), l)).join('') : '<div class="muted">Link Sigma Icons files to use their icons in components.</div>') +
-      '<button class="btn wide" data-action="open-icon-libraries">Manage icon libraries…</button>');
+    // The file's tokens and libraries are on the file tools rail (rail.js).
     const pub = componentPublishStatus();
     if (pub.count && state.doc.project?.path) {
       html += section('Components', `<div class="muted">${pub.count} component${pub.count === 1 ? '' : 's'} in this file. In a project, saving is publishing: files that use them read them from the project.</div>`);
@@ -1934,14 +1912,6 @@ function initProps() {
       return;
     }
     switch (b.dataset.action) {
-      case 'open-variables':
-        return openVariablesEditor();
-      case 'audit':
-        return openAuditDialog();
-      case 'open-libraries':
-        return openLibrariesDialog();
-      case 'open-icon-libraries':
-        return openIconLibrariesDialog();
       case 'insert-icon':
         return openInsertIcon(b.getBoundingClientRect());
       case 'swap-icon':
@@ -1950,8 +1920,6 @@ function initProps() {
         const r = b.getBoundingClientRect();
         return showContextMenu(r.left, r.bottom + 4, propMenuItems(nodes, 'iconId', r));
       }
-      case 'open-design-tokens':
-        return openDesignTokensDialog();
       case 'publish-components':
         return openPublishComponentsDialog();
       case 'reset-overrides':
