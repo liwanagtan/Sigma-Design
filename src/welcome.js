@@ -339,8 +339,8 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'An extension like Brand B changes only some tokens (the accent). Pick it in the same place to re-skin a design.',
     ] },
     { h: 'This file’s tokens', bullets: [
-      'With nothing selected, the panel shows the Sigma Tokens file this file uses. Design tokens… (Σ menu) changes it; files with the same token names are interchangeable.',
-      'Browse design tokens… (Σ menu, or the panel) shows them all: this file’s local tokens (most files have none) and the Sigma Tokens file’s, read-only. Local tokens can move to a Sigma Tokens file later.',
+      'The file tools rail (the thin column at the far left) has this file’s Sigma Tokens file: hover the first button to see it, click it to change it. Files with the same token names are interchangeable.',
+      'Browse design tokens… (Σ menu, or the rail) shows them all: this file’s local tokens (most files have none) and the Sigma Tokens file’s, read-only. Local tokens can move to a Sigma Tokens file later.',
       'Audit design tokens… finds the values that don’t use a token yet. See page 7.',
     ] },
   ]);
@@ -411,7 +411,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'In a Sigma Tokens file, a color token’s inspector checks it against the colors it’s used with, in every mode.',
     ] },
     { h: 'Token audit', bullets: [
-      'Audit design tokens… (Σ menu, or the panel with nothing selected) lists every color, text style, spacing, radius and shadow that doesn’t use a token, with the token that matches.',
+      'Audit design tokens… (Σ menu, or the rail) lists every color, text style, spacing, radius and shadow that doesn’t use a token, with the token that matches.',
       'Use, Choose… or Use all exact matches binds them; Select shows the layers.',
       'It also finds layers using deprecated tokens and instances of deprecated components.',
     ] },
