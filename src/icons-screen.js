@@ -59,7 +59,7 @@ export function initIconsScreen(el) {
     </div></div>`;
   el.querySelector('[data-rail-home]').addEventListener('click', goHome);
   registerRailTools('icons', [
-    { id: 'import', label: 'Import SVGs', icon: RAIL_TOOL_ICONS.import, open: () => pickSVGs(), state: () => ({ title: `Import SVGs${groupFilter ? ` into “${groupFilter}”` : ''} (or drop .svg files on the grid)` }) },
+    { id: 'import', label: 'Import SVGs', icon: RAIL_TOOL_ICONS.import, open: () => pickSVGs(), state: () => ({ detail: `${groupFilter ? `Into “${groupFilter}”. ` : ''}Or drop .svg files on the grid` }) },
   ]);
 
   el.querySelector('[data-rail-menu]').addEventListener('click', (e) => {

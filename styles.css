@@ -1077,3 +1077,9 @@ button.group-caret.open { transform: rotate(90deg); }
 .ask-input { width: 100%; box-sizing: border-box; }
 .btn.primary.destructive { background: #e03e1a; border-color: #e03e1a; }
 .btn.primary.destructive:hover { background: #c4320a; }
+
+/* ---------- rail tooltips (rail.js) ---------- */
+.rail-tip { position: fixed; z-index: 250; max-width: 260px; padding: 6px 10px; border-radius: 6px; background: #1e1e1e; color: #fff; font-size: 12px; line-height: 1.4; pointer-events: none; box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
+.rail-tip[hidden] { display: none; }
+.rail-tip-label { font-weight: 600; }
+.rail-tip-detail { color: rgba(255,255,255,0.72); }

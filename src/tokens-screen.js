@@ -33,11 +33,11 @@ export function initTokensScreen(el) {
   registerRailTools('tokens', [
     { id: 'linked', label: 'Linked Sigma Tokens files', icon: RAIL_TOOL_ICONS.linked, open: () => openLibrariesDialog(), state: () => {
       const l = libraries();
-      return { title: l.length ? `Linked Sigma Tokens files: ${l.map((x) => `${x.name} v${x.version}`).join(', ')}` : 'Linked Sigma Tokens files: point this file’s tokens at another file’s, e.g. brand colors that use core colors', badge: l.length || null };
+      return { detail: l.length ? l.map((x) => `${x.name} v${x.version}`).join(', ') : 'None linked: point this file’s tokens at another file’s, e.g. brand colors that use core colors', badge: l.length || null };
     } },
-    { id: 'import', label: 'Import tokens.json', icon: RAIL_TOOL_ICONS.import, sepBefore: true, open: importIntoThisFile, state: () => ({ title: 'Import tokens.json (W3C design tokens format) into this file' }) },
-    { id: 'export-json', label: 'Export tokens.json', icon: RAIL_TOOL_ICONS.export, open: exportJSONFile, state: () => ({ title: 'Export tokens.json (W3C design tokens format)' }) },
-    { id: 'export-css', label: 'Export CSS variables', icon: RAIL_TOOL_ICONS.code, open: exportCSSFile, state: () => ({ title: 'Export CSS variables (one per token, with each mode)' }) },
+    { id: 'import', label: 'Import tokens.json', icon: RAIL_TOOL_ICONS.import, sepBefore: true, open: importIntoThisFile, state: () => ({ detail: 'Into this file, from the W3C design tokens format' }) },
+    { id: 'export-json', label: 'Export tokens.json', icon: RAIL_TOOL_ICONS.export, open: exportJSONFile, state: () => ({ detail: 'In the W3C design tokens format' }) },
+    { id: 'export-css', label: 'Export CSS variables', icon: RAIL_TOOL_ICONS.code, open: exportCSSFile, state: () => ({ detail: 'One variable per token, with each mode' }) },
   ]);
 
   el.querySelector('[data-rail-menu]').addEventListener('click', (e) => {
