@@ -11,11 +11,12 @@
 //         sigma: { parseColorValue, formatColor, parseCSSValue, formatCSSValue, iconSVG } }
 // Paths are relative to the project root. Every write is checked by reading back: if what the adapter reads
 // isn't what Sigma has, the files it changed are put back as they were.
-import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync } from 'node:fs';
-import { join, dirname, resolve, relative, isAbsolute } from 'node:path';
+import { readFileSync, existsSync, unlinkSync } from 'node:fs';
+import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseColorValue, formatColor, parseCSSValue, formatCSSValue } from '../../src/token-sync.js';
 import { iconSVG } from '../../src/icon-sync.js';
+import { writeAtomic } from './project.mjs';
 
 const inside = (root, path) => {
   const rel = relative(root, resolve(root, path));
@@ -39,7 +40,7 @@ export class Snapshot {
       const full = inside(this.root, path);
       if (text === null) {
         if (existsSync(full)) unlinkSync(full);
-      } else writeFileSync(full, text);
+      } else writeAtomic(full, text);
     }
   }
   // [{ path, before, after }] for the files that changed.
@@ -59,9 +60,7 @@ export function adapterContext(root, entry, snapshot = new Snapshot(root)) {
     exists: (path) => existsSync(inside(root, path)),
     write: (path, text) => {
       snapshot.remember(path);
-      const full = inside(root, path);
-      mkdirSync(dirname(full), { recursive: true });
-      writeFileSync(full, text);
+      writeAtomic(inside(root, path), text);
     },
     remove: (path) => {
       snapshot.remember(path);

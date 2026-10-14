@@ -38,7 +38,12 @@ function project() {
 }
 const sigmaPath = (dir) => join(dir, '.sigma/tokens/app.sigma.json');
 const tokenValue = (dir, name) => {
-  const f = JSON.parse(readFileSync(sigmaPath(dir), 'utf8'));
+  let f;
+  try {
+    f = JSON.parse(readFileSync(sigmaPath(dir), 'utf8'));
+  } catch {
+    return undefined; // being written: ask again
+  }
   for (const c of f.collections) for (const v of c.variables) if (v.name === name) return Object.values(v.valuesByMode)[0];
 };
 // Sigma's save: the file with one token changed, PUT like the editor does.

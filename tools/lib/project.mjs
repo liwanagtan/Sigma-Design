@@ -1,5 +1,5 @@
 // Reading a project's Sigma files from disk (Node), shared by tools/validate.js and tools/sigma.mjs.
-import { readFileSync, readdirSync, statSync, existsSync, writeFileSync, mkdirSync, unlinkSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync, writeFileSync, mkdirSync, unlinkSync, renameSync } from 'node:fs';
 import { join, relative, sep, dirname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
@@ -57,8 +57,16 @@ export const readText = (root, path) => readFileSync(join(root, path), 'utf8');
 export const exists = (root, path) => existsSync(join(root, path));
 export function writeText(root, path, text) {
   if (isPackagePath(path)) throw new Error(`${path} comes from a design system package: change it in that package`);
-  mkdirSync(dirname(join(root, path)), { recursive: true });
-  writeFileSync(join(root, path), text);
+  writeAtomic(join(root, path), text);
+}
+
+/** Write a file all at once (a temporary file, then a rename), so nothing (Sigma's polling, a watcher, an
+ * agent) ever reads half of it. */
+export function writeAtomic(full, text) {
+  mkdirSync(dirname(full), { recursive: true });
+  const tmp = join(dirname(full), `.sigma-${process.pid}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`);
+  writeFileSync(tmp, text);
+  renameSync(tmp, full);
 }
 
 // A file as it is in a git revision (null if it isn't there, or this isn't a git repo).
