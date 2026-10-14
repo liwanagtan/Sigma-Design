@@ -39,28 +39,29 @@ export const RAIL_TOOL_ICONS = {
   code: svg('<path d="M7 5.5L2.8 10 7 14.5M13 5.5l4.2 4.5-4.2 4.5"/>'),
 };
 
-// The tools, in order: { id, label, icon, open, state() → { title, badge?, alert? }, sepBefore? }.
+// The tools, in order: { id, label, icon, open, state() → { detail, badge?, alert? }, sepBefore? }. The tooltip shows
+// the label, and the detail under it (what's linked, or what it does).
 const TOOLS = [
   { id: 'tokens', label: 'Change Sigma Tokens file', icon: RAIL_ICONS.tokens, open: () => openDesignTokensDialog(), state: () => {
     const t = libraries();
-    if (!t.length) return { title: 'Choose a Sigma Tokens file: none chosen yet', alert: true };
-    if (t.length > 1) return { title: `This file uses ${t.length} Sigma Tokens files (${t.map((l) => l.name).join(', ')}): choose one`, alert: true };
-    return { title: `Sigma Tokens file: ${t[0].name} v${t[0].version}. Change it` };
+    if (!t.length) return { detail: 'None chosen yet: choose one to use its tokens', alert: true };
+    if (t.length > 1) return { detail: `This file uses ${t.length} (${t.map((l) => l.name).join(', ')}): choose one`, alert: true };
+    return { detail: `Using ${t[0].name} v${t[0].version}` };
   } },
   { id: 'browse', label: 'Browse design tokens', icon: RAIL_ICONS.browse, open: () => openVariablesEditor(), state: () => {
     const n = localCollections().reduce((k, c) => k + c.variables.length, 0);
-    return { title: `Browse design tokens: the Sigma Tokens file’s, and ${n ? `${n} local token${n === 1 ? '' : 's'}` : 'no local tokens'} in this file` };
+    return { detail: `The Sigma Tokens file’s, and ${n ? `${n} local token${n === 1 ? '' : 's'}` : 'no local tokens'} in this file` };
   } },
   { id: 'audit', label: 'Audit design tokens', icon: RAIL_ICONS.audit, open: () => openAuditDialog(), state: () => ({
-    title: 'Audit design tokens: find colors, text styles, spacing, radii and shadows that don’t use tokens',
+    detail: 'Find colors, text styles, spacing, radii and shadows that don’t use tokens',
   }) },
   { id: 'components', label: 'Component libraries', icon: RAIL_ICONS.components, sepBefore: true, open: () => openLibrariesDialog(), state: () => {
     const l = componentLibraries();
-    return { title: l.length ? `Component libraries: ${l.map((x) => `${x.name} v${x.version}`).join(', ')}` : 'Component libraries: link Sigma Design files that publish components, to use them from Assets', badge: l.length || null };
+    return { detail: l.length ? l.map((x) => `${x.name} v${x.version}`).join(', ') : 'None linked: link files that publish components, to use them from Assets', badge: l.length || null };
   } },
   { id: 'icons', label: 'Icon libraries', icon: RAIL_ICONS.icons, open: () => openIconLibrariesDialog(), state: () => {
     const l = iconLibraries();
-    return { title: l.length ? `Icon libraries: ${l.map((x) => `${x.name} v${x.version}`).join(', ')}` : 'Icon libraries: link Sigma Icons files, to use their icons', badge: l.length || null };
+    return { detail: l.length ? l.map((x) => `${x.name} v${x.version}`).join(', ') : 'None linked: link Sigma Icons files, to use their icons', badge: l.length || null };
   } },
 ];
 
@@ -74,8 +75,8 @@ export function registerRailTools(kind, tools) {
 /** The rail's markup for the token and icon screens: Σ menu, Home, then that kind's tools (renderRailTools). */
 export function railHTML(kind) {
   return `<nav class="rail" aria-label="File tools">` +
-    `<button class="rail-btn rail-logo" data-rail-menu title="Main menu" aria-label="Main menu" aria-haspopup="menu">${uiIcons.logo}</button>` +
-    `<button class="rail-btn" data-rail-home title="Back to files" aria-label="Back to files">${uiIcons.home}</button>` +
+    `<button class="rail-btn rail-logo" data-rail-menu aria-label="Main menu" data-tip-detail="Files, export, version history and more" aria-haspopup="menu">${uiIcons.logo}</button>` +
+    `<button class="rail-btn" data-rail-home aria-label="Home" data-tip-detail="Back to your files">${uiIcons.home}</button>` +
     `<div class="rail-sep"></div><div class="rail-tools" data-rail-kind="${kind}"></div></nav>`;
 }
 
@@ -91,8 +92,8 @@ const lastHTML = new WeakMap();
 export function renderRailTools(container, kind = container?.dataset.railKind) {
   if (!container || !state.doc || !KINDS[kind]) return;
   const html = KINDS[kind].map((t) => {
-    const st = t.state ? t.state() : { title: t.label };
-    return `${t.sepBefore ? '<div class="rail-sep"></div>' : ''}<button class="rail-btn" data-rail="${t.id}" title="${esc(st.title)}" aria-label="${esc(t.label)}">${t.icon}` +
+    const st = t.state ? t.state() : {};
+    return `${t.sepBefore ? '<div class="rail-sep"></div>' : ''}<button class="rail-btn" data-rail="${t.id}" aria-label="${esc(t.label)}"${st.detail ? ` data-tip-detail="${esc(st.detail)}"` : ''}>${t.icon}` +
       `${st.alert ? '<span class="rail-dot"></span>' : st.badge ? `<span class="rail-badge">${st.badge}</span>` : ''}</button>`;
   }).join('');
   if (html !== lastHTML.get(container)) {
@@ -109,3 +110,62 @@ export function initRail() {
 export function renderRail() {
   renderRailTools(document.getElementById('rail-tools'), 'design');
 }
+
+// ---------- tooltips ----------
+// Every rail button's tooltip, shown beside it: its name, and under it what's linked or what it does. Sigma's
+// own, not the browser's (that one is slow, and some embedded browsers don't show it). Quick to appear, and
+// instant while moving between buttons; also shown when a button gets keyboard focus.
+let tip = null;
+let showTimer = 0;
+let hiddenAt = 0;
+let tipFor = null;
+function tipEl() {
+  if (!tip) {
+    tip = document.createElement('div');
+    tip.className = 'rail-tip';
+    tip.setAttribute('role', 'tooltip');
+    tip.hidden = true;
+    document.body.appendChild(tip);
+  }
+  return tip;
+}
+function showTip(btn) {
+  const el = tipEl();
+  const label = btn.getAttribute('aria-label') || '';
+  const detail = btn.dataset.tipDetail || '';
+  el.innerHTML = `<div class="rail-tip-label">${esc(label)}</div>${detail ? `<div class="rail-tip-detail">${esc(detail)}</div>` : ''}`;
+  el.hidden = false;
+  const r = btn.getBoundingClientRect();
+  const t = el.getBoundingClientRect();
+  el.style.left = `${Math.round(r.right + 8)}px`;
+  el.style.top = `${Math.round(Math.max(8, Math.min(window.innerHeight - t.height - 8, r.top + r.height / 2 - t.height / 2)))}px`;
+  tipFor = btn;
+}
+function hideTip() {
+  clearTimeout(showTimer);
+  if (tip && !tip.hidden) {
+    tip.hidden = true;
+    hiddenAt = Date.now();
+  }
+  tipFor = null;
+}
+document.addEventListener('mouseover', (e) => {
+  const btn = e.target.closest?.('.rail-btn');
+  if (!btn || btn === tipFor) return;
+  clearTimeout(showTimer);
+  // Moving from one button to the next shows the next at once.
+  const quick = (tip && !tip.hidden) || Date.now() - hiddenAt < 600;
+  showTimer = setTimeout(() => btn.isConnected && showTip(btn), quick ? 0 : 300);
+});
+document.addEventListener('mouseout', (e) => {
+  const btn = e.target.closest?.('.rail-btn');
+  if (btn && !btn.contains(e.relatedTarget)) hideTip();
+});
+document.addEventListener('focusin', (e) => {
+  const btn = e.target.closest?.('.rail-btn');
+  if (btn && btn.matches(':focus-visible')) showTip(btn);
+});
+document.addEventListener('focusout', (e) => e.target.closest?.('.rail-btn') && hideTip());
+// Clicking (a menu or dialog opens), scrolling, a key, or leaving the window hides it.
+for (const type of ['pointerdown', 'wheel', 'keydown']) document.addEventListener(type, () => tipFor && hideTip(), true);
+window.addEventListener('blur', hideTip);
