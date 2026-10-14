@@ -5,7 +5,7 @@ import {
   listFiles, createFile, renameFile, duplicateFile, deleteFile, downloadFile, importFiles, pickFilesToImport,
   listArchivedFiles, archiveFile, restoreFile, emptyArchive,
   storageSummary, openFile, fileHref, fileKind, newTokenDocument, newIconsDocument, welcomeFile, isSampleFile,
-  loadFile, addOptics,
+  loadFile,
 } from './files.js';
 import { blankDocument } from './sample.js';
 import {
@@ -175,7 +175,6 @@ export function initHome(el) {
     if (action) {
       e.preventDefault();
       const act = action.dataset.emptyAction;
-      if (act === 'optics') return addOpticsFiles();
       if (act === 'icons') return newIconsFile();
       if (act === 'icon-set') return newIconSetFile(ICON_SETS.find((s) => s.id === action.dataset.set));
       return act === 'welcome' ? openWelcome() : act === 'tokens' ? newTokenFile() : newBlankFile();
@@ -488,13 +487,6 @@ async function openWelcome() {
 
 // A complete sample design system: primitives, semantic Light/Dark colors, a brand, text styles and
 // component tokens, published so design files can link it right away. Opens the existing one if there is one.
-// Optics, the working design system, as files of your own (Add Optics design system, in the Welcome to Sigma folder).
-async function addOpticsFiles() {
-  toast('Adding Optics…');
-  const ids = await addOptics();
-  toast(`Added Optics: Optics Tokens, Optics Icons, Optics Foundations and Optics Components (${ids.length} files)`);
-  renderHome();
-}
 
 
 function afterImport(ids) {
@@ -706,7 +698,6 @@ function archivedCard(f) {
 const WELCOME_INTRO = `<div class="welcome-intro">
   <p><b>Welcome to Sigma</b> is where to learn Sigma: a guide, and the small design system it's built with. Open the <b>Guide</b> first; it explains everything, page by page, with examples to try.</p>
   <p class="muted">These files are for looking at: open them to see how everything is built, but they can't be changed, renamed or deleted. <b>Make an editable copy</b> (in the banner, the Σ menu, or a file's ⋯ menu here) gives you one of your own, which goes with your files.</p>
-  <p class="muted"><b>Optics</b>, a complete design system inspired by Shopify’s Polaris (tokens, icons, foundations and every Polaris component), came as files of your own with your first Welcome to Sigma. <button class="link-btn" data-empty-action="optics">Add Optics design system</button> makes a fresh set.</p>
 </div>`;
 const SAMPLE_DESCRIPTIONS = {
   design: 'The guide. Ten pages, each with a short explanation and examples: the canvas, layout, components, design tokens, style, quality checks, libraries and versions, tokens files and icons files.',
@@ -730,9 +721,8 @@ function card(f, { describe = false } = {}) {
     : `<div class="card-name" title="${esc(f.name)}">${esc(f.name)}</div>`;
   return `<a class="file-card${tokens ? ' tokens' : ''}" href="${fileHref(f.id)}" data-id="${f.id}" draggable="false">
     <div class="file-thumb" style="background:${tokens ? '#FFFFFF' : esc(f.background || '#F5F5F5')}">${thumb}</div>
-    <div class="file-info">${name}<div class="file-time">${kindBadge(kind)}${sample
-      ? `<span class="kind-badge sample" title="A Welcome to Sigma file: for looking at; make an editable copy to change it">Sample</span>${tokens ? 'For the guide' : 'Guide to Sigma'}` // never edited, so no "Edited … ago"
-      : `Edited ${ago(f.updatedAt)}`}</div>${describe && sample && SAMPLE_DESCRIPTIONS[kind] ? `<div class="card-desc">${SAMPLE_DESCRIPTIONS[kind]}</div>` : ''}</div>
+    <div class="file-info">${name}${sample ? '' // Welcome to Sigma's files: just the name and what they are (no badges; never edited)
+      : `<div class="file-time">${kindBadge(kind)}Edited ${ago(f.updatedAt)}</div>`}${describe && sample && SAMPLE_DESCRIPTIONS[kind] ? `<div class="card-desc">${SAMPLE_DESCRIPTIONS[kind]}</div>` : ''}</div>
     <div class="file-created">${sample ? '' : new Date(f.createdAt).toLocaleDateString()}</div>
     <button class="icon-btn file-more" data-more title="More actions">${MORE_ICON}</button>
   </a>`;

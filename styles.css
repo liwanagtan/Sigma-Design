@@ -1095,5 +1095,6 @@ body.view-only .rail-tools [data-rail="tokens"], body.view-only .rail-tools [dat
 body.view-only .rail-tools [data-rail="linked"], body.view-only .rail-tools [data-rail="import"], body.view-only .rail-tools .rail-sep { display: none !important; }
 body.view-only [data-act="add-mode"], body.view-only [data-act="delete-collection"], body.view-only [data-act="extend"], body.view-only [data-act="move-to-file"],
 body.view-only [data-act="new-collection"], body.view-only [data-act="new-group"], body.view-only [data-act="new-variable"] { display: none !important; }
+body.view-only .tokens-kind { display: none; } /* the Tokens / Icons badge in the top bar */
 body.view-only .file-name[readonly] { cursor: default; }
 body.view-only .file-name[readonly]:hover { border-color: transparent; }

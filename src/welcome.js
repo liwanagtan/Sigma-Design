@@ -9,7 +9,7 @@ import { createNode, uid, makePaint } from './store.js';
 import { DEFAULT_LAYOUT } from './layout.js';
 import { sampleIconId } from './sample-icons.js';
 
-export const WELCOME_VERSION = 11;
+export const WELCOME_VERSION = 12;
 // The sample icons the guide uses (outline unless marked filled).
 const GUIDE_ICONS = ['plus', 'search', 'pencil', 'copy', 'share-2', 'trash', 'settings', 'user', 'log-out', 'star', 'heart', 'bookmark', 'bell'];
 export const WELCOME_ICONS = [...GUIDE_ICONS.map((n) => sampleIconId(n)), ...['star', 'heart', 'bookmark', 'bell'].map((n) => sampleIconId(n, true))];
@@ -179,7 +179,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'When a tokens or icons file publishes a new version, the design files that use it are offered the update.',
     ] },
     { h: 'A complete design system: Optics', p: [
-      'Your files also have Optics, a design system made in Sigma and inspired by Shopify’s Polaris: Optics Tokens (in Tokens), Optics Icons (in Icons), and Optics Foundations and Optics Components (in Design), with color, type, spacing, elevation, motion, icons and documented, ready components. They’re yours to change. Link Optics Tokens and Optics Components from your own files to design with them; Add Optics design system, in the Welcome to Sigma folder, adds them again.',
+      'Your files also have Optics, a design system made in Sigma and inspired by Shopify’s Polaris: Optics Tokens (in Tokens), Optics Icons (in Icons), and Optics Foundations and Optics Components (in Design), with color, type, spacing, elevation, motion, icons and documented, ready components. They’re yours to change. Link Optics Tokens and Optics Components from your own files to design with them.',
     ] },
     { h: 'Find your way', bullets: [
       'Layers and Assets are on the left; the thin column at the far left has this file’s tokens and libraries. The right panel shows what you’ve selected.',
