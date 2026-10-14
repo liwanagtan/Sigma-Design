@@ -13,6 +13,7 @@ import {
 } from './icon-library.js';
 import { projectMenuItems } from './project-ui.js';
 import { ask, askText } from './dialogs.js';
+import { resizerHTML } from './columns.js';
 
 let root = null;
 let selected = new Set(); // icon ids (this screen's own selection, not part of the document)
@@ -43,7 +44,7 @@ export function initIconsScreen(el) {
         <button class="icon-btn" data-redo title="Redo  ⇧⌘Z"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><path d="M11 3l3 3-3 3"/><path d="M14 6H6.5a4 4 0 0 0 0 8H9"/></svg></button>
       </div>
     </header>
-    <div class="icons-body">
+    <div class="icons-body">${resizerHTML('icons-groups')}${resizerHTML('icons-inspector')}
       <nav class="icons-groups" data-groups></nav>
       <main class="icons-main">
         <div class="icons-toolbar">
