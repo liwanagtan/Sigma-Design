@@ -1,12 +1,15 @@
 # Sigma roadmap
 
-Status: **Every phase is done: Phases 1–14, Part D (15–19), Part E (20–30), Part F (31–35) Part G (36–37, Optics) and Part H (38–39: page groups, the file tools rail)**, and the small and medium items from the "Later" and "Follow-ups" lists. Drawing icons is no longer planned (icons come from icon libraries).
+Status: **Every phase is done: Phases 1–14, Part D (15–19), Part E (20–30), Part F (31–35) Part G (36–37, Optics) and Part H (38–39: page groups, the file tools rail)**, and the small and medium items from the "Later" and "Follow-ups" lists. Drawing icons is no longer planned (icons come from icon libraries); vector layers and the pen tool come back in Part J, for Figma files.
 
 **What's next, in order:**
 
 1. **Finalize the project:** Optics is in (Phases 36–37: every Polaris component, a page each), as files of your own. What's still open: plugins and automation (Part D, "Later": large, needs an API design first) and what needs a backend (real sharing in Part C; the hosted team service in Part E). The license files are in (see "Open source").
-2. **Publish to npm:** claim `sigma-design` and publish the package (Phase 32 made it ready).
-3. **Pilot teams:** two or three teams, after npm, to shape the workflow around how they actually work.
+2. **Beyond Figma, next (Parts I–K, in this order):** AI inside the editor (Part I), Figma interop: import
+   `.fig` files and save as `.fig` (Part J), and live peer-to-peer editing (Part K). Each keeps Sigma local-first:
+   no accounts, your own API key, no server that holds your files.
+3. **Publish to npm:** claim `sigma-design` and publish the package (Phase 32 made it ready).
+4. **Pilot teams:** two or three teams, after npm, to shape the workflow around how they actually work.
 
 The repository's settings are done: auto-merge is on, and `main` is protected (the four CI checks must pass to merge a pull request; no force pushes or deleting it).
 
@@ -412,6 +415,16 @@ Update the **Status** line at the top and tick the phase off below as you go:
 - [x] Phase 37: Optics Components: every Polaris component, a page each (Part G)
 - [x] Phase 38: Page groups (Part H)
 - [x] Phase 39: The file tools rail (Part H)
+- [ ] Phase 40: Document tools, one registry for the assistant and MCP (Part I)
+- [ ] Phase 41: The Assistant in the editor (Part I)
+- [ ] Phase 42: The Assistant sees its work; the open editor over MCP (Part I)
+- [ ] Phase 43: Vector layers, the pen tool and boolean operations (Part J)
+- [ ] Phase 44: Reading `.fig` files (Part J)
+- [ ] Phase 45: Figma import, the import report and paste from Figma (Part J)
+- [ ] Phase 46: Save as `.fig` (Part J)
+- [ ] Phase 47: The shared document: Sigma's document as Yjs (Part K)
+- [ ] Phase 48: Live sessions: share links, WebRTC, presence (Part K)
+- [ ] Phase 49: Undo per person, live comments, and sessions for every kind of file (Part K)
 
 ## Follow-ups
 
@@ -1134,3 +1147,148 @@ design file, a click away from anywhere.
   pointing at the rail (Tokens in designs and Quality checks). The Σ menu still has all five. Verified in the
   editor: the rail on Optics Components (Optics Tokens in the tooltip, 1 icon library), each button opening
   its dialog, the Σ menu opening beside the rail, and Home going back to the files.
+
+# Part I: AI inside the editor
+
+An **Assistant** in the editor that works on the open file with the same functions a person's edits use: ask
+it for a screen from your design system, or to fix what the checks found, and watch it build. It uses your own
+Claude API key; nothing goes through a Sigma server.
+
+**Decisions:**
+- **Model:** Claude Opus 5.5 (`claude-opus-5-5`) through the official Anthropic SDK, with adaptive thinking,
+  streaming, prompt caching (system prompt and tool definitions first, unchanging, so they cache), strict tool
+  schemas, and the server-side refusal fallback (`fallbacks: "default"`). Effort is set explicitly (medium for
+  chat-sized asks, high for building screens) and can be changed in the panel.
+- **Where the key lives:** in a project, the local server (`tools/server.mjs`) makes the calls with
+  `ANTHROPIC_API_KEY` or an `ant auth login` profile, so the key never reaches the browser. Without a project,
+  the person's own key is kept in this browser, with a plain warning about what that means.
+- **Tools, not free-form edits:** the Assistant changes the file only through tools, which go through Sigma's
+  own edit functions (so tokens, instances, auto layout and undo behave as when a person edits). One registry
+  serves both the in-editor Assistant and MCP.
+- **Safety:** text from files and tool results is data, never instructions; anything destructive asks first
+  (the in-app `ask` dialog); each Assistant turn is one undo step; tokens used are shown after each turn.
+
+## Phase 40: Document tools, one registry for the assistant and MCP
+
+- **Reading:** an outline of the file (pages, groups, top-level frames, the selection), a layer's properties in
+  the project format, the tokens (names, types, modes), components and their properties, icons (search), and
+  the results of the token audit, the accessibility check and readiness.
+- **Writing:** create, change, move and delete layers; insert instances and set their properties; bind tokens;
+  add auto layout; create pages and page groups; make components and variants. Every tool has a JSON schema,
+  checks its input, and reports what it did (ids, names) so the model can build on it.
+- **Done when:** the registry is tested without a model: each tool against a document, errors as results, and
+  undo after a sequence of tool calls.
+
+## Phase 41: The Assistant in the editor
+
+- **The panel:** an Assistant button on the file tools rail opens a chat beside the canvas: streaming replies,
+  each tool call shown as it runs (with its effect), Stop, and the conversation kept with the file in this
+  browser (not in the file).
+- **Context:** the selection and the open page go along with each message, compactly; the model reads more
+  with tools when it needs to.
+- **Keys and settings:** set up the key (or see that the project's server has one), the model and effort.
+- **Done when:** “add a sign-in form from Optics to this frame” works end to end on Optics Components, with one
+  undo removing it.
+
+## Phase 42: The Assistant sees its work; the open editor over MCP
+
+- **Seeing:** a tool that renders a frame (or the selection) to a PNG and gives it to the model, so it can check
+  spacing, alignment and contrast, and fix what it sees.
+- **The open editor over MCP:** `npx sigma-design mcp` also offers the document tools, acting on the file open
+  in Sigma (through the local server), so Claude Code or another agent can design in the open editor.
+- **Done when:** the Assistant builds a page, looks at it and corrects one of its own mistakes; an outside agent
+  makes the same edit over MCP.
+
+# Part J: Figma interop
+
+Bring Figma files into Sigma, paste layers from Figma, and save Sigma files as `.fig`. The `.fig` format isn't
+documented but is well understood: a ZIP holding the document in Kiwi (a compact binary format whose schema
+travels inside each file), compressed, plus images and a thumbnail. Reading and writing it is interoperability
+for your own files; the README's note stays (Sigma isn't affiliated with Figma). Figma can change the format at
+any time, so a set of sample files guards the importer in CI, and saving as `.fig` is labeled best effort.
+
+## Phase 43: Vector layers, the pen tool and boolean operations
+
+Figma files are full of paths, and Sigma has none: this comes first.
+
+- **A vector layer:** paths (with curves, open or closed, fill rules), fills and strokes like other layers, its
+  own stroke caps and joins, editing its points.
+- **The pen tool (P):** draw paths point by point, with curves; edit points and handles; close a path.
+- **Boolean operations:** union, subtract, intersect and exclude, kept live (a boolean group) and flattenable.
+- **Done when:** the pen tool draws and edits paths, booleans work, and vectors export to SVG and survive the
+  project format, branches and merging.
+
+## Phase 44: Reading `.fig` files
+
+- **The reader:** unzip, decompress, decode Kiwi with the schema inside the file, and give back Figma's nodes
+  with their properties, images and fonts used. Small MIT libraries (a Kiwi decoder, a zstd decoder), kept in the
+  repository as pinned files, so Sigma still needs no build step.
+- **Done when:** the sample `.fig` files decode in the browser and in Node, tested in CI.
+
+## Phase 45: Figma import, the import report and paste from Figma
+
+- **Mapping:** frames, groups, rectangles, ellipses, lines, vectors and booleans, text with mixed styles,
+  images, components, component sets and their properties, instances with overrides, auto layout (with wrap,
+  padding, gaps, sizing), constraints, fills, strokes, effects, corner radii, layout grids, pages, and
+  variables (collections and modes) into Sigma tokens, with their bindings.
+- **The import report:** what came in, and what didn't map (by kind, with where), never dropped silently.
+- **Where:** Import… and dragging a `.fig` onto the files home or a project; `npx sigma-design import file.fig`.
+- **Paste from Figma:** layers copied in Figma carry the same binary data on the clipboard, so pasting them into
+  Sigma brings them in.
+- **Done when:** the sample files import and look right next to Figma's own renders (visual review), and paste
+  from Figma works.
+
+## Phase 46: Save as `.fig`
+
+- **Writing:** Sigma Design files to `.fig`, with a schema taken from a recent Figma file; what Figma has no place
+  for (page groups, slots, tokens Figma can't express) is flattened or left out, and listed.
+- **Done when:** saved files open in Figma (checked by a person, since Sigma can't sign in to Figma), and
+  import → save → import keeps the sample files the same.
+
+# Part K: Live peer-to-peer editing
+
+Edit a file together, live, with no server that holds it: every person's browser has the whole file, and edits
+go directly between browsers (WebRTC), merged with Yjs (a CRDT). This is real-time sharing without a backend;
+Part C's accounts and roles still need one.
+
+**Decisions:**
+- **Connecting:** browsers find each other through a signaling relay: public relays by default, or your own
+  (`npx sigma-design signal`). The room key lives in the link's `#` part (never sent to a server), and edits are
+  encrypted with it. Some networks need a TURN relay to connect; that's a setting.
+- **Trust:** with no server in the middle, anyone with the edit link is a full editor; a view link is enforced
+  only in the viewer's own browser. Said plainly where links are made.
+- **Who saves:** the person who shared saves the file (in a project, to disk, where agents' and git's changes
+  come into the session too); others can save a copy.
+- **Libraries:** design files already carry copies of their linked tokens, components and icons, so people who
+  join see everything without those files.
+- **Dependencies:** Yjs and the WebRTC provider (MIT), kept in the repository as pinned files, with NOTICE.
+
+## Phase 47: The shared document: Sigma's document as Yjs
+
+- **The model:** layers by id, each with its parent and a fractional position among its siblings (two people
+  moving layers never tangle the tree), and its properties; pages, page groups, comments and local tokens.
+  Only source data is shared; derived data (instances' layers, resolved token values) is rebuilt on each machine,
+  as the project format leaves it out.
+- **Both ways:** a local edit becomes the smallest Yjs change; a remote change patches the open document and
+  redraws only what changed.
+- **Done when:** two Yjs documents in one test page converge through any mix of edits (concurrent moves,
+  deletes, property changes, components and instances), and a solo file behaves exactly as before.
+
+## Phase 48: Live sessions: share links, WebRTC, presence
+
+- **Share live:** a file's menu (and the rail) makes an edit link or a view link; opening it joins the session.
+- **Presence:** everyone's cursor and selection with their name and color, avatars in the header (click one to
+  follow them), and who's on which page.
+- **Connection:** reconnects after a drop and catches up; a banner says when you're offline (keep editing; it
+  merges when you're back).
+- **Done when:** two browsers on different machines edit the same file live, through a relay, and in a project
+  the host's saves land on disk.
+
+## Phase 49: Undo per person, live comments, and sessions for every kind of file
+
+- **Undo per person:** in a live session, ⌘Z undoes only your own edits (Yjs's undo manager); solo files keep
+  today's undo.
+- **Live comments:** threads and replies appear for everyone as they're written.
+- **Sigma Tokens and Sigma Icons files** can be shared live too.
+- **Done when:** undo never removes someone else's work, and tokens edited in a live session show up in the
+  design files that use them after publishing, as today.
