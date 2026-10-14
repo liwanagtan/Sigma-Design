@@ -95,6 +95,7 @@ export function initHome(el) {
       <header class="home-header">
         <div class="home-heading"><button class="icon-btn project-header-icon" id="project-header-icon" aria-label="Change project icon" hidden></button><h1 id="home-title"></h1></div>
         <div class="home-tools">
+          <button class="btn" id="home-report" title="Design system report" hidden>${NAV_REPORT} Report</button>
           <select id="home-sort" class="select" title="Sort">${Object.entries(SORTS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
           <div class="seg home-layout">
             <button class="icon-btn" data-layout="grid" title="Grid view">${GRID_ICON}</button>
@@ -132,6 +133,7 @@ export function initHome(el) {
     savePrefs();
     renderHome();
   });
+  root.querySelector('#home-report').onclick=()=>{query='';location.hash=scopeHref(prefs.section==='report'?'workspace':'report');};
   root.querySelector('#home-create').onclick=()=>{
     const button=root.querySelector('#home-create'),box=button.getBoundingClientRect();
     const prepare=prepareCreationScope;
@@ -431,8 +433,9 @@ let reportRun = 0;
 async function renderReport(list) {
   const mine = ++reportRun;
   list.innerHTML = '<div class="home-empty"><p class="muted">Measuring…</p></div>';
+  if(projectMode()&&(!project.connected||selectedProjectId()!==project.identity)){list.innerHTML='<div class="home-empty"><p>This repository is offline. Reconnect its Sigma server to view its report.</p></div>';return;}
   const files = await reportFiles();
-  if (mine !== reportRun || prefs.section !== 'report') return; // a newer report (or another section) is showing
+  if (mine !== reportRun || prefs.section !== 'report' || query.trim()) return; // a newer report (or another section) is showing
   const days = Number(prefs.reportDays || 0);
   const r = useReport(files, { since: days ? Date.now() - days * 86400000 : null, handoff: !!prefs.reportHandoff });
   const bar = (x) => `<span class="report-bar"><span style="width:${x === null ? 0 : Math.round(x * 100)}%"></span></span>`;
@@ -442,12 +445,12 @@ async function renderReport(list) {
       <label><input type="checkbox" data-report-handoff${prefs.reportHandoff ? ' checked' : ''}> Only pages marked for handoff</label>
     </div>`;
   if (!files.length) {
-    list.innerHTML = `<div class="report">${filters}<div class="home-empty"><p>No design files to measure${projectMode() ? ' in this project' : ' in this browser'} yet.</p></div></div>`;
+    list.innerHTML = `<div class="report">${filters}<div class="home-empty"><p>No design files to measure${selectedProject()?` in ${esc(selectedProject().name)}`:' in Drafts'} yet.</p></div></div>`;
     return;
   }
   const rows = (items, cols) => items.map((it) => `<tr>${cols.map((c) => `<td${c.num ? ' class="num"' : ''}>${c.get(it)}</td>`).join('')}</tr>`).join('');
   list.innerHTML = `<div class="report">
-    <p class="muted">How much of the design comes from the design system${projectMode() ? ` in ${esc(project.name)}` : ' in this browser'}: ${files.length} design file${files.length === 1 ? '' : 's'}. The same report on the command line: <code>npx sigma-design report</code>.</p>
+    <p class="muted">How much of the design comes from the design system${selectedProject()?` in ${esc(selectedProject().name)}`:' in Drafts'}: ${files.length} design file${files.length === 1 ? '' : 's'}. ${projectMode()?'The same report on the command line: <code>npx sigma-design report</code>.':''}</p>
     ${filters}
     <div class="report-cards">
       <div class="report-card"><div class="report-big">${formatShare(r.overall.componentShare)}</div><div>of layers are library components</div><div class="muted">${r.overall.instances} instances of ${r.overall.layers} layers on pages</div></div>
@@ -636,12 +639,13 @@ function groupedFiles(files,renderCard) {
   }).join('');
   return sections||'<div class="home-empty"><p>No files yet. Use Create New in the sidebar to start this project.</p></div>';
 }
-function renderProjectHeader(p) {
+function renderProjectHeader(p,editable=true) {
   const icon=root.querySelector('#project-header-icon'),title=root.querySelector('#home-title');
   icon.hidden=!p;
-  title.contentEditable=p?'plaintext-only':'false';
+  title.contentEditable=p&&editable?'plaintext-only':'false';
   if(!p){title.removeAttribute('aria-label');title.onblur=null;title.onkeydown=null;return;}
   icon.innerHTML=projectIconMarkup(p.icon);icon.onclick=()=>projectIconDialog(p);
+  if(!editable){title.removeAttribute('aria-label');title.onblur=null;title.onkeydown=null;return;}
   title.setAttribute('aria-label','Project title');
   title.onblur=()=>{if(title.textContent.trim()!==p.name)updateProjectDetails(p.id,{name:title.textContent}).catch(error=>{toast(error.message);renderHome();});};
   title.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();title.blur();}if(e.key==='Escape'){title.textContent=p.name;title.blur();}};
@@ -663,8 +667,8 @@ export async function renderHome() {
   files=files.filter(f=>q||prefs.section==='recents'||inScope(f,drafts?null:selectedProjectId()));
   const total = files.length;
   const welcome = !q&&section === 'welcome';
-  const proposals = section === 'proposals';
-  const report = section === 'report';
+  const proposals = !q&&section === 'proposals';
+  const report = !q&&section === 'report';
   const projectFiles = pm && !welcome && !proposals && !report; // Recents and the kind sections list the project's files
   if (archive) files=(await listArchivedFiles()).filter(f=>inScope(f));
   else if(welcome) files=[];
@@ -677,11 +681,14 @@ export async function renderHome() {
   root.querySelectorAll('[data-layout]').forEach((b) => b.classList.toggle('on', b.dataset.layout === prefs.layout));
   const recents = section === 'recents';
   const selected=(await projectList()).find(p=>p.id===selectedProjectId());
-  root.querySelector('#home-title').textContent=q?'Search results':welcome?'Documentation':drafts?'Drafts':workspace?selected.name:SECTIONS[section];
+  root.querySelector('#home-title').textContent=q?'Search results':welcome?'Documentation':drafts?'Drafts':workspace?selected.name:report&&selected?`${selected.name} · Report`:SECTIONS[section];
   root.querySelector('.home-layout').hidden = proposals || report || welcome;
   root.querySelector('#home-search').hidden=false;
   root.querySelector('#home-search').value=query;
-  renderProjectHeader(workspace?selected:null);
+  renderProjectHeader(workspace||report&&!q?selected:null,!!workspace);
+  const reportButton=root.querySelector('#home-report');reportButton.hidden=!selected||!!q||!(workspace||report);
+  reportButton.innerHTML=report?`${NAV_DESIGN} Go back to Files`:`${NAV_REPORT} Report`;
+  reportButton.title=report?'Back to project files':'Design system report';
   const sortSel = root.querySelector('#home-sort');
   sortSel.hidden = recents || archive || proposals || welcome || report;
   sortSel.value = prefs.sort;

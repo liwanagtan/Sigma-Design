@@ -6,7 +6,7 @@ import { syncInstances, createInstance } from '../src/components.js';
 import { resolveVariables, snapshotForLibrary } from '../src/variables.js';
 import { applyLayouts } from '../src/layout.js';
 import { defaultTokenCode, tokenCode, cssVar, setTokenCode, componentCode, propCode, variantValueCode } from '../src/code-names.js';
-import { layerCSS, instanceUsage, layerTokens } from '../src/inspect.js';
+import { inspectHTML, layerCSS, instanceUsage, layerTokens } from '../src/inspect.js';
 import { exportCSS } from '../src/tokens-io.js';
 
 const tokens = [{
@@ -69,4 +69,22 @@ test('inspect: an instance is written as code with its variant and changed prope
   set.codeName = 'PrimaryButton';
   inst.propValues = {};
   eq(instanceUsage(inst), '<PrimaryButton size="large" variant="primary" />', 'defaults are left out');
+});
+
+test('Code panel: collapsed docs, variant values distinct from code names, resolved labels and safe highlighted snippets',async()=>{
+  const label=createNode('text',{name:'Label',text:'Continue'});
+  const hidden=createNode('text',{text:'Hidden',visible:false});
+  const main=createNode('component',{name:'Variant=Primary',children:[label,hidden]});
+  const set=createNode('componentSet',{name:'Button',children:[main],docs:{purpose:'Use this button'},codeNames:{Variant:'variant'}});
+  useDoc([set]);
+  const host=document.createElement('div');host.innerHTML=inspectHTML([main]);
+  ok(host.querySelector('details[data-component-docs]'));ok(!host.querySelector('details').open);
+  eq(host.querySelector('.inspect-variant-values').textContent,'Primary');
+  eq(host.querySelector('[aria-label="Variant code name"]').value,'variant');
+  eq(host.querySelector('[data-a11y=label]').value,'Continue');
+  ok(host.querySelector('.syntax-property'));ok(host.querySelector('.syntax-number'));
+  const {docsHTML}=await import('../src/component-docs.js');set.docs.usage='- First step\n- <img src=x onerror=alert(1)>';const docs=document.createElement('div');docs.innerHTML=docsHTML(set);eq(docs.querySelectorAll('li').length,2);eq(docs.querySelector('img'),null);ok(docs.querySelector('h4'));
+  const {codeBlock}=await import('../src/code-highlight.js');
+  const source='<Button label="<img src=x onerror=alert(1)>" />';host.innerHTML=codeBlock(source);eq(host.querySelector('code').textContent,source);eq(host.querySelector('img'),null);ok(host.querySelector('.syntax-element'));
+  const instance=createInstance(main,{x:100,y:0});instance.a11y={label:'Next step'};syncInstances();host.innerHTML=inspectHTML([instance]);eq(host.querySelector('[data-a11y=label]').value,'Next step');ok(host.querySelector('.inspect-property-head').textContent.includes('Primary'));
 });

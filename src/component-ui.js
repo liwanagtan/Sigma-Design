@@ -30,7 +30,7 @@ import {
   addVariant, goToMainComponent, resetSelectionOverrides, detachSelection, duplicateSelection, makeComponentSet,
 } from './commands.js';
 import { showContextMenu } from './menu.js';
-import { openDocsEditor, docsHTML, statusOf, statusLabel, STATUSES, docsTarget } from './component-docs.js';
+import { openDocsEditor, docsHTML, docsDisclosure, statusOf, statusLabel, STATUSES, docsTarget } from './component-docs.js';
 import { icons } from './icons.js';
 import { openIconPicker, availableIcons } from './icon-ui.js';
 import { iconLibraries, loadIconLibraries } from './libraries.js';
@@ -102,7 +102,7 @@ function description(node) {
   if (editingDescription === node.id) {
     return `<textarea class="desc comp-desc-edit" data-desc rows="3" placeholder="Describe this component…" spellcheck="false">${esc(node.description || '')}</textarea>`;
   }
-  return (node.description ? `<div class="comp-desc">${esc(node.description)}</div>` : '') + docsHTML(node, { status: false }); // the status is the chip by the name
+  return docsDisclosure(node, { status: false }); // the status is the chip by the name
 }
 let editingDescription = null;
 

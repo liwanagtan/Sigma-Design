@@ -69,7 +69,7 @@ export function readiness(node) {
     { key: 'breakpoints', label: 'Breakpoint behavior', ok: !!checks.breakpoints, manual: true, hint: 'Confirm how it behaves at each width (fill, hug, wrapping).' },
     { key: 'documented', label: 'Documented', ok: !!docs.usage && !!((docs.dos || []).length || (docs.donts || []).length), hint: 'Write usage guidance and link a Do or Don’t example.' },
     { key: 'accessibility', label: 'Accessibility checked', ok: !!checks.accessibility || a11yReady(t, docs), manual: true, hint: 'Write its role and keyboard behavior in its docs: then Sigma checks its contrast and labels. Or confirm it by hand.' },
-    { key: 'code', label: 'Code linked', ok: !!(t.codeName || docs.code), hint: 'Give it its code name (Inspect) or link its code in its docs.' },
+    { key: 'code', label: 'Code linked', ok: !!(t.codeName || docs.code), hint: 'Give it its code name (Code) or link its code in its docs.' },
   ];
 }
 
@@ -217,17 +217,31 @@ export function openDocsEditor(node) {
   });
 }
 
-/** A component's docs as HTML, for Inspect and Assets (empty when it has none). */
+// Preserve paragraphs and authored lists while rendering documentation as escaped text.
+function docText(text) {
+  return String(text||'').trim().split(/\n\s*\n/).filter(Boolean).map(paragraph=>{
+    const lines=paragraph.split('\n');
+    if(lines.every(line=>/^\s*[-*]\s+/.test(line)))return `<ul>${lines.map(line=>`<li>${esc(line.replace(/^\s*[-*]\s+/,''))}</li>`).join('')}</ul>`;
+    if(lines.every(line=>/^\s*\d+[.)]\s+/.test(line)))return `<ol>${lines.map(line=>`<li>${esc(line.replace(/^\s*\d+[.)]\s+/,''))}</li>`).join('')}</ol>`;
+    return `<p>${esc(paragraph).replace(/\n/g,'<br>')}</p>`;
+  }).join('');
+}
+const docSection=(title,body)=>body?`<section class="comp-doc-section"><h4>${title}</h4>${body}</section>`:'';
+
+/** A component's docs as HTML, for Code and Assets (empty when it has none). */
 export function docsHTML(node, { compact = false, status = true } = {}) {
-  const t = docsTarget(node);
-  const d = t?.docs || {};
-  const purpose = d.purpose || t?.description;
-  if (!purpose && !d.usage && !d.notFor && !d.code && !d.role && !d.keyboard) return '';
-  const name = (id) => getNode(id)?.name;
-  const examples = (ids, label) => ((ids || []).map(name).filter(Boolean).length ? `<div><b>${label}:</b> ${(ids || []).map(name).filter(Boolean).map(esc).join(', ')}</div>` : '');
-  return `<div class="comp-docs">${purpose ? `<div>${esc(purpose)}</div>` : ''}` +
-    (compact ? '' : `${d.notFor ? `<div><b>Not for:</b> ${esc(d.notFor)}</div>` : ''}${d.usage ? `<div class="comp-docs-usage">${esc(d.usage)}</div>` : ''}${examples(d.dos, 'Do')}${examples(d.donts, 'Don’t')}` +
-      `${d.role || d.keyboard ? `<div><b>Accessibility:</b> ${d.role ? `${esc(ROLES[d.role] || d.role)} role. ` : ''}${esc(d.keyboard || '')}</div>` : ''}`) +
-    `${d.code ? `<div class="muted">Code: ${/^https?:/.test(d.code) ? `<a href="${esc(d.code)}" target="_blank" rel="noopener">${esc(d.code)}</a>` : `<code>${esc(d.code)}</code>`}</div>` : ''}` +
-    `${status ? `<div class="muted">${statusLabel(statusOf(t))}</div>` : ''}</div>`;
+  const t = docsTarget(node),d=t?.docs||{},purpose=d.purpose||t?.description;
+  const examples=(ids,title)=>{const names=(ids||[]).map(id=>getNode(id)?.name).filter(Boolean);return names.length?docSection(title,`<ul>${names.map(name=>`<li>${esc(name)}</li>`).join('')}</ul>`):'';};
+  if(!purpose&&!d.usage&&!d.notFor&&!d.code&&!d.role&&!d.keyboard&&!d.dos?.length&&!d.donts?.length)return '';
+  return `<div class="comp-docs">${compact?`<div class="comp-doc-section">${docText(purpose)}</div>`:docSection('Overview',docText(purpose))}`+
+    (compact?'':docSection('Usage',docText(d.usage))+docSection('Avoid',docText(d.notFor))+examples(d.dos,'Do')+examples(d.donts,'Don’t')+
+      docSection('Accessibility',(d.role?`<p class="comp-doc-role"><span class="muted">Role</span><span>${esc(ROLES[d.role]||d.role)}</span></p>`:'')+docText(d.keyboard)))+
+    docSection('Code',d.code?`<p>${/^https?:/.test(d.code)?`<a href="${esc(d.code)}" target="_blank" rel="noopener">${esc(d.code)}</a>`:`<code>${esc(d.code)}</code>`}</p>`:'')+
+    (status?`<div class="comp-doc-status"><span class="muted">Status</span><span>${statusLabel(statusOf(t))}</span></div>`:'')+'</div>';
+}
+
+export function docsDisclosure(node,options={}) {
+  const content=docsHTML(node,options);
+  if(!content)return '';
+  return `<details class="component-docs-disclosure" data-component-docs="${esc(docsTarget(node)?.id||node.id)}"><summary>Documentation</summary>${content}</details>`;
 }

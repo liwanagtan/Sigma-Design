@@ -2,6 +2,7 @@
 export const UI_SOURCE = {
   "palette": [
     "#00000026",
+    "#006da8",
     "#0B6BCB",
     "#0D99FF",
     "#0F7A40",
@@ -13,7 +14,9 @@ export const UI_SOURCE = {
     "#1A1A1A",
     "#1D3629",
     "#1e1e1e",
+    "#216b5b",
     "#242424",
+    "#28723b",
     "#2A2A2A",
     "#30223F",
     "#333333",
@@ -23,14 +26,20 @@ export const UI_SOURCE = {
     "#3D2D1C",
     "#444444",
     "#47315F",
+    "#4ec9b0",
     "#555555",
     "#6B5A8E",
+    "#7140ae",
     "#73D79E",
     "#7AC5FF",
     "#7B2EE6",
+    "#825500",
     "#8c8c8c",
+    "#953c79",
     "#9747FF",
     "#9747ff",
+    "#995400",
+    "#9cdcfe",
     "#AAAAAA",
     "#B5197F",
     "#B54708",
@@ -53,11 +62,16 @@ export const UI_SOURCE = {
     "#FFF4E5",
     "#FFFFFF",
     "#b3b3b3",
+    "#b5cea8",
     "#b9a3e8",
     "#c4320a",
+    "#c586c0",
     "#c7c7c7",
+    "#ce9178",
     "#d9d9d9",
+    "#dcdcaa",
     "#e03e1a",
+    "#e4abd3",
     "#e5f4ff",
     "#e6e6e6",
     "#e91e8c",
@@ -1313,12 +1327,12 @@ export const UI_SOURCE = {
       "padding-left": "8px"
     },
     {
-      "padding": "8px 10px",
+      "padding": "12px",
       "border-radius": "6px",
-      "padding-top": "8px",
-      "padding-right": "10px",
-      "padding-bottom": "8px",
-      "padding-left": "10px"
+      "padding-top": "12px",
+      "padding-right": "12px",
+      "padding-bottom": "12px",
+      "padding-left": "12px"
     },
     {
       "padding": "8px 0",
@@ -1328,19 +1342,27 @@ export const UI_SOURCE = {
       "padding-left": "0px"
     },
     {
-      "padding": "6px 8px",
+      "padding": "10px",
       "border-radius": "6px",
-      "padding-top": "6px",
-      "padding-right": "8px",
-      "padding-bottom": "6px",
-      "padding-left": "8px"
+      "padding-top": "10px",
+      "padding-right": "10px",
+      "padding-bottom": "10px",
+      "padding-left": "10px"
+    },
+    {
+      "gap": "10px"
     },
     {
       "gap": "8px",
-      "font-size": "11px"
+      "font-size": "11px",
+      "padding": "3px 0",
+      "padding-top": "3px",
+      "padding-right": "0px",
+      "padding-bottom": "3px",
+      "padding-left": "0px"
     },
     {
-      "width": "52px"
+      "width": "auto"
     },
     {
       "width": "min(640px, calc(100vw - 32px))"
@@ -1481,6 +1503,14 @@ export const UI_SOURCE = {
     },
     {
       "font-size": "12px"
+    },
+    {
+      "padding": "8px 10px",
+      "border-radius": "6px",
+      "padding-top": "8px",
+      "padding-right": "10px",
+      "padding-bottom": "8px",
+      "padding-left": "10px"
     },
     {
       "height": "160px",
@@ -1823,6 +1853,10 @@ export const UI_SOURCE = {
       "padding-left": "0px"
     },
     {
+      "gap": "8px",
+      "font-size": "11px"
+    },
+    {
       "font-weight": "600",
       "font-size": "10px"
     },
@@ -2122,7 +2156,7 @@ export const UI_SOURCE = {
       "padding-left": "6px"
     },
     {
-      "gap": "4px",
+      "gap": "12px",
       "font-size": "12px"
     },
     {
@@ -2200,9 +2234,6 @@ export const UI_SOURCE = {
       "padding-right": "6px",
       "padding-bottom": "1px",
       "padding-left": "6px"
-    },
-    {
-      "width": "auto"
     },
     {
       "width": "auto",
@@ -2362,6 +2393,78 @@ export const UI_SOURCE = {
     },
     {
       "box-shadow": "0 1px 0 var(--accent)"
+    },
+    {
+      "padding": "8px 10px",
+      "font-weight": "500",
+      "padding-top": "8px",
+      "padding-right": "10px",
+      "padding-bottom": "8px",
+      "padding-left": "10px"
+    },
+    {
+      "padding": "10px",
+      "font-size": "11px",
+      "padding-top": "10px",
+      "padding-right": "10px",
+      "padding-bottom": "10px",
+      "padding-left": "10px"
+    },
+    {
+      "padding": "3px 6px",
+      "border-radius": "4px",
+      "padding-top": "3px",
+      "padding-right": "6px",
+      "padding-bottom": "3px",
+      "padding-left": "6px"
+    },
+    {
+      "font-size": "10px",
+      "padding": "2px 5px",
+      "border-radius": "4px",
+      "padding-top": "2px",
+      "padding-right": "5px",
+      "padding-bottom": "2px",
+      "padding-left": "5px"
+    },
+    {
+      "gap": "8px",
+      "padding-bottom": "8px",
+      "padding-top": "0px",
+      "padding-right": "0px",
+      "padding-left": "0px"
+    },
+    {
+      "width": "16px",
+      "height": "16px",
+      "border-radius": "4px"
+    },
+    {
+      "font-size": "inherit",
+      "font-weight": "600"
+    },
+    {
+      "gap": "8px",
+      "padding-top": "8px",
+      "padding-right": "0px",
+      "padding-bottom": "0px",
+      "padding-left": "0px"
+    },
+    {
+      "border-radius": "4px",
+      "padding": "2px 6px",
+      "padding-top": "2px",
+      "padding-right": "6px",
+      "padding-bottom": "2px",
+      "padding-left": "6px"
+    },
+    {
+      "padding": "2px 4px",
+      "border-radius": "3px",
+      "padding-top": "2px",
+      "padding-right": "4px",
+      "padding-bottom": "2px",
+      "padding-left": "4px"
     },
     {
       "width": "auto",

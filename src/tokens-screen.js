@@ -20,7 +20,6 @@ export function initTokensScreen(el) {
   el.innerHTML = `${railHTML('tokens')}<div class="screen-main">
     <header class="tokens-header">
       <input class="file-name tokens-file-name" spellcheck="false" aria-label="Tokens file name">
-      <span class="kind-badge tokens-kind">Tokens</span>
       <div class="tokens-header-actions">
         <button class="project-status" data-project-status hidden></button>
         <span class="publish-status" data-publish-status></span>
@@ -142,6 +141,7 @@ function renderHeader() {
     ? '<span class="status-chip">Not published</span>'
     : dirty ? `<span class="status-chip warn">Unpublished changes · v${pub.version} live</span>`
       : `<span class="status-chip ok">v${pub.version} published</span>`;
+  root.querySelector('[data-publish-status]').title=pub?`Version ${pub.version} is the published token-library snapshot available to linked files.`:'Publish a token-library version for other files to use.';
   root.querySelector('[data-publish]').disabled = !!pub && !dirty;
   renderRailTools(root.querySelector('.rail-tools'));
 }

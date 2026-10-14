@@ -1,3 +1,4 @@
+import {codeBlock,highlightCode} from './code-highlight.js';
 // The Inspect panel (code handoff): for the selected layer, its CSS with tokens as their code names, the
 // tokens it uses with their values in its modes, and for components their code: how an instance is
 // written (<Button variant="primary" label="Save" />) and the component's API, with editable code names.
@@ -7,8 +8,8 @@ import { propsOf, mainComponentOf, parseVariantName, variantDefs, isInsideInstan
 import { getSizing, isAutoLayout } from './layout.js';
 import { cornerRadii, strokeSides } from './render.js';
 import { findIcon } from './icon-library.js';
-import { docsHTML } from './component-docs.js';
-import { a11yOf, roleOf, a11yCode, ROLES } from './a11y.js';
+import { docsDisclosure } from './component-docs.js';
+import { accessibleLabel, a11yOf, roleOf, a11yCode, ROLES } from './a11y.js';
 import {
   cssVar, cssVarName, tokenCode, PLATFORMS, componentCode, propCode, variantPropCode, variantValueCode, defaultComponentCode, defaultPropCode,
 } from './code-names.js';
@@ -156,16 +157,16 @@ export function instanceUsage(inst) {
 }
 
 // A component's API: its code name and each property's, with the values it takes.
-function componentAPI(host) {
+function componentAPI(host,component=host) {
   const rows = [];
   if (host.type === 'componentSet') {
     for (const [prop, values] of Object.entries(variantDefs(host))) {
-      rows.push({ kind: 'variant', key: prop, label: prop, code: variantPropCode(host, prop), placeholder: defaultPropCode(prop), type: values.map((v) => `"${variantValueCode(v)}"`).join(' | ') });
+      rows.push({ kind: 'variant', key: prop, label: prop, code: variantPropCode(host, prop), placeholder: defaultPropCode(prop), selected:parseVariantName(component.name)[prop], values, type: values.map((v) => `"${variantValueCode(v)}"`).join(' | ') });
     }
   }
-  for (const [pid, def] of Object.entries(host.props || {})) {
+  for (const [pid, def] of Object.entries(propsOf(component))) {
     const type = { boolean: 'boolean', text: 'string', instance: 'ReactNode', icon: 'IconName', slot: 'ReactNode' }[def.type] || def.type;
-    rows.push({ kind: 'prop', key: pid, label: def.name, code: propCode(def), placeholder: defaultPropCode(def.name), type });
+    rows.push({ kind: 'prop', key: pid, label: def.name, code: propCode(def), placeholder: defaultPropCode(def.name), default:def.default, host:component.props?.[pid]?component.id:host.id, type });
   }
   return rows;
 }
@@ -202,7 +203,7 @@ function a11yBlock(n) {
   const all = a11yOf(n);
   const inherited = (k) => (own[k] === undefined && all[k] !== undefined ? all[k] : '');
   const field = (label, html) => `<label class="code-name-row a11y-row"><span class="muted">${label}</span>${html}</label>`;
-  const input = (k, ph = '') => `<input class="prop-input" data-a11y="${k}" data-node="${esc(n.id)}" value="${esc(own[k] ?? '')}" placeholder="${esc(inherited(k) || ph)}" spellcheck="${k === 'focus' ? 'false' : 'true'}"${k === 'focus' ? ' inputmode="numeric"' : ''}>`;
+  const input = (k, ph = '') => `<input class="prop-input" data-a11y="${k}" data-node="${esc(n.id)}" value="${esc(own[k] ?? (k==='label'?accessibleLabel(n):''))}" placeholder="${esc(inherited(k) || ph)}" spellcheck="${k === 'focus' ? 'false' : 'true'}"${k === 'focus' ? ' inputmode="numeric"' : ''}>`;
   const role = roleOf(n);
   const rows = [];
   if (n.type === 'image' || n.type === 'icon' || own.decorative || all.decorative) {
@@ -215,11 +216,11 @@ function a11yBlock(n) {
   if (n.type !== 'text' && n.type !== 'image') {
     const auto = !own.role && role ? `${ROLES[role] || role} (auto)` : 'Automatic';
     rows.push(field('Role', `<select class="prop-input" data-a11y="role" data-node="${esc(n.id)}"><option value="">${esc(auto)}</option>${Object.entries(ROLES).map(([k, l]) => `<option value="${k}" ${own.role === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`));
-    rows.push(field('Label', input('label', role && role !== 'none' ? 'From its text' : 'Accessible name')));
+    rows.push(field('Label', input('label', 'Accessible name')));
   }
   rows.push(field('Focus order', input('focus', '—')));
   const code = a11yCode(n);
-  return block('Accessibility', rows.join('') + (code.length ? `<pre class="inspect-code">${esc(code.join('\n'))}</pre>` : '') +
+  return block('Accessibility', rows.join('') + (code.length ? codeBlock(code.join('\n')) : '') +
     '<button class="btn wide" data-a11y-check>Check accessibility…</button>', code.join('\n') || undefined);
 }
 
@@ -239,35 +240,38 @@ export function inspectHTML(nodes) {
   let html = '';
   const comp = n.type === 'component' ? (getParent(n.id)?.type === 'componentSet' ? getParent(n.id) : n) : n.type === 'componentSet' ? n : null;
   if (comp && !isInsideInstance(n)) {
-    const rows = componentAPI(comp);
+    const rows = componentAPI(comp,n);
     html += block('Component', `<label class="code-name-row"><span class="muted">Code name</span><input class="prop-input" data-code-component="${comp.id}" value="${esc(comp.codeName || '')}" placeholder="${esc(defaultComponentCode(comp.name))}" spellcheck="false"></label>` +
-      (rows.length ? '<div class="inspect-props">' + rows.map((r) => `<label class="code-name-row" title="${esc(r.label)}"><span class="muted">${esc(r.label)}</span>` +
-        `<input class="prop-input" data-code-${r.kind}="${esc(r.key)}" data-host="${comp.id}" value="${esc(r.code === r.placeholder ? '' : r.code)}" placeholder="${esc(r.placeholder)}" spellcheck="false"><code class="inspect-type">${esc(r.type)}</code></label>`).join('') + '</div>'
-        : '<div class="muted">No properties.</div>'));
+      (rows.length ? `<div class="inspect-props">${rows.map(r=>`<div class="inspect-property"><div class="inspect-property-head"><b>${esc(r.label)}</b><span class="inspect-type">${esc(r.kind==='variant'?'Options':r.type)}</span></div>${r.values?`<div class="inspect-variant-values">${r.values.map(v=>`<code class="${v===r.selected?'selected':''}">${esc(v)}</code>`).join('')}</div>`:`<div class="inspect-default"><span class="muted">Default</span><code>${esc(valueText(r.type,r.default))}</code></div>`}<label class="code-name-row"><span class="muted">Code name</span><input class="prop-input" aria-label="${esc(r.label)} code name" data-code-${r.kind}="${esc(r.key)}" data-host="${esc(r.host||comp.id)}" value="${esc(r.code)}" placeholder="${esc(r.placeholder)}" spellcheck="false"></label></div>`).join('')}</div>`:'<div class="muted">No properties.</div>'));
   }
   if (n.type === 'instance' && !isInsideInstance(n)) {
     const usage = instanceUsage(n);
-    if (usage) html += block('Code', `<pre class="inspect-code">${esc(usage)}</pre>`, usage);
+    if (usage) html += block('Code', codeBlock(usage), usage);
     const main = mainComponentOf(n);
-    const docs = main ? docsHTML(main) : '';
-    if (docs) html += block('Component docs', docs);
+    if(main){
+      const host=getParent(main.id)?.type==='componentSet'?getParent(main.id):main;
+      const rows=componentAPI(host,main);
+      if(rows.length)html+=block('Properties',`<div class="inspect-props">${rows.map(r=>`<div class="inspect-property"><div class="inspect-property-head"><b>${esc(r.label)}</b><code>${esc(r.kind==='variant'?r.selected:valueText(r.type,n.propValues?.[r.key]??r.default))}</code></div><div class="inspect-default"><span class="muted">Code name</span><code>${esc(r.code)}</code></div></div>`).join('')}</div>`);
+    }
+    const docs = main ? docsDisclosure(main) : '';
+    if (docs) html += `<div class="section inspect-section">${docs}</div>`;
   } else if (comp && !isInsideInstance(n)) {
-    const docs = docsHTML(comp);
-    if (docs) html += block('Component docs', docs);
+    const docs = docsDisclosure(comp);
+    if (docs) html += `<div class="section inspect-section">${docs}</div>`;
   }
   html += a11yBlock(n);
   const css = layerCSS(n);
   const cssText = css.map(([k, v]) => `${k}: ${v};`).join('\n');
-  html += block(`CSS <span class="muted">${esc(n.name)}</span>`, css.length ? `<pre class="inspect-code">${esc(cssText)}</pre>` : '<div class="muted">Nothing to style.</div>', cssText);
+  html += block(`CSS <span class="muted">${esc(n.name)}</span>`, css.length ? codeBlock(cssText) : '<div class="muted">Nothing to style.</div>', cssText);
   const bp = breakpointCSS(n);
-  if (bp) html += block('Breakpoints', `<pre class="inspect-code">${esc(bp)}</pre>`, bp);
+  if (bp) html += block('Breakpoints', codeBlock(bp), bp);
   const tokens = layerTokens(n);
   if (tokens.length) {
     const seen = new Set();
     const list = tokens.filter((t) => !seen.has(t.variable.id) && seen.add(t.variable.id));
     html += block('Design tokens', '<div class="inspect-tokens">' + list.map(({ variable: v, value }) => `<div class="inspect-token">
-      <div class="inspect-token-head"><b>${esc(v.name)}</b><span class="muted">${esc(valueText(v.type, value))}</span></div>
-      ${Object.keys(PLATFORMS).map((p) => `<div class="inspect-token-code"><span class="muted">${PLATFORMS[p]}</span><code>${esc(tokenCode(v, p))}</code></div>`).join('')}
+      <div class="inspect-token-head"><b>${esc(v.name)}</b><span class="inspect-token-type">${esc(v.type)}</span></div><div class="inspect-token-value">${v.type==='color'&&/^#[\da-f]{6,8}$/i.test(valueText(v.type,value))?`<span class="inspect-token-swatch" style="background:${esc(valueText(v.type,value))}"></span>`:''}<code>${highlightCode(valueText(v.type,value))}</code></div>
+      ${Object.keys(PLATFORMS).map((p) => `<div class="inspect-token-code"><span class="muted">${PLATFORMS[p]}</span><code>${highlightCode(tokenCode(v, p))}</code></div>`).join('')}
     </div>`).join('') + '</div>', list.map(({ variable: v, value }) => `${tokenCode(v)}: ${valueText(v.type, value)}`).join('\n'));
   }
   if (n.type === 'icon') {

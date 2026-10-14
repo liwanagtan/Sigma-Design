@@ -77,6 +77,17 @@ function disabled(n) {
   return false;
 }
 
+export function accessibleLabel(n) {
+  const explicit=a11yOf(n).label;
+  if(explicit)return String(explicit);
+  const text=[];
+  walk([n],layer=>{
+    if(layer.visible===false)return false;
+    if(layer.type==='text'&&String(layer.text||'').trim())text.push(String(layer.text).trim());
+  });
+  return text.join(' ');
+}
+
 const visibleText = (n) => {
   let found = false;
   walk([n], (k) => {

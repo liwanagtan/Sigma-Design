@@ -1,4 +1,4 @@
-// The accessibility check dialog (Σ menu → Check accessibility…, or Inspect → Accessibility): issues in the
+// The accessibility check dialog (Σ menu → Check accessibility…, or Code → Accessibility): issues in the
 // selected frames (or every frame on the page), grouped by kind with the reason, to select or annotate.
 import { state, page, getParent, getNode } from './store.js';
 import { checkAccessibility, KINDS } from './a11y.js';
@@ -39,7 +39,7 @@ function body(issues, scope) {
   let html = `<div class="a11y-bar"><span class="muted">Checks ${esc(scope)}.</span><span class="spacer"></span><label class="muted">Tap targets <select class="prop-input a11y-target">` +
     [44, 48].map((t) => `<option value="${t}" ${t === target ? 'selected' : ''}>${t}×${t} (${t === 44 ? 'iOS' : 'Material'})</option>`).join('') + '</select></label></div>';
   if (!groups.length) return `${html}<div class="audit-done">No accessibility issues found. Sigma checks contrast, sizes, alt text, labels, headings and focus order; keyboard behavior and screen reader output still need a person.</div>`;
-  html += `<p class="muted lib-intro">${plural(errors, 'error')} and ${plural(groups.length - errors, 'warning')}. Select the layers to fix them, or annotate them in Inspect → Accessibility.</p>`;
+  html += `<p class="muted lib-intro">${plural(errors, 'error')} and ${plural(groups.length - errors, 'warning')}. Select the layers to fix them, or annotate them in Code → Accessibility.</p>`;
   for (const [kind, { label, reason }] of Object.entries(KINDS)) {
     const rows = groups.map((g, i) => ({ g, i })).filter(({ g }) => g.kind === kind);
     if (!rows.length) continue;

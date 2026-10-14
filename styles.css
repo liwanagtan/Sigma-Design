@@ -1231,3 +1231,52 @@ select:disabled { opacity: 0.45; cursor: default; }
 .project-header-icon svg { width:18px; height:18px; }
 #home-title[contenteditable="plaintext-only"] { outline:none; min-width:40px; }
 #home-title[contenteditable="plaintext-only"]:focus { box-shadow:0 1px 0 var(--accent); }
+
+/* Component documentation stays available without crowding editing controls. */
+.component-docs-disclosure { margin:8px 0; border:1px solid var(--border); border-radius:6px; }
+.component-docs-disclosure summary { padding:8px 10px; cursor:pointer; font-weight:500; }
+.component-docs-disclosure summary:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; border-radius:6px; }
+.component-docs-disclosure[open] summary { border-bottom:1px solid var(--border); }
+.component-docs-disclosure .comp-docs { padding:10px; margin:0; max-height:240px; overflow:auto; font-size:11px; line-height:1.5; }
+.inspect-section { --code-property:#006da8; --code-string:#28723b; --code-number:#995400; --code-variable:#953c79; --code-keyword:#7140ae; --code-function:#825500; --code-element:#216b5b; }
+[data-theme="dark"] .inspect-section { --code-property:#9cdcfe; --code-string:#ce9178; --code-number:#b5cea8; --code-variable:#e4abd3; --code-keyword:#c586c0; --code-function:#dcdcaa; --code-element:#4ec9b0; }
+.inspect-code { margin:0; border:1px solid var(--border); padding:12px; white-space:pre; word-break:normal; overflow:auto; tab-size:2; background:var(--subtle); color:var(--text); line-height:1.8; }
+.syntax-property,.syntax-attribute { color:var(--code-property); }
+.syntax-string { color:var(--code-string); }
+.syntax-number,.syntax-color { color:var(--code-number); }
+.syntax-variable { color:var(--code-variable); }
+.syntax-keyword { color:var(--code-keyword); }
+.syntax-function { color:var(--code-function); }
+.syntax-element { color:var(--code-element); }
+.syntax-comment,.syntax-punctuation { color:var(--muted); }
+.inspect-props { display:flex; flex-direction:column; gap:8px; }
+.inspect-property { padding:10px; border:1px solid var(--border); border-radius:6px; }
+.inspect-property-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+.inspect-property-head b { font-weight:500; }
+.inspect-property-head code,.inspect-default code { overflow-wrap:anywhere; color:var(--code-variable); }
+.inspect-property .code-name-row { grid-template-columns:70px minmax(0,1fr); margin:8px 0 0; }
+.inspect-default { display:flex; align-items:center; gap:8px; }
+.inspect-variant-values { display:flex; flex-wrap:wrap; gap:4px; }
+.inspect-variant-values code { padding:3px 6px; border-radius:4px; background:var(--input); color:var(--muted); }
+.inspect-variant-values code.selected { background:var(--accent-soft); color:var(--accent); }
+.inspect-token { padding:10px; background:var(--subtle); }
+.inspect-tokens { margin:0; }
+.inspect-token-head { align-items:flex-start; gap:10px; margin-bottom:8px; }
+.inspect-token-head b { white-space:normal; overflow-wrap:anywhere; }
+.inspect-token-type { font-size:10px; color:var(--muted); padding:2px 5px; border:1px solid var(--border); border-radius:4px; }
+.inspect-token-value { display:flex; align-items:center; gap:8px; padding-bottom:8px; margin-bottom:6px; border-bottom:1px solid var(--border); }
+.inspect-token-swatch { width:16px; height:16px; border:1px solid var(--border); border-radius:4px; flex-shrink:0; }
+.inspect-token-code { display:grid; grid-template-columns:36px minmax(0,1fr); gap:8px; padding:3px 0; }
+.inspect-token-code .muted { width:auto; }
+
+.comp-docs { gap:12px; line-height:1.55; }
+.comp-doc-section h4 { margin:0 0 5px; font-size:inherit; font-weight:600; color:var(--text); }
+.comp-doc-section p { margin:0 0 7px; overflow-wrap:anywhere; }
+.comp-doc-section p:last-child { margin-bottom:0; }
+.comp-doc-section ul,.comp-doc-section ol { margin:0; padding-left:16px; }
+.comp-doc-section li { margin-bottom:4px; }
+.comp-doc-section li:last-child { margin-bottom:0; }
+.comp-doc-role,.comp-doc-status { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.comp-doc-role span:last-child { background:var(--input); border-radius:4px; padding:2px 6px; }
+.comp-doc-status { padding-top:8px; border-top:1px solid var(--border); }
+.comp-doc-section code { font:inherit; font-family:ui-monospace,monospace; background:var(--input); padding:2px 4px; border-radius:3px; }

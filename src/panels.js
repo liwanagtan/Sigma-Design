@@ -1213,8 +1213,8 @@ function buildProps() {
         `<div class="muted">${pub.count} component${pub.count === 1 ? '' : 's'} in this file · ${!pub.pub ? 'not published' : pub.dirty ? `v${pub.pub.version} published, changes not published` : `v${pub.pub.version} published`}</div>` +
         `<button class="btn wide" data-action="publish-components" ${pub.pub && !pub.dirty ? 'disabled' : ''}>Publish components…</button>`);
     }
-    html += section('Page', modeRows(null) + `<div class="color-row"><label class="swatch" style="--c:${page().background}"><input type="color" data-page-bg value="${page().background.toLowerCase()}"></label>` +
-      `<input class="hex" data-page-hex value="${page().background.replace('#', '')}" spellcheck="false"></div>`);
+    const pageModes=modeRows(null);
+    if(pageModes)html += section('Page', pageModes);
     html += section('Export', `<div class="export-row">${exportControls()}</div><button class="btn wide" data-action="export-page">Export ${esc(page().name)}</button>`);
     return html;
   }
@@ -1616,7 +1616,7 @@ export function renderProps() {
     tmp.innerHTML = buildProps();
     for (const el of panel.querySelectorAll('input:not([type=color]):not([type=checkbox])')) {
       if (el === active) continue;
-      const attr = ['data-key', 'data-paint-hex', 'data-paint-op', 'data-page-hex', 'data-effect-input', 'data-grid-input'].find((a) => el.hasAttribute(a));
+      const attr = ['data-key', 'data-paint-hex', 'data-paint-op', 'data-effect-input', 'data-grid-input'].find((a) => el.hasAttribute(a));
       if (!attr) continue;
       const twin = tmp.querySelector(`[${attr}${el.getAttribute(attr) ? `="${el.getAttribute(attr)}"` : ''}]`);
       if (twin) el.value = twin.value;
@@ -1624,7 +1624,9 @@ export function renderProps() {
     return;
   }
   const scroll = panel.scrollTop;
+  const expanded=sameTarget?[...panel.querySelectorAll('details[data-component-docs][open]')].map(el=>el.dataset.componentDocs):[];
   panel.innerHTML = buildProps();
+  for(const el of panel.querySelectorAll('details[data-component-docs]'))el.open=expanded.includes(el.dataset.componentDocs);
   panel.scrollTop = scroll;
 }
 
@@ -1761,14 +1763,6 @@ function initProps() {
       const v = t.dataset.select === 'fontWeight' ? +t.value : t.value;
       return setProps({ [t.dataset.select]: v });
     }
-    if (t.hasAttribute('data-page-bg') || t.hasAttribute('data-page-hex')) {
-      const hex = normHex(t.value);
-      if (hex) {
-        page().background = hex;
-        commit();
-      } else emit('selection');
-      return;
-    }
     if (t.hasAttribute('data-export-scale')) exportScale = +t.value;
     if (t.hasAttribute('data-export-format')) exportFormat = t.value;
   });
@@ -1786,10 +1780,7 @@ function initProps() {
       updateEffect(+t.dataset.effectColor, (fx) => void (fx.color = t.value.toUpperCase()), { live: true });
       t.parentElement.style.setProperty('--c', t.value);
     }
-    if (t.hasAttribute('data-page-bg')) {
-      page().background = t.value.toUpperCase();
-      emit('view');
-    }
+
   });
   panel.addEventListener('keydown', (e) => {
     const t = e.target;

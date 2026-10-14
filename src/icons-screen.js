@@ -36,7 +36,6 @@ export function initIconsScreen(el) {
   el.innerHTML = `${railHTML('icons')}<div class="screen-main">
     <header class="tokens-header">
       <input class="file-name tokens-file-name icons-file-name" spellcheck="false" aria-label="Icons file name">
-      <span class="kind-badge tokens-kind icons-kind">Icons</span>
       <div class="tokens-header-actions">
         <button class="project-status" data-project-status hidden></button>
         <span class="publish-status" data-publish-status></span>

@@ -54,7 +54,7 @@ test('Welcome Guide: chapters are documentation with stable example links, not f
 });
 
 test('projects Home: selector, scoped cards, creation dialog and documentation replace the Welcome file section',async()=> {
-  const {initHome,renderHome,showHomeSection}=await import('../src/home.js');
+  const {initHome,renderHome,showHomeSection,reportFiles}=await import('../src/home.js');
   const before=selectedProjectId(),prefs=localStorage.getItem('sigma.home.prefs'),hash=location.hash;
   const el=document.createElement('div');document.body.append(el);
   const p=await createProject('Home scope '+crypto.randomUUID());selectProject(null,{notify:false});
@@ -64,6 +64,7 @@ test('projects Home: selector, scoped cards, creation dialog and documentation r
     initHome(el);showHomeSection('design');await renderHome();
     ok(!el.querySelector('#project-select'));ok(el.querySelector(`[data-project-id="${p}"]`).matches('[aria-current=true]'));ok(!el.querySelector('#home-project').textContent.includes('Drafts'));eq(el.querySelector('[data-section=recents]').nextElementSibling.dataset.section,'drafts');ok(el.querySelector('.home-side').lastElementChild.matches('[data-section=welcome]'));ok(el.querySelector(`[data-id="${file}"]`));ok(!el.querySelector(`[data-id="${draft}"]`));
     ok(el.querySelector('[data-file-group=design]'));ok(el.querySelector('.home-side #home-search'));ok(el.querySelector('.home-side #home-create'));ok(!el.querySelector('[data-section=tokens]'));ok(el.querySelector('.home-header [aria-label="Project title"]'));ok(el.querySelector('.home-header #home-sort'));ok(el.querySelector('.home-header .home-layout'));ok(el.querySelector('#project-header-icon').nextElementSibling.id==='home-title');ok(!el.querySelector('#project-overview')); 
+    ok(!el.querySelector('.home-header #home-report').hidden);eq((await reportFiles()).map(f=>f.id),[file]);showHomeSection('report');await renderHome();ok(el.querySelector('.report'));ok(el.querySelector('#home-title').textContent.includes('Report'));ok(el.querySelector('#home-report').textContent.includes('Go back to Files'));showHomeSection('workspace');await renderHome();
     const search=el.querySelector('#home-search');search.value=(await loadFile(draft)).meta.name;search.dispatchEvent(new Event('input'));for(let i=0;i<50&&!el.querySelector(`[data-id="${draft}"]`);i++)await new Promise(r=>setTimeout(r,10));ok(el.querySelector(`[data-id="${draft}"]`));search.value='';search.dispatchEvent(new Event('input'));await renderHome();
     el.querySelector(`[data-project-icon="${p}"]`).click();
     const picker=document.querySelector('.modal-backdrop');ok(picker.querySelector('[data-emoji]'));picker.querySelector('[data-emoji="🚀"]').click();
