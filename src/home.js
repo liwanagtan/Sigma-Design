@@ -4,11 +4,10 @@
 import {
   listFiles, createFile, renameFile, duplicateFile, deleteFile, downloadFile, importFiles, pickFilesToImport,
   listArchivedFiles, archiveFile, restoreFile, emptyArchive,
-  storageSummary, openFile, fileHref, fileKind, newTokenDocument, newIconsDocument, welcomeFile, sampleTokenFile, isSampleFile,
+  storageSummary, openFile, fileHref, fileKind, newTokenDocument, newIconsDocument, welcomeFile, isSampleFile,
   loadFile, addOptics,
 } from './files.js';
 import { blankDocument } from './sample.js';
-import { ICON_SETS, iconSetDocument, loadIconSet } from './icon-library.js';
 import {
   project, onProjectChange, projectListing, openProjectFile, newProjectFile,
 } from './project.js';
@@ -16,6 +15,7 @@ import { openProposeDialog, changesetListing } from './propose.js';
 import { buildLibraryFromCode } from './code-check.js';
 import { useReport, REPORT_KINDS, formatShare } from './use-report.js';
 import { fromProjectFile } from './project-format.js';
+import { ICON_SETS, iconSetDocument, loadIconSet } from './icon-library.js';
 import { showContextMenu } from './menu.js';
 import { modal } from './libraries.js';
 import { icons } from './icons.js';
@@ -101,8 +101,8 @@ export function initHome(el) {
             <button class="icon-btn" data-layout="list" title="List view">${LIST_ICON}</button>
           </div>
           <button class="btn" id="home-import">Import</button>
-          <span class="split-btn"><button class="btn" id="home-new-icons" title="New Sigma Icons file">${icons.plus} Sigma Icons</button><button class="btn split-more" id="home-new-icons-more" title="More Sigma Icons options">${icons.chevronDown}</button></span>
-          <span class="split-btn"><button class="btn" id="home-new-tokens" title="New Sigma Tokens file">${icons.plus} Sigma Tokens</button><button class="btn split-more" id="home-new-tokens-more" title="More Sigma Tokens options">${icons.chevronDown}</button></span>
+          <button class="btn" id="home-new-icons" title="New Sigma Icons file">${icons.plus} Sigma Icons</button>
+          <button class="btn" id="home-new-tokens" title="New Sigma Tokens file">${icons.plus} Sigma Tokens</button>
           <button class="btn primary" id="home-new" title="New Sigma Design file">${icons.plus} Sigma Design</button>
         </div>
       </header>
@@ -139,23 +139,6 @@ export function initHome(el) {
   root.querySelector('#home-new-icons').addEventListener('click', () => newIconsFile());
   onProjectChange(() => !root.hidden && renderHome());
   window.addEventListener('sigma:changesets', () => !root.hidden && renderHome());
-  root.querySelector('#home-new-icons-more').addEventListener('click', (e) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    showContextMenu(r.right - 240, r.bottom + 4, [
-      { label: 'Blank Sigma Icons file', action: newIconsFile },
-      '-',
-      ...ICON_SETS.map((set) => ({ label: `${set.name} (${set.note})`, action: () => newIconSetFile(set) })),
-    ]);
-  });
-  root.querySelector('#home-new-tokens-more').addEventListener('click', (e) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    showContextMenu(r.right - 220, r.bottom + 4, [
-      { label: 'Blank Sigma Tokens file', action: newTokenFile },
-      { label: 'Open sample tokens', action: openSampleTokenFile },
-      '-',
-      { label: 'Add Optics design system', action: addOpticsFiles },
-    ]);
-  });
   root.querySelector('#home-import').addEventListener('click', async () => {
     const ids = await pickFilesToImport();
     afterImport(ids);
@@ -191,7 +174,7 @@ export function initHome(el) {
     if (action) {
       e.preventDefault();
       const act = action.dataset.emptyAction;
-      if (act === 'sample-tokens') return openSampleTokenFile();
+      if (act === 'optics') return addOpticsFiles();
       if (act === 'icons') return newIconsFile();
       if (act === 'icon-set') return newIconSetFile(ICON_SETS.find((s) => s.id === action.dataset.set));
       return act === 'welcome' ? openWelcome() : act === 'tokens' ? newTokenFile() : newBlankFile();
@@ -471,7 +454,8 @@ async function newIconsFile() {
   await create(newIconsDocument());
 }
 
-// A Sigma Icons file with a free icon set (Lucide), published so Sigma Design files can link it.
+// A Sigma Icons file with a free icon set (Lucide), published so Sigma Design files can link it. Offered when
+// there are no Sigma Icons files yet; in a project it's the way to get Lucide as a project file.
 let creatingSet = false;
 async function newIconSetFile(set) {
   if (!set || creatingSet) return;
@@ -503,7 +487,7 @@ async function openWelcome() {
 
 // A complete sample design system: primitives, semantic Light/Dark colors, a brand, text styles and
 // component tokens, published so design files can link it right away. Opens the existing one if there is one.
-// Optics, the working design system, as three files of your own (Sigma Tokens ▾ → Add Optics design system).
+// Optics, the working design system, as files of your own (Add Optics design system, in the Welcome to Sigma folder).
 async function addOpticsFiles() {
   toast('Adding Optics…');
   const ids = await addOptics();
@@ -511,10 +495,6 @@ async function addOpticsFiles() {
   renderHome();
 }
 
-async function openSampleTokenFile() {
-  const lib = await sampleTokenFile();
-  openFile(lib.id);
-}
 
 function afterImport(ids) {
   if (!ids.length) return;
@@ -633,9 +613,7 @@ export async function renderHome() {
   // The primary "New" button matches the section you're in.
   root.querySelector('#home-new').classList.toggle('primary', section !== 'tokens' && section !== 'icons');
   root.querySelector('#home-new-icons').classList.toggle('primary', section === 'icons');
-  root.querySelector('#home-new-icons-more').classList.toggle('primary', section === 'icons');
   root.querySelector('#home-new-tokens').classList.toggle('primary', section === 'tokens');
-  root.querySelector('#home-new-tokens-more').classList.toggle('primary', section === 'tokens');
   const sortSel = root.querySelector('#home-sort');
   sortSel.hidden = recents || archive || proposals || welcome || report;
   sortSel.value = prefs.sort;
@@ -686,8 +664,7 @@ export async function renderHome() {
   } else if (!inSection && section === 'tokens') {
     list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No Sigma Tokens files yet</div>
       <p>A Sigma Tokens file holds your design tokens (colors, spacing, type, shadows, motion) for Sigma Design files to use. It has no canvas.</p>
-      <div class="home-empty-actions"><button class="btn primary" data-empty-action="tokens">${icons.plus} New Sigma Tokens file</button>
-      <button class="btn" data-empty-action="sample-tokens">Open the sample tokens</button></div></div>`;
+      <div class="home-empty-actions"><button class="btn primary" data-empty-action="tokens">${icons.plus} New Sigma Tokens file</button></div></div>`;
   } else if (!inSection && section === 'icons') {
     list.innerHTML = `<div class="home-empty"><div class="home-empty-title">No Sigma Icons files yet</div>
       <p>A Sigma Icons file holds icons imported from SVG (from a free icon set, for example). Components in Sigma Design files pick their icons from it. It has no canvas.</p>
@@ -728,6 +705,7 @@ function archivedCard(f) {
 const WELCOME_INTRO = `<div class="welcome-intro">
   <p><b>Welcome to Sigma</b> is where to learn Sigma: a guide, and the small design system it's built with. Open <b>Sigma Design</b> first; it explains everything, page by page, with examples to try.</p>
   <p class="muted">These are sample files: open them and try anything. Nothing in them is saved, so they're back to the original whenever you open them again. <b>Duplicate to keep changes</b> (in the banner) makes a copy of your own, which goes with your files.</p>
+  <p class="muted"><b>Optics</b>, a complete design system inspired by Shopify’s Polaris (tokens, icons, foundations and every Polaris component), came as files of your own with your first Welcome to Sigma. <button class="link-btn" data-empty-action="optics">Add Optics design system</button> makes a fresh set.</p>
 </div>`;
 const SAMPLE_DESCRIPTIONS = {
   design: 'The guide. Ten pages, each with a short explanation and examples: the canvas, layout, components, design tokens, style, quality checks, libraries and versions, Sigma Tokens and Sigma Icons.',

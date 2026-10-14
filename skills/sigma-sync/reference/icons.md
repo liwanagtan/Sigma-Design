@@ -13,7 +13,7 @@ Record them in `sigma.config.json`:
 
 `output` is how the project keeps icons: `svg` (files), `react`, `vue`, `svelte` (components), `sprite`
 (one SVG with symbols) or `other`. An icon package (`lucide-react`, `@heroicons/react`) isn't the
-project's own: link its set instead (Sigma has **+ Sigma Icons ▾ → Lucide**) and only sync icons the
+project's own: link its set instead (Sigma's **Add Lucide icons**, on the Sigma Icons page when there are none yet, makes a Lucide file) and only sync icons the
 project adds itself.
 
 ## SVG files (`output: "svg"`)

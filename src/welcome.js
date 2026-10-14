@@ -178,7 +178,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'When a Sigma Tokens or Sigma Icons file publishes a new version, the Sigma Design files that use it are offered the update.',
     ] },
     { h: 'A complete design system: Optics', p: [
-      'Your files also have Optics, a design system made in Sigma and inspired by Shopify’s Polaris: Optics Tokens (in Sigma Tokens), Optics Icons (in Sigma Icons), and Optics Foundations and Optics Components (in Sigma Design), with color, type, spacing, elevation, motion, icons and documented, ready components. They’re yours to change. Link Optics Tokens and Optics Components from your own files to design with them; Sigma Tokens ▾ → Add Optics design system adds them again.',
+      'Your files also have Optics, a design system made in Sigma and inspired by Shopify’s Polaris: Optics Tokens (in Sigma Tokens), Optics Icons (in Sigma Icons), and Optics Foundations and Optics Components (in Sigma Design), with color, type, spacing, elevation, motion, icons and documented, ready components. They’re yours to change. Link Optics Tokens and Optics Components from your own files to design with them; Add Optics design system, in the Welcome to Sigma folder, adds them again.',
     ] },
     { h: 'Find your way', bullets: [
       'Layers and Assets are on the left. The right panel shows what you’ve selected, or this file’s tokens and libraries when nothing is.',
@@ -518,7 +518,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     { h: 'A Sigma Icons file', bullets: [
       'Import SVGs from any free set (Lucide, Tabler, Heroicons, Phosphor, Material Symbols), drop them in, or paste SVG code. Colors are removed: an icon takes the color of the layer that shows it.',
       'Icons are outline or filled, in groups, with keywords for search. Publish… makes them available to Sigma Design files.',
-      'Sigma Icons, in the Welcome to Sigma folder, is the whole Lucide set: about 1,900 icons. + Sigma Icons ▾ → Lucide (on the files home) adds it as a file of your own.',
+      'Sigma Icons, in the Welcome to Sigma folder, is the whole Lucide set: about 1,900 icons. Link it from Icon libraries, or use Optics Icons, the same icons as a file of your own.',
     ] },
     { h: 'Icons in components', bullets: [
       'Icon libraries… (Σ menu) links a Sigma Icons file. A file keeps copies of only the icons it uses.',
@@ -596,7 +596,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     iconPage.push(mains, iconButtons, menu);
     iconColumns.push([iconButtons, menu]);
   } else {
-    iconPage.push(example('Sigma Icons', 600, 0, [para('The sample Sigma Icons couldn’t be made, so this page has no examples. + Sigma Icons ▾ → Lucide on the files home adds the Lucide set.', { typo: T('body/small') })], { width: 360 }));
+    iconPage.push(example('Sigma Icons', 600, 0, [para('The sample Sigma Icons couldn’t be made, so this page has no examples. Add Lucide icons, on the Sigma Icons page of the files home, adds the Lucide set.', { typo: T('body/small') })], { width: 360 }));
   }
 
   // ---------- pages ----------
