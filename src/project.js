@@ -13,6 +13,7 @@ import {
 } from './files.js';
 import { fromProjectFile, toProjectFile, serializeForProject, projectPath, KIND_DIRS } from './project-format.js';
 import { validateFile } from './validate.js';
+import { ask } from './dialogs.js';
 
 const POLL_MS = 2000;
 const toast = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
@@ -193,7 +194,7 @@ export async function openProjectFile(path) {
     const disk = project.files.find((f) => f.path === path);
     if (meta && disk && disk.mtime !== meta.project.mtime && (await hasUnsavedProjectChanges(meta.id))) {
       const { text } = await adapter.read(path);
-      if (textHash(text) !== meta.project.hash && confirm(`“${meta.name}” changed on disk, and it has changes here that aren’t saved to the project.\n\nOK loads the version on disk (the changes here are lost). Cancel keeps the changes here.`)) {
+      if (textHash(text) !== meta.project.hash && await ask('It has changes here that aren’t saved to the project. Loading the version on disk loses them; keeping them opens the file as it is here.', { title: `“${meta.name}” changed on disk`, ok: 'Load the disk version', cancel: 'Keep the changes here', danger: true })) {
         openFile(await bring(path, { force: true }));
         return;
       }

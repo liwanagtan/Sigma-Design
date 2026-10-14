@@ -12,6 +12,7 @@ import {
   parseSVGIcon, iconMarkup, iconGroups, iconMatches, iconNameFrom, diffIcons, ICON_STYLES,
 } from './icon-library.js';
 import { projectMenuItems } from './project-ui.js';
+import { ask, askText } from './dialogs.js';
 
 let root = null;
 let selected = new Set(); // icon ids (this screen's own selection, not part of the document)
@@ -270,18 +271,18 @@ function setGroup(ids, group) {
 }
 
 // Rename a group within one style (the same group name in another style is its own group).
-function renameGroup(from, style) {
-  const to = prompt(`Rename the ${ICON_STYLES[style].toLowerCase()} group “${from}” to:`, from);
+async function renameGroup(from, style) {
+  const to = await askText(`Rename the ${ICON_STYLES[style].toLowerCase()} group “${from}” to:`, { title: 'Rename group', value: from, ok: 'Rename' });
   if (to === null || !to.trim() || to.trim() === from) return;
   setGroup(list().filter((i) => (i.group || '') === from && i.style === style).map((i) => i.id), to);
   if (groupFilter === from) groupFilter = to.trim();
   render();
 }
 
-function deleteIcons(ids) {
+async function deleteIcons(ids) {
   ids = ids.filter((id) => byId(id));
   if (!ids.length) return;
-  if (ids.length > 1 && !confirm(`Delete ${ids.length} icons? Sigma Design files that use them keep them until they accept the next published version.`)) return;
+  if (ids.length > 1 && !(await ask('Sigma Design files that use them keep them until they accept the next published version. ⌘Z undoes it.', { title: `Delete ${ids.length} icons?`, ok: `Delete ${ids.length} icons`, danger: true }))) return;
   state.doc.icons = list().filter((i) => !ids.includes(i.id));
   commit();
   setSelection([]);

@@ -6,6 +6,7 @@ import {
 } from '../src/variables.js';
 import { syncInstances, createInstance } from '../src/components.js';
 import { createTokenFileWith, appendToTokenFile, loadPublished, deleteFile } from '../src/files.js';
+import { answerWith } from '../src/dialogs.js';
 
 function tokenCollections() {
   const mode = uid();
@@ -81,8 +82,7 @@ test('design tokens: a design file uses one token file; switching moves layers t
   };
   const a = await createTokenFileWith('Brand A (temporary)', brand('a', '#0D99FF'));
   const b = await createTokenFileWith('Brand B (temporary)', brand('b', '#9747FF'));
-  const realConfirm = window.confirm;
-  window.confirm = () => true;
+  answerWith(() => true); // OK to switching token files
   try {
     setCurrentFile(null);
     const [aPrimary, aOnly] = a.published.collections[0].variables;
@@ -99,7 +99,7 @@ test('design tokens: a design file uses one token file; switching moves layers t
     eq(r1.fills[0].color, '#9747FF');
     eq(r2.fills[0].color, '#000000'); // no match: keeps its value
   } finally {
-    window.confirm = realConfirm;
+    answerWith(null);
     await deleteFile(a.id);
     await deleteFile(b.id);
   }

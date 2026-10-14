@@ -18,6 +18,7 @@ import { FONTS, WEIGHTS } from './fonts.js';
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
 import { PLATFORMS, defaultTokenCode, setTokenCode } from './code-names.js';
+import { ask, isAsking } from './dialogs.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -100,6 +101,7 @@ function close() {
 }
 
 function onKey(e) {
+  if (isAsking()) return; // Escape is the open dialog's
   if (e.key === 'Escape' && !e.target.closest?.('input')) {
     e.stopImmediatePropagation();
     close();
@@ -598,8 +600,8 @@ function groupMenu(btn, col, id) {
     { label: 'Edit description', action: () => { activeGroup = id; render(); modal.querySelector('[data-group-desc]')?.focus(); } },
     { label: 'Ungroup', action: () => change(() => { ungroup(col, id); activeGroup = g.parentId || null; }) },
     '-',
-    { label: count ? `Delete group and ${count} token${count === 1 ? '' : 's'}` : 'Delete group', action: () => {
-      if (count && !confirm(`Delete “${groupPathOf(col, id)}” and its ${count} token${count === 1 ? '' : 's'}? Layers and tokens that use them keep their current values.`)) return;
+    { label: count ? `Delete group and ${count} token${count === 1 ? '' : 's'}` : 'Delete group', action: async () => {
+      if (count && !(await ask('Layers and tokens that use them keep their current values.', { title: `Delete “${groupPathOf(col, id)}” and its ${count} token${count === 1 ? '' : 's'}?`, ok: 'Delete', danger: true }))) return;
       change(() => { activeGroup = g.parentId || null; deleteGroup(col, id); });
     } },
   ]);
@@ -748,7 +750,7 @@ function bind() {
         if (readOnly(col)) return;
         const exts = collections().filter((c) => c.extends === col.id).length;
         const what = isExtension(col) ? 'its overrides' : `its ${col.variables.length} tokens${exts ? ` and ${exts} extended collection${exts === 1 ? '' : 's'}` : ''}`;
-        if (col && confirm(`Delete “${col.name}” and ${what}? Bound layers keep their current values.`)) change(() => deleteCollection(col));
+        if (col) ask('Bound layers keep their current values.', { title: `Delete “${col.name}” and ${what}?`, ok: 'Delete', danger: true }).then((ok) => ok && change(() => deleteCollection(col)));
         return;
       }
       case 'add-mode':

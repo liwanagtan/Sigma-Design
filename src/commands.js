@@ -11,6 +11,7 @@ import {
   isInsideInstance, owningInstance, createInstance, detachInstance, resetOverrides, mainComponentOf, canPlaceInside,
   parseVariantName, formatVariantName, variantsOf, variantDefs, libraryOfComponent, containingComponent, addComponentProp, setSlot,
 } from './components.js';
+import { ask } from './dialogs.js';
 
 const hint = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
 
@@ -565,7 +566,8 @@ export function goToMainComponent() {
   const lib = libraryOfComponent(main);
   if (lib) {
     // Library components live in another file: open it to edit them.
-    if (confirm(`“${main.name}” comes from the library “${lib.name}”. Open that file in a new tab?`)) window.open(`#/file/${lib.fileId}`, '_blank');
+    ask(`“${main.name}” comes from the library “${lib.name}”. Open that file in a new tab to edit it?`, { title: 'A library component', ok: 'Open the library' })
+      .then((ok) => ok && window.open(`#/file/${lib.fileId}`, '_blank'));
     return;
   }
   revealNode(main);

@@ -10,6 +10,7 @@ import {
 import { modal } from './libraries.js';
 import { showContextMenu } from './menu.js';
 import { icons } from './icons.js';
+import { ask } from './dialogs.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const toast = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
@@ -163,7 +164,7 @@ async function backToCurrent() {
 }
 
 async function restore(v) {
-  if (!confirm(`Restore “${label(v)}” from ${day(v.createdAt)}, ${time(v.createdAt)}? The current state is kept in the version history first.`)) return;
+  if (!(await ask(`The file goes back to “${label(v)}” from ${day(v.createdAt)}, ${time(v.createdAt)}. The current state is kept in the version history first.`, { title: 'Restore this version?', ok: 'Restore' }))) return;
   try {
     await restoreVersion(getCurrentFileId(), v);
   } catch (err) {
@@ -189,7 +190,7 @@ async function duplicate(v) {
 }
 
 async function remove(v) {
-  if (!confirm(`Delete “${label(v)}” from the version history? This can’t be undone.`)) return;
+  if (!(await ask('This can’t be undone.', { title: `Delete “${label(v)}” from the version history?`, ok: 'Delete version', danger: true }))) return;
   if (viewing?.id === v.id) await backToCurrent();
   await deleteVersion(v);
   await refreshHistory();
