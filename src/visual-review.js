@@ -11,6 +11,7 @@ import { layOutDocument } from './lay-out.js';
 import { zoomToSelection } from './commands.js';
 import { nodeSVG, strokeOverhang, effectOverhang } from './render.js';
 import { modal } from './libraries.js';
+import { pageLabel } from './page-groups.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const toast = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
@@ -48,8 +49,8 @@ export function renderAll(doc = state.doc) {
   };
   for (const pg of doc.pages || []) {
     for (const n of pg.children || []) {
-      if (n.type === 'componentSet') for (const v of n.children.filter((c) => c.type === 'component')) add(v, pg.name, 'component', `${n.name} / ${v.name}`);
-      else add(n, pg.name, n.type === 'component' ? 'component' : 'frame');
+      if (n.type === 'componentSet') for (const v of n.children.filter((c) => c.type === 'component')) add(v, pageLabel(pg), 'component', `${n.name} / ${v.name}`);
+      else add(n, pageLabel(pg), n.type === 'component' ? 'component' : 'frame');
     }
   }
   // A library's components, laid out on a page of their own (a project file keeps them without derived sizes).

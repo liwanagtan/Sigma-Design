@@ -70,8 +70,10 @@ export function opticsComponentsDocument(collections) {
   ]);
   const section = (title, children, o = {}) => frame(title, { dir: 'vertical', gap: '400', ...o }, [text('Heading', title, 'text/default', 'heading/lg'), ...children]);
 
-  // A page per component: its name and purpose, the component (and its parts), and its usage.
-  const pages = list.map((e) => {
+  // A page per component: its name and purpose, the component (and its parts), and its usage. Pages are grouped
+  // by category (page groups), in the Overview's order.
+  const ordered = OPTICS_CATEGORIES.flatMap((c) => list.filter((e) => e.category === c));
+  const pages = ordered.map((e) => {
     const dos = example(e.name, true, e.usage.do), donts = example(e.name, false, e.usage.dont);
     const docs = { ...e.info, code: `components/${codeNameOf(e.name)}`, dos: [dos.id], donts: [donts.id] };
     ready(e.node, { codeName: codeNameOf(e.name), docs, a11y: e.a11y || null });
@@ -90,7 +92,7 @@ export function opticsComponentsDocument(collections) {
       ]),
       section('Usage', [frame('Examples', { dir: 'horizontal', gap: '600' }, [dos, donts])]),
     ]);
-    return { id: `optics-c-${slug(e.name)}`, name: e.name, background: '#F1F1F1', children: [Object.assign(sheet, { x: 0, y: 0 })] };
+    return { id: `optics-c-${slug(e.name)}`, name: e.name, group: e.category, background: '#F1F1F1', children: [Object.assign(sheet, { x: 0, y: 0 })] };
   });
 
   // The Overview: every component by category, with what it's for.

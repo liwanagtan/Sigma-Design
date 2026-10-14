@@ -15,7 +15,10 @@ import {
   isDeprecated, mainComponentOf,
 } from './components.js';
 import { exportNodes, saveFile, pickImages } from './io.js';
-import { createFile, openFile, goHome, pickFilesToImport, welcomeFile } from './files.js';
+import { createFile, openFile, goHome, pickFilesToImport, welcomeFile, getCurrentFileId } from './files.js';
+import {
+  pageRuns, pageLabel, groupNames, keepTogether, movePage, moveGroup, renameGroup, ungroup, newGroupName, collapsedGroups, setCollapsedGroups,
+} from './page-groups.js';
 import {
   componentPanel, onComponentClick, onComponentChange, bindPropertyDrag, propBinding, propMenuItems, openPlayground, APPLY_PROP_ICON,
 } from './component-ui.js';
@@ -189,35 +192,144 @@ function showShortcuts() {
 }
 
 // ---------- pages ----------
-function initPages() {
-  $('#add-page').innerHTML = icons.plus;
-  $('#add-page').addEventListener('click', () => {
-    const pg = { id: uid(), name: `Page ${state.doc.pages.length + 1}`, background: '#F5F5F5', children: [] };
-    state.doc.pages.push(pg);
-    switchPage(pg.id);
+// The pages list, with page groups (page-groups.js): a header per group, collapsible, its pages under it;
+// right-click menus to make and change groups; drag to reorder pages and groups; a filter for long lists.
+let pageFilter = '';
+let pageDrag = null; // { page: id } or { group: name }
+const FILTER_FROM = 12; // pages; more than this shows the filter
+
+const pagesOf = () => state.doc.pages;
+const groupOfPage = (id) => pagesOf().find((p) => p.id === id)?.group || null;
+function addPage({ group = null, after = null } = {}) {
+  const pg = { id: uid(), name: `Page ${pagesOf().length + 1}`, background: '#F5F5F5', children: [], ...(group ? { group } : {}) };
+  const at = after ? pagesOf().findIndex((p) => p.id === after) + 1 : pagesOf().length;
+  pagesOf().splice(at || pagesOf().length, 0, pg);
+  keepTogether(pagesOf());
+  switchPage(pg.id);
+  commit();
+  return pg;
+}
+function deletePages(list) {
+  const gone = new Set(list.map((p) => p.id));
+  if (gone.size >= pagesOf().length) return;
+  const wasCurrent = gone.has(state.doc.currentPageId);
+  const i = pagesOf().findIndex((p) => p.id === state.doc.currentPageId);
+  state.doc.pages = pagesOf().filter((p) => !gone.has(p.id));
+  if (wasCurrent) switchPage((pagesOf()[Math.min(i, pagesOf().length - 1)] || pagesOf()[0]).id);
+  commit();
+}
+function setCollapsed(group, on) {
+  const set = collapsedGroups(getCurrentFileId());
+  if (on) set.add(group);
+  else set.delete(group);
+  setCollapsedGroups(getCurrentFileId(), set);
+  renderPages();
+}
+// Rename a group in place, on its header (after making it, too).
+function renameGroupInline(group) {
+  const head = [...$('#pages-list').querySelectorAll('[data-group]')].find((h) => h.dataset.group === group);
+  if (!head) return;
+  inlineRename(head.querySelector('.name'), group, (name) => {
+    const was = collapsedGroups(getCurrentFileId());
+    if (was.delete(group)) setCollapsedGroups(getCurrentFileId(), was.add(name.trim()));
+    renameGroup(pagesOf(), group, name);
     commit();
   });
+}
+function newGroupWith(pg) {
+  const name = newGroupName(pagesOf());
+  movePage(pagesOf(), pg.id, { group: name, beforeId: pagesOf()[pagesOf().indexOf(pg) + 1]?.id || null });
+  commit();
+  renderPages();
+  renameGroupInline(name);
+}
+
+function initPages() {
+  $('#add-page').innerHTML = icons.plus;
+  $('#add-page').title = 'New page or group';
+  $('#add-page').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const r = e.currentTarget.getBoundingClientRect();
+    const cur = page();
+    showContextMenu(r.left, r.bottom + 4, [
+      { label: cur.group ? `New page in “${cur.group}”` : 'New page', action: () => addPage({ group: cur.group || null, after: cur.id }) },
+      ...(cur.group ? [{ label: 'New page (no group)', action: () => addPage() }] : []),
+      { label: 'New group', action: () => {
+        const name = newGroupName(pagesOf());
+        addPage({ group: name });
+        renderPages();
+        renameGroupInline(name);
+      } },
+    ]);
+  });
+  const filter = document.createElement('input');
+  filter.id = 'pages-filter';
+  filter.className = 'prop-input pages-filter';
+  filter.placeholder = 'Filter pages';
+  filter.spellcheck = false;
+  filter.hidden = true;
+  filter.addEventListener('input', () => {
+    pageFilter = filter.value;
+    renderPages();
+  });
+  filter.addEventListener('keydown', (e) => {
+    e.stopPropagation();
+    if (e.key === 'Escape') {
+      filter.value = pageFilter = '';
+      renderPages();
+      filter.blur();
+    }
+  });
+  $('#pages-list').before(filter);
+
   const list = $('#pages-list');
   list.addEventListener('click', (e) => {
+    const head = e.target.closest('[data-group]');
+    if (head) return setCollapsed(head.dataset.group, !head.classList.contains('collapsed'));
     const row = e.target.closest('[data-page]');
     if (!row) return;
     if (e.target.closest('[data-del]')) {
-      const pg = state.doc.pages.find((p) => p.id === row.dataset.page);
-      if (pg && confirm(`Delete page “${pg.name}”?`)) {
-        state.doc.pages = state.doc.pages.filter((p) => p !== pg);
-        if (state.doc.currentPageId === pg.id) switchPage(state.doc.pages[0].id);
-        commit();
-      }
+      const pg = pagesOf().find((p) => p.id === row.dataset.page);
+      if (pg && confirm(`Delete page “${pg.name}”?`)) deletePages([pg]);
       return;
     }
     switchPage(row.dataset.page);
   });
-  // Right-click: rename, mark for handoff (the design system use report can count only those pages), delete.
+  // Right-click a page: rename, mark for handoff (the design system use report can count only those pages),
+  // move to a group, delete. Right-click a group: rename, a new page in it, ungroup, delete it.
   list.addEventListener('contextmenu', (e) => {
+    const head = e.target.closest('[data-group]');
+    if (head) {
+      e.preventDefault();
+      const group = head.dataset.group;
+      const members = pagesOf().filter((p) => p.group === group);
+      return showContextMenu(e.clientX, e.clientY, [
+        { label: 'Rename group', action: () => renameGroupInline(group) },
+        { label: 'New page in group', action: () => addPage({ group, after: members.at(-1).id }) },
+        '-',
+        { label: 'Collapse all groups', action: () => {
+          setCollapsedGroups(getCurrentFileId(), new Set(groupNames(pagesOf())));
+          renderPages();
+        } },
+        { label: 'Expand all groups', action: () => {
+          setCollapsedGroups(getCurrentFileId(), new Set());
+          renderPages();
+        } },
+        '-',
+        { label: 'Ungroup', action: () => {
+          ungroup(pagesOf(), group);
+          commit();
+        } },
+        { label: `Delete group and its ${members.length === 1 ? 'page' : `${members.length} pages`}`, disabled: members.length >= pagesOf().length, action: () => {
+          if (confirm(`Delete “${group}” and its ${members.length === 1 ? 'page' : `${members.length} pages`}?`)) deletePages(members);
+        } },
+      ]);
+    }
     const row = e.target.closest('[data-page]');
     if (!row) return;
     e.preventDefault();
-    const pg = state.doc.pages.find((p) => p.id === row.dataset.page);
+    const pg = pagesOf().find((p) => p.id === row.dataset.page);
+    const others = groupNames(pagesOf()).filter((g) => g !== pg.group);
     showContextMenu(e.clientX, e.clientY, [
       { label: 'Rename', action: () => inlineRename(row.querySelector('.name'), pg.name, (name) => {
         pg.name = name;
@@ -228,22 +340,107 @@ function initPages() {
         else pg.handoff = true;
         commit();
       } },
-      ...(state.doc.pages.length > 1 ? ['-', { label: 'Delete page', action: () => {
-        if (!confirm(`Delete page “${pg.name}”?`)) return;
-        state.doc.pages = state.doc.pages.filter((p) => p !== pg);
-        if (state.doc.currentPageId === pg.id) switchPage(state.doc.pages[0].id);
+      '-',
+      ...others.map((g) => ({ label: `Move to “${g}”`, action: () => {
+        movePage(pagesOf(), pg.id, { group: g });
+        setCollapsed(g, false);
         commit();
+      } })),
+      { label: 'Move to new group', action: () => newGroupWith(pg) },
+      ...(pg.group ? [{ label: 'Remove from group', action: () => {
+        // Out of the group, just after it.
+        const after = pagesOf().filter((p) => p.group === pg.group && p !== pg).at(-1);
+        const next = after ? pagesOf()[pagesOf().indexOf(after) + 1] : null;
+        movePage(pagesOf(), pg.id, { group: null, beforeId: next && next !== pg ? next.id : null });
+        commit();
+      } }] : []),
+      ...(pagesOf().length > 1 ? ['-', { label: 'Delete page', action: () => {
+        if (confirm(`Delete page “${pg.name}”?`)) deletePages([pg]);
       } }] : []),
     ]);
   });
   list.addEventListener('dblclick', (e) => {
+    const head = e.target.closest('[data-group]');
+    if (head) return renameGroupInline(head.dataset.group);
     const row = e.target.closest('[data-page]');
     if (!row) return;
-    const pg = state.doc.pages.find((p) => p.id === row.dataset.page);
+    const pg = pagesOf().find((p) => p.id === row.dataset.page);
     inlineRename(row.querySelector('.name'), pg.name, (name) => {
       pg.name = name;
       commit();
     });
+  });
+
+  // Drag a page to reorder it (into or out of a group), or a group's header to move the whole group.
+  list.addEventListener('dragstart', (e) => {
+    const head = e.target.closest('[data-group]');
+    const row = e.target.closest('[data-page]');
+    if (!head && !row) return;
+    pageDrag = head ? { group: head.dataset.group } : { page: row.dataset.page };
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', 'pages');
+  });
+  const clearMarks = () => list.querySelectorAll('.drop-before,.drop-after,.drop-inside').forEach((r) => r.classList.remove('drop-before', 'drop-after', 'drop-inside'));
+  // Where a drop lands: { el, pos: 'before' | 'after' | 'inside' } (inside: into a group, on its header).
+  const dropAt = (e) => {
+    const el = e.target.closest('[data-group], [data-page]');
+    if (!el || !pageDrag) return null;
+    const r = el.getBoundingClientRect();
+    const t = (e.clientY - r.top) / r.height;
+    if (el.dataset.group) {
+      if (pageDrag.page) return { el, pos: t < 0.3 ? 'before' : 'inside' };
+      return el.dataset.group === pageDrag.group ? null : { el, pos: 'before' };
+    }
+    if (pageDrag.group && el.dataset.page && groupOfPage(el.dataset.page) === pageDrag.group) return null;
+    if (pageDrag.page === el.dataset.page) return null;
+    return { el, pos: t < 0.5 ? 'before' : 'after' };
+  };
+  list.addEventListener('dragover', (e) => {
+    const at = dropAt(e);
+    if (!at) return;
+    e.preventDefault();
+    clearMarks();
+    at.el.classList.add(`drop-${at.pos}`);
+  });
+  list.addEventListener('dragleave', (e) => {
+    if (!list.contains(e.relatedTarget)) clearMarks();
+  });
+  list.addEventListener('dragend', () => {
+    pageDrag = null;
+    clearMarks();
+  });
+  list.addEventListener('drop', (e) => {
+    const at = dropAt(e);
+    e.preventDefault();
+    clearMarks();
+    const drag = pageDrag;
+    pageDrag = null;
+    if (!at || !drag) return;
+    const pages = pagesOf();
+    const nextId = (id) => pages[pages.findIndex((p) => p.id === id) + 1]?.id || null;
+    if (at.el.dataset.group) {
+      const g = at.el.dataset.group;
+      const first = pages.find((p) => p.group === g);
+      if (drag.page) {
+        if (at.pos === 'inside') movePage(pages, drag.page, { group: g });
+        else movePage(pages, drag.page, { group: null, beforeId: first.id });
+      } else moveGroup(pages, drag.group, first.id);
+    } else {
+      const target = at.el.dataset.page;
+      if (drag.page) {
+        // Joins the group of the page it's dropped by.
+        movePage(pages, drag.page, { group: groupOfPage(target), beforeId: at.pos === 'before' ? target : nextId(target) });
+      } else {
+        // A group goes before or after the page, or before or after that page's whole group.
+        const g = groupOfPage(target);
+        const members = g ? pages.filter((p) => p.group === g) : [pages.find((p) => p.id === target)];
+        moveGroup(pages, drag.group, at.pos === 'before' ? members[0].id : nextId(members.at(-1).id));
+      }
+    }
+    commit();
+    // A page dropped into a collapsed group: open it, so the page stays in view.
+    const g = drag.page && groupOfPage(drag.page);
+    if (g && collapsedGroups(getCurrentFileId()).has(g)) setCollapsed(g, false);
   });
 }
 
@@ -260,6 +457,10 @@ function switchPage(id) {
   state.selection = [];
   state.hoverId = null;
   const fresh = !state.pageViews[id];
+  // The open page's group opens.
+  const g = groupOfPage(id);
+  const collapsed = collapsedGroups(getCurrentFileId());
+  if (g && collapsed.delete(g)) setCollapsedGroups(getCurrentFileId(), collapsed);
   emit('doc');
   if (fresh) requestAnimationFrame(() => zoomToFit());
 }
@@ -267,12 +468,37 @@ function switchPage(id) {
 export function renderPages() {
   const list = $('#pages-list');
   if (list.querySelector('input')) return;
-  const many = state.doc.pages.length > 1;
-  list.innerHTML = state.doc.pages.map((p) =>
-    `<div class="page-row${p.id === page().id ? ' active' : ''}" data-page="${p.id}">` +
-    `<span class="check">${p.id === page().id ? '✓' : ''}</span><span class="name">${esc(p.name)}</span>` +
+  const pages = pagesOf();
+  const filter = $('#pages-filter');
+  if (filter) {
+    filter.hidden = pages.length <= FILTER_FROM && !pageFilter;
+    if (filter.hidden && pageFilter) pageFilter = filter.value = '';
+  }
+  const q = pageFilter.trim().toLowerCase();
+  const many = pages.length > 1;
+  const current = page().id;
+  const collapsed = q ? new Set() : collapsedGroups(getCurrentFileId());
+  const pageRow = (p, inGroup) =>
+    `<div class="page-row${p.id === current ? ' active' : ''}${inGroup ? ' in-group' : ''}" data-page="${p.id}" draggable="${!q}">` +
+    `<span class="check">${p.id === current ? '✓' : ''}</span><span class="name">${esc(p.name)}</span>` +
     (p.handoff ? '<span class="kind-badge handoff-badge" title="Marked for handoff">Handoff</span>' : '') +
-    (many ? `<button class="icon-btn row-btn" data-del title="Delete page">${icons.close}</button>` : '') + '</div>').join('');
+    (many ? `<button class="icon-btn row-btn" data-del title="Delete page">${icons.close}</button>` : '') + '</div>';
+  let html = '';
+  for (const run of pageRuns(pages)) {
+    const shown = q ? run.pages.filter((p) => p.name.toLowerCase().includes(q) || (run.group || '').toLowerCase().includes(q)) : run.pages;
+    if (!shown.length) continue;
+    if (!run.group) {
+      html += shown.map((p) => pageRow(p, false)).join('');
+      continue;
+    }
+    const closed = collapsed.has(run.group);
+    const holdsCurrent = run.pages.some((p) => p.id === current);
+    html += `<div class="page-group${closed ? ' collapsed' : ''}${holdsCurrent ? ' has-active' : ''}" data-group="${esc(run.group)}" draggable="${!q}" title="${closed ? 'Show' : 'Hide'} its pages">` +
+      `<span class="chev">${closed ? icons.chevronRight : icons.chevronDown}</span><span class="name">${esc(run.group)}</span>` +
+      `<span class="count">${run.pages.length}</span></div>`;
+    if (!closed) html += shown.map((p) => pageRow(p, true)).join('');
+  }
+  list.innerHTML = html || '<div class="muted pages-none">No pages match</div>';
 }
 
 function inlineRename(span, value, done) {
@@ -1366,7 +1592,7 @@ export function renderAssets() {
       if (!groups.has(g)) groups.set(g, []);
       groups.get(g).push(it);
     }
-    const title = pg.fileId ? `${COMPONENT_LIB_ICON}${esc(pg.name)} <span class="muted">v${pg.version}</span>` : esc(pg.name);
+    const title = pg.fileId ? `${COMPONENT_LIB_ICON}${esc(pg.name)} <span class="muted">v${pg.version}</span>` : esc(pageLabel(pg));
     return `<div class="assets-group"><div class="assets-group-title">${title}</div>` +
       [...groups].map(([g, list]) => (g ? `<div class="assets-subgroup">${esc(g)}</div>` : '') + `<div class="assets-grid">${list.map(tile).join('')}</div>`).join('') +
       '</div>';

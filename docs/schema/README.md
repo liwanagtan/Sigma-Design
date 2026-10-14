@@ -160,6 +160,9 @@ they change, by token id and their own mode ids:
 
 A page marked for handoff has `"handoff": true` (the design system use report can count only those).
 
+A page in a page group has `"group"`, the group's name (`"group": "Forms"`). A group's pages are next to each
+other in `pages`; the pages list shows them under the group's name, and other pages stay where they are.
+
 A design file can also have `collections` (local tokens, like a tokens file's), but tokens belong in a
 Sigma Tokens file.
 

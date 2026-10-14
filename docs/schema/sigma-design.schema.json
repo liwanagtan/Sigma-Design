@@ -77,6 +77,15 @@
           "modes": {
             "type": "object"
           },
+          "handoff": {
+            "const": true,
+            "description": "Marked for handoff"
+          },
+          "group": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The page group it belongs to (by name); a group's pages are next to each other"
+          },
           "children": {
             "type": "array",
             "items": {

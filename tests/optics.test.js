@@ -14,6 +14,7 @@ import { useReport } from '../src/use-report.js';
 import { toProjectFile } from '../src/project-format.js';
 import { validateFile } from '../src/validate.js';
 import { newTokenDocument } from '../src/files.js';
+import { groupNames } from '../src/page-groups.js';
 
 let built = null;
 async function optics() {
@@ -74,6 +75,8 @@ test('optics: Optics Components validate, use tokens for every value, and every 
   eq(rows.length, 87, '86 components, and Tab (part of Tabs)');
   eq(doc.pages.length, 87);
   eq(doc.pages[0].name, 'Overview');
+  eq(groupNames(doc.pages), OPTICS_CATEGORIES, 'pages grouped by category, in the Overview’s order');
+  ok(!doc.pages[0].group, 'the Overview isn’t in a group');
   ok(doc.pages.every((pg) => pg.children.length === 1), 'one sheet a page');
   const missing = doc.pages.slice(1).filter((pg) => {
     let comps = 0, dos = 0, donts = 0;

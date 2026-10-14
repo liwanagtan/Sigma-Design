@@ -7,6 +7,7 @@ import { valuePreview, openTokenPicker } from './token-picker.js';
 import { openComponentPicker } from './component-ui.js';
 import { zoomToSelection } from './commands.js';
 import { modal } from './libraries.js';
+import { pageLabel } from './page-groups.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const toast = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
@@ -85,7 +86,7 @@ export function selectLayers(ids) {
   }
   select(onPage);
   requestAnimationFrame(() => zoomToSelection());
-  if (byPage.size > 1) toast(`Selected ${onPage.length} on “${pg.name}”; ${ids.length - onPage.length} more on other pages`);
+  if (byPage.size > 1) toast(`Selected ${onPage.length} on “${pageLabel(pg)}”; ${ids.length - onPage.length} more on other pages`);
 }
 
 export function openAuditDialog() {

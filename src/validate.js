@@ -355,7 +355,17 @@ export function validateFile(file, { path = '(file)', files = {} } = {}) {
       pageIds.add(pg.id);
       if (pg.background !== undefined && !HEX.test(pg.background)) error(`${at}.background`, 'should be a color like "#F5F5F5"');
       if (pg.handoff !== undefined && pg.handoff !== true) error(`${at}.handoff`, 'should be true (a page marked for handoff), or left out');
+      if (pg.group !== undefined && (typeof pg.group !== 'string' || !pg.group.trim())) error(`${at}.group`, 'should be its page group’s name, or left out');
       (pg.children || []).forEach((n, i) => checkNode(n, `${at}.children[${i}]`, null, null));
+    });
+    // Page groups: a group's pages are next to each other (Sigma keeps them together; a hand edit may not).
+    const seenGroups = new Set();
+    let lastGroup = null;
+    (file.pages || []).forEach((pg, pi) => {
+      const g = typeof pg?.group === 'string' ? pg.group.trim() : null;
+      if (g && g !== lastGroup && seenGroups.has(g)) warn(`pages[${pi}] (“${pg.name}”).group`, `“${g}” is split: its pages should be next to each other (Sigma puts them together when it opens the file)`);
+      if (g) seenGroups.add(g);
+      lastGroup = g;
     });
     // Comments: on a page of this file, and (if on a layer) a layer that's still there.
     const commentIds = new Set();

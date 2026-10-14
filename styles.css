@@ -39,8 +39,25 @@ body.scrubbing, body.scrubbing * { cursor: ew-resize !important; user-select: no
 
 .panel-head { display: flex; align-items: center; justify-content: space-between; height: 32px; padding: 0 8px 0 16px; font-weight: 600; }
 .pages { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
-#pages-list { max-height: 160px; overflow: auto; }
-.page-row { display: flex; align-items: center; height: 28px; padding: 0 8px 0 8px; margin: 0 8px; border-radius: 5px; }
+#pages-list { max-height: 220px; overflow: auto; }
+.page-row { display: flex; align-items: center; height: 28px; padding: 0 8px 0 8px; margin: 0 8px; border-radius: 5px; position: relative; }
+.page-row.in-group { padding-left: 24px; }
+/* Page groups (page-groups.js): a header per group, its pages indented under it. */
+.page-group { display: flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px 0 4px; margin: 0 8px; border-radius: 5px; position: relative; color: var(--muted); font-weight: 600; cursor: default; }
+.page-group:hover { background: var(--hover); }
+.page-group .chev { width: 16px; height: 16px; display: grid; place-items: center; flex: none; }
+.page-group .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.page-group.has-active .name { color: var(--text); }
+.page-group .count { font-weight: 400; font-size: 11px; }
+.page-row.drop-before::before, .page-row.drop-after::after, .page-group.drop-before::before {
+  content: ''; position: absolute; left: 8px; right: 0; height: 2px; background: var(--accent);
+}
+.page-row.drop-before::before, .page-group.drop-before::before { top: -1px; }
+.page-row.drop-after::after { bottom: -1px; }
+.page-group.drop-inside { box-shadow: inset 0 0 0 2px var(--accent); }
+.pages-filter { display: block; width: calc(100% - 32px); margin: 0 16px 6px; box-sizing: border-box; }
+.pages-filter[hidden] { display: none; }
+.pages-none { padding: 4px 16px; }
 .page-row:hover { background: var(--hover); }
 .page-row .check { width: 16px; color: var(--text); }
 .page-row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
