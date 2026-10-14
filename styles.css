@@ -1083,3 +1083,17 @@ button.group-caret.open { transform: rotate(90deg); }
 .rail-tip[hidden] { display: none; }
 .rail-tip-label { font-weight: 600; }
 .rail-tip-detail { color: rgba(255,255,255,0.72); }
+
+/* ---------- view-only files (Welcome to Sigma): what only edits is hidden ---------- */
+body.view-only #toolbar [data-tool]:not([data-tool="move"]):not([data-tool="hand"]),
+body.view-only #toolbar .tb-sep,
+body.view-only #add-page,
+body.view-only [data-action="publish-components"],
+body.view-only [data-publish], body.view-only [data-publish-status], body.view-only [data-undo], body.view-only [data-redo],
+body.view-only [data-import], body.view-only [data-import-empty],
+body.view-only .rail-tools [data-rail="tokens"], body.view-only .rail-tools [data-rail="components"], body.view-only .rail-tools [data-rail="icons"],
+body.view-only .rail-tools [data-rail="linked"], body.view-only .rail-tools [data-rail="import"], body.view-only .rail-tools .rail-sep { display: none !important; }
+body.view-only [data-act="add-mode"], body.view-only [data-act="delete-collection"], body.view-only [data-act="extend"], body.view-only [data-act="move-to-file"],
+body.view-only [data-act="new-collection"], body.view-only [data-act="new-group"], body.view-only [data-act="new-variable"] { display: none !important; }
+body.view-only .file-name[readonly] { cursor: default; }
+body.view-only .file-name[readonly]:hover { border-color: transparent; }

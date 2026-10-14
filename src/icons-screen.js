@@ -3,7 +3,7 @@
 // (picked, dropped or pasted) and are published as versions for design files to use.
 import { state, commit, subscribe, undo, redo } from './store.js';
 import { openHistory, openSaveVersionDialog } from './history.js';
-import { goHome, isCurrentSample } from './files.js';
+import { goHome, isCurrentSample, makeEditableCopy } from './files.js';
 import { saveFile, download, toast } from './io.js';
 import { showContextMenu } from './menu.js';
 import { icons as uiIcons } from './icons.js';
@@ -65,6 +65,7 @@ export function initIconsScreen(el) {
   el.querySelector('[data-rail-menu]').addEventListener('click', (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     showContextMenu(r.right + 4, r.top, [
+      ...(state.viewOnly ? [{ label: 'Make an editable copy', action: makeEditableCopy }, '-'] : []),
       { label: 'Back to files', action: goHome },
       '-',
       { label: 'Import SVGs…', action: pickSVGs },
@@ -385,6 +386,7 @@ function render() {
 function renderHeader() {
   const name = root.querySelector('.icons-file-name');
   if (document.activeElement !== name) name.value = state.doc.name || 'Untitled icons';
+  name.readOnly = !!state.viewOnly;
   document.title = `${state.doc.name || 'Untitled icons'} – Sigma`;
   const pub = state.doc.published;
   const dirty = hasUnpublishedChanges();
@@ -446,10 +448,11 @@ function renderInspector() {
       `${src.note ? `<div class="muted">${esc(src.note)}</div>` : ''}</div>` : '';
     el.innerHTML = `<div class="inspector-title">Icons file</div>${credit}
       <p class="muted icons-help">${list().length ? `${plural(list().length, 'icon')} in ${plural(groups.length, 'group')}: ${outline} outline, ${list().length - outline} filled.` : 'No icons yet.'}</p>
-      <p class="muted icons-help">Import SVGs, drop them anywhere here, or paste SVG code (⌘V). Icons go into the group you have open. Re-importing an icon with the same name, group and style updates it.</p>
+      ${state.viewOnly ? `<p class="muted icons-help">These are the sample icons, for looking at: design files link them from Icon libraries. To add or change icons, make an editable copy (Σ menu).</p>`
+    : `<p class="muted icons-help">Import SVGs, drop them anywhere here, or paste SVG code (⌘V). Icons go into the group you have open. Re-importing an icon with the same name, group and style updates it.</p>
       <p class="muted icons-help">Colors are removed on import: an icon takes the color of the layer that shows it. Outline icons keep their stroke width, which components can change.</p>
       <p class="muted icons-help">Publish to let design files use these icons in components.</p>
-      <button class="btn wide" data-import>${uiIcons.plus} Import SVGs</button>`;
+      <button class="btn wide" data-import>${uiIcons.plus} Import SVGs</button>`}`;
     return;
   }
   if (sel.length === 1) {

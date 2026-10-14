@@ -130,7 +130,8 @@ function active() {
   const first = sideTab === 'local' ? locals[0] : sideTab === 'linked' ? libs[0] : locals[0] || libs[0];
   return pool.find((c) => c.id === activeId) || first || null;
 }
-const readOnly = (c) => isLibraryCollection(c);
+// Linked files' tokens can't be edited here, and nothing can in a Welcome to Sigma file (view-only).
+const readOnly = (c) => !!state.viewOnly || isLibraryCollection(c);
 const editableGroups = (c) => !!c && !readOnly(c) && !isExtension(c);
 
 // Collections in tree order: each root followed by its extensions (indented).

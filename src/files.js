@@ -106,8 +106,8 @@ const channel = 'BroadcastChannel' in window ? new BroadcastChannel('sigma-files
 
 let currentFileId = null;
 let currentDeleted = false; // the open file was deleted or archived in another tab: stop writing it
-// The open file is a sample (Welcome to Sigma): a playground. Anything can be changed while it's open, but
-// nothing is saved, so it's back to how it was whenever it's opened again.
+// The open file is a sample (Welcome to Sigma): a guide to look at. It opens view-only (state.viewOnly), so it
+// can't be changed, renamed or deleted; Make an editable copy makes a file of your own from it.
 let currentSample = false;
 export const isCurrentSample = () => currentSample;
 const SAMPLE_READONLY = 'Sample files keep their original content. Duplicate it to make your own copy.';
@@ -608,7 +608,7 @@ export function setCurrentFile(id, { sample = false } = {}) {
   sampleThumbDone = false;
 }
 
-// A sample's edits as a file of your own (what "Duplicate to keep changes" makes).
+// A copy of the open file as a file of your own (Make an editable copy, for a Welcome to Sigma file).
 export async function duplicateCurrent() {
   if (!state.doc) return null;
   const doc = structuredClone(state.doc);
@@ -616,6 +616,14 @@ export async function duplicateCurrent() {
   delete doc.publishedComponents;
   doc.name = `${doc.name || 'Untitled'} (copy)`;
   return createFile(doc, structuredClone(state.pageViews || {}));
+}
+
+/** Make an editable copy of the open (view-only) file, and open it. */
+export async function makeEditableCopy() {
+  const copy = await duplicateCurrent();
+  if (!copy) return;
+  window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'Made an editable copy, with your files' }));
+  openFile(copy);
 }
 
 // Called (debounced) by the store whenever the open document changes.
