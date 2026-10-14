@@ -6,6 +6,7 @@ import { css, mul, apply, unionBoxes, cornersOf } from './geom.js';
 import { textStyle, caseText, wrapsAtMax, truncateStyle } from './text.js';
 import { isInsideInstance } from './components.js';
 import { gridsOverlay } from './grids.js';
+import { componentSetSymbol } from './icons.js';
 import { findIcon, iconMarkup } from './icon-library.js';
 
 export const ACCENT = '#0D99FF';
@@ -362,15 +363,18 @@ export function renderOverlay(svg) {
     const tl = toScreen(apply(W, { x: 0, y: 0 }));
     const tr = toScreen(apply(W, { x: n.w, y: 0 }));
     const maxW = Math.max(0, Math.hypot(tr.x - tl.x, tr.y - tl.y));
-    let text = (n.type === 'component' || n.type === 'componentSet' ? '❖ ' : n.type === 'instance' ? '◇ ' : '') + n.name;
-    if (labelWidth(text) > maxW) {
-      while (text.length > 1 && labelWidth(text + '…') > maxW) text = text.slice(0, -1);
-      text = maxW < 16 ? '' : text + '…';
+    const iconWidth = n.type === 'componentSet' && maxW >= 12 ? 16 : 0;
+    let text = (n.type === 'component' ? '❖ ' : n.type === 'instance' ? '◇ ' : '') + n.name;
+    const textWidth = Math.max(0, maxW - iconWidth);
+    if (labelWidth(text) > textWidth) {
+      while (text.length > 1 && labelWidth(text + '…') > textWidth) text = text.slice(0, -1);
+      text = textWidth < 16 ? '' : text + '…';
     }
     const angle = Math.atan2(tr.y - tl.y, tr.x - tl.x) * 180 / Math.PI;
     const color = isComponentish(n) ? COMPONENT_ACCENT : sel.has(n.id) ? ACCENT : state.hoverId === n.id ? '#333' : '#8C8C8C';
-    out += `<text transform="translate(${tl.x},${tl.y}) rotate(${angle})" y="-6" fill="${color}" font-size="11" font-weight="500" font-family="Inter,system-ui,sans-serif">${esc(text)}</text>`;
-    frameLabels.push({ id: n.id, x: tl.x, y: tl.y - 18, w: Math.max(labelWidth(text), 8), h: 16, angle });
+    if (iconWidth) out += `<g transform="translate(${tl.x},${tl.y}) rotate(${angle})" color="${color}"><svg x="0" y="-16" width="11" height="11" viewBox="0 0 12 12" aria-hidden="true">${componentSetSymbol}</svg></g>`;
+    out += `<text transform="translate(${tl.x},${tl.y}) rotate(${angle})" x="${iconWidth}" y="-6" fill="${color}" font-size="11" font-weight="500" font-family="Inter,system-ui,sans-serif">${esc(text)}</text>`;
+    frameLabels.push({ id: n.id, x: tl.x, y: tl.y - 18, w: Math.max(iconWidth + labelWidth(text), 8), h: 16, angle });
   }
 
   // Component sets get Figma's dashed purple border (canvas chrome only, never exported).

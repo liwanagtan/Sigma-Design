@@ -14,7 +14,7 @@ import { isAutoLayout } from './layout.js';
 import {
   listTokenFiles, loadPublished, createTokenFileWith, appendToTokenFile, getCurrentFileId, listComponentLibraries,
   loadPublishedComponents, listIconFiles, loadPublishedIcons,
-  isSampleFile,
+  isSampleFile, isCurrentSample,
 } from './files.js';
 import { diffIcons, findIcon, usedIconIds, libraryIconCache } from './icon-library.js';
 import { project } from './project.js';
@@ -465,6 +465,7 @@ export function publishRecord(version, notes = '') {
 }
 
 export function openPublishComponentsDialog() {
+  if (isCurrentSample()) return toast('Make an editable copy (Σ menu) to keep and publish these components.');
   const { pub, count } = componentPublishStatus();
   if (!count) return toast('This file has no components to publish yet. Select layers and press ⌥⌘K to create one.');
   const d = diffComponents(pub?.components || [], componentSnapshot());

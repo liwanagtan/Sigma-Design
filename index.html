@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sigma</title>
+  <script src="src/appearance-init.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -21,11 +22,12 @@
       <div class="rail-sep"></div>
       <div id="rail-tools" class="rail-tools"></div>
     </nav>
-    <aside id="left" class="panel">
-      <div class="file-header">
+      <div class="file-header design-header">
         <input id="file-name" class="file-name" spellcheck="false" aria-label="File name">
         <button class="project-status" data-project-status hidden></button>
+        <div id="design-appearance"></div>
       </div>
+    <aside id="left" class="panel">
       <div class="left-tabs">
         <button class="left-tab active" data-left-tab="layers">Layers</button>
         <button class="left-tab" data-left-tab="assets">Assets</button>

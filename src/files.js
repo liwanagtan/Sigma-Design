@@ -9,6 +9,7 @@ import { libraryEntry } from './variables.js';
 import { welcomeDocument, WELCOME_VERSION, WELCOME_ICONS } from './welcome.js';
 import { newIconsDocument, sanitizeIcons, iconMarkup, usedIconIds, ICON_SETS, loadIconSet } from './icon-library.js';
 import { sampleIconsDocument, SAMPLE_ICONS_NAME, SAMPLE_ICONS_VERSION, sampleIconId } from './sample-icons.js';
+import { sigmaPagesDocument, SIGMA_PAGES_VERSION } from './sigma-pages.js';
 import { opticsTokenDocument } from './optics-tokens.js';
 import { opticsComponentsDocument, opticsFoundationsDocument, opticsIconsDocument, OPTICS_ICON_NAMES } from './optics.js';
 
@@ -51,12 +52,12 @@ async function archiveSamples(keep) {
 }
 
 const currentGuide = async () => (await listFiles())
-  .filter((m) => m.welcome === WELCOME_VERSION && fileKind(m) === 'design')
+  .filter((m) => m.welcome === WELCOME_VERSION && !m.sigmaSystem && fileKind(m) === 'design')
   .sort((a, b) => b.updatedAt - a.updatedAt)[0] || null;
 
 // Once per guide version: make the Welcome to Sigma folder hold exactly the current guide
 // and the sample tokens it uses. If you've had sample files before but there's no current guide, one is
-// made (reusing your sample tokens, renamed Sample tokens); then older sample files move to the Archive.
+// made with the current interface system; then older sample files move to the Archive.
 // A browser that never had sample files is left alone (the first visit makes them).
 async function setUpWelcomeFolder() {
   const KEY = 'sigma.welcomeFolder';
@@ -69,11 +70,10 @@ async function setUpWelcomeFolder() {
     const guide = await currentGuide();
     if (!guide) await welcomeFile(); // makes the current pair and archives the rest
     else {
-      const keep = new Set([guide.id]);
+      const keep = new Set([guide.id, ...(await listFiles()).filter(m => (m.sigmaSystem === SIGMA_SYSTEM_VERSION || m.sigmaPages === SIGMA_PAGES_VERSION)).map(m => m.id)]);
       const doc = (await loadFile(guide.id))?.doc;
       for (const l of doc?.libraries || []) {
         keep.add(l.fileId);
-        await nameSampleTokens(l.fileId);
       }
       for (const l of doc?.iconLibraries || []) keep.add(l.fileId);
       await archiveSamples(keep);
@@ -84,21 +84,8 @@ async function setUpWelcomeFolder() {
   } catch {}
 }
 
-// The guide's tokens file is marked as a sample and named Sample tokens (it was "Sample design tokens", then
-// "Sigma Tokens").
-async function nameSampleTokens(id) {
-  const meta = (await db.getAll('files')).find((m) => m.id === id);
-  const old = [LEGACY_SAMPLE_TOKENS_NAME, PREVIOUS_SAMPLE_NAMES.tokens];
-  if (!meta || fileKind(meta) !== 'tokens' || (meta.sample && !old.includes(meta.name))) return meta?.name;
-  const name = old.includes(meta.name) || meta.sampleLegacy ? sampleTokenDocument().name : meta.name;
-  await db.updateFile(id, (m, rec) => {
-    const { sampleLegacy, ...rest } = m;
-    return { meta: { ...rest, sample: true, name }, doc: rec && { ...rec, doc: { ...rec.doc, name } } };
-  });
-  broadcast('renamed', id);
-  return name;
-}
 import { sampleTokenDocument } from './sample-tokens.js';
+import { sigmaTokenDocument, sigmaFoundationsDocument, sigmaComponentsDocument, SIGMA_SYSTEM_VERSION } from './sigma-design-system.js';
 import { importTokens } from './tokens-io.js';
 
 const TAB_ID = uid();
@@ -106,8 +93,8 @@ const channel = 'BroadcastChannel' in window ? new BroadcastChannel('sigma-files
 
 let currentFileId = null;
 let currentDeleted = false; // the open file was deleted or archived in another tab: stop writing it
-// The open file is a sample (Welcome to Sigma): a guide to look at. It opens view-only (state.viewOnly), so it
-// can't be changed, renamed or deleted; Make an editable copy makes a file of your own from it.
+// Welcome files are temporary playgrounds. Edits stay in memory and never replace their originals.
+// Make an editable copy keeps the current session as a regular saved file.
 let currentSample = false;
 export const isCurrentSample = () => currentSample;
 const SAMPLE_READONLY = 'Sample files keep their original content. Duplicate it to make your own copy.';
@@ -136,7 +123,6 @@ function readPending() {
   }
 }
 let thumbTimer = null;
-let sampleThumbDone = false;
 
 export const getCurrentFileId = () => currentFileId;
 
@@ -450,26 +436,20 @@ export async function appendToTokenFile(id, collections, notes, { libraries = []
   return { id, name, published: doc.published };
 }
 
-// The sample token file: the most recently edited one (marked as the sample when created, or an earlier
-// one with the sample's name) whose published tokens still have everything "Welcome to Sigma" uses.
-// Only when there is none is a new one created, marked as the sample. Returns { id, name, published }.
+// Sigma’s built-in UI Tokens: reuse only the current generated system. Old teaching token
+// files and editable copies are never used as its source. Returns { id, name, published }.
 export async function sampleTokenFile() {
-  const sampleName = sampleTokenDocument().name;
-  const candidates = (await listTokenFiles())
-    .filter((m) => !m.optics && (m.sample || m.name === sampleName || m.name === LEGACY_SAMPLE_TOKENS_NAME))
-    .sort((a, b) => b.updatedAt - a.updatedAt);
+  const expected = sigmaTokenDocument().collections;
+  const candidates = (await listTokenFiles()).filter(m => m.sample && m.sigmaSystem === SIGMA_SYSTEM_VERSION);
   for (const meta of candidates) {
     const published = (await loadPublished(meta.id))?.published;
-    if (!published) continue;
-    try {
-      welcomeDocument(published.collections);
-    } catch {
-      continue; // tokens the sample uses were renamed or deleted
-    }
-    return { id: meta.id, name: meta.name, published };
+    if (published && expected.every(c => {
+      const actual = published.collections.find(x => x.name === c.name);
+      return actual && actual.variables.length === c.variables.length && actual.modes.map(m => m.name).join(',') === 'Light,Dark' && c.variables.every(v => actual.variables.some(x => x.name === v.name && x.type === v.type));
+    })) return { id: meta.id, name: meta.name, published };
   }
-  const { name, collections } = sampleTokenDocument();
-  return createTokenFileWith(name, collections, 'Sample tokens', { meta: { sample: true } });
+  const { name, collections } = sigmaTokenDocument();
+  return createTokenFileWith(name, collections, 'Sigma interface tokens; Light and Dark from styles.css.', { meta: { sample: true, sigmaSystem: SIGMA_SYSTEM_VERSION } });
 }
 
 // The sample icons (the whole Lucide set, made the first time). Reuses one of the current kind
@@ -481,8 +461,8 @@ export async function sampleIconFile() {
     if (!published) continue;
     const ids = new Set(published.icons.map((x) => x.id));
     if (![...WELCOME_ICONS, ...OPTICS_ICON_NAMES.map((n) => sampleIconId(n))].every((id) => ids.has(id))) continue; // icons the guide or Optics use are missing
-    if (meta.name === PREVIOUS_SAMPLE_NAMES.icons) {
-      // It was "Sigma Icons": now "Sample icons" (the same icons, so it's kept).
+    if ([PREVIOUS_SAMPLE_NAMES.icons, 'Sample icons'].includes(meta.name)) {
+      // Earlier built-in names become Icons in place; keep the same file and icon IDs.
       await db.updateFile(meta.id, (m, rec) => ({ meta: { ...m, name: SAMPLE_ICONS_NAME }, doc: rec && { ...rec, doc: { ...rec.doc, name: SAMPLE_ICONS_NAME } } }));
       broadcast('renamed', meta.id);
       meta.name = SAMPLE_ICONS_NAME;
@@ -507,9 +487,12 @@ export async function welcomeFile() {
   const current = await currentGuide();
   if (current) return current.id;
   const lib = await sampleTokenFile();
-  lib.name = (await nameSampleTokens(lib.id)) || lib.name; // an older sample tokens file takes the current name
   const icons = await sampleIconFile();
-  const doc = welcomeDocument(lib.published.collections, { icons: icons?.published.icons || null });
+  // The Guide retains its educational alias/extension examples as local tokens.
+  // The shipped Tokens library now contains only Sigma's interface design system.
+  const teaching = sampleTokenDocument().collections;
+  const doc = welcomeDocument(teaching, { icons: icons?.published.icons || null });
+  doc.variables = { collections: teaching };
   doc.libraries = [libraryEntry(lib.id, lib.name, lib.published)];
   if (icons) {
     // Like any design file, the guide keeps copies of just the icons it uses.
@@ -519,10 +502,24 @@ export async function welcomeFile() {
       icons: structuredClone(icons.published.icons.filter((x) => used.has(x.id))),
     }];
   }
+  const systemIds = [];
+  for (const make of [sigmaFoundationsDocument, sigmaComponentsDocument]) {
+    const systemDoc = make(lib.published.collections);
+    systemDoc.libraries = [libraryEntry(lib.id, lib.name, lib.published)];
+    if (icons) {
+      const used = usedIconIds(systemDoc.pages.flatMap(pg => pg.children));
+      if (used.size) systemDoc.iconLibraries = [{ fileId: icons.id, name: icons.name, version: icons.published.version, count: icons.published.icons.length, icons: structuredClone(icons.published.icons.filter(x => used.has(x.id))) }];
+    }
+    systemIds.push(await createFile(systemDoc, {}, { sample: true, sigmaSystem: SIGMA_SYSTEM_VERSION }));
+  }
+  const pagesDoc = sigmaPagesDocument(lib.published.collections);
+  pagesDoc.libraries = [libraryEntry(lib.id, lib.name, lib.published)];
+  systemIds.push(await createFile(pagesDoc, {}, { sample:true, sigmaPages:SIGMA_PAGES_VERSION }));
+  // Create the Guide last: an interrupted setup can safely retry without a partial current guide.
   const id = await createFile(doc, {}, { welcome: WELCOME_VERSION });
   await opticsOnce(icons);
   // The new guide replaces the old one: older sample files go to the Archive.
-  const moved = await archiveSamples(new Set([id, lib.id, ...(icons ? [icons.id] : [])]));
+  const moved = await archiveSamples(new Set([id, lib.id, ...systemIds, ...(icons ? [icons.id] : [])]));
   if (moved) toast(`Moved ${moved === 1 ? 'the previous sample file' : `${moved} older sample files`} to the Archive`);
   return id;
 }
@@ -597,7 +594,6 @@ export function setCurrentFile(id, { sample = false } = {}) {
   currentFileId = id;
   currentDeleted = false;
   currentSample = sample;
-  sampleThumbDone = false;
 }
 
 // A copy of the open file as a file of your own (Make an editable copy, for a Welcome to Sigma file).
@@ -610,7 +606,7 @@ export async function duplicateCurrent() {
   return createFile(doc, structuredClone(state.pageViews || {}));
 }
 
-/** Make an editable copy of the open (view-only) file, and open it. */
+/** Keep the current temporary edits as a regular file, and open it. */
 export async function makeEditableCopy() {
   const copy = await duplicateCurrent();
   if (!copy) return;
@@ -892,9 +888,8 @@ async function renderThumbnail() {
 export async function updateThumbnail() {
   const id = currentFileId;
   if (!id || !state.doc) return;
-  // A sample's thumbnail is made once, of its original content (see main.js), never of your edits.
-  if (currentSample && (sampleThumbDone || (await db.get('files', id))?.thumbnail)) return;
-  if (currentSample) sampleThumbDone = true;
+  // Temporary edits must never overwrite the built-in thumbnail either.
+  if (currentSample) return;
   let thumbnail = null;
   try {
     thumbnail = await renderThumbnail();

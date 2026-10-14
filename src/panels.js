@@ -15,7 +15,7 @@ import {
   isDeprecated, mainComponentOf,
 } from './components.js';
 import { exportNodes, saveFile, pickImages } from './io.js';
-import { createFile, openFile, goHome, pickFilesToImport, welcomeFile, getCurrentFileId, makeEditableCopy } from './files.js';
+import { createFile, openFile, goHome, pickFilesToImport, welcomeFile, getCurrentFileId, makeEditableCopy, isCurrentSample } from './files.js';
 import {
   pageRuns, pageLabel, groupNames, keepTogether, movePage, moveGroup, renameGroup, ungroup, newGroupName, collapsedGroups, setCollapsedGroups,
 } from './page-groups.js';
@@ -108,7 +108,7 @@ function initFileHeader() {
     const r = e.currentTarget.getBoundingClientRect();
     const sel = selectedNodes();
     showContextMenu(r.right + 4, r.top, [
-      ...(state.viewOnly ? [{ label: 'Make an editable copy', action: makeEditableCopy }, '-'] : []),
+      ...(isCurrentSample() ? [{ label: 'Make an editable copy', action: makeEditableCopy }, '-'] : []),
       { label: 'Back to files', action: goHome },
       '-',
       { label: 'New design file', action: async () => openFile(await createFile(blankDocument())) },
@@ -164,7 +164,7 @@ function initFileHeader() {
 export function renderFileHeader() {
   const input = $('#file-name');
   if (document.activeElement !== input) input.value = state.doc.name || 'Untitled';
-  input.readOnly = !!state.viewOnly; // Welcome to Sigma's files keep their names
+  input.readOnly = !!state.readOnly || !!state.viewOnly;
   document.title = `${state.doc.name || 'Untitled'} – Sigma`;
 }
 

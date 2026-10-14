@@ -51,6 +51,9 @@ export const icons = {
   logo: `<svg width="20" height="20" viewBox="0 0 20 20"><rect width="20" height="20" rx="5" fill="#0D99FF"/><path d="M14 5.5H6.5L11 10l-4.5 4.5H14" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
 };
 
+// Four rounded tiles represent a family of component variants.
+export const componentSetSymbol = '<g fill="currentColor" stroke="none"><rect x="1" y="1" width="4" height="4" rx="1"/><rect x="7" y="1" width="4" height="4" rx="1"/><rect x="1" y="7" width="4" height="4" rx="1"/><rect x="7" y="7" width="4" height="4" rx="1"/></g>';
+
 export function layerIcon(n) {
   const i16 = (body) => `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1">${body}</svg>`;
   switch (n.type) {
@@ -70,7 +73,7 @@ export function layerIcon(n) {
       const icon = findIcon(n.iconId);
       return icon ? iconMarkup(icon, { w: 12, h: 12 }) : i16('<rect x="1.5" y="1.5" width="9" height="9" rx="1" stroke-dasharray="1.5 1.5"/>');
     }
-    case 'componentSet': return i16('<path d="M6 1.5L10.5 6 6 10.5 1.5 6z" stroke-dasharray="1.6 1.2"/>');
+    case 'componentSet': return i16(componentSetSymbol);
     default: return '';
   }
 }

@@ -3,12 +3,13 @@
 Status: **Every phase is done: Phases 1–14, Part D (15–19), Part E (20–30), Part F (31–35) Part G (36–37, Optics) and Part H (38–39: page groups, the file tools rail)**, and the small and medium items from the "Later" and "Follow-ups" lists. Drawing icons is no longer planned (icons come from icon libraries); vector layers and the pen tool come back in Part J, for Figma files.
 
 **Names:** the file kinds are now **design**, **tokens** and **icons** files (they were "Sigma Design", "Sigma
-Tokens" and "Sigma Icons" files), and the sample files are **Guide**, **Sample tokens** and **Sample icons**. Sigma
+Tokens" and "Sigma Icons" files), and the welcome files are **Guide**, **Tokens**, **Foundations**, **Components**, **Pages and UI** and **Icons**. Sigma
 is the tool's name (the Σ, Welcome to Sigma, `.sigma.json`, `sigma-design`). Sections below written before the
 change keep the old names.
 
 **What's next, in order:**
 
+0. **Sigma’s own design system in Welcome to Sigma is implemented:** Tokens has Light/Dark modes; Foundations and Components use Sigma’s interface styles. The app appearance switch is implemented too (see below).
 1. **Finalize the project:** Optics is in (Phases 36–37: every Polaris component, a page each), as files of your own. What's still open: plugins and automation (Part D, "Later": large, needs an API design first) and what needs a backend (real sharing in Part C; the hosted team service in Part E). The license files are in (see "Open source").
 2. **Beyond Figma, next (Parts I–K, in this order):** AI inside the editor (Part I), Figma interop: import
    `.fig` files and save as `.fig` (Part J), and live peer-to-peer editing (Part K). Each keeps Sigma local-first:
@@ -1174,13 +1175,65 @@ Done on 2026-10-14, each through its own pull request (liwanagtan/Sigma-Design#7
   what it does.
 - **File kinds without "Sigma":** design, tokens and icons files; the sample files are Guide, Sample tokens and
   Sample icons (older ones renamed in place). See **Names** at the top.
-- **Welcome to Sigma's files are view-only:** they open read-only (`state.viewOnly`), so changes are put back
-  with a message, editing tools are hidden, and they can't be renamed or archived; **Make an editable copy**
-  (banner, Σ menu, the files home's ⋯ menu) makes one of your own. The guide's Try it boxes became Look
-  closer. Their cards show just the name and description, and a view-only file's top bar has no kind badge.
+- **Welcome to Sigma’s files are temporary playgrounds:** edits work while the file is open and reset when leaving or refreshing. **Make an editable copy** in the Σ menu keeps the current edits as a saved file. Built-in originals and thumbnails stay unchanged.
 - **Add Optics design system is gone:** Optics is made once, with the first Welcome to Sigma in a browser.
 - **Project files are written all at once** (a temporary file, then a rename), so nothing reads half a file:
   CI's live-sync test once caught a half-written read.
+
+## Sigma's own design system in Welcome to Sigma
+
+The welcome files should showcase the design system used by Sigma itself, sourced from this repository,
+instead of generic sample tokens. **Welcome files implemented on 2026-10-14; the app appearance switch
+is implemented too.** Light values come from `styles.css`; Dark uses the interface’s CSS appearance tokens.
+`npm run build:welcome` regenerates the extracted source, with a Node test checking freshness.
+Tokens includes interface roles, the source color palette, typography, spacing, radii, sizing, elevation,
+and component style values. Foundations groups its specimens by mode and foundation; Components has
+19 UI control families with reusable components and available hover/selected states. The Guide retains
+its alias and extended-collection teaching examples locally, separate from the actual interface library.
+**Pages and UI** was added on 2026-10-14: a design file with full 1280 × 900 desktop screen designs for
+Files home, Design editor, Tokens and Icons. Captured from the rendered app, with editable native interface
+layers and embedded SVG artwork (including the editor’s canvas preview). It links Tokens, allows temporary edits
+until copied, and ships on first visit and to existing browsers. `tools/design-system/capture-pages.html`
+and `npm run build:pages` provide the recapture workflow; a source freshness test checks the stylesheet.
+Existing built-in welcome versions move to Archive; editable copies and unrelated files are preserved.
+
+### Welcome files: Tokens, Foundations and Components
+
+- Rename **Sample tokens** to **Tokens** inside **Welcome to Sigma**, including the guide's references and
+  file descriptions.
+- Populate Tokens with the actual tokens used by Sigma's UI. Use the repository as the source of truth;
+  identify and consolidate styles that need named tokens so the welcome system accurately represents the app.
+- Provide **Light** and **Dark** modes with matching token names and appropriate values for each mode.
+  Preserve shared values for foundations that do not change with appearance. Where the repository currently
+  provides only one appearance, define the other mode deliberately rather than presenting invented values as
+  existing source tokens.
+- Add a **Foundations** design file in the same folder, documenting Sigma's actual colors, typography,
+  spacing, radii and other foundations used in its UI, with token bindings.
+- Add a **Components** design file in the same folder, representing Sigma's actual UI components and their
+  relevant variants and states as reusable components, bound to Tokens. These should reflect the repository's
+  implemented UI, rather than a separate sample component kit.
+- Keep these built-in files editable for the current session, resetting on leaving or refresh, with **Make an editable copy** available, as for the existing welcome
+  files. Update existing browsers' built-in welcome files as well as first-run creation, preserving users'
+  editable copies and unrelated files.
+- Establish a repeatable way to keep the welcome design system aligned with changes to Sigma's source.
+
+**Done when:** new and existing browsers show Guide, Tokens, Foundations and Components in Welcome to Sigma
+(alongside the existing icons file); Tokens has Light and Dark modes; both design files reference Tokens;
+their foundations and components match the app's source; switching their token modes resolves the appropriate
+values; users' own files remain intact.
+
+### Auto/Light/Dark appearance for the Sigma app — implemented
+
+- Add a user-facing **Auto/Light/Dark** appearance setting for Sigma's interface, using the same semantic tokens
+  documented in the welcome Tokens file.
+- Remember the person's choice across reloads and apply it consistently to the files home, editor, tokens
+  and icons screens, menus and dialogs.
+- Keep the app's interface appearance independent of the mode selected in a design document.
+
+**Done when:** changing the setting updates Sigma's interface across its screens, both modes remain readable,
+and the selected appearance survives a reload. Implemented on 2026-10-14: An icon-only half-circle control at the top right of every screen, including the design editor on narrow screens. Auto follows system appearance and updates live. CSS semantic tokens style both modes; `src/appearance-init.js` restores the preference
+before CSS paints, and `src/appearance.js` saves it and follows changes from other tabs. Design document
+modes and page backgrounds remain independent. The built-in Tokens file reads both palettes from CSS.
 
 # Part I: AI inside the editor
 
@@ -1326,3 +1379,5 @@ Part C's accounts and roles still need one.
 - **Tokens and icons files** can be shared live too.
 - **Done when:** undo never removes someone else's work, and tokens edited in a live session show up in the
   design files that use them after publishing, as today.
+
+Welcome files now support temporary edits (2026-10-14). Leaving a file or refreshing reloads the stored original; autosave, pending recovery and thumbnail writes skip built-in samples. Make an editable copy preserves the current session.

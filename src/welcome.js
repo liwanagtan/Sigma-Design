@@ -1,6 +1,6 @@
 // "Welcome to Sigma": the file a new user starts with. Each page pairs a short guide with live examples,
-// and everything in it is built from the sample tokens (sample-tokens.js), which it links as its Sigma
-// Tokens file, and the sample icons (sample-icons.js), its icons file. It replaces the old sample
+// Its examples use local teaching tokens (sample-tokens.js) and linked sample icons.
+// The separate Tokens, Foundations and Components files document Sigma’s interface. It replaces the old sample
 // Design file.
 //
 // Bump WELCOME_VERSION whenever the content changes: "Open Welcome to Sigma" then makes a fresh copy
@@ -9,19 +9,19 @@ import { createNode, uid, makePaint } from './store.js';
 import { DEFAULT_LAYOUT } from './layout.js';
 import { sampleIconId } from './sample-icons.js';
 
-export const WELCOME_VERSION = 12;
+export const WELCOME_VERSION = 37;
 // The sample icons the guide uses (outline unless marked filled).
 const GUIDE_ICONS = ['plus', 'search', 'pencil', 'copy', 'share-2', 'trash', 'settings', 'user', 'log-out', 'star', 'heart', 'bookmark', 'bell'];
 export const WELCOME_ICONS = [...GUIDE_ICONS.map((n) => sampleIconId(n)), ...['star', 'heart', 'bookmark', 'bell'].map((n) => sampleIconId(n, true))];
 // The files home keeps the guide and its tokens in a "Welcome to Sigma" folder, as "Guide" and
-// "Sample tokens".
+// "Tokens".
 export const WELCOME_FOLDER = 'Welcome to Sigma';
 export const WELCOME_NAME = 'Guide';
 
 const autoLayout = (props) => ({ ...DEFAULT_LAYOUT, ...props });
 
-// `collections` are the sample tokens' published collections. Throws if a token, collection or mode it
-// uses is missing (or a token has another type), so an edited copy of the sample tokens is never linked.
+// `collections` are the Guide’s teaching tokens' published collections. Throws if a token, collection or mode it
+// uses is missing (or a token has another type), so an edited copy of the Guide’s teaching tokens is never linked.
 // `icons`: the sample icons' published icons (null when they couldn't be made: page 10 then has no examples).
 export function welcomeDocument(collections, { icons = null } = {}) {
   // ---------- tokens ----------
@@ -99,9 +99,9 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     children: g.parts,
   });
   // A "Try it" note.
-  // Things to look at in the examples (the guide is view-only; an editable copy is for trying changes).
-  const tryIt = (value) => fillWidth(stack('Look closer', 'vertical', { gap: P('space/1'), padding: P('space/4'), fill: S('accent/subtle'), radius: P('radius/md') }, [
-    text('Label', 'Look closer', S('text/link'), T('label/default'), { textCase: 'upper' }),
+  // Things to look at in the examples (the guide is a temporary playground; edits last until you leave or refresh).
+  const tryIt = (value) => fillWidth(stack('Try it', 'vertical', { gap: P('space/1'), padding: P('space/4'), fill: S('accent/subtle'), radius: P('radius/md') }, [
+    text('Label', 'Try it', S('text/link'), T('label/default'), { textCase: 'upper' }),
     para(value, { typo: T('body/small') }),
   ]));
   // A titled example area to the right of the guide.
@@ -175,7 +175,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'Icons files hold icons imported from SVG (from a free set like Lucide), for components to use. No canvas either.',
     ] },
     { h: 'How they connect', p: [
-      'This file uses the sample tokens and sample icons next to it in the Welcome to Sigma folder on the files home. Every color, size, text style and shadow here comes from one of its tokens, so switching a mode or a brand restyles everything at once.',
+      'This Guide keeps its teaching tokens locally and uses Icons. Tokens, Foundations and Components next to it document Sigma’s own interface design system. Pages and UI shows complete Sigma screens on a design canvas. Every color, size, text style and shadow here comes from one of its tokens, so switching a mode or a brand restyles everything at once.',
       'When a tokens or icons file publishes a new version, the design files that use it are offered the update.',
     ] },
     { h: 'A complete design system: Optics', p: [
@@ -198,10 +198,10 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       '10 Icons files: icon sets, and icons in components',
     ] },
   ]);
-  start.parts.push(tryIt('Pick a page in the Pages list on the left. Each one has a guide like this and examples on the right. This file is for looking at: select anything to see how it’s built (in the right panel, and Inspect for its code), but it can’t be changed. To try things yourself, Make an editable copy (in the banner or the Σ menu): it goes with your files.'));
-  const tokensBox = stack('Sample tokens', 'vertical', { gap: P('space/2'), padding: P('space/6'), fill: S('surface/default'), radius: P('radius/lg'), stroke: S('border/strong'), width: 300 }, [
+  start.parts.push(tryIt('Pick a page in the Pages list on the left. Each one has a guide like this and examples on the right. This file is a playground: select anything to inspect it, and try making changes. Edits reset when you leave the file or refresh. Make an editable copy (in the Σ menu) to keep your current edits with your own files.'));
+  const tokensBox = stack('Tokens', 'vertical', { gap: P('space/2'), padding: P('space/6'), fill: S('surface/default'), radius: P('radius/lg'), stroke: S('border/strong'), width: 300 }, [
     text('Kind', 'Tokens file', S('text/link'), T('label/default'), { textCase: 'upper' }),
-    text('Name', 'Sample tokens', S('text/primary'), T('heading/h3')),
+    text('Name', 'Tokens', S('text/primary'), T('heading/h3')),
     para('Primitives → Semantic → Components, in Light and Dark, with a Brand B extension.', { typo: T('body/small'), color: S('text/secondary') }),
   ]);
   const designBox = stack('Guide', 'vertical', { gap: P('space/2'), padding: P('space/6'), fill: S('surface/default'), radius: P('radius/lg'), stroke: S('border/strong'), width: 300 }, [
@@ -209,9 +209,9 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     text('Name', `${WELCOME_NAME} (this file)`, S('text/primary'), T('heading/h3')),
     para('Pages, components and layouts whose colors, sizes and text styles are those tokens.', { typo: T('body/small'), color: S('text/secondary') }),
   ]);
-  const iconsBox = stack('Sample icons', 'vertical', { gap: P('space/2'), padding: P('space/6'), fill: S('surface/default'), radius: P('radius/lg'), stroke: S('border/strong'), width: 300 }, [
+  const iconsBox = stack('Icons', 'vertical', { gap: P('space/2'), padding: P('space/6'), fill: S('surface/default'), radius: P('radius/lg'), stroke: S('border/strong'), width: 300 }, [
     text('Kind', 'Icons file', S('text/link'), T('label/default'), { textCase: 'upper' }),
-    text('Name', 'Sample icons', S('text/primary'), T('heading/h3')),
+    text('Name', 'Icons', S('text/primary'), T('heading/h3')),
     para('The whole Lucide set, about 1,900 icons, outline and filled, in groups.', { typo: T('body/small'), color: S('text/secondary') }),
   ]);
   const arrow = stack('Publish and use', 'vertical', { gap: P('space/1'), props: { layout: autoLayout({ mode: 'vertical', alignC: 'center' }) } }, [
@@ -238,7 +238,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'Drag pages to reorder them, into or out of a group; drag a group to move it with its pages.',
     ] },
   ]);
-  basics.parts.push(tryIt('Select the shapes on the right: their size, colors and corner radius show in the right panel. ⌘-click picks a layer inside a group, and holding ⌥ measures distances. In an editable copy, try ⌘G to group two shapes, and ⌘Z to undo.'));
+  basics.parts.push(tryIt('Select the shapes on the right: their size, colors and corner radius show in the right panel. ⌘-click picks a layer inside a group, and holding ⌥ measures distances. try ⌘G to group two shapes, and ⌘Z to undo.'));
   const shape = (type, name, colorVar, props) => createNode(type, { name, ...props, fills: [makePaint('#000000')], bindings: { ...(props.bindings || {}), 'fills.0.color': colorVar } });
   const practice = createNode('frame', {
     name: 'Practice area', x: 600, y: 0, w: 520, h: 360, clip: true, fills: [makePaint('#FFFFFF')], strokes: [makePaint('#000000')],
@@ -267,7 +267,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     { h: 'Constraints', p: ['Layers placed freely in a frame keep their place when the frame is resized: Left, Right, Left & right, Center or Scale (and the same vertically). Hold ⌘ while resizing to ignore them.'] },
     { h: 'Layout grids', p: ['Frames can have column, row and square grids, drawn on the canvas only. Layers snap to them, and ⌃G shows or hides them. Count, gutter and margin can use tokens, like the 12-column grid on the right.'] },
   ]);
-  layoutGuide.parts.push(tryIt('Select the Tags row: its Auto layout section shows its gap and padding. Select a layer in the Constraints frame to see how it’s pinned. In an editable copy, ⌘D on a tag grows the row, and resizing the Constraints frame keeps its layers in their places.'));
+  layoutGuide.parts.push(tryIt('Select the Tags row: its Auto layout section shows its gap and padding. Select a layer in the Constraints frame to see how it’s pinned. ⌘D on a tag grows the row, and resizing the Constraints frame keeps its layers in their places.'));
   const chip = (label) => stack('Tag', 'horizontal', { gap: P('space/1'), padding: P('space/2'), fill: S('accent/subtle'), radius: P('radius/full') }, [text('Label', label, S('text/link'), T('label/default'))]);
   const tags = example('Auto layout: hug', 600, 0, [row('Tags', [chip('Design'), chip('Tokens'), chip('Components')], P('space/2'))], { note: 'The row hugs its tags; each tag hugs its label.' });
   const listRow = (label) => fillWidth(stack('Row', 'horizontal', { gap: P('space/3'), padding: P('space/3'), fill: S('surface/sunken'), radius: P('radius/sm') }, [
@@ -322,7 +322,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'A component’s ⋯ → Deprecate hides it from Assets while its instances keep working.',
     ] },
   ]);
-  compGuide.parts.push(tryIt('Select one of the instances on the right: its properties show in the right panel, and its component’s name opens the main Button set. In an editable copy, change a variant’s color in the set and every instance follows.'));
+  compGuide.parts.push(tryIt('Select one of the instances on the right: its properties show in the right panel, and its component’s name opens the main Button set. change a variant’s color in the set and every instance follows.'));
   const instances = example('Instances', 600, 360, [
     row('Buttons', [buttonInstance(primaryBtn, 'Save'), buttonInstance(secondaryBtn, 'Cancel'), buttonInstance(primaryBtn, 'Publish')], P('space/3')),
     cardInstance(),
@@ -345,7 +345,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'Audit design tokens… finds the values that don’t use a token yet. See page 7.',
     ] },
   ]);
-  tokensGuide.parts.push(tryIt('Select the Light and Dark frames: Semantic in their Layer section says which mode each uses, so the same tokens look different. In an editable copy, set the Light frame to Dark, or try Brand B.'));
+  tokensGuide.parts.push(tryIt('Select the Light and Dark frames: Semantic in their Layer section says which mode each uses, so the same tokens look different. set the Light frame to Dark, or try Brand B.'));
   const showcase = (name, x, modes) => createNode('frame', {
     name, x, y: 0, w: 328, h: 228, modes, clip: false,
     layout: autoLayout({ mode: 'vertical' }), sizingH: 'hug', sizingV: 'hug',
@@ -375,7 +375,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     ] },
     { h: 'Export', p: ['The Export section exports the selection (or the page) as PNG, JPG or SVG at 0.5× to 4×; ⇧⌘E exports a PNG.'] },
   ]);
-  styleGuide.parts.push(tryIt('Select a text style sample and look at its Text style chip, then the Overlay card’s shadow in Effects: both come from tokens. In an editable copy, changing the shadow detaches its token.'));
+  styleGuide.parts.push(tryIt('Select a text style sample and look at its Text style chip, then the Overlay card’s shadow in Effects: both come from tokens. changing the shadow detaches its token.'));
   const specimen = (label, path, sample) => row(label, [
     stack('Label', 'vertical', { width: 140, gap: P('space/1') }, [text('Name', path, S('text/secondary'), T('code'))]),
     text('Sample', sample, S('text/primary'), T(path)),
@@ -469,7 +469,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
   ], P('space/3'), 'start')]);
 
   // ---------- 9. Tokens files ----------
-  const tokGuide = guide('Tokens files · 9 of 10', 'Tokens files', 'A tokens file is a design system’s values, with no canvas. Open Sample tokens in the Welcome to Sigma folder (on the files home) to explore the one this file uses.', [
+  const tokGuide = guide('Tokens files · 9 of 10', 'Tokens files', 'A tokens file is a design system’s values, with no canvas. Open Tokens in Welcome to Sigma to explore Sigma’s actual UI values in Light and Dark modes. Foundations and Components show how the interface uses them. This Guide’s alias and brand examples use separate local teaching tokens.', [
     { h: 'Structure', bullets: [
       'Collections hold groups and tokens (Collection → Group → Tokens), with descriptions.',
       'Three levels work well: Primitives (raw values: color/blue/500), Semantic (what they mean: accent/default) and Components (where they’re used: button/primary/background).',
@@ -487,7 +487,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'Export tokens.json (W3C format) and CSS variables for code; import tokens.json from other tools.',
     ] },
   ]);
-  tokGuide.parts.push(tryIt('Select a swatch on the right: its fill is a primitive token. Back to files → Welcome to Sigma → Sample tokens shows them all.'));
+  tokGuide.parts.push(tryIt('Select a swatch on the right: its fill is a local teaching token. Browse design tokens shows this Guide’s local examples. Back to files → Welcome to Sigma → Tokens shows Sigma’s interface system.'));
   const swatchRow = (hue, steps) => row(hue, [
     stack('Label', 'vertical', { width: 64, gap: P('space/1') }, [text('Hue', hue, S('text/secondary'), T('code'))]),
     ...steps.map((s) => createNode('rect', {
@@ -515,11 +515,11 @@ export function welcomeDocument(collections, { icons = null } = {}) {
   const radii = example('Primitives: radius', 1040, 480, [row('Radii', ['none', 'sm', 'md', 'lg', 'xl', 'full'].map(radiusSample), P('space/4'))]);
 
   // ---------- 10. Icons files ----------
-  const iconsGuide = guide('Icons files · 10 of 10', 'Icons files', 'Icons are a library of their own: an icons file holds them, and components pick from it. Open Sample icons in the Welcome to Sigma folder to explore the one this file uses.', [
+  const iconsGuide = guide('Icons files · 10 of 10', 'Icons files', 'Icons are a library of their own: an icons file holds them, and components pick from it. Open Icons in the Welcome to Sigma folder to explore the one this file uses.', [
     { h: 'An icons file', bullets: [
       'Import SVGs from any free set (Lucide, Tabler, Heroicons, Phosphor, Material Symbols), drop them in, or paste SVG code. Colors are removed: an icon takes the color of the layer that shows it.',
       'Icons are outline or filled, in groups, with keywords for search. Publish… makes them available to design files.',
-      'Sample icons, in the Welcome to Sigma folder, is the whole Lucide set: about 1,900 icons. Link it from Icon libraries, or use Optics Icons, the same icons as a file of your own.',
+      'Icons, in the Welcome to Sigma folder, is the whole Lucide set: about 1,900 icons. Link it from Icon libraries, or use Optics Icons, the same icons as a file of your own.',
     ] },
     { h: 'Icons in components', bullets: [
       'Icon libraries… (Σ menu) links an icons file. A file keeps copies of only the icons it uses.',
@@ -531,7 +531,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'Instances choose only the icon: its size, color and stroke stay the main component’s.',
     ] },
   ]);
-  iconsGuide.parts.push(tryIt('Select one of the icon buttons on the right: its Icon property shows its icon, and only the Actions icons are offered. In an editable copy, choose another icon, or change the main Icon button’s color token: every instance follows.'));
+  iconsGuide.parts.push(tryIt('Select one of the icon buttons on the right: its Icon property shows its icon, and only the Actions icons are offered. choose another icon, or change the main Icon button’s color token: every instance follows.'));
   const I = sampleIconId;
   const iconLayer = (name, iconId, colorVar, size, props = {}) => createNode('icon', {
     name, iconId, w: size, h: size, ...props, fills: [makePaint('#000000')], bindings: { 'fills.0.color': colorVar },
@@ -597,7 +597,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     iconPage.push(mains, iconButtons, menu);
     iconColumns.push([iconButtons, menu]);
   } else {
-    iconPage.push(example('Sample icons', 600, 0, [para('The sample icons couldn’t be made, so this page has no examples. Add Lucide icons, on the Icons page of the files home, adds the Lucide set.', { typo: T('body/small') })], { width: 360 }));
+    iconPage.push(example('Icons', 600, 0, [para('The sample icons couldn’t be made, so this page has no examples. Add Lucide icons, on the Icons page of the files home, adds the Lucide set.', { typo: T('body/small') })], { width: 360 }));
   }
 
   // ---------- pages ----------

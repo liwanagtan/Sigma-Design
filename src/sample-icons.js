@@ -1,4 +1,4 @@
-// The sample icons file ("Sample icons" in the Welcome to Sigma folder): the whole Lucide set
+// The sample icons file ("Icons" in the Welcome to Sigma folder): the whole Lucide set
 // (https://lucide.dev, ISC License, about 1,900 icons), with filled versions of some shapes so it shows both
 // styles. The icons the guide uses are in groups of their own (Actions, Arrows, Status…); the rest are in
 // Lucide's categories. The Welcome to Sigma guide links it and uses its icons in components; Optics Icons is
@@ -6,7 +6,7 @@
 export const SAMPLE_ICONS_VERSION = 2; // 2: the whole Lucide set (1: a selection of 72 icons)
 import { newIconsDocument, sanitizeIcons } from './icon-library.js';
 
-export const SAMPLE_ICONS_NAME = 'Sample icons';
+export const SAMPLE_ICONS_NAME = 'Icons';
 
 // The guide's groups → Lucide icon names (outline). Every other Lucide icon keeps its Lucide category.
 const OUTLINE = {
@@ -57,6 +57,6 @@ export function sampleIconsDocument(lucide) {
     name: 'Lucide', version: lucide.version, url: lucide.url, license: lucide.license, licenseText: lucide.licenseText,
     note: 'The whole Lucide set. The filled versions are Lucide shapes, filled.',
   };
-  doc.published = { version: 1, publishedAt: Date.now(), notes: 'Sample icons', icons: structuredClone(doc.icons) };
+  doc.published = { version: 1, publishedAt: Date.now(), notes: 'Icons', icons: structuredClone(doc.icons) };
   return doc;
 }

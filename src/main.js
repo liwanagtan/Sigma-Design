@@ -1,10 +1,13 @@
+import './select.js';
+import { applyWelcomeAppearance } from './welcome-appearance.js';
+import { appearanceButtonHTML, appearance } from './appearance.js';
 import {
   state, page, view, subscribe, emit, normalizeDocument, addNormalizer, loadDocument, unloadDocument, walk, cancelPendingSave,
   fixGroups, commit, forgetUndo,
 } from './store.js';
 import { applyLayouts } from './layout.js';
 import { syncInstances } from './components.js';
-import { resolveVariables, normalizeTokenGroups } from './variables.js';
+import { resolveVariables, normalizeTokenGroups, collections } from './variables.js';
 import { renderScene, applyViewTransform, renderOverlay } from './render.js';
 import { initInteractions, refreshCursor } from './interact.js';
 import { initTextEditor, positionEditor, measureText, stopEditing } from './text.js';
@@ -18,7 +21,7 @@ import { resizerHTML } from './columns.js';
 import { initComments, renderCommentPins } from './comments.js';
 import {
   initFiles, loadFile, setCurrentFile, closeCurrentFile, discardCurrentFile, saveNow, getCurrentFileId, goHome, fileKind, isArchived,
-  welcomeOnFirstVisit, openFile, isSampleFile, makeEditableCopy, updateThumbnail,
+  welcomeOnFirstVisit, openFile, isSampleFile, isCurrentSample,
 } from './files.js';
 import { initHome, renderHome, setHomeNotice, showHomeSection } from './home.js';
 import { initTokensScreen, showTokensScreen, hideTokensScreen } from './tokens-screen.js';
@@ -30,6 +33,7 @@ import { clearViewing, resetHistory } from './history.js';
 import { connectProject, saveToProject, project, syncOpenProjectFile } from './project.js';
 
 const appEl = document.getElementById('app');
+document.querySelector('#design-appearance').innerHTML = appearanceButtonHTML();
 appEl.insertAdjacentHTML('beforeend', resizerHTML('left') + resizerHTML('right')); // drag a panel's edge to resize it
 const homeEl = document.getElementById('home');
 const tokensEl = document.getElementById('tokens');
@@ -63,7 +67,6 @@ function frame() {
   }
   if (dirty.view || dirty.scene) {
     applyViewTransform(world);
-    canvas.style.backgroundColor = page().background || '#F5F5F5';
     renderZoomLabel();
   }
   if (dirty.overlay) renderOverlay(overlay);
@@ -94,13 +97,6 @@ function remeasureAllText() {
   emit('doc');
 }
 
-// A Welcome to Sigma file is a guide to look at: view-only, with a way to make a copy of your own.
-function sampleBanner() {
-  document.body.classList.add('view-only');
-  showBanner('Welcome to Sigma: this file is for looking at, so it can’t be changed.', 'Make an editable copy', makeEditableCopy,
-    [{ label: 'Dismiss', action: () => hideBanner() }]);
-}
-
 // ---------- banner (changes from other tabs) ----------
 // `extra`: more buttons after the main one, [{ label, action }].
 function showBanner(text, actionLabel, action, extra = []) {
@@ -125,6 +121,14 @@ window.addEventListener('sigma:reopen', (e) => {
   const id = getCurrentFileId();
   routing = routing.then(() => id && showFile(id, { force: true, discard: true })).finally(e.detail);
 });
+
+function syncWelcomeAppearance({ initial = false } = {}) {
+  if (!isCurrentSample() || state.screen !== 'editor' || !state.doc || state.readOnly) return;
+  if (!applyWelcomeAppearance(state.doc, collections(), appearance())) return;
+  commit();
+  if (initial) forgetUndo();
+}
+window.addEventListener('sigma:appearance', () => syncWelcomeAppearance());
 
 // ---------- screens ----------
 // `discard`: drop unsaved local changes instead of writing them (reloading another tab's version).
@@ -174,7 +178,7 @@ async function showFile(id, { force = false, discard = false } = {}) {
   if (id !== getCurrentFileId()) resetHistory();
   await leaveEditor({ discard });
   const sample = isSampleFile(file.meta);
-  state.viewOnly = false; // set again once a sample is open (after its one-time arranging)
+  state.viewOnly = false; // Welcome files allow temporary edits; persistence skips samples.
   document.body.classList.remove('view-only');
   setCurrentFile(id, { sample });
   homeEl.hidden = true;
@@ -185,13 +189,8 @@ async function showFile(id, { force = false, discard = false } = {}) {
     tokensEl.hidden = true;
     iconsEl.hidden = false;
     loadDocument(file.doc, file.views);
-    state.viewOnly = sample;
     showIconsScreen();
     syncOpenProjectFile();
-    if (sample) {
-      sampleBanner();
-      setTimeout(() => getCurrentFileId() === id && updateThumbnail(), 1500); // of the original, once
-    }
     return;
   }
   iconsEl.hidden = true;
@@ -201,10 +200,8 @@ async function showFile(id, { force = false, discard = false } = {}) {
     appEl.hidden = true;
     tokensEl.hidden = false;
     loadDocument(file.doc, file.views);
-    state.viewOnly = sample;
     showTokensScreen();
     syncOpenProjectFile();
-    if (sample) sampleBanner();
     checkLibraryUpdates(); // token files it points at may have published new versions
     return;
   }
@@ -213,17 +210,13 @@ async function showFile(id, { force = false, discard = false } = {}) {
   appEl.hidden = false;
   const wasVersion = file.doc.version || 1;
   loadDocument(file.doc, file.views);
+  syncWelcomeAppearance({ initial:true });
   remeasureAllText();
   // "Welcome to Sigma": place its examples by their real sizes (each time it opens, since a sample is
   // never saved).
   if (arrangeWelcome(state.doc)) {
     commit();
     forgetUndo();
-  }
-  state.viewOnly = sample;
-  if (sample) {
-    sampleBanner();
-    setTimeout(() => getCurrentFileId() === id && updateThumbnail(), 1500); // of the original, once
   }
   if (!state.pageViews[page().id]) requestAnimationFrame(() => getCurrentFileId() === id && state.screen === 'editor' && zoomToFit()); // unless you've left already
   emit('view');

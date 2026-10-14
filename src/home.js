@@ -1,3 +1,4 @@
+import { appearanceButtonHTML } from './appearance.js';
 // The files home. Standalone, it lists the Sigma files stored in this browser. In a project (Part F, Phase 31)
 // the same sections list the project's files (its .sigma/ folder), proposals get a section of their own, and
 // files kept only in the browser are hidden (they can be moved into the project).
@@ -86,7 +87,7 @@ export function initHome(el) {
         <button class="nav-item" data-section="proposals" id="nav-proposals" title="Changes proposed from Sigma, and their pull requests" hidden>${NAV_PROPOSALS} Proposals</button>
         <button class="nav-item" data-section="report" title="How much of the design files comes from the design system">${NAV_REPORT} Report</button>
         <div class="nav-spacer"></div>
-        <button class="nav-item nav-welcome" data-section="welcome" title="The guide to Sigma and its sample tokens">${NAV_WELCOME} Welcome to Sigma</button>
+        <button class="nav-item nav-welcome" data-section="welcome" title="The guide and Sigma’s interface design system">${NAV_WELCOME} Welcome to Sigma</button>
         <button class="nav-item" data-section="archive" id="nav-archive" title="Deleted files, until you delete them forever">${NAV_ARCHIVE} Archive</button>
       </nav>
       <div class="home-storage" id="home-storage"></div>
@@ -105,6 +106,7 @@ export function initHome(el) {
           <button class="btn" id="home-new-icons" title="New icons file">${icons.plus} Icons file</button>
           <button class="btn" id="home-new-tokens" title="New tokens file">${icons.plus} Tokens file</button>
           <button class="btn primary" id="home-new" title="New design file">${icons.plus} Design file</button>
+          ${appearanceButtonHTML()}
         </div>
       </header>
       <div id="home-notice"></div>
@@ -696,12 +698,17 @@ function archivedCard(f) {
 
 // The Welcome to Sigma folder: what it's for, and (on each card) what each sample file holds.
 const WELCOME_INTRO = `<div class="welcome-intro">
-  <p><b>Welcome to Sigma</b> is where to learn Sigma: a guide, and the small design system it's built with. Open the <b>Guide</b> first; it explains everything, page by page, with examples to try.</p>
-  <p class="muted">These files are for looking at: open them to see how everything is built, but they can't be changed, renamed or deleted. <b>Make an editable copy</b> (in the banner, the Σ menu, or a file's ⋯ menu here) gives you one of your own, which goes with your files.</p>
+  <p><b>Welcome to Sigma</b> is where to learn Sigma: a guide, and the design system used by Sigma’s interface. Tokens, Foundations and Components document its Light and Dark appearances. Pages and UI shows complete Sigma screens on a design canvas. Open the <b>Guide</b> first; it explains everything, page by page, with examples to try.</p>
+  <p class="muted">These files are playgrounds: try editing their designs, tokens and icons. Changes reset when you leave the file or refresh. <b>Make an editable copy</b> in the Σ menu keeps your current edits as a file of your own; the card’s ⋯ menu copies the original.</p>
 </div>`;
+const WELCOME_DESIGN_DESCRIPTIONS = {
+  Foundations: 'Sigma’s interface foundations: colors, typography, spacing, radii and sizing, bound to Tokens.',
+  Components: 'Sigma’s UI components, with states and Light/Dark specimens bound to Tokens.',
+  'Pages and UI': 'Complete Sigma desktop screens on a design canvas: files home, design editor, Tokens and Icons. Interface layers are editable in a copy; SVG artwork is embedded.',
+};
 const SAMPLE_DESCRIPTIONS = {
   design: 'The guide. Ten pages, each with a short explanation and examples: the canvas, layout, components, design tokens, style, quality checks, libraries and versions, tokens files and icons files.',
-  tokens: 'The design tokens the guide is built with: primitives, semantic colors in Light and Dark, a Brand B, text styles and component tokens.',
+  tokens: 'Sigma’s interface tokens from styles.css: colors, typography, spacing, radii and component values, in Light and Dark modes.',
   icons: 'The whole Lucide set, about 1,900 icons, outline and filled, in groups. The guide’s components use them, and Optics Icons is made from it.',
 };
 
@@ -722,7 +729,7 @@ function card(f, { describe = false } = {}) {
   return `<a class="file-card${tokens ? ' tokens' : ''}" href="${fileHref(f.id)}" data-id="${f.id}" draggable="false">
     <div class="file-thumb" style="background:${tokens ? '#FFFFFF' : esc(f.background || '#F5F5F5')}">${thumb}</div>
     <div class="file-info">${name}${sample ? '' // Welcome to Sigma's files: just the name and what they are (no badges; never edited)
-      : `<div class="file-time">${kindBadge(kind)}Edited ${ago(f.updatedAt)}</div>`}${describe && sample && SAMPLE_DESCRIPTIONS[kind] ? `<div class="card-desc">${SAMPLE_DESCRIPTIONS[kind]}</div>` : ''}</div>
+      : `<div class="file-time">${kindBadge(kind)}Edited ${ago(f.updatedAt)}</div>`}${describe && sample && SAMPLE_DESCRIPTIONS[kind] ? `<div class="card-desc">${(WELCOME_DESIGN_DESCRIPTIONS[f.name] || SAMPLE_DESCRIPTIONS[kind])}</div>` : ''}</div>
     <div class="file-created">${sample ? '' : new Date(f.createdAt).toLocaleDateString()}</div>
     <button class="icon-btn file-more" data-more title="More actions">${MORE_ICON}</button>
   </a>`;

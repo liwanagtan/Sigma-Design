@@ -2,8 +2,10 @@ import { test, eq, ok } from './harness.js';
 import { state, createNode, commit, loadDocument, flushSave, setPersistence, editNode } from '../src/store.js';
 import {
   initFiles, createFile, deleteFile, loadFile, listFiles, renameFile, setCurrentFile, saveNamedVersion, listVersions, updateThumbnail,
-  welcomeFile, createTokenFileWith, sampleTokenFile, sampleIconFile, appendToTokenFile, archiveFile, restoreFile, listArchivedFiles, listTokenFiles,
+  welcomeFile, createTokenFileWith, sampleTokenFile, sampleIconFile, appendToTokenFile, archiveFile, restoreFile, listArchivedFiles, listTokenFiles, duplicateCurrent, closeCurrentFile,
 } from '../src/files.js';
+import { SIGMA_PAGES_VERSION } from '../src/sigma-pages.js';
+import { SIGMA_SYSTEM_VERSION } from '../src/sigma-design-system.js';
 import { sampleTokenDocument } from '../src/sample-tokens.js';
 import { sampleIconsDocument, SAMPLE_ICONS_VERSION } from '../src/sample-icons.js';
 import { loadIconSet, ICON_SETS } from '../src/icon-library.js';
@@ -99,7 +101,7 @@ test('storage: Welcome to Sigma is reused, and links the sample tokens, skipping
   }
 });
 
-test('storage: sample files from before keep going, renamed: Sigma Tokens → Sample tokens, Sigma Icons → Sample icons', async () => {
+test('storage: old teaching tokens are archived intact, Sigma UI Tokens replace them, and icons are reused', async () => {
   const before = new Set((await listFiles()).map((f) => f.id));
   const archivedBefore = new Set((await listArchivedFiles()).map((f) => f.id));
   try {
@@ -108,12 +110,30 @@ test('storage: sample files from before keep going, renamed: Sigma Tokens → Sa
     doc.name = 'Sigma Icons';
     const iconsId = await createFile(doc, {}, { sample: true, sampleIcons: SAMPLE_ICONS_VERSION });
     const icons = await sampleIconFile();
-    eq([icons.id, icons.name, (await loadFile(iconsId)).meta.name, (await loadFile(iconsId)).doc.name], [iconsId, 'Sample icons', 'Sample icons', 'Sample icons']);
+    eq([icons.id, icons.name, (await loadFile(iconsId)).meta.name, (await loadFile(iconsId)).doc.name], [iconsId, 'Icons', 'Icons', 'Icons']);
     // The sample tokens, named as before: a new guide reuses them, renamed, and links them by the new name.
     for (const f of await listFiles()) if (f.welcome) await archiveFile(f.id);
     const old = await createTokenFileWith('Sigma Tokens', sampleTokenDocument().collections, 'Before', { meta: { sample: true } });
     const guide = await loadFile(await welcomeFile());
-    eq([guide.meta.name, guide.doc.libraries[0].fileId, guide.doc.libraries[0].name, (await loadFile(old.id)).meta.name], ['Guide', old.id, 'Sample tokens', 'Sample tokens']);
+    eq(guide.meta.name, 'Guide');
+    eq(guide.doc.libraries[0].name, 'Tokens');
+    ok(guide.doc.libraries[0].fileId !== old.id, 'replaces teaching tokens with the interface system');
+    eq((await loadFile(old.id)).meta.name, 'Sigma Tokens', 'old file preserved intact');
+    ok((await listArchivedFiles()).some(f => f.id === old.id), 'old tokens remain recoverable');
+    const system = (await listFiles()).filter(f => f.sample && f.sigmaSystem === SIGMA_SYSTEM_VERSION);
+    eq(system.map(f => f.name).sort(), ['Components', 'Foundations', 'Tokens']);
+    for (const meta of system.filter(f => f.kind === 'design')) {
+      const file = await loadFile(meta.id);
+      eq(file.doc.libraries[0].fileId, guide.doc.libraries[0].fileId);
+    }
+    const pageFiles = (await listFiles()).filter(f=>f.sample && f.sigmaPages===SIGMA_PAGES_VERSION);
+    eq(pageFiles.length, 1, 'one Pages and UI welcome file');
+    const pageFile = await loadFile(pageFiles[0].id);
+    eq(pageFile.doc.name, 'Pages and UI');
+    eq(pageFile.doc.libraries[0].fileId, guide.doc.libraries[0].fileId);
+    await welcomeFile();
+    eq((await listFiles()).filter(f=>f.sample && f.sigmaPages===SIGMA_PAGES_VERSION).length, 1, 'Pages and UI reused');
+    eq((await listFiles()).filter(f => f.sample && f.sigmaSystem === SIGMA_SYSTEM_VERSION).length, 3, 'no duplicate welcome system');
   } finally {
     for (const f of [...await listFiles(), ...await listArchivedFiles()]) if (!before.has(f.id) && !archivedBefore.has(f.id)) await deleteFile(f.id);
     for (const f of await listArchivedFiles()) if (before.has(f.id) && !archivedBefore.has(f.id)) await restoreFile(f.id);
@@ -145,6 +165,7 @@ test('storage: deleting moves a file to the Archive; it can be restored, and onl
 test('storage: a sample file (Welcome to Sigma) can be edited while open but is never saved', async () => {
   await initFiles();
   const id = await createFile(sampleDoc(), {}, { welcome: 1 });
+  let keptCopy = null;
   const tokens = await createTokenFileWith('Sample tokens test (temporary)', sampleTokenDocument().collections, 'x', { meta: { sample: true } });
   try {
     const file = await loadFile(id);
@@ -157,6 +178,11 @@ test('storage: a sample file (Welcome to Sigma) can be edited while open but is 
     await flushSave();
     eq(state.doc.pages[0].children[0].x, 500); // the edit works while it's open
     eq((await loadFile(id)).doc.pages[0].children[0].x, 0); // …but the file is unchanged
+    const originalThumbnail = (await loadFile(id)).meta.thumbnail;
+    await updateThumbnail();
+    eq((await loadFile(id)).meta.thumbnail, originalThumbnail, 'temporary edits never update thumbnails');
+    keptCopy = await duplicateCurrent();
+    eq((await loadFile(keptCopy)).doc.pages[0].children[0].x, 500, 'copy keeps the current edits');
     eq(await saveNamedVersion(id, 'Mine'), null);
     eq((await listVersions(id)).length, 0);
     await renameFile(id, 'Renamed');
@@ -168,10 +194,15 @@ test('storage: a sample file (Welcome to Sigma) can be edited while open but is 
       refused = true;
     }
     ok(refused, 'tokens can’t be moved into the sample tokens');
+    await closeCurrentFile();
+    const reopened = await loadFile(id);
+    loadDocument(reopened.doc, reopened.views);
+    eq(state.doc.pages[0].children[0].x, 0, 'leaving and reopening resets the sample');
   } finally {
     setCurrentFile(null);
     state.screen = 'home';
     await deleteFile(id);
     await deleteFile(tokens.id);
+    if (keptCopy) await deleteFile(keptCopy);
   }
 });

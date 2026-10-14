@@ -37,9 +37,32 @@ node bin/sigma-design.mjs standalone --port 5173       # Sigma on its own
 node bin/sigma-design.mjs dev examples/css-app         # Sigma in the example project
 ```
 
+Welcome to Sigma includes **Tokens**, **Foundations**, **Components** and **Pages and UI** documenting Sigma’s interface.
+Components’ main specimens inherit the page mode; fixed Dark references remain below for comparison.
+
+Tokens has Light and Dark modes: Light comes from `styles.css`; Dark comes from the same stylesheet’s interface appearance tokens. The Guide keeps its alias and brand teaching examples as local tokens.
+Pages and UI contains full 1280 × 900 desktop designs of the files home, design editor, Tokens and Icons screens. Interface boxes and text are native layers; SVG artwork, including the editor’s canvas preview, is embedded. The welcome files are view-only, and editable copies remain your own files.
+
+After editing interface styles, run `npm run build:welcome` to regenerate `src/sigma-ui-source.js`.
+When shipped welcome content changes, bump `SIGMA_SYSTEM_VERSION` in `src/sigma-design-system.js` and
+`WELCOME_VERSION` in `src/welcome.js`; existing browsers receive new built-in files and keep the older
+versions in Archive. For Pages and UI, open `/tools/design-system/capture-pages.html` in the running app,
+click **Capture four screens**, save its JSON to `../work/sigma-pages-captures.json` (relative to the repository),
+and run `npm run build:pages`. Bump `SIGMA_PAGES_VERSION` in `src/sigma-pages.js` and `WELCOME_VERSION`
+when shipping changed screen designs. Capture only the built-in welcome files, not personal project content.
+The source freshness check catches a stylesheet change without regeneration.
+
 Tests: with the server running, open `/tests/` (the in-browser tests); `npm run test:node` runs the Node
 tests (the server, the command line, `init`, adapters, live sync, the team workflow). See `CONTRIBUTING.md`
 for how to make a change, and `docs/data-and-ai.md` for what Sigma sends where (nothing to AI models).
+
+## Appearance
+
+Use the half-circle icon at the top right of every screen to choose **Auto**, **Light**, or **Dark**.
+Auto follows your system appearance, including live changes. The choice is saved locally and synced
+between tabs. The editor canvas follows the app appearance too. Interface appearance is independent of a design document’s token modes.
+
+Select fields use a subtle outline and Sigma’s themed dropdown menu, with keyboard navigation and selected-option checks.
 
 ## Features
 
@@ -183,7 +206,7 @@ for how to make a change, and `docs/data-and-ai.md` for what Sigma sends where (
   - apply an extension with the mode picker on a frame, page or instance to re-skin it (for example, a second brand); extensions can be extended again
   - copied layers remember their variables' names, so pasting into another file reconnects them to same-named variables there
   - a binding to a variable the other file doesn't have is dropped, and the layer keeps its value
-- **Welcome to Sigma:** a folder on the files home with Sigma's sample files, kept apart from your own: the **Guide**, **Sample tokens** (the design tokens it uses) and **Sample icons** (the main sample icons file: the whole Lucide set, 1,877 icons, plus 18 filled versions of Lucide shapes; the icons the guide uses are in 9 groups of their own and the rest in Lucide's categories; made from `icon-sets/lucide.json` by `src/sample-icons.js`, and Optics Icons is made from it). The first visit to Sigma in a browser (no files yet) creates them and opens the guide; after that, **Open Welcome to Sigma** (Σ menu, or an empty files page) opens it. The guide's ten pages, in three page groups (Get started, Design systems, Sample files) (Start here, Canvas basics, Layout, Components, Tokens in designs, Style, Quality checks, Libraries and versions, Tokens files, Icons files) each pair a short guide with live examples, all built from the sample tokens; the Icons files page has components with icons and an Icon property, and instances choosing their icons. It reopens your copy, and makes a fresh one when the guide is newer (`WELCOME_VERSION` in `src/welcome.js`; bump it whenever the guide changes, and add new features to it). They're for looking at (view-only): select anything, inspect it, browse the tokens and run the checks, but nothing can be changed, and they can't be renamed, published or moved to the Archive. Tools that only edit (drawing, Import, Publish, undo) are hidden, and a change put back says so. A banner says so too, and **Make an editable copy** (the banner, the Σ menu, or a file's ⋯ menu on the files home) gives you a file of your own. Only the current three stay in the folder: when a newer guide is made, the previous sample files move to the Archive (never deleted, since they may hold your edits, and files that used old sample tokens keep working). Sample files from older versions of Sigma were moved there once the same way
+- **Welcome to Sigma:** a folder on the files home with Sigma's sample files, kept apart from your own: the **Guide**, **Tokens**, **Foundations**, **Components**, **Pages and UI** and **Icons** (the icons file: the whole Lucide set, 1,877 icons, plus 18 filled versions of Lucide shapes; the icons the guide uses are in 9 groups of their own and the rest in Lucide's categories; made from `icon-sets/lucide.json` by `src/sample-icons.js`, and Optics Icons is made from it). The first visit to Sigma in a browser (no files yet) creates them and opens the guide; after that, **Open Welcome to Sigma** (Σ menu, or an empty files page) opens it. The guide's ten pages, in three page groups (Get started, Design systems, Sample files) (Start here, Canvas basics, Layout, Components, Tokens in designs, Style, Quality checks, Libraries and versions, Tokens files, Icons files) each pair a short guide with live examples, built from local teaching tokens; the Icons files page has components with icons and an Icon property, and instances choosing their icons. It reopens your copy, and makes a fresh one when the guide is newer (`WELCOME_VERSION` in `src/welcome.js`; bump it whenever the guide changes, and add new features to it). They’re editable playgrounds: designs, tokens and icons can be changed while open, but changes reset on leaving the file or refreshing. Welcome design pages follow Sigma’s appearance on opening and on theme changes; explicit specimen overrides remain in place. Built-in documents, views and thumbnails are never overwritten. **Make an editable copy** in the Σ menu keeps the current edits as a normal saved file; the files home card menu copies the original. Publishing and version history require a saved copy. Only the current welcome files stay in the folder: when a newer guide is made, the previous sample files move to the Archive (never deleted, since they may hold your edits, and files that used old sample tokens keep working). Sample files from older versions of Sigma were moved there once the same way
 - **Constraints:** layers placed freely in a frame have horizontal (Left, Right, Left & right, Center, Scale) and vertical (Top, Bottom, Top & bottom, Center, Scale) rules
   - the rules apply when the frame is resized by its handles or its W/H fields; hold ⌘ while dragging to ignore them
   - they also apply when an instance is sized differently from its main component

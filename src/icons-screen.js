@@ -1,3 +1,4 @@
+import { appearanceButtonHTML } from './appearance.js';
 // The screen for icons files: no canvas. Icons are grouped in a grid with a search; the inspector on
 // the right edits the selected icons' names, groups, keywords and style. Icons come in as SVG files
 // (picked, dropped or pasted) and are published as versions for design files to use.
@@ -42,6 +43,7 @@ export function initIconsScreen(el) {
         <button class="btn primary" data-publish>Publish…</button>
         <button class="icon-btn" data-undo title="Undo  ⌘Z"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><path d="M5 3L2 6l3 3"/><path d="M2 6h7.5a4 4 0 0 1 0 8H7"/></svg></button>
         <button class="icon-btn" data-redo title="Redo  ⇧⌘Z"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><path d="M11 3l3 3-3 3"/><path d="M14 6H6.5a4 4 0 0 0 0 8H9"/></svg></button>
+        ${appearanceButtonHTML()}
       </div>
     </header>
     <div class="icons-body">${resizerHTML('icons-groups')}${resizerHTML('icons-inspector')}
@@ -65,7 +67,7 @@ export function initIconsScreen(el) {
   el.querySelector('[data-rail-menu]').addEventListener('click', (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     showContextMenu(r.right + 4, r.top, [
-      ...(state.viewOnly ? [{ label: 'Make an editable copy', action: makeEditableCopy }, '-'] : []),
+      ...(isCurrentSample() ? [{ label: 'Make an editable copy', action: makeEditableCopy }, '-'] : []),
       { label: 'Back to files', action: goHome },
       '-',
       { label: 'Import SVGs…', action: pickSVGs },
@@ -386,7 +388,7 @@ function render() {
 function renderHeader() {
   const name = root.querySelector('.icons-file-name');
   if (document.activeElement !== name) name.value = state.doc.name || 'Untitled icons';
-  name.readOnly = !!state.viewOnly;
+  name.readOnly = !!state.readOnly || !!state.viewOnly;
   document.title = `${state.doc.name || 'Untitled icons'} – Sigma`;
   const pub = state.doc.published;
   const dirty = hasUnpublishedChanges();
@@ -448,7 +450,8 @@ function renderInspector() {
       `${src.note ? `<div class="muted">${esc(src.note)}</div>` : ''}</div>` : '';
     el.innerHTML = `<div class="inspector-title">Icons file</div>${credit}
       <p class="muted icons-help">${list().length ? `${plural(list().length, 'icon')} in ${plural(groups.length, 'group')}: ${outline} outline, ${list().length - outline} filled.` : 'No icons yet.'}</p>
-      ${state.viewOnly ? `<p class="muted icons-help">These are the sample icons, for looking at: design files link them from Icon libraries. To add or change icons, make an editable copy (Σ menu).</p>`
+      ${isCurrentSample() ? '<p class="muted icons-help">Changes reset when you leave this file or refresh. Make an editable copy (Σ menu) to keep them.</p>' : ''}
+      ${state.viewOnly ? `<p class="muted icons-help">Try editing these icons. Changes reset when you leave this file or refresh. Make an editable copy (Σ menu) to keep them.</p>`
     : `<p class="muted icons-help">Import SVGs, drop them anywhere here, or paste SVG code (⌘V). Icons go into the group you have open. Re-importing an icon with the same name, group and style updates it.</p>
       <p class="muted icons-help">Colors are removed on import: an icon takes the color of the layer that shows it. Outline icons keep their stroke width, which components can change.</p>
       <p class="muted icons-help">Publish to let design files use these icons in components.</p>

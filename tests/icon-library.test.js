@@ -296,7 +296,7 @@ test('Welcome to Sigma: the Icons files page’s components and instances show s
   const tokens = sampleTokenDocument();
   const doc = welcomeDocument(tokens.collections, { icons });
   doc.libraries = [{ fileId: 'lib', name: tokens.name, version: 1, collections: snapshotForLibrary(tokens.collections, 'lib') }];
-  doc.iconLibraries = [{ fileId: 'icons', name: 'Sample icons', version: 1, count: icons.length, icons }];
+  doc.iconLibraries = [{ fileId: 'icons', name: 'Icons', version: 1, count: icons.length, icons }];
   loadDocument(doc);
   syncInstances();
   resolveVariables();

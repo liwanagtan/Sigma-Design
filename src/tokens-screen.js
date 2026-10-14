@@ -1,3 +1,4 @@
+import { appearanceButtonHTML } from './appearance.js';
 // The screen for token files: no canvas, just the design token editor full-screen.
 import { state, commit, subscribe, undo, redo } from './store.js';
 import { openHistory, openSaveVersionDialog } from './history.js';
@@ -26,6 +27,7 @@ export function initTokensScreen(el) {
         <button class="btn primary" data-publish>Publish…</button>
         <button class="icon-btn" data-undo title="Undo  ⌘Z"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><path d="M5 3L2 6l3 3"/><path d="M2 6h7.5a4 4 0 0 1 0 8H7"/></svg></button>
         <button class="icon-btn" data-redo title="Redo  ⇧⌘Z"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><path d="M11 3l3 3-3 3"/><path d="M14 6H6.5a4 4 0 0 0 0 8H9"/></svg></button>
+        ${appearanceButtonHTML()}
       </div>
     </header>
     <div class="tokens-editor"></div></div>`;
@@ -43,7 +45,7 @@ export function initTokensScreen(el) {
   el.querySelector('[data-rail-menu]').addEventListener('click', (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     showContextMenu(r.right + 4, r.top, [
-      ...(state.viewOnly ? [{ label: 'Make an editable copy', action: makeEditableCopy }, '-'] : []),
+      ...(isCurrentSample() ? [{ label: 'Make an editable copy', action: makeEditableCopy }, '-'] : []),
       { label: 'Back to files', action: goHome },
       '-',
       { label: 'Export tokens.json (W3C format)', action: exportJSONFile },
@@ -132,7 +134,7 @@ function renderHeader() {
   if (!root || state.screen !== 'tokens' || !state.doc) return;
   const name = root.querySelector('.tokens-file-name');
   if (document.activeElement !== name) name.value = state.doc.name || 'Untitled tokens';
-  name.readOnly = !!state.viewOnly;
+  name.readOnly = !!state.readOnly || !!state.viewOnly;
   document.title = `${state.doc.name || 'Untitled tokens'} – Sigma`;
   const pub = state.doc.published;
   const dirty = hasUnpublishedChanges();
@@ -155,7 +157,7 @@ const hasUnpublishedChanges = () => JSON.stringify(current()) !== JSON.stringify
 // see "Token updates available" and choose when to accept it.
 function openPublishDialog() {
   if (isCurrentSample()) {
-    return window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'The sample tokens can’t be published: it isn’t saved. Duplicate it (banner above) to publish your own.' }));
+    return window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'The sample tokens can’t be published: it isn’t saved. Make an editable copy (Σ menu) to publish your own.' }));
   }
   const pub = state.doc.published;
   const d = diffCollections(pub?.collections || [], current());
