@@ -182,7 +182,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     ] },
     { h: 'Find your way', bullets: [
       'Layers and Assets are on the left. The right panel shows what you’ve selected, or this file’s tokens and libraries when nothing is.',
-      'The Σ menu has your files, export, version history, tokens, libraries and the keyboard shortcuts (press ?).',
+      'The Σ menu (top of the thin column at the far left, with Home under it) has your files, export, version history, tokens, libraries and the keyboard shortcuts (press ?).',
       'Back to files (Σ menu) goes to the files home, where this file and its tokens are in the Welcome to Sigma folder. Deleted files wait in the Archive until you delete them forever.',
     ] },
     { h: 'Pages in this file', bullets: [

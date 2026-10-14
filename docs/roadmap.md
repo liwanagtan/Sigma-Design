@@ -1126,9 +1126,11 @@ design file, a click away from anywhere.
   buttons opened. The tokens button has a red dot when the file has no Sigma Tokens file or several; the library
   buttons show how many are linked; each tooltip says what's linked (“Sigma Tokens file: Optics Tokens v1”).
 - **The Design panel** with nothing selected keeps the frame presets, Components (publishing), Page and Export.
+- **Σ and Home:** the Σ menu moves from the file header to the top of the rail (its menu opens beside it), with a
+  Home button under it that goes back to the files home; the file header starts with the file's name.
 - **What shipped:** `src/rail.js` (the buttons, their state and tooltips; re-rendered with the layers and the
   panel, only when something changed), a 40px column in the editor's grid (`--rail-w`; hidden on narrow screens
   with the panels), the three sections and their actions removed from `panels.js`, and the README and the guide
   pointing at the rail (Tokens in designs and Quality checks). The Σ menu still has all five. Verified in the
-  editor: the rail on Optics Components (Optics Tokens in the tooltip, 1 icon library), and each button opening
-  its dialog.
+  editor: the rail on Optics Components (Optics Tokens in the tooltip, 1 icon library), each button opening
+  its dialog, the Σ menu opening beside the rail, and Home going back to the files.

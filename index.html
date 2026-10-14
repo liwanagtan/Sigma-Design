@@ -15,10 +15,14 @@
   <div id="icons" class="tokens-screen icons-screen" hidden></div>
   <div id="file-banner" class="file-banner" hidden></div>
   <div id="app" hidden>
-    <nav id="rail" class="rail" aria-label="File tools"></nav>
+    <nav id="rail" class="rail" aria-label="File tools">
+      <button id="logo-btn" class="rail-btn rail-logo" title="Main menu" aria-label="Main menu" aria-haspopup="menu"></button>
+      <button id="home-btn" class="rail-btn" title="Back to files" aria-label="Back to files"></button>
+      <div class="rail-sep"></div>
+      <div id="rail-tools" class="rail-tools"></div>
+    </nav>
     <aside id="left" class="panel">
       <div class="file-header">
-        <button id="logo-btn" class="logo-btn" title="Main menu"></button>
         <input id="file-name" class="file-name" spellcheck="false" aria-label="File name">
         <button class="project-status" data-project-status hidden></button>
       </div>
