@@ -529,16 +529,8 @@ export async function welcomeFile() {
 
 // Optics (Phase 36): a working design system as your own files (saved like any other): Optics Tokens, Optics
 // Icons (made from the sample icons), Optics Components (published, so other files can link it) and Optics
-// Foundations. Made once with Welcome to Sigma; Add Optics design system, in the Welcome to Sigma folder, adds them again. Returns their ids.
+// Foundations. Made once, with the first Welcome to Sigma in this browser (not again if you've deleted them).
 const OPTICS_KEY = 'sigma.optics';
-export async function addOptics() {
-  const ids = await opticsFiles(await sampleIconFile());
-  try {
-    localStorage.setItem(OPTICS_KEY, '1');
-  } catch {}
-  return ids;
-}
-// With the first Welcome to Sigma in this browser (not again if you've deleted them: add them from the menu).
 async function opticsOnce(icons) {
   try {
     if (localStorage.getItem(OPTICS_KEY)) return [];
