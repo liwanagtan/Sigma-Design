@@ -1135,14 +1135,14 @@ Components (87 pages) is the first to use it: its components grouped by category
 
 ## Phase 39: The file tools rail
 
-The Design panel with nothing selected was busy: the file's Sigma Tokens file, its tokens and their audit, and its
+The Design panel with nothing selected was busy: the file's tokens file, its tokens and their audit, and its
 component and icon libraries took most of it. They move to a thin rail of icon buttons at the left edge of a
 design file, a click away from anywhere.
 
-- **The rail:** five icon buttons, top to bottom: Change Sigma Tokens file, Browse design tokens, Audit design
+- **The rail:** five icon buttons, top to bottom: Change tokens file, Browse design tokens, Audit design
   tokens, then (after a divider) Component libraries and Icon libraries. Each opens the dialog the panel's
-  buttons opened. The tokens button has a red dot when the file has no Sigma Tokens file or several; the library
-  buttons show how many are linked; each tooltip says what's linked (“Sigma Tokens file: Optics Tokens v1”).
+  buttons opened. The tokens button has a red dot when the file has no tokens file or several; the library
+  buttons show how many are linked; each tooltip says what's linked (“Change tokens file / Using Optics Tokens v1”).
 - **The Design panel** with nothing selected keeps the frame presets, Components (publishing), Page and Export.
 - **Σ and Home:** the Σ menu moves from the file header to the top of the rail (its menu opens beside it), with a
   Home button under it that goes back to the files home; the file header starts with the file's name.
@@ -1152,10 +1152,35 @@ design file, a click away from anywhere.
   pointing at the rail (Tokens in designs and Quality checks). The Σ menu still has all five. Verified in the
   editor: the rail on Optics Components (Optics Tokens in the tooltip, 1 icon library), each button opening
   its dialog, the Σ menu opening beside the rail, and Home going back to the files.
-- **Sigma Tokens and Sigma Icons files** have the rail too (`railHTML`, `registerRailTools`): the Σ menu and Home,
-  then Linked Sigma Tokens files, Import tokens.json, Export tokens.json and Export CSS variables for a token file,
+- **Tokens and icons files** have the rail too (`railHTML`, `registerRailTools`): the Σ menu and Home,
+  then Linked tokens files, Import tokens.json, Export tokens.json and Export CSS variables for a token file,
   and Import SVGs for an icon file. On narrow screens the rail stays (the side panels go), so the Σ menu is always
   there.
+
+## After Phase 39: interface and naming
+
+Done on 2026-10-14, each through its own pull request (liwanagtan/Sigma-Design#7 to #12):
+
+- **Resizable columns:** drag the edge of the layers and properties panels, the files home's sidebar, and the
+  side columns of the tokens and icons screens; double-click resets; widths are remembered per person in the
+  browser (`src/columns.js`).
+- **Plain new-file buttons:** + Design file, + Tokens file and + Icons file make a file in one click (no dropdown
+  of blank or sample files). Add Lucide icons stays on the empty Icons page (in a project, the way to get Lucide
+  as a project file).
+- **Sigma's own confirm and prompt dialogs** (`src/dialogs.js`): the browser's `confirm()` and `prompt()` answer
+  Cancel at once in some embedded browsers, so Empty Archive, Delete forever, Delete page and the rest did
+  nothing there.
+- **The rail on every kind of file**, and **tooltips** on its buttons: the name, and under it what's linked or
+  what it does.
+- **File kinds without "Sigma":** design, tokens and icons files; the sample files are Guide, Sample tokens and
+  Sample icons (older ones renamed in place). See **Names** at the top.
+- **Welcome to Sigma's files are view-only:** they open read-only (`state.viewOnly`), so changes are put back
+  with a message, editing tools are hidden, and they can't be renamed or archived; **Make an editable copy**
+  (banner, Σ menu, the files home's ⋯ menu) makes one of your own. The guide's Try it boxes became Look
+  closer. Their cards show just the name and description, and a view-only file's top bar has no kind badge.
+- **Add Optics design system is gone:** Optics is made once, with the first Welcome to Sigma in a browser.
+- **Project files are written all at once** (a temporary file, then a rename), so nothing reads half a file:
+  CI's live-sync test once caught a half-written read.
 
 # Part I: AI inside the editor
 
@@ -1249,7 +1274,7 @@ Figma files are full of paths, and Sigma has none: this comes first.
 
 ## Phase 46: Save as `.fig`
 
-- **Writing:** Sigma Design files to `.fig`, with a schema taken from a recent Figma file; what Figma has no place
+- **Writing:** design files to `.fig`, with a schema taken from a recent Figma file; what Figma has no place
   for (page groups, slots, tokens Figma can't express) is flattened or left out, and listed.
 - **Done when:** saved files open in Figma (checked by a person, since Sigma can't sign in to Figma), and
   import → save → import keeps the sample files the same.
@@ -1298,6 +1323,6 @@ Part C's accounts and roles still need one.
 - **Undo per person:** in a live session, ⌘Z undoes only your own edits (Yjs's undo manager); solo files keep
   today's undo.
 - **Live comments:** threads and replies appear for everyone as they're written.
-- **Sigma Tokens and Sigma Icons files** can be shared live too.
+- **Tokens and icons files** can be shared live too.
 - **Done when:** undo never removes someone else's work, and tokens edited in a live session show up in the
   design files that use them after publishing, as today.
