@@ -9,7 +9,7 @@ import { createNode, uid, makePaint } from './store.js';
 import { DEFAULT_LAYOUT } from './layout.js';
 import { sampleIconId } from './sample-icons.js';
 
-export const WELCOME_VERSION = 10;
+export const WELCOME_VERSION = 11;
 // The sample icons the guide uses (outline unless marked filled).
 const GUIDE_ICONS = ['plus', 'search', 'pencil', 'copy', 'share-2', 'trash', 'settings', 'user', 'log-out', 'star', 'heart', 'bookmark', 'bell'];
 export const WELCOME_ICONS = [...GUIDE_ICONS.map((n) => sampleIconId(n)), ...['star', 'heart', 'bookmark', 'bell'].map((n) => sampleIconId(n, true))];
@@ -99,8 +99,9 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     children: g.parts,
   });
   // A "Try it" note.
-  const tryIt = (value) => fillWidth(stack('Try it', 'vertical', { gap: P('space/1'), padding: P('space/4'), fill: S('accent/subtle'), radius: P('radius/md') }, [
-    text('Label', 'Try it', S('text/link'), T('label/default'), { textCase: 'upper' }),
+  // Things to look at in the examples (the guide is view-only; an editable copy is for trying changes).
+  const tryIt = (value) => fillWidth(stack('Look closer', 'vertical', { gap: P('space/1'), padding: P('space/4'), fill: S('accent/subtle'), radius: P('radius/md') }, [
+    text('Label', 'Look closer', S('text/link'), T('label/default'), { textCase: 'upper' }),
     para(value, { typo: T('body/small') }),
   ]));
   // A titled example area to the right of the guide.
@@ -197,7 +198,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       '10 Icons files: icon sets, and icons in components',
     ] },
   ]);
-  start.parts.push(tryIt('Pick a page in the Pages list on the left. Each one has a guide like this and examples to try on the right. This file is a playground: change anything, nothing is saved, and it’s back to the original the next time you open it. Duplicate to keep changes (in the banner) makes it your own.'));
+  start.parts.push(tryIt('Pick a page in the Pages list on the left. Each one has a guide like this and examples on the right. This file is for looking at: select anything to see how it’s built (in the right panel, and Inspect for its code), but it can’t be changed. To try things yourself, Make an editable copy (in the banner or the Σ menu): it goes with your files.'));
   const tokensBox = stack('Sample tokens', 'vertical', { gap: P('space/2'), padding: P('space/6'), fill: S('surface/default'), radius: P('radius/lg'), stroke: S('border/strong'), width: 300 }, [
     text('Kind', 'Tokens file', S('text/link'), T('label/default'), { textCase: 'upper' }),
     text('Name', 'Sample tokens', S('text/primary'), T('heading/h3')),
@@ -237,7 +238,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'Drag pages to reorder them, into or out of a group; drag a group to move it with its pages.',
     ] },
   ]);
-  basics.parts.push(tryIt('Select two shapes on the right and press ⌘G to group them, then ⇧H to flip the group. Double-click the text to edit it. ⌘Z undoes anything.'));
+  basics.parts.push(tryIt('Select the shapes on the right: their size, colors and corner radius show in the right panel. ⌘-click picks a layer inside a group, and holding ⌥ measures distances. In an editable copy, try ⌘G to group two shapes, and ⌘Z to undo.'));
   const shape = (type, name, colorVar, props) => createNode(type, { name, ...props, fills: [makePaint('#000000')], bindings: { ...(props.bindings || {}), 'fills.0.color': colorVar } });
   const practice = createNode('frame', {
     name: 'Practice area', x: 600, y: 0, w: 520, h: 360, clip: true, fills: [makePaint('#FFFFFF')], strokes: [makePaint('#000000')],
@@ -266,7 +267,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     { h: 'Constraints', p: ['Layers placed freely in a frame keep their place when the frame is resized: Left, Right, Left & right, Center or Scale (and the same vertically). Hold ⌘ while resizing to ignore them.'] },
     { h: 'Layout grids', p: ['Frames can have column, row and square grids, drawn on the canvas only. Layers snap to them, and ⌃G shows or hides them. Count, gutter and margin can use tokens, like the 12-column grid on the right.'] },
   ]);
-  layoutGuide.parts.push(tryIt('Select a tag and press ⌘D: the row grows. Resize the Constraints frame by a corner and watch its layers keep their places.'));
+  layoutGuide.parts.push(tryIt('Select the Tags row: its Auto layout section shows its gap and padding. Select a layer in the Constraints frame to see how it’s pinned. In an editable copy, ⌘D on a tag grows the row, and resizing the Constraints frame keeps its layers in their places.'));
   const chip = (label) => stack('Tag', 'horizontal', { gap: P('space/1'), padding: P('space/2'), fill: S('accent/subtle'), radius: P('radius/full') }, [text('Label', label, S('text/link'), T('label/default'))]);
   const tags = example('Auto layout: hug', 600, 0, [row('Tags', [chip('Design'), chip('Tokens'), chip('Components')], P('space/2'))], { note: 'The row hugs its tags; each tag hugs its label.' });
   const listRow = (label) => fillWidth(stack('Row', 'horizontal', { gap: P('space/3'), padding: P('space/3'), fill: S('surface/sunken'), radius: P('radius/sm') }, [
@@ -321,7 +322,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'A component’s ⋯ → Deprecate hides it from Assets while its instances keep working.',
     ] },
   ]);
-  compGuide.parts.push(tryIt('Select one of the instances on the right and type a new Label in the panel. Then select the main Button set and change a variant’s color: every instance follows.'));
+  compGuide.parts.push(tryIt('Select one of the instances on the right: its properties show in the right panel, and its component’s name opens the main Button set. In an editable copy, change a variant’s color in the set and every instance follows.'));
   const instances = example('Instances', 600, 360, [
     row('Buttons', [buttonInstance(primaryBtn, 'Save'), buttonInstance(secondaryBtn, 'Cancel'), buttonInstance(primaryBtn, 'Publish')], P('space/3')),
     cardInstance(),
@@ -344,7 +345,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'Audit design tokens… finds the values that don’t use a token yet. See page 7.',
     ] },
   ]);
-  tokensGuide.parts.push(tryIt('Select the Light frame and set Semantic to Dark in its Layer section. Then try Brand B on the Dark frame.'));
+  tokensGuide.parts.push(tryIt('Select the Light and Dark frames: Semantic in their Layer section says which mode each uses, so the same tokens look different. In an editable copy, set the Light frame to Dark, or try Brand B.'));
   const showcase = (name, x, modes) => createNode('frame', {
     name, x, y: 0, w: 328, h: 228, modes, clip: false,
     layout: autoLayout({ mode: 'vertical' }), sizingH: 'hug', sizingV: 'hug',
@@ -374,7 +375,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     ] },
     { h: 'Export', p: ['The Export section exports the selection (or the page) as PNG, JPG or SVG at 0.5× to 4×; ⇧⌘E exports a PNG.'] },
   ]);
-  styleGuide.parts.push(tryIt('Select a text style sample and look at its Text style chip. Select the Overlay card and change its shadow in Effects: the token detaches.'));
+  styleGuide.parts.push(tryIt('Select a text style sample and look at its Text style chip, then the Overlay card’s shadow in Effects: both come from tokens. In an editable copy, changing the shadow detaches its token.'));
   const specimen = (label, path, sample) => row(label, [
     stack('Label', 'vertical', { width: 140, gap: P('space/1') }, [text('Name', path, S('text/secondary'), T('code'))]),
     text('Sample', sample, S('text/primary'), T(path)),
@@ -417,7 +418,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     ] },
     { h: 'Deprecation', p: ['Deprecate tokens (in their inspector) and components (⋯ menu) you’re retiring: they’re hidden from pickers and Assets, while everything that uses them keeps working with a note.'] },
   ]);
-  qualityGuide.parts.push(tryIt('Select each text on the right and look at Contrast in its Fill section. Then run Audit design tokens…: it finds the two one-off values on purpose.'));
+  qualityGuide.parts.push(tryIt('Select each text on the right and look at Contrast in its Fill section. Then run Audit design tokens… (on the thin column at the far left): it finds the two one-off values on purpose.'));
   const contrastSample = (name, fg, bg, value) => createNode('frame', {
     name, w: 220, h: 64, clip: false, fills: [makePaint('#FFFFFF')], layout: autoLayout({ mode: 'horizontal', alignP: 'center', alignC: 'center' }),
     strokes: [makePaint('#000000')], sizingH: 'fixed', sizingV: 'fixed',
@@ -454,7 +455,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'Move to Archive (on the files home) is a soft delete; restore from the Archive.',
     ] },
   ]);
-  libGuide.parts.push(tryIt('Every file of your own gets a version history (Σ menu → Show version history). This sample has none, because it’s never saved: duplicate it to try version history on your copy.'));
+  libGuide.parts.push(tryIt('Every file of your own gets a version history (Σ menu → Show version history). This guide has none, since it never changes: make an editable copy to try version history on it.'));
   const step = (n, title, body) => stack(title, 'vertical', { gap: P('space/1'), padding: P('space/4'), fill: S('surface/default'), radius: P('radius/md'), stroke: S('border/default'), width: 180 }, [
     text('Step', `Step ${n}`, S('text/link'), T('label/small'), { textCase: 'upper' }),
     text('Title', title, S('text/primary'), T('body/strong')),
@@ -530,7 +531,7 @@ export function welcomeDocument(collections, { icons = null } = {}) {
       'Instances choose only the icon: its size, color and stroke stay the main component’s.',
     ] },
   ]);
-  iconsGuide.parts.push(tryIt('Select one of the icon buttons on the right and choose another icon in its Icon property: only the Actions icons are offered. Then select the main Icon button’s icon and change its color token: every instance follows.'));
+  iconsGuide.parts.push(tryIt('Select one of the icon buttons on the right: its Icon property shows its icon, and only the Actions icons are offered. In an editable copy, choose another icon, or change the main Icon button’s color token: every instance follows.'));
   const I = sampleIconId;
   const iconLayer = (name, iconId, colorVar, size, props = {}) => createNode('icon', {
     name, iconId, w: size, h: size, ...props, fills: [makePaint('#000000')], bindings: { 'fills.0.color': colorVar },

@@ -22,6 +22,7 @@ export const state = {
   pageViews: {}, // pageId -> {x, y, zoom}
   layoutSkip: new Set(), // ids auto layout must not reposition (being dragged/drawn)
   readOnly: false, // viewing an older version: edits are put back and nothing is saved
+  viewOnly: false, // a Welcome to Sigma file: a guide to look at; edits are put back, and it can't be renamed or deleted
   highlightIds: [], // layers outlined while a component property is hovered in the panel
   showGrids: (() => { // layout grids on the canvas (⌃G); remembered in this browser
     try {
@@ -417,8 +418,8 @@ export function commit() {
   normalizeDocument();
   const snap = snapshot();
   if (snap === lastSnapshot) return;
-  if (state.readOnly) {
-    // Viewing an older version: put back whatever was changed.
+  if (state.readOnly || state.viewOnly) {
+    // Viewing an older version, or a Welcome to Sigma file: put back whatever was changed.
     state.doc = JSON.parse(lastSnapshot);
     state.editingTextId = null;
     reindex();
@@ -426,7 +427,9 @@ export function commit() {
     emit('doc');
     if (Date.now() - readOnlyHintAt > 3000) {
       readOnlyHintAt = Date.now();
-      window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'You’re viewing an older version. Restore it to make changes.' }));
+      window.dispatchEvent(new CustomEvent('sigma:toast', { detail: state.viewOnly && !state.readOnly
+        ? 'Welcome to Sigma’s files are for looking at, so they can’t be changed. Σ menu → Make an editable copy.'
+        : 'You’re viewing an older version. Restore it to make changes.' }));
     }
     return;
   }

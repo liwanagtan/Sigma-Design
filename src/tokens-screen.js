@@ -5,7 +5,7 @@ import { openLibrariesDialog, publishDependencies, libraries } from './libraries
 import { railHTML, registerRailTools, renderRailTools, RAIL_TOOL_ICONS } from './rail.js';
 import { diffCollections, libraryCollections, dependencyChanges } from './variables.js';
 import { mountTokenEditor, unmountTokenEditor } from './variables-ui.js';
-import { goHome, isCurrentSample } from './files.js';
+import { goHome, isCurrentSample, makeEditableCopy } from './files.js';
 import { saveFile, download } from './io.js';
 import { exportDTCG, exportCSS, importTokens, mergeCollections } from './tokens-io.js';
 import { showContextMenu } from './menu.js';
@@ -43,6 +43,7 @@ export function initTokensScreen(el) {
   el.querySelector('[data-rail-menu]').addEventListener('click', (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     showContextMenu(r.right + 4, r.top, [
+      ...(state.viewOnly ? [{ label: 'Make an editable copy', action: makeEditableCopy }, '-'] : []),
       { label: 'Back to files', action: goHome },
       '-',
       { label: 'Export tokens.json (W3C format)', action: exportJSONFile },
@@ -131,6 +132,7 @@ function renderHeader() {
   if (!root || state.screen !== 'tokens' || !state.doc) return;
   const name = root.querySelector('.tokens-file-name');
   if (document.activeElement !== name) name.value = state.doc.name || 'Untitled tokens';
+  name.readOnly = !!state.viewOnly;
   document.title = `${state.doc.name || 'Untitled tokens'} – Sigma`;
   const pub = state.doc.published;
   const dirty = hasUnpublishedChanges();

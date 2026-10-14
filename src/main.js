@@ -18,7 +18,7 @@ import { resizerHTML } from './columns.js';
 import { initComments, renderCommentPins } from './comments.js';
 import {
   initFiles, loadFile, setCurrentFile, closeCurrentFile, discardCurrentFile, saveNow, getCurrentFileId, goHome, fileKind, isArchived,
-  welcomeOnFirstVisit, openFile, isSampleFile, duplicateCurrent, updateThumbnail,
+  welcomeOnFirstVisit, openFile, isSampleFile, makeEditableCopy, updateThumbnail,
 } from './files.js';
 import { initHome, renderHome, setHomeNotice, showHomeSection } from './home.js';
 import { initTokensScreen, showTokensScreen, hideTokensScreen } from './tokens-screen.js';
@@ -94,14 +94,11 @@ function remeasureAllText() {
   emit('doc');
 }
 
-// A sample file (Welcome to Sigma) is a playground: edits work but are never saved.
+// A Welcome to Sigma file is a guide to look at: view-only, with a way to make a copy of your own.
 function sampleBanner() {
-  showBanner('Sample file: try anything. Nothing is saved; it resets when you reopen it.', 'Duplicate to keep changes', async () => {
-    const copy = await duplicateCurrent();
-    if (!copy) return;
-    window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'Made a copy of your changes in Design' }));
-    openFile(copy);
-  }, [{ label: 'Dismiss', action: () => hideBanner() }]);
+  document.body.classList.add('view-only');
+  showBanner('Welcome to Sigma: this file is for looking at, so it can’t be changed.', 'Make an editable copy', makeEditableCopy,
+    [{ label: 'Dismiss', action: () => hideBanner() }]);
 }
 
 // ---------- banner (changes from other tabs) ----------
@@ -151,6 +148,8 @@ async function leaveEditor({ discard = false } = {}) {
 async function showHome() {
   resetHistory();
   await leaveEditor();
+  state.viewOnly = false;
+  document.body.classList.remove('view-only');
   state.screen = 'home';
   appEl.hidden = true;
   tokensEl.hidden = true;
@@ -175,6 +174,8 @@ async function showFile(id, { force = false, discard = false } = {}) {
   if (id !== getCurrentFileId()) resetHistory();
   await leaveEditor({ discard });
   const sample = isSampleFile(file.meta);
+  state.viewOnly = false; // set again once a sample is open (after its one-time arranging)
+  document.body.classList.remove('view-only');
   setCurrentFile(id, { sample });
   homeEl.hidden = true;
   if (fileKind(file.meta) === 'icons') {
@@ -184,6 +185,7 @@ async function showFile(id, { force = false, discard = false } = {}) {
     tokensEl.hidden = true;
     iconsEl.hidden = false;
     loadDocument(file.doc, file.views);
+    state.viewOnly = sample;
     showIconsScreen();
     syncOpenProjectFile();
     if (sample) {
@@ -199,6 +201,7 @@ async function showFile(id, { force = false, discard = false } = {}) {
     appEl.hidden = true;
     tokensEl.hidden = false;
     loadDocument(file.doc, file.views);
+    state.viewOnly = sample;
     showTokensScreen();
     syncOpenProjectFile();
     if (sample) sampleBanner();
@@ -217,6 +220,7 @@ async function showFile(id, { force = false, discard = false } = {}) {
     commit();
     forgetUndo();
   }
+  state.viewOnly = sample;
   if (sample) {
     sampleBanner();
     setTimeout(() => getCurrentFileId() === id && updateThumbnail(), 1500); // of the original, once
