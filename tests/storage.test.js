@@ -115,7 +115,7 @@ test('storage: old teaching tokens are archived intact, Sigma UI Tokens replace 
     for (const f of await listFiles()) if (f.welcome) await archiveFile(f.id);
     const old = await createTokenFileWith('Sigma Tokens', sampleTokenDocument().collections, 'Before', { meta: { sample: true } });
     const guide = await loadFile(await welcomeFile());
-    eq(guide.meta.name, 'Guide');
+    eq(guide.meta.name,'Guide examples');
     eq(guide.doc.libraries[0].name, 'Tokens');
     ok(guide.doc.libraries[0].fileId !== old.id, 'replaces teaching tokens with the interface system');
     eq((await loadFile(old.id)).meta.name, 'Sigma Tokens', 'old file preserved intact');

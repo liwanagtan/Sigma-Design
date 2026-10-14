@@ -381,3 +381,11 @@ their own licenses (Lucide's icons: ISC; see `NOTICE`).
 ### Welcome system synchronization
 
 Welcome Tokens now publish Foundation aliases for spacing, dimensions, radii, typography, and elevation, including CSS shorthand zero values. Components bind their layouts to those tokens and show explicit control states. Dropdown menus and segmented controls compose reusable item instances. Foundations retain labelled Light/Dark references on matching surfaces while the editor follows global appearance. Icons includes a Sigma UI group generated from the app glyphs, only; the multicolor brand mark remains separate from the monochrome icon library. Regeneration versions refresh existing Welcome files, and library reuse validates token values and Sigma icon content.
+
+### Projects, Drafts, and Documentation
+
+Choose a project from the Home sidebar Projects group. Its top bar has an editable title and project icon, with files grouped into Design, Tokens, and Icons. Empty file sections are hidden. Click the sidebar or page icon to choose an emoji or Sigma glyph. Sort and grid/list controls in the top bar share the Home view preference.
+
+Sidebar search finds files across projects and Drafts and labels their source. **Create New** offers Design file, Tokens file, Icons file, and Import. New files belong to the open project; from Recents, Drafts, Documentation, or global search they belong to Drafts. Recents shows files across projects and Drafts, ordered by opening time (falling back to editing time for older files). Drafts lists all unowned files and supports moving them into projects. Sigma’s examples live in Sigma; Optics contains the Polaris-inspired sample design system.
+
+Documentation sits at the bottom of the sidebar; its contents will be prepared before Sigma ships. Sigma example edits remain temporary; editable copies are saved to Drafts. Library pickers start in the current scope, with **Other projects and Drafts** for external libraries. Connected repositories remain selectable and use the existing `.sigma/` storage adapter.

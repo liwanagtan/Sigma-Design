@@ -13,6 +13,7 @@
 // 127.0.0.1 only, answers only requests addressed to localhost, and writes only for requests that carry the
 // X-Sigma header (which pages on other sites can't send), so other websites can't read or change a project.
 // Every write is logged.
+import { createHash } from 'node:crypto';
 import { createServer as httpServer } from 'node:http';
 import { readFileSync, existsSync, statSync, readdirSync, mkdirSync, writeFileSync, renameSync, realpathSync } from 'node:fs';
 import { join, resolve, relative, dirname, extname, basename, sep, isAbsolute } from 'node:path';
@@ -160,7 +161,7 @@ export function sigmaHandler({ root = EDITOR_ROOT, project = null, log = () => {
           config = { invalid: true };
         }
       }
-      return reply(res, 200, { name: basename(projectReal), files: projectFiles(), config });
+      return reply(res, 200, { id:'repository-'+createHash('sha256').update(projectReal).digest('hex').slice(0,24), name: basename(projectReal), files: projectFiles(), config });
     }
     if (url.pathname === '/api/project/base' && method === 'GET') {
       // A file as committed in git (HEAD, or ?rev=): what changes are compared with.

@@ -5,7 +5,7 @@ import { encodeDocumentRecord, decodeDocumentRecord } from './document-storage.j
 //         `versions` holds each file's version history (small records, indexed by fileId); the document
 //         of a version lives in `docs` under the key `v:<version id>`.
 const DB_NAME = 'sigma';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let dbPromise = null;
 
@@ -16,6 +16,9 @@ function openDB() {
       req.onupgradeneeded = () => {
         const db = req.result;
         if (!db.objectStoreNames.contains('files')) db.createObjectStore('files', { keyPath: 'id' });
+        const files=req.transaction.objectStore('files');
+        if(!files.indexNames.contains('projectId')) files.createIndex('projectId','projectId');
+        if(!db.objectStoreNames.contains('projects')) db.createObjectStore('projects',{keyPath:'id'});
         if (!db.objectStoreNames.contains('docs')) db.createObjectStore('docs', { keyPath: 'id' });
         if (!db.objectStoreNames.contains('versions')) db.createObjectStore('versions', { keyPath: 'id' }).createIndex('fileId', 'fileId');
       };
@@ -79,6 +82,23 @@ async function updateFile(id, update) {
 
 export const db = {
   updateFile,
+  delete:(store,id)=>transact(store,'readwrite',tx=>tx.objectStore(store).delete(id)),
+  // Ownership migrations and batch moves operate on metadata only, atomically.
+  projectUpdate: async (update) => {
+    const database=await openDB();
+    return new Promise((resolve,reject)=> {
+      const tx=database.transaction(['projects','files'],'readwrite');
+      let projects,files,result;
+      const ready=()=>{if(!projects||!files)return;try {
+        const changes=update(projects,files);result=changes.result;
+        for(const p of changes.projects||[]) tx.objectStore('projects').put(p);
+        for(const f of changes.files||[]) tx.objectStore('files').put(f);
+      }catch(error){tx.abort();reject(error);}};
+      tx.objectStore('projects').getAll().onsuccess=e=>{projects=e.target.result;ready();};
+      tx.objectStore('files').getAll().onsuccess=e=>{files=e.target.result;ready();};
+      tx.oncomplete=()=>resolve(result);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Project update aborted'));
+    });
+  },
 
   get: async (store, id) => {const value=await transact(store, 'readonly', (tx) => tx.objectStore(store).get(id));return store==='docs' ? decodeDocumentRecord(value) : value;},
   getAll: async (store) => {const values=await transact(store, 'readonly', (tx) => tx.objectStore(store).getAll());return store==='docs' ? values.map(decodeDocumentRecord) : values;},

@@ -1,3 +1,4 @@
+import { recordFileOpened, initializeProjects, selectedProjectId, selectProject, projectList, resolveProjectId } from './projects.js';
 import './select.js';
 import { applyWelcomeAppearance } from './welcome-appearance.js';
 import { appearanceButtonHTML, appearance } from './appearance.js';
@@ -21,7 +22,7 @@ import { resizerHTML } from './columns.js';
 import { initComments, renderCommentPins } from './comments.js';
 import {
   initFiles, loadFile, setCurrentFile, closeCurrentFile, discardCurrentFile, saveNow, getCurrentFileId, goHome, fileKind, isArchived,
-  welcomeOnFirstVisit, openFile, isSampleFile, isCurrentSample,
+  welcomeOnFirstVisit, welcomeFile, refreshSigmaPages, openFile, isSampleFile, isCurrentSample,
 } from './files.js';
 import { initHome, renderHome, setHomeNotice, showHomeSection } from './home.js';
 import { initTokensScreen, showTokensScreen, hideTokensScreen } from './tokens-screen.js';
@@ -174,6 +175,8 @@ async function showFile(id, { force = false, discard = false } = {}) {
     setHomeNotice('That file could not be found. It may have been deleted.');
     return goHome();
   }
+  selectProject(file.meta.projectId||null,{notify:false});
+  showHomeSection(fileKind(file.meta));
   if (isArchived(file.meta)) {
     setHomeNotice(`“${file.meta.name}” is in the Archive. Restore it to open it.`);
     showHomeSection('archive');
@@ -181,7 +184,9 @@ async function showFile(id, { force = false, discard = false } = {}) {
   }
   if (id !== getCurrentFileId()) resetHistory();
   await leaveEditor({ discard });
+  await recordFileOpened(id);
   const sample = isSampleFile(file.meta);
+  if(sample&&file.meta.welcome)file.doc.name=file.meta.name;
   state.viewOnly = false; // Welcome files allow temporary edits; persistence skips samples.
   document.body.classList.remove('view-only');
   setCurrentFile(id, { sample });
@@ -214,6 +219,8 @@ async function showFile(id, { force = false, discard = false } = {}) {
   appEl.hidden = false;
   const wasVersion = file.doc.version || 1;
   loadDocument(file.doc, file.views);
+  const requestedPage=new URLSearchParams(location.hash.split('?')[1]||'').get('page');
+  const target=state.doc.pages.find(p=>p.name===requestedPage);if(target)state.doc.currentPageId=target.id;
   syncWelcomeAppearance({ initial:true });
   remeasureAllText();
   // "Welcome to Sigma": place its examples by their real sizes (each time it opens, since a sample is
@@ -234,9 +241,14 @@ async function showFile(id, { force = false, discard = false } = {}) {
 let routing = Promise.resolve();
 function route() {
   // Serialize navigations so a fast back/forward can't interleave saves and loads.
-  routing = routing.then(() => {
-    const m = location.hash.match(/^#\/file\/([\w-]+)/);
-    return m ? showFile(m[1]) : showHome();
+  routing = routing.then(async () => {
+    const m=location.hash.match(/^#\/file\/([\w-]+)/);
+    if(m)return showFile(m[1]);
+    const scope=location.hash.match(/^#\/(drafts|project)\/(?:([^/]+)\/)?([^/?]*)/);
+    if(scope){const id=scope[1]==='project'?await resolveProjectId(decodeURIComponent(scope[2]||'')):null;const valid=!id||(await projectList()).some(p=>p.id===id);selectProject(valid?id:null,{notify:false});showHomeSection(scope[1]==='drafts'?scope[2]||scope[3]||'drafts':scope[3]||'recents');}
+    if(location.hash==='#/recents'){selectProject(null,{notify:false});showHomeSection('recents');}
+    if(location.hash.startsWith('#/guide/'))showHomeSection('welcome');
+    return showHome();
   }).catch((err) => {
     console.error(err);
     window.dispatchEvent(new CustomEvent('sigma:toast', { detail: `Something went wrong: ${err.message}` }));
@@ -303,17 +315,18 @@ window.addEventListener('keydown', (e) => {
   if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== 's') return;
   if (state.screen !== 'editor' && state.screen !== 'tokens' && state.screen !== 'icons') return;
   e.preventDefault(); // never the browser's "Save page"
-  if (project.connected) saveToProject();
+  if (project.connected&&selectedProjectId()===project.identity) saveToProject();
   else window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'Sigma saves as you work. To work on a codebase, run Sigma in it: npx sigma-design init, then npm run sigma.' }));
 });
 
 initFiles({ onRemoteChange })
   .then(async () => {
     await connectProject();
-    // A first visit opens "Welcome to Sigma"; in a project, Sigma opens on the project's files instead (the
-    // guide is in the sidebar).
-    const welcome = project.connected ? null : await welcomeOnFirstVisit().catch((err) => console.error('Could not create Welcome to Sigma', err));
-    if (welcome && !/^#\/file\//.test(location.hash)) return openFile(welcome);
+    const firstVisit=await welcomeOnFirstVisit();
+    await welcomeFile();
+    await initializeProjects(project);
+    await refreshSigmaPages();
+    if(firstVisit&&!/^#\/(file|project|drafts|guide)\//.test(location.hash))location.hash='#/guide/getting-started';
     return route();
   })
   .catch((err) => {

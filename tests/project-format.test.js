@@ -180,17 +180,19 @@ test('project format: serializeForProject names new files by kind and name', () 
 });
 
 // ---------- projects (src/project.js), with an in-memory project ----------
+import {db} from '../src/db.js';
 import { connectWith, bringProjectFile, hasUnsavedProjectChanges, textHash, project } from '../src/project.js';
-import { loadFile, deleteFile, listFiles, replaceFile } from '../src/files.js';
+import { loadFile, deleteFile, listFiles, replaceFile, createFile, duplicateFile } from '../src/files.js';
 
 function memoryProject(files) {
+  const name='test-project-'+crypto.randomUUID(),id='repository-test-'+crypto.randomUUID();
   const disk = new Map(Object.entries(files).map(([p, f]) => [p, { text: formatProjectJSON(f), mtime: '1' }]));
   let clock = 1;
   return {
     disk,
     via: 'memory',
     async list() {
-      return { name: `test-project-${Date.now()}`, files: [...disk].map(([path, { text, mtime }]) => ({ path, kind: JSON.parse(text).kind, name: JSON.parse(text).name, mtime, size: text.length })), config: null };
+      return {id,name,files: [...disk].map(([path, { text, mtime }]) => ({ path, kind: JSON.parse(text).kind, name: JSON.parse(text).name, mtime, size: text.length })), config: null };
     },
     async read(path) {
       if (!disk.has(path)) throw new Error(`${path} doesn’t exist`);
@@ -243,5 +245,18 @@ test('projects: a project file and the files it uses come into the browser, link
     ok(textHash('abc') !== textHash('abd'));
   } finally {
     for (const m of await listFiles()) if (m.project?.name === project.name) await deleteFile(m.id);
+    await db.delete('projects',project.identity);
   }
+});
+
+
+test('repository projects: new files and duplicates use the selected repository adapter',async()=> {
+  const {initializeProjects,selectProject,selectedProjectId}=await import('../src/projects.js');
+  const before=selectedProjectId(),mem=memoryProject({});await connectWith(mem);await initializeProjects(project);selectProject(project.identity,{notify:false});
+  let id,copy;const repositoryId=project.identity;
+  try {
+    id=await createFile({name:'Repository new file',pages:[{id:'page',name:'Page',children:[]}]});
+    eq(mem.disk.size,1);eq((await loadFile(id)).meta.projectId,repositoryId);
+    copy=await duplicateFile(id);eq(mem.disk.size,2);eq((await loadFile(copy)).meta.projectId,repositoryId);
+  }finally{if(copy)await deleteFile(copy);if(id)await deleteFile(id);await db.delete('projects',repositoryId);selectProject(before,{notify:false});}
 });

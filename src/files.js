@@ -1,5 +1,7 @@
 // File management: every Sigma file is a record in IndexedDB (see db.js). This module owns
 // the currently open file, autosave, thumbnails, cross-tab notifications and migration.
+import { serializeDocument, deserializeDocument } from './document-storage.js';
+import { ownerFor, inScope, selectedProject } from './projects.js';
 import { db } from './db.js';
 import {
   state, uid, setPersistence, flushSave, hasUnsavedChanges, LEGACY_STORAGE_KEY, migrateDocument,
@@ -9,7 +11,7 @@ import { libraryEntry } from './variables.js';
 import { welcomeDocument, WELCOME_VERSION, WELCOME_ICONS } from './welcome.js';
 import { newIconsDocument, sanitizeIcons, iconMarkup, usedIconIds, ICON_SETS, loadIconSet } from './icon-library.js';
 import { sampleIconsDocument, lucideIconsDocument, SAMPLE_ICONS_NAME, SAMPLE_ICONS_VERSION, sigmaUIIcons } from './sample-icons.js';
-import { sigmaPagesDocument, SIGMA_PAGES_VERSION } from './sigma-pages.js';
+import { sigmaPagesDocument, SIGMA_PAGES_VERSION, SIGMA_PAGES_SOURCE_HASH } from './sigma-pages.js';
 import { opticsTokenDocument } from './optics-tokens.js';
 import { opticsComponentsDocument, opticsFoundationsDocument, opticsIconsDocument } from './optics.js';
 
@@ -209,7 +211,7 @@ export async function restoreFile(id) {
 }
 
 export async function emptyArchive() {
-  const files = await listArchivedFiles();
+  const files = (await listArchivedFiles()).filter(f=>inScope(f));
   for (const f of files) await deleteFile(f.id);
   return files.length;
 }
@@ -280,9 +282,18 @@ export async function updateFileMeta(id, patch) {
 }
 
 export async function createFile(doc, views = {}, extra = {}) {
+  if(selectedProject()?.kind==='repository'&&!extra.project&&!extra.sample&&!extra.welcome&&!extra.optics&&!Object.hasOwn(extra,'projectId')){
+    const {project,newProjectFile,bringProjectFile}=await import('./project.js');
+    if(!project.connected||project.identity!==selectedProject().id)throw new Error('Reconnect this repository before creating files.');
+    const path=await newProjectFile(doc,{open:false});if(!path)throw new Error('The repository file could not be created.');
+    return bringProjectFile(path);
+  }
   const id = uid() + uid();
   migrateDocument(doc);
-  await db.putFile(metaFor(id, doc, extra), { id, doc, views });
+  const meta=metaFor(id,doc,extra);meta.projectId=ownerFor(meta);
+  if(meta.sigmaSystem||meta.sigmaPages||meta.sampleIcons) meta.exampleKey=meta.sigmaSystem?(doc.kind==='tokens'?'sigma:tokens':`sigma:${doc.name.toLowerCase()}`):meta.sigmaPages?'sigma:pages-and-ui':'sigma:icons';
+  if(meta.welcome)meta.exampleKey='sigma:guide-examples';
+  await db.putFile(meta,{id,doc,views});
   broadcast('created', id);
   return id;
 }
@@ -301,9 +312,9 @@ export async function duplicateFile(id) {
   if (id === currentFileId) await flushSave();
   const file = await loadFile(id);
   if (!file) return null;
-  const doc = structuredClone(file.doc);
+  const doc=file.doc.figmaImport?deserializeDocument(serializeDocument(file.doc)):structuredClone(file.doc);
   doc.name = `${file.meta.name} (copy)`;
-  return createFile(doc, structuredClone(file.views), { thumbnail: file.meta.thumbnail });
+  return createFile(doc, structuredClone(file.views), { thumbnail:file.meta.thumbnail,...(isSampleFile(file.meta)?{projectId:null}:{}) });
 }
 
 // Erase a file for good (with its versions). The files home only does this from the Archive.
@@ -502,6 +513,7 @@ export async function welcomeFile() {
   // The shipped Tokens library now contains only Sigma's interface design system.
   const teaching = sampleTokenDocument().collections;
   const doc = welcomeDocument(teaching, { icons: icons?.published.icons || null });
+  doc.name='Guide examples';
   doc.variables = { collections: teaching };
   doc.libraries = [libraryEntry(lib.id, lib.name, lib.published)];
   if (icons) {
@@ -524,7 +536,7 @@ export async function welcomeFile() {
   }
   const pagesDoc = sigmaPagesDocument(lib.published.collections);
   pagesDoc.libraries = [libraryEntry(lib.id, lib.name, lib.published)];
-  systemIds.push(await createFile(pagesDoc, {}, { sample:true, sigmaPages:SIGMA_PAGES_VERSION }));
+  systemIds.push(await createFile(pagesDoc, {}, {sample:true,sigmaPages:SIGMA_PAGES_VERSION,sigmaPagesSourceHash:SIGMA_PAGES_SOURCE_HASH}));
   // Create the Guide last: an interrupted setup can safely retry without a partial current guide.
   const id = await createFile(doc, {}, { welcome: WELCOME_VERSION });
   await opticsOnce(icons);
@@ -610,11 +622,11 @@ export function setCurrentFile(id, { sample = false } = {}) {
 // A copy of the open file as a file of your own (Make an editable copy, for a Welcome to Sigma file).
 export async function duplicateCurrent() {
   if (!state.doc) return null;
-  const doc = structuredClone(state.doc);
+  const doc=state.doc.figmaImport?deserializeDocument(serializeDocument(state.doc)):structuredClone(state.doc);
   delete doc.published;
   delete doc.publishedComponents;
   doc.name = `${doc.name || 'Untitled'} (copy)`;
-  return createFile(doc, structuredClone(state.pageViews || {}));
+  return createFile(doc,structuredClone(state.pageViews||{}),currentSample?{projectId:null}:{});
 }
 
 /** Keep the current temporary edits as a regular file, and open it. */
@@ -909,4 +921,14 @@ export async function updateThumbnail() {
     return;
   }
   if (await db.updateFile(id, (meta) => ({ meta: { ...meta, thumbnail } }))) broadcast('thumbnail', id);
+}
+
+// Refresh interface reference screens in place: their bookmark and project owner survive.
+export async function refreshSigmaPages() {
+  const meta=(await listFiles()).filter(f=>f.sample&&f.sigmaPages).sort((a,b)=>b.updatedAt-a.updatedAt)[0];
+  if(!meta||meta.sigmaPagesSourceHash===SIGMA_PAGES_SOURCE_HASH)return;
+  const file=await loadFile(meta.id),lib=file.doc.libraries?.[0];
+  if(!lib)return;
+  const doc=sigmaPagesDocument(lib.collections);doc.libraries=file.doc.libraries;
+  await replaceFile(meta.id,doc,{sigmaPages:SIGMA_PAGES_VERSION,sigmaPagesSourceHash:SIGMA_PAGES_SOURCE_HASH});
 }

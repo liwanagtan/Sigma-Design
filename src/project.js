@@ -81,6 +81,7 @@ function apply(info, via) {
   project.connected = true;
   project.via = via;
   project.name = info.name;
+  project.identity=info.id||`repository-legacy-${encodeURIComponent(info.name)}`;
   project.files = info.files || [];
   project.config = info.config || null;
   changed();
@@ -112,7 +113,7 @@ export async function connectWith(custom) {
 }
 
 // ---------- files in the browser ----------
-const isProjectMeta = (m) => m?.project?.name && m.project.name === project.name;
+const isProjectMeta = (m) => m?.project?.name && m.project.name===project.name&&(!m.project.identity||m.project.identity===project.identity);
 export const projectMetaOf = async (id) => (await listFiles()).find((m) => m.id === id) || null;
 async function cachedFiles() {
   return (await listFiles()).filter(isProjectMeta);
@@ -176,11 +177,11 @@ async function bring(path, { force = false, texts = new Map(), seen = new Set() 
   const projectMeta = { name: project.name, path, mtime, hash };
   if (meta) {
     if (!force && (await hasUnsavedProjectChanges(meta.id))) return meta.id; // keep the changes made here
-    await replaceFile(meta.id, doc, { project: projectMeta });
+    await replaceFile(meta.id, doc, { project:{...projectMeta,identity:project.identity},projectId:project.identity });
     if (meta.id === getCurrentFileId()) window.dispatchEvent(new CustomEvent('sigma:reopen'));
     return meta.id;
   }
-  return createFile(doc, {}, { project: projectMeta });
+  return createFile(doc, {}, { project:{...projectMeta,identity:project.identity},projectId:project.identity });
 }
 
 // Bring a project file into the browser without opening it (tests, and files other files use).
@@ -243,7 +244,7 @@ export async function saveToProject({ force = false } = {}) {
   try {
     const base = force ? (await adapter.read(path).catch(() => null))?.mtime || 'new' : inProject ? meta.project.mtime : 'new';
     const { mtime, code } = await adapter.write(path, text, base);
-    await updateFileMeta(id, { project: { name: project.name, path, mtime, hash: textHash(text) } });
+    await updateFileMeta(id, {project:{name:project.name,identity:project.identity,path,mtime,hash:textHash(text)},projectId:project.identity});
     state.doc.project = { path };
     window.dispatchEvent(new CustomEvent('sigma:project-saved'));
     banner(null);
@@ -286,7 +287,8 @@ export async function newProjectFile(doc, { open = true, paths = {} } = {}) {
   if (!adapter) return null;
   const path = freePath(fileKind(doc), doc.name);
   const known = await pathMap();
-  const { text } = serializeForProject(doc, { pathOf: (id) => paths[id] || known(id), path });
+  const {text,warnings}=serializeForProject(doc,{pathOf:id=>paths[id]||known(id),path});
+  if(warnings.length){toast('Include linked token, icon and component files in this repository move.');return null;}
   try {
     await adapter.write(path, text, 'new');
     await refresh();
@@ -312,10 +314,12 @@ async function poll({ force = false } = {}) {
   try {
     const before = JSON.stringify(project.files);
     const info = await adapter.list();
-    if (!info) return;
+    if(!info){if(project.connected){project.connected=false;changed();}return;}
+    const reconnect=!project.connected;project.connected=true;
+    const identity=info.id||project.identity,identityChanged=identity!==project.identity;project.identity=identity;project.name=info.name;
     project.files = info.files || [];
     project.config = info.config || null;
-    if (JSON.stringify(project.files) !== before) changed();
+    if(reconnect||identityChanged||JSON.stringify(project.files)!==before)changed();
     await checkOpenFile();
   } catch (err) {
     if (project.connected) {

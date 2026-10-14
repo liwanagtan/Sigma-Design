@@ -9,6 +9,8 @@ change keep the old names.
 
 **What's next, in order:**
 
+**Project architecture — implemented:** restored project-based navigation with a separate Drafts scope, built-in Sigma and Polaris-inspired Optics sample projects, scoped file lists, a sidebar project selector and creation flow, and a documentation-style Welcome Guide. See [Project-based Sigma architecture](projects-architecture.md) for the data model, migration, repository compatibility, phases, and acceptance criteria.
+
 0. **Sigma’s own design system in Welcome to Sigma is implemented:** Tokens has Light/Dark modes; Foundations and Components use Sigma’s interface styles. The app appearance switch is implemented too (see below).
 1. **Finalize the project:** Optics is in (Phases 36–37: every Polaris component, a page each), as files of your own. What's still open: plugins and automation (Part D, "Later": large, needs an API design first) and what needs a backend (real sharing in Part C; the hosted team service in Part E). The license files are in (see "Open source").
 2. **Beyond Figma, next (Parts I–K, in this order):** AI inside the editor (Part I), Figma interop: import
@@ -1393,3 +1395,11 @@ Imported Figma files persist with shared-source byte chunks in IndexedDB and ver
 Welcome design-system audit fixes: corrected native-select and compound dropdown state extraction; added dimensions, shorthand padding, Foundation numeric/type aliases, hexadecimal/variable shadow colors and focus rings; bound component layouts, checkbox surfaces and elevation; composed menus/segmented controls from item instances; pinned labelled Foundations references and surfaces; published actual Sigma UI glyphs and strengthened token/icon reuse content checks. Regression tests cover dependencies, reference modes, states, composition and glyph publication.
 
 Welcome Icons now contains only Sigma UI glyphs. Guide examples use those IDs; Lucide remains a separate import option and supplies Optics Icons independently.
+
+## Implemented: project-based home, Drafts, and Documentation
+
+Move the current Welcome example files into a Sigma project, and the sample design system inspired by Polaris into an Optics project. Keep unassigned personal files in Drafts, with a Move to project flow; Drafts is a menu under Recents showing all unowned files, not a project or project entry. Design, Tokens, and Icons show only files belonging to the selected project. Add a sidebar Projects group and New project flow. Rename the guide navigation to Documentation and anchor it at the bottom of the sidebar. Final documentation contents are deferred until before shipping. Preserve existing file IDs, library links, versions, sample reset behavior, and repository-backed storage.
+
+Implementation specification: [Project-based Sigma architecture](projects-architecture.md). Implemented with metadata-only ownership migration, scoped file creation and navigation, browser/repository adapters, draft moves, explicit external-library browsing, and ten documentation chapters.
+
+Project workspace refinement: removed sidebar file-type navigation; project pages now have editable titles and project icons (cover controls removed; descriptions hidden for now), with files grouped into Design, Tokens, and Icons. Moved global search and Create New (Design, Tokens, Icons, Import) into the sidebar. Recents spans projects and Drafts with opening-time ordering; creation outside a project targets Drafts. Grid/list controls stay above files and share the Home view preference. Project icons remain editable from the sidebar and workspace header.

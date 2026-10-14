@@ -684,6 +684,10 @@ export const UI_SOURCE = {
       "padding-left": "8px"
     },
     {
+      "gap": "2px",
+      "min-height": "0"
+    },
+    {
       "height": "32px",
       "padding": "0 10px",
       "border-radius": "6px",
@@ -1170,8 +1174,9 @@ export const UI_SOURCE = {
       "padding-left": "4px"
     },
     {
-      "padding": "8px 0 0",
-      "padding-top": "8px",
+      "padding": "0",
+      "gap": "2px",
+      "padding-top": "0px",
       "padding-right": "0px",
       "padding-bottom": "0px",
       "padding-left": "0px"
@@ -2279,6 +2284,84 @@ export const UI_SOURCE = {
       "padding-right": "28px",
       "padding-top": "0px",
       "padding-bottom": "0px"
+    },
+    {
+      "padding-right": "6px",
+      "padding-top": "0px",
+      "padding-bottom": "0px",
+      "padding-left": "0px"
+    },
+    {
+      "gap": "16px",
+      "padding": "12px 0 40px",
+      "padding-top": "12px",
+      "padding-right": "0px",
+      "padding-bottom": "40px",
+      "padding-left": "0px"
+    },
+    {
+      "padding": "9px 12px",
+      "border-radius": "6px",
+      "padding-top": "9px",
+      "padding-right": "12px",
+      "padding-bottom": "9px",
+      "padding-left": "12px"
+    },
+    {
+      "padding": "20px",
+      "border-radius": "10px",
+      "font-size": "14px",
+      "padding-top": "20px",
+      "padding-right": "20px",
+      "padding-bottom": "20px",
+      "padding-left": "20px"
+    },
+    {
+      "font-size": "24px"
+    },
+    {
+      "gap": "2px",
+      "padding-left": "10px",
+      "border-radius": "6px",
+      "padding-top": "0px",
+      "padding-right": "0px",
+      "padding-bottom": "0px"
+    },
+    {
+      "width": "24px",
+      "height": "24px",
+      "font-size": "16px"
+    },
+    {
+      "width": "32px",
+      "height": "32px",
+      "font-size": "20px"
+    },
+    {
+      "width": "100%",
+      "height": "32px"
+    },
+    {
+      "padding": "24px 32px",
+      "padding-top": "24px",
+      "padding-right": "32px",
+      "padding-bottom": "24px",
+      "padding-left": "32px"
+    },
+    {
+      "font-size": "14px"
+    },
+    {
+      "width": "24px",
+      "height": "24px",
+      "font-size": "18px"
+    },
+    {
+      "width": "18px",
+      "height": "18px"
+    },
+    {
+      "box-shadow": "0 1px 0 var(--accent)"
     },
     {
       "width": "auto",

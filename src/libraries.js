@@ -1,3 +1,4 @@
+import { inScope, projectList } from './projects.js';
 // Libraries: a design file links
 //   - token files (doc.libraries): published design tokens
 //   - component libraries (doc.componentLibraries): components published by other design files
@@ -584,6 +585,7 @@ export function modal(title, body, footer = '') {
     window.removeEventListener('keydown', onKey, true);
   };
   const onKey = (e) => {
+    if([...document.querySelectorAll('.modal-backdrop')].at(-1)!==wrap)return;
     if (isAsking()) return; // Escape is the open dialog's
     if (e.key === 'Escape') {
       e.stopImmediatePropagation();
@@ -608,8 +610,8 @@ const versionStatus = (published, lib) => (!published ? '<span class="muted">Not
 const openBtn = (id) => `<button class="btn" data-open="${id}" title="Open the file">Open</button>`;
 
 // Design files: choose the one token file this file uses.
-export async function openDesignTokensDialog() {
-  const files = (await listTokenFiles()).filter(linkable);
+export async function openDesignTokensDialog(allScopes=false) {
+  const files=await scopedLibraries((await listTokenFiles()).filter(linkable),allScopes,libraries().map(l=>l.fileId));
   const using = new Map(libraries().map((l) => [l.fileId, l]));
   const several = libraries().length > 1;
   const rows = files.map((f) => {
@@ -627,10 +629,11 @@ export async function openDesignTokensDialog() {
     (rows || '<div class="muted lib-empty">No tokens files yet. Create one from the home page and publish it.</div>') +
     (deps.length ? `<p class="muted">Also included, because the tokens file points at them: ${deps.map((d) => `${esc(d.name)} v${d.version}`).join(', ')}.</p>` : '');
   const footer = tokenFile() && !several ? `<button class="btn" data-stop="${tokenFile().fileId}">Stop using “${esc(tokenFile().name)}”</button><span class="spacer"></span><button class="btn" data-close>Done</button>` : '<button class="btn" data-close>Done</button>';
-  const wrap = modal('Design tokens', body, footer);
+  const wrap = modal('Design tokens', libraryScopeButton(allScopes)+body, footer);
   wrap.addEventListener('click', async (e) => {
     const b = e.target.closest('button');
     if (!b) return;
+    if(b.hasAttribute('data-all-libraries')){wrap.remove();return openDesignTokensDialog(!allScopes);}
     if (b.dataset.use) await useTokenFile(b.dataset.use);
     else if (b.dataset.stop) stopUsingTokenFile(b.dataset.stop);
     else if (b.dataset.open) {
@@ -643,9 +646,9 @@ export async function openDesignTokensDialog() {
 }
 
 // Design files: link component libraries. Token files: link other token files (to point tokens at theirs).
-export async function openLibrariesDialog() {
-  if (!isDesignFile()) return openLinkedTokenFilesDialog();
-  const compFiles = (await listComponentLibraries()).filter(linkable);
+export async function openLibrariesDialog(allScopes=false) {
+  if (!isDesignFile()) return openLinkedTokenFilesDialog(allScopes);
+  const compFiles=await scopedLibraries((await listComponentLibraries()).filter(linkable),allScopes,componentLibraries().map(l=>l.fileId));
   const linkedComps = new Map(componentLibraries().map((l) => [l.fileId, l]));
   const compRows = compFiles.map((f) => {
     const lib = linkedComps.get(f.id);
@@ -659,10 +662,11 @@ export async function openLibrariesDialog() {
     libraryRow(COMPONENT_ICON, l.name, `<span class="muted">File archived or deleted · using v${l.version}</span>`, `<button class="btn" data-unlink-components="${l.fileId}">Unlink</button>`)).join('');
   const body = '<p class="muted lib-intro">Component libraries are design files that publish their components. Link one to use its components from Assets; changes arrive when it publishes a new version and you accept it.</p>' +
     (compRows || '<div class="muted lib-empty">No other design file has published components yet. Use <b>Publish components…</b> in a design file’s main menu.</div>');
-  const wrap = modal('Component libraries', body);
+  const wrap = modal('Component libraries', libraryScopeButton(allScopes)+body);
   wrap.addEventListener('click', async (e) => {
     const b = e.target.closest('button');
     if (!b) return;
+    if(b.hasAttribute('data-all-libraries')){wrap.remove();return openLibrariesDialog(!allScopes);}
     if (b.dataset.linkComponents) await linkComponentLibrary(b.dataset.linkComponents);
     else if (b.dataset.unlinkComponents) await unlinkComponentLibrary(b.dataset.unlinkComponents);
     else if (b.dataset.open) {
@@ -675,8 +679,8 @@ export async function openLibrariesDialog() {
 }
 
 // Design files: link icons files, whose icons components can use.
-export async function openIconLibrariesDialog() {
-  const files = (await listIconFiles()).filter(linkable);
+export async function openIconLibrariesDialog(allScopes=false) {
+  const files=await scopedLibraries((await listIconFiles()).filter(linkable),allScopes,iconLibraries().map(l=>l.fileId));
   const linked = new Map(iconLibraries().map((l) => [l.fileId, l]));
   const count = (l) => l.icons.filter((x) => !x.removed).length;
   const rows = files.map((f) => {
@@ -688,10 +692,11 @@ export async function openIconLibrariesDialog() {
     libraryRow(ICONS_ICON, l.name, `<span class="muted">File archived or deleted · using v${l.version}</span>`, `<button class="btn" data-unlink-icons="${l.fileId}">Unlink</button>`)).join('');
   const body = '<p class="muted lib-intro">Icons files hold icons imported from SVG. Link one to use its icons in this file’s components; changes arrive when it publishes a new version and you accept it.</p>' +
     (rows || '<div class="muted lib-empty">No icons files yet. Create one from the home page (<b>+ Icons file</b>), import SVGs and publish it.</div>');
-  const wrap = modal('Icon libraries', body);
+  const wrap = modal('Icon libraries', libraryScopeButton(allScopes)+body);
   wrap.addEventListener('click', async (e) => {
     const b = e.target.closest('button');
     if (!b) return;
+    if(b.hasAttribute('data-all-libraries')){wrap.remove();return openIconLibrariesDialog(!allScopes);}
     if (b.dataset.linkIcons) await linkIconLibrary(b.dataset.linkIcons);
     else if (b.dataset.unlinkIcons) unlinkIconLibrary(b.dataset.unlinkIcons);
     else if (b.dataset.open) {
@@ -703,8 +708,8 @@ export async function openIconLibrariesDialog() {
   });
 }
 
-async function openLinkedTokenFilesDialog() {
-  const tokenFiles = (await listTokenFiles()).filter(linkable);
+async function openLinkedTokenFilesDialog(allScopes=false) {
+  const tokenFiles=await scopedLibraries((await listTokenFiles()).filter(linkable),allScopes,libraries().map(l=>l.fileId));
   const linked = new Map(libraries().map((l) => [l.fileId, l]));
   const rows = tokenFiles.map((f) => {
     const lib = linked.get(f.id);
@@ -717,10 +722,11 @@ async function openLinkedTokenFilesDialog() {
     libraryRow(TOKEN_ICON, l.name, `<span class="muted">Tokens file archived or deleted · using v${l.version}</span>`, `<button class="btn" data-unlink="${l.fileId}">Unlink</button>`)).join('');
   const body = '<p class="muted lib-intro">Link other tokens files to point this file’s tokens at theirs, e.g. brand colors that use core colors. When you publish, the tokens files you point at go along, so design files resolve them too.</p>' +
     (rows || '<div class="muted lib-empty">No other tokens files yet. Create one from the home page and publish it.</div>');
-  const wrap = modal('Linked tokens files', body);
+  const wrap = modal('Linked tokens files', libraryScopeButton(allScopes)+body);
   wrap.addEventListener('click', async (e) => {
     const b = e.target.closest('button');
     if (!b) return;
+    if(b.hasAttribute('data-all-libraries')){wrap.remove();return openLinkedTokenFilesDialog(!allScopes);}
     if (b.dataset.link) await linkLibrary(b.dataset.link);
     else if (b.dataset.unlink) await unlinkLibrary(b.dataset.unlink);
     else if (b.dataset.open) {
@@ -783,3 +789,9 @@ const TOKEN_ICON = '<svg width="16" height="16" viewBox="0 0 14 14" fill="none" 
 export const ICONS_ICON = '<svg width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 1.5l1.6 3.3 3.6.5-2.6 2.5.6 3.6L7 9.7l-3.2 1.7.6-3.6L1.8 5.3l3.6-.5z" stroke-linejoin="round"/></svg>';
 const COMPONENT_ICON = '<svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M6 1.2l1.9 1.9L6 5 4.1 3.1zM6 7l1.9 1.9L6 10.8 4.1 8.9zM3.1 4.1L5 6 3.1 7.9 1.2 6zM8.9 4.1L10.8 6 8.9 7.9 7 6z"/></svg>';
 
+
+function libraryScopeButton(all) {return `<button class="btn" data-all-libraries>${all?'Current project only':'Other projects and Drafts'}</button>`;}
+async function scopedLibraries(files,all,linked) {
+  const projects=await projectList();
+  return files.filter(f=>all||inScope(f)||linked.includes(f.id)).map(f=>({...f,name:inScope(f)?f.name:`${f.name} · ${projects.find(p=>p.id===f.projectId)?.name||'Drafts'}`}));
+}

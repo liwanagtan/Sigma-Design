@@ -46,9 +46,7 @@ document.querySelector('#capture').onclick = async () => {
   const button = document.querySelector('#capture'); button.disabled = true;
   try {
     // Boot the app and its Welcome migrations before resolving fixture IDs.
-    await load('/#/', 'Files home');
-    frame.contentDocument.querySelector('[data-section="welcome"]').click();
-    for (let i=0; i<150 && frame.contentDocument.querySelector('#home-title')?.textContent !== 'Welcome to Sigma'; i++) await wait(100);
+    await load('/#/project/project-sigma/recents','Files home');
     const captures = [];
     for (const name of ['Files home', 'Design editor', 'Tokens', 'Icons']) {
       status.textContent = `Capturing ${name}…`;
