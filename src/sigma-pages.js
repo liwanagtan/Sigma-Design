@@ -6,7 +6,7 @@ import { buildPage } from './capture-to-sigma.js';
 import { createNode, uid } from './store.js';
 
 export const SIGMA_PAGES_VERSION = 15;
-export const SIGMA_PAGES_SOURCE_HASH=PAGE_CAPTURES.sourceHash;
+export const SIGMA_PAGES_SOURCE_HASH=`${PAGE_CAPTURES.sourceHash}:${PAGE_CAPTURES.captureHash || 'legacy'}`;
 export const SIGMA_PAGES_NAME = 'Pages and UI';
 
 function svgImage(svg, box, color) {

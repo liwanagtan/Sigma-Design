@@ -1,5 +1,5 @@
 // Sigma's local server (Part F, Phase 32): serves the editor and, when Sigma runs in a project, the project
-// API the editor uses to read and write its Sigma files. No dependencies (Node 18+). It replaces serve.py.
+// API the editor uses to read and write its Sigma files, plus the local terminal service (Node 18+).
 //
 //   GET  /api/project                    the project: { name, files: [{ path, kind, name, mtime, size }], config }
 //   GET  /api/project/file?path=P        a file's text (header X-Sigma-Mtime: its modification time)
@@ -13,6 +13,7 @@
 // 127.0.0.1 only, answers only requests addressed to localhost, and writes only for requests that carry the
 // X-Sigma header (which pages on other sites can't send), so other websites can't read or change a project.
 // Every write is logged.
+import { terminalService } from './terminal.mjs';
 import { createHash } from 'node:crypto';
 import { createServer as httpServer } from 'node:http';
 import { readFileSync, existsSync, statSync, readdirSync, mkdirSync, writeFileSync, renameSync, realpathSync } from 'node:fs';
@@ -293,8 +294,13 @@ export function startServer({ port = 6200, strictPort = false, tries = 20, ...op
   const handler = sigmaHandler(options);
   return new Promise((ok, fail) => {
     const attempt = (p, left) => {
-      const server = httpServer(handler);
+      let terminal;
+      const server = httpServer((req, res) => req.url.startsWith('/api/terminal/') ? terminal.handle(req, res).catch(() => { if (!res.headersSent) res.writeHead(500); res.end(); }) : handler(req, res));
+      terminal = terminalService(server, options);
+      const close = server.close.bind(server);
+      server.close = (...args) => { terminal.dispose(); return close(...args); };
       server.once('error', (err) => {
+        terminal.dispose();
         if (err.code === 'EADDRINUSE' && !strictPort && left > 0) attempt(p + 1, left - 1);
         else fail(err.code === 'EADDRINUSE' ? new Error(`port ${p} is in use (try --port)`) : err);
       });

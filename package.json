@@ -32,7 +32,9 @@
     "build:welcome": "node tools/design-system/build.mjs",
     "build:pages": "node tools/design-system/build-pages.mjs",
     "test:node": "node --test tools/test/*.test.mjs",
-    "build:figma": "node tools/figma/build.mjs"
+    "build:figma": "node tools/figma/build.mjs",
+    "postinstall": "node tools/terminal-install.mjs",
+    "build:terminal": "node tools/build-terminal.mjs"
   },
   "engines": {
     "node": ">=18"
@@ -48,5 +50,13 @@
   "license": "SEE LICENSE IN LICENSE",
   "devDependencies": {
     "openfig-core": "0.4.1"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "0.11.0",
+    "@xterm/xterm": "6.0.0",
+    "ws": "8.22.0"
+  },
+  "optionalDependencies": {
+    "node-pty": "1.1.0"
   }
 }

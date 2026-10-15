@@ -27,10 +27,36 @@ Sigma is also a design tool on its own, with files saved in the browser:
 npx sigma-design standalone
 ```
 
+## Built-in terminal
+
+Open **Terminal** from the file tools rail in a Design or Tokens file, then choose **New terminal**.
+When Sigma runs through `npx sigma-design dev`, the shell starts in that workspace's root. Browser-only
+projects (including Sigma/Optics examples and Drafts) require **Connect this workspace** before creating
+a shell. In standalone mode, the panel explains how to start the local project server; it cannot run a shell.
+
+The dock resizes from its top edge (or Arrow keys on the resize handle). Sessions are shared across
+Design/Tokens files attached to the same workspace. **Hide** keeps commands running; **End session**
+terminates the shell and its jobs. Ctrl+C interrupts a command. Shift+Tab leaves terminal input so you can
+reach the dock controls. Select output and use **Copy**, or paste using your system shortcut. **Clear**
+clears the visible scrollback; reconnect can restore the server's recent output. **Reconnect** recovers
+a dropped connection; a server restart ends old sessions and never replays commands.
+
+Commands run with your local user's permissions: the workspace path is the starting directory, not a
+filesystem sandbox. The server is loopback-only and requires same-origin capabilities. Four sessions,
+12 connections, 256 KiB of recent output per session and 2,000 browser scrollback lines are retained in
+memory. Detached sessions expire after 15 minutes. Shell history is not saved by default; startup scripts
+are skipped so they cannot silently re-enable history persistence. The inherited environment/PATH remains
+available. Supported shell choices are zsh, bash, sh, and dash via the server's `SHELL` environment variable.
+
+The macOS arm64 workflow and fresh-package PTY installation are verified. Linux has CI coverage configured
+but has not yet been verified for this change; Windows execution is explicitly unavailable pending validation.
+If native PTY installation is unavailable, the editor still starts and the panel reports how to rebuild
+`node-pty`. The terminal does not belong to the design document, published libraries, or undo history.
+
 ## Developing Sigma
 
 ES modules need a web server, so opening `index.html` directly won't work. Sigma's server (`tools/server.mjs`)
-turns off browser caching, so code changes show up on reload:
+turns off browser caching, so code changes show up on reload. Run `npm install` first:
 
 ```bash
 node bin/sigma-design.mjs standalone --port 5173       # Sigma on its own

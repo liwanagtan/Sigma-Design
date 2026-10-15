@@ -1,0 +1,63 @@
+<!doctype html><html><head><link rel="stylesheet" href="../../styles.css"><link rel="stylesheet" href="../../src/terminal.css"></head><body>
+<script type="module">
+// Isolated renderer/transport regression fixture: never opens an OS shell.
+import { setTerminalContext, toggleTerminal } from '../../src/terminal.js';
+const wait = () => new Promise(resolve => setTimeout(resolve, 30));
+const assert = (condition, text) => { if (!condition) throw Error(text); };
+let instance = 'server-a', creates = 0, records = [], input = [], sockets = [];
+const workspace = { id:'workspace', name:'Test workspace', path:'/test/workspace' };
+window.fetch = async (url, options = {}) => {
+  let body;
+  if (url.endsWith('/connect')) body = { capability:'test', instance, workspace, supported:true };
+  else if (url.endsWith('/sessions') && options.method === 'POST') { body = { id:'session-' + ++creates, workspaceId:workspace.id, shell:'sh', exited:false }; records.push(body); }
+  else if (url.endsWith('/sessions')) body = { sessions:records };
+  else { records = records.filter(s => s.id !== JSON.parse(options.body).id); body = {}; }
+  return { ok:true, json:async () => body };
+};
+class Socket {
+  static OPEN = 1; static CONNECTING = 0;
+  constructor() { this.readyState = 0; sockets.push(this); queueMicrotask(() => { this.readyState = 1; this.onopen?.(); }); }
+  send(raw) {
+    const m = JSON.parse(raw);
+    if (m.type === 'attach') queueMicrotask(() => this.onmessage?.({data:JSON.stringify({type:'attached', output:'\x1b[31m<svg onload=evil>safe text</svg>\x1b[0m\r\n', bytes:0, exited:false})}));
+    if (m.type === 'input') input.push(m.data);
+  }
+  close() { this.readyState = 3; queueMicrotask(() => this.onclose?.({code:1000})); }
+}
+window.WebSocket = Socket;
+window.runTerminalChecks = async () => {
+  const old = localStorage.getItem('sigma.terminal.visible');
+  try {
+    setTerminalContext({id:'design', name:'Design', kind:'design', projectId:'workspace'});
+    const dock = document.querySelector('#terminal-dock');
+    if (dock.hidden) toggleTerminal();
+    await wait();
+    assert(creates === 0, 'Opening dock must not start a shell');
+    dock.querySelector('[data-terminal-new]').click(); await wait();
+    assert(creates === 1 && dock.querySelectorAll('[role=tab]').length === 1, 'New creates one session');
+    assert(!dock.querySelector('svg'), 'Terminal output cannot create markup');
+    let editorEvents = 0;
+    const listener = () => editorEvents++;
+    window.addEventListener('keydown', listener);
+    const textarea = dock.querySelector('textarea');
+    for (const key of ['Backspace', 'Delete', 'r', 'f', 'z', 's']) textarea.dispatchEvent(new KeyboardEvent('keydown', {key,ctrlKey:true,bubbles:true}));
+    window.removeEventListener('keydown', listener);
+    assert(editorEvents === 0, 'Terminal keystrokes escaped into editor shortcuts');
+    setTerminalContext({id:'tokens', name:'Tokens', kind:'tokens', projectId:'workspace'}); await wait();
+    assert(creates === 1 && sockets.length === 1, 'Switching file must reuse the session');
+    dock.querySelector('[data-terminal-hide]').click(); assert(dock.hidden, 'Hide did not hide');
+    toggleTerminal(); await wait(); assert(sockets.length === 1, 'Hide/reopen must preserve transport');
+    setTerminalContext({id:'other', name:'Other project', kind:'design', projectId:'other'}); await wait();
+    assert(dock.querySelectorAll('[role=tab]').length === 0 && dock.querySelector('[data-terminal-new]').disabled, 'Other project exposed an attached shell');
+    setTerminalContext({id:'icons',name:'Icons',kind:'icons',projectId:'workspace'}); assert(dock.hidden, 'Icons must not display a terminal');
+    setTerminalContext({id:'tokens',name:'Tokens',kind:'tokens',projectId:'workspace'}); await wait();
+    instance = 'server-b'; records = [];
+    dock.querySelector('[data-terminal-reconnect]').click(); await wait();
+    assert(dock.querySelectorAll('[role=tab]').length === 0, 'Restart retained old sessions');
+    assert(dock.querySelector('.terminal-status').textContent.includes('Server restarted'), 'Restart not explained');
+    assert(creates === 1, 'Restart automatically launched a shell');
+    setTerminalContext(null); assert(dock.hidden, 'Home must hide the terminal');
+    return {passed:true};
+  } finally { setTerminalContext(null); if (old === null) localStorage.removeItem('sigma.terminal.visible'); else localStorage.setItem('sigma.terminal.visible',old); }
+};
+</script></body></html>

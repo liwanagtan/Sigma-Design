@@ -1,3 +1,4 @@
+import { toggleTerminal } from './terminal.js';
 // The file tools rail: a thin column of icon buttons at the left edge of every file (design, tokens and icons
 // files). At the top, the Σ menu and Home; then the tools for that kind of file. A design file's
 // are for what it uses (its tokens file, its tokens and their audit, its component and icon libraries);
@@ -84,6 +85,7 @@ export function railHTML(kind) {
 document.addEventListener('click', (e) => {
   const b = e.target.closest?.('[data-rail]');
   const kind = b?.closest('[data-rail-kind]')?.dataset.railKind;
+  if (b?.dataset.rail === 'terminal') { toggleTerminal(); return; }
   if (b && kind) KINDS[kind]?.find((t) => t.id === b.dataset.rail)?.open();
 });
 
@@ -91,7 +93,9 @@ const lastHTML = new WeakMap();
 /** Draw a rail's tools (only when something about them changed). */
 export function renderRailTools(container, kind = container?.dataset.railKind) {
   if (!container || !state.doc || !KINDS[kind]) return;
-  const html = KINDS[kind].map((t) => {
+  const tools = [...KINDS[kind]];
+  if (kind === 'design' || kind === 'tokens') tools.push({ id: 'terminal', label: 'Terminal', sepBefore: true, icon: svg('<path d="M4 5l5 5-5 5M11 15h5"/>') });
+  const html = tools.map((t) => {
     const st = t.state ? t.state() : {};
     return `${t.sepBefore ? '<div class="rail-sep"></div>' : ''}<button class="rail-btn" data-rail="${t.id}" aria-label="${esc(t.label)}"${st.detail ? ` data-tip-detail="${esc(st.detail)}"` : ''}>${t.icon}` +
       `${st.alert ? '<span class="rail-dot"></span>' : st.badge ? `<span class="rail-badge">${st.badge}</span>` : ''}</button>`;

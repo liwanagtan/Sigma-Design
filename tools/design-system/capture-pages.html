@@ -44,6 +44,7 @@ function prune(node, parentClip={ x:0,y:0,w:1280,h:900 }) {
 }
 document.querySelector('#capture').onclick = async () => {
   const button = document.querySelector('#capture'); button.disabled = true;
+  const terminalVisibility = localStorage.getItem('sigma.terminal.visible');
   try {
     // Boot the app and its Welcome migrations before resolving fixture IDs.
     await load('/#/project/project-sigma/recents','Files home');
@@ -56,6 +57,8 @@ document.querySelector('#capture').onclick = async () => {
       if (name !== 'Files home' && !file) throw new Error(`Current Welcome file ${targetName} is missing.`);
       if (name !== 'Files home') await load(`/#/file/${file.id}`, name);
       const doc = frame.contentDocument;
+      // Capture the default closed dock without stopping a workspace shell.
+      if (!doc.querySelector('#terminal-dock')?.hidden) doc.querySelector('[data-terminal-hide]')?.click();
       // Home updates its heading before asynchronous thumbnail/card rendering finishes.
       // Require the card/image snapshot to settle before taking its geometry.
       let previous = '', stable = 0;
@@ -105,6 +108,10 @@ document.querySelector('#capture').onclick = async () => {
     document.querySelector('#output').value = JSON.stringify({ sourceHash, captures });
     status.textContent = 'Done — four screens captured. Copy the JSON to work/sigma-pages-captures.json, then run npm run build:pages.';
   } catch (error) { status.textContent = error.message; }
-  finally { button.disabled=false; }
+  finally {
+    if (terminalVisibility === null) localStorage.removeItem('sigma.terminal.visible');
+    else localStorage.setItem('sigma.terminal.visible', terminalVisibility);
+    button.disabled=false;
+  }
 };
 </script>

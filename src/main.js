@@ -1,3 +1,4 @@
+import { setTerminalContext } from './terminal.js';
 import { recordFileOpened, initializeProjects, selectedProjectId, selectProject, projectList, resolveProjectId } from './projects.js';
 import './select.js';
 import { applyWelcomeAppearance } from './welcome-appearance.js';
@@ -138,6 +139,7 @@ window.addEventListener('sigma:figma-imported', async event => {
 // ---------- screens ----------
 // `discard`: drop unsaved local changes instead of writing them (reloading another tab's version).
 async function leaveEditor({ discard = false } = {}) {
+  setTerminalContext(null);
   if (!getCurrentFileId()) return;
   clearViewing(); // an older version on screen is never saved over the file
   if (state.editingTextId) stopEditing();
@@ -190,6 +192,7 @@ async function showFile(id, { force = false, discard = false } = {}) {
   state.viewOnly = false; // Welcome files allow temporary edits; persistence skips samples.
   document.body.classList.remove('view-only');
   setCurrentFile(id, { sample });
+  setTerminalContext(file.meta);
   homeEl.hidden = true;
   if (fileKind(file.meta) === 'icons') {
     // Icon files have no canvas either: a grid of their icons.

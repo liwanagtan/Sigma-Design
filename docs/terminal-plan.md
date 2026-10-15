@@ -1,6 +1,6 @@
 # Phase 52: Built-in terminal
 
-Status: **Planned**. Added 15 October 2026. Scope: Design and Tokens files.
+Status: **In progress**. Added 15 October 2026. Scope: Design and Tokens files.
 
 ## Purpose and UI
 
@@ -61,3 +61,13 @@ A terminal session belongs to a local workspace, not to the design document.
 ## Relationship to other phases
 
 Code creation (Phase 51) can export or apply files independently; this terminal adds an integrated way to run their checks/builds. It also supports token sync and existing CLI commands. Future Assistant tool execution requires its own authorization/context design and is not implicit in adding a user-operated terminal. Icons files and Home are outside this phase's initial UI scope.
+
+## Implementation progress
+
+- Implemented: local PTY service with same-origin HTTP/WebSocket capabilities and workspace identity checks; shared Design/Tokens dock; explicit attachment for browser files; session tabs; resizer; keyboard isolation; copy/paste/clear; foreground process and exit status; hide/reopen; reconnect/server restart; shell/job cleanup.
+- Limits: four sessions, twelve transports, 16 KiB input messages, 256 KiB recent server output, 512 KiB outstanding browser output with write acknowledgements, 2,000 scrollback lines, fifteen-minute detached retention. Transcripts, capabilities, and default shell history are memory-only.
+- Pinned MIT dependencies: xterm.js 6.0.0, fit addon 0.11.0, node-pty 1.1.0, ws 8.22.0. `tools/build-terminal.mjs` reproduces checked-in browser assets/licenses. Postinstall repairs the packaged Unix PTY helper's executable bit.
+- Supported shells: zsh/bash/sh/dash, selected from server `SHELL`. Interactive startup scripts are skipped to preserve memory-only history. The inherited environment/PATH is retained. Unsupported or missing shells give a panel error; there is no command-log fallback.
+- Verified locally on macOS arm64: real Design/Tokens commands and shared environment, hide/reopen, server restart, Ctrl+C, resize, output limits, origin/capability rejection, concurrent session limits, stale-save protection, child cleanup, and fresh npm package installation. Browser regression covers event isolation, safe text rendering, project separation, and restart without automatic execution.
+- Release gate remaining: Linux CI execution and broader platform validation. Node CI installs runtime dependencies; a macOS terminal job is added. Windows terminal execution is deliberately unavailable with guidance until its process lifecycle is validated.
+- User instructions and operational limits are in the README. No terminal commands are initiated by document content or Assistant tools. Code-generation integration remains dependent on Phase 51.

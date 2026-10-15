@@ -50,9 +50,10 @@ async function serve({ project }) {
   const log = (line) => console.log(`  ${new Date().toLocaleTimeString()}  ${line}`);
   // In a project, the code and Sigma follow each other while it runs (--no-sync to turn that off).
   const sync = project && !flag('no-sync') ? startLiveSync({ root: project, log }) : null;
-  const { url } = await startServer({ port, strictPort: !!value('port'), project, log, afterSave: sync?.afterSave, actions: project ? projectActions(project) : {} });
+  const { server, url } = await startServer({ port, strictPort: !!value('port'), project, log, afterSave: sync?.afterSave, actions: project ? projectActions(project) : {} });
   console.log(`Sigma ${pkg.version} running at ${url}${project ? `  (project: ${project}${sync ? ', live sync on' : ''})` : '  (standalone)'}`);
   console.log('Ctrl+C to stop.');
+  for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => { server.close(); process.exit(0); });
   if (!flag('no-open')) openBrowser(url);
 }
 

@@ -33,5 +33,6 @@ const pack = node => {
 };
 data.captures.forEach(p => pack(p.capture.tree));
 const packed = { ...data, styles, authored };
-const output = `// Generated from rendered Sigma screens by tools/design-system/capture-pages.html.\nconst packed = ${JSON.stringify(packed)};\nconst expand = n => { n.style = packed.styles[n.style]; n.authored = packed.authored[n.authored]; (n.children || []).forEach(expand); };\npacked.captures.forEach(p => expand(p.capture.tree));\nexport const PAGE_CAPTURES = { sourceHash:packed.sourceHash, captures:packed.captures };\n`;
+const captureHash = createHash('sha256').update(JSON.stringify(packed)).digest('hex');
+const output = `// Generated from rendered Sigma screens by tools/design-system/capture-pages.html.\nconst packed = ${JSON.stringify(packed)};\nconst expand = n => { n.style = packed.styles[n.style]; n.authored = packed.authored[n.authored]; (n.children || []).forEach(expand); };\npacked.captures.forEach(p => expand(p.capture.tree));\nexport const PAGE_CAPTURES = { sourceHash:packed.sourceHash, captureHash:'${captureHash}', captures:packed.captures };\n`;
 writeFileSync(new URL('../../src/sigma-page-captures.js', import.meta.url), output);

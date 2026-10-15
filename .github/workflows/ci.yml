@@ -21,6 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+      - run: npm ci
       - run: npm run test:node
 
   browser:
@@ -45,6 +46,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - run: npm ci
       # Every example project's Sigma files are valid, and their tokens and icons match the code.
       - run: |
           for project in examples/*/; do
@@ -53,3 +55,14 @@ jobs:
               node bin/sigma-design.mjs check "$project"
             fi
           done
+
+  terminal-macos:
+    name: Terminal lifecycle (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: node --test tools/test/terminal.test.mjs

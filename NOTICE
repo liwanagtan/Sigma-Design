@@ -14,3 +14,7 @@ Third-party parts keep their own licenses, which the Commons Clause doesn't chan
 
 - Figma file importer: openfig-core 0.4.1, fflate, fzstd and kiwi-schema, MIT licenses.
   Attribution and license terms: src/vendor/figma-parser.NOTICE.txt.
+
+- Terminal: @xterm/xterm 6.0.0 and @xterm/addon-fit 0.11.0 (https://xtermjs.org),
+  node-pty 1.1.0 (https://github.com/microsoft/node-pty), and ws 8.22.0
+  (https://github.com/websockets/ws), MIT licenses distributed with the installed packages.
