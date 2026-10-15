@@ -2467,6 +2467,24 @@ export const UI_SOURCE = {
       "padding-left": "4px"
     },
     {
+      "padding": "14px 32px 0",
+      "padding-top": "14px",
+      "padding-right": "32px",
+      "padding-bottom": "0px",
+      "padding-left": "32px"
+    },
+    {
+      "width": "100%",
+      "min-height": "30px",
+      "padding": "4px 0",
+      "border-radius": "0",
+      "font-size": "12px",
+      "padding-top": "4px",
+      "padding-right": "0px",
+      "padding-bottom": "4px",
+      "padding-left": "0px"
+    },
+    {
       "width": "auto",
       "height": "24px",
       "border-radius": "5px"

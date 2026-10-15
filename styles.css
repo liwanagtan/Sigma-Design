@@ -1280,3 +1280,13 @@ select:disabled { opacity: 0.45; cursor: default; }
 .comp-doc-role span:last-child { background:var(--input); border-radius:4px; padding:2px 6px; }
 .comp-doc-status { padding-top:8px; border-top:1px solid var(--border); }
 .comp-doc-section code { font:inherit; font-family:ui-monospace,monospace; background:var(--input); padding:2px 4px; border-radius:3px; }
+
+.project-description-area { padding:14px 32px 0; flex-shrink:0; }
+#project-description { display:block; width:100%; min-height:30px; max-height:132px; resize:none; overflow:auto; padding:4px 0; border:0; border-radius:0; outline:none; background:transparent; color:var(--muted); font-family:inherit; font-size:12px; line-height:1.6; }
+#project-description:focus { color:var(--text); box-shadow:0 1px 0 var(--accent); }
+#project-description::placeholder { color:var(--muted); }
+
+.project-nav-row:not(.active):hover,.project-nav-row:not(.active):focus-within { background:var(--hover); }
+.project-nav-row .project-nav-item,.project-nav-row .project-nav-item:hover { background:transparent; }
+
+.project-nav-row .project-icon:hover,.project-nav-row .project-icon:focus-visible { background:var(--input); box-shadow:inset 0 0 0 1px var(--border); }

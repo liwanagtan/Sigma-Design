@@ -384,7 +384,7 @@ Welcome Tokens now publish Foundation aliases for spacing, dimensions, radii, ty
 
 ### Projects, Drafts, and Documentation
 
-Choose a project from the Home sidebar Projects group. Its top bar has an editable title and project icon, with files grouped into Design, Tokens, and Icons. Empty file sections are hidden. Click the sidebar or page icon to choose an emoji or Sigma glyph. The top-bar Report button opens the selected project’s design-system report and offers Files to return. Sort and grid/list controls in the top bar share the Home view preference.
+Choose a project from the Home sidebar Projects group. Its top bar has an editable title and project icon, with a saved editable description underneath and files grouped into Design, Tokens, and Icons. Empty file sections are hidden. Click the sidebar or page icon to choose an emoji or Sigma glyph. The top-bar Report button opens the selected project’s design-system report and offers Files to return. Sort and grid/list controls in the top bar share the Home view preference.
 
 Sidebar search finds files across projects and Drafts and labels their source. **Create New** offers Design file, Tokens file, Icons file, and Import. New files belong to the open project; from Recents, Drafts, Documentation, or global search they belong to Drafts. Recents shows files across projects and Drafts, ordered by opening time (falling back to editing time for older files). Drafts lists all unowned files and supports moving them into projects. Sigma’s examples live in Sigma; Optics contains the Polaris-inspired sample design system.
 

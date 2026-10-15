@@ -104,6 +104,7 @@ export function initHome(el) {
           ${appearanceButtonHTML()}
         </div>
       </header>
+      <div class="project-description-area" id="project-description-area" hidden><textarea id="project-description" aria-label="Project description" placeholder="Add a project description…" maxlength="2000" rows="1"></textarea></div>
       <div id="home-notice"></div>
       <div id="home-files"></div>
     </main>
@@ -639,6 +640,18 @@ function groupedFiles(files,renderCard) {
   }).join('');
   return sections||'<div class="home-empty"><p>No files yet. Use Create New in the sidebar to start this project.</p></div>';
 }
+function renderProjectDescription(p) {
+  const area=root.querySelector('#project-description-area'),field=root.querySelector('#project-description');
+  area.hidden=!p;
+  if(!p)return;
+  const resize=()=>{field.style.height='auto';field.style.height=`${Math.min(field.scrollHeight,132)}px`;};
+  if(document.activeElement!==field){
+    field.value=p.description||'';
+    field.onchange=()=>updateProjectDetails(p.id,{description:field.value}).catch(error=>{toast(error.message);renderHome();});
+  }
+  field.oninput=resize;resize();
+}
+
 function renderProjectHeader(p,editable=true) {
   const icon=root.querySelector('#project-header-icon'),title=root.querySelector('#home-title');
   icon.hidden=!p;
@@ -686,6 +699,7 @@ export async function renderHome() {
   root.querySelector('#home-search').hidden=false;
   root.querySelector('#home-search').value=query;
   renderProjectHeader(workspace||report&&!q?selected:null,!!workspace);
+  renderProjectDescription(workspace?selected:null);
   const reportButton=root.querySelector('#home-report');reportButton.hidden=!selected||!!q||!(workspace||report);
   reportButton.innerHTML=report?`${NAV_DESIGN} Go back to Files`:`${NAV_REPORT} Report`;
   reportButton.title=report?'Back to project files':'Design system report';

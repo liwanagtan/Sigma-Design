@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Updated: **15 October 2026**. Status: core editor and design-system phases **1–39 are complete**; local Figma import is implemented with fidelity limitations. Reports redesign, code creation, AI in the editor, full Figma interoperability, and live collaboration remain planned.
+Updated: **15 October 2026**. Status: core editor and design-system phases **1–39 are complete**; local Figma import is implemented with fidelity limitations. Reports redesign, code creation, a built-in terminal, AI in the editor, full Figma interoperability, and live collaboration remain planned.
 
 This is the current backlog. Detailed phase specifications, past decisions, and implementation notes are in [roadmap history](roadmap-history.md). Project storage and migration details are in [project architecture](projects-architecture.md).
 
@@ -28,7 +28,7 @@ This is the current backlog. Detailed phase specifications, past decisions, and 
 - Report opens for the selected project; **Go back to Files** returns to that project’s workspace.
 - The top bar has the project icon on the left of its editable title, with Report, sort, grid/list, and appearance controls on the right. Project icons support Sigma glyphs and emoji.
 - Create New in the sidebar offers Design file, Tokens file, Icons file, and Import. The open project is the destination; creation outside a project goes to Drafts.
-- Covers and their controls are removed. Descriptions are hidden for now. Grid/list preference is shared across Home views.
+- Covers and their controls are removed. An editable description appears below the project top bar and saves with project metadata. Grid/list preference is shared across Home views.
 - Existing IDs, contents, versions, and library links survive migration. Library pickers offer the current scope plus explicit access to other projects and Drafts.
 
 ## Next priorities
@@ -36,19 +36,21 @@ This is the current backlog. Detailed phase specifications, past decisions, and 
 1. **Release readiness:** validate the new Home/project flows, restore discoverable access to repository Proposals, and prepare Documentation before shipping.
 2. **Reports usability and design:** redesign the report UI, clarify what metrics mean, and help users find and act on issues (Phase 50).
 3. **Code creation:** turn selections, components, and pages into editable, previewable code using project tokens and existing components (Phase 51).
-4. **AI in the editor:** shared document tools, the Assistant panel, and visual feedback/open-editor MCP (Phases 40–42).
-5. **Live collaboration:** the shared document, live sessions, and collaborative undo/comments (Phases 47–49).
-6. **Publish and pilot:** complete the release checklist, publish the npm package, and work with two or three pilot teams.
-7. **Figma interoperability — lowest priority:** one consolidated phase covering native vector editing, reader validation, conversion/paste/CLI import, and `.fig` export. Existing local import remains available; completing this phase is not a release gate.
+4. **Built-in terminal:** a real local shell in a resizable dock for Design and Tokens files, bound to a connected workspace (Phase 52).
+5. **AI in the editor:** shared document tools, the Assistant panel, and visual feedback/open-editor MCP (Phases 40–42).
+6. **Live collaboration:** the shared document, live sessions, and collaborative undo/comments (Phases 47–49).
+7. **Publish and pilot:** complete the release checklist, publish the npm package, and work with two or three pilot teams.
+8. **Figma interoperability — lowest priority:** one consolidated phase covering native vector editing, reader validation, conversion/paste/CLI import, and `.fig` export. Existing local import remains available; completing this phase is not a release gate.
 
 ## Remaining feature milestones
 
-Milestones below follow feature priority. Phase 43 now consolidates the former Figma Phases 43–46; their original specifications remain in history. AI and collaboration retain their existing phase numbers; Reports is Phase 50 and code creation is Phase 51. **Done** means implemented in the stated scope; **Partial** means usable behavior exists with outstanding acceptance work; **Planned** means a future milestone; **Deferred** means outside the current release scope.
+Milestones below follow feature priority. Phase 43 now consolidates the former Figma Phases 43–46; their original specifications remain in history. AI and collaboration retain their existing phase numbers; Reports is Phase 50, code creation is Phase 51, and the terminal is Phase 52. **Done** means implemented in the stated scope; **Partial** means usable behavior exists with outstanding acceptance work; **Planned** means a future milestone; **Deferred** means outside the current release scope.
 
 | Phase | Milestone | Status | Remaining outcome |
 | --- | --- | --- | --- |
 | 50 | Reports usability and design | Planned | A clearer project report UI, understandable and trustworthy metrics, filters/drill-down, and practical next steps linked to the affected files/layers. |
 | 51 | Code creation | Planned | Create editable code for selections/components/pages, reuse project components and tokens, preview and validate results, and copy/download or apply project files through an explicit action. |
+| 52 | Built-in terminal | Planned | A shared resizable terminal dock in Design/Tokens, real workspace-bound PTY sessions through the local server, streaming output, keyboard isolation, reconnect, and process cleanup. |
 | 40 | Shared document tools | Planned | One validated registry for reading/editing documents through the Assistant and MCP, using normal edit functions and undo. |
 | 41 | Assistant panel | Planned | Streaming chat, selection/page context, tool activity, Stop, provider/key settings, and one undo step per turn. |
 | 42 | Visual feedback and open-editor MCP | Planned | Render frames/selections for inspection and let an external agent edit the open document through the local server. |
@@ -78,6 +80,15 @@ Build on the **Code** tab and existing repository handoff/design-to-code workflo
 - **Ownership and scope:** decide the first supported target and adapter before implementation. Define how generated files and subsequent manual edits are tracked on regeneration; preserve user edits and surface conflicts. AI assistance can extend this workflow later; Phase 51 does not require the Assistant panel or promise automatic code-to-design round trips.
 - **Validation:** check source syntax/builds for the chosen target, preview representative outputs, and compare them with the design. Show dependencies and fidelity limitations before applying changes.
 - **Done when:** a component and responsive page built from Sigma/Optics tokens and components can be generated, edited, previewed, and exported/applied into a working example project; regeneration preserves manual work or reports conflicts; tests cover bindings, imports/assets, unsupported cases, and file ownership.
+
+### Phase 52: Built-in terminal
+
+- **UI:** Terminal icon in Design and Tokens rails opens a resizable bottom dock, closed by default, with session tabs, workspace/shell context, copy/paste, and clear connection/exit status. Hiding preserves running commands; End session terminates them.
+- **Workspace:** sessions belong to a connected local workspace and are reused across its Design/Tokens files. Browser-only projects and Drafts must connect a workspace before execution; project switches never silently reuse another project's shell.
+- **Runtime:** real interactive PTY via the local Node server and authenticated bidirectional transport. Validate Host/Origin and session capabilities; stream bounded output and keep shell input separate from editor shortcuts and document data.
+- **Persistence:** sessions/transcripts are separate from files, publishing, sample resets, and design undo. Handle reconnect, server restart, resource limits, and process cleanup explicitly; no automatic command replay.
+- **Done when:** real commands, interactive input, resize, interrupt, switching/reconnect, and termination work in both file kinds; no accidental design edits, cross-workspace session exposure, unauthenticated execution, or orphan processes. Validate packaging and declared platform support.
+- Detailed UI, architecture, connection limits, implementation sequence, and acceptance criteria: [Built-in terminal plan](terminal-plan.md).
 
 ### AI acceptance and decisions
 
