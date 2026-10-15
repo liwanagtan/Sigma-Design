@@ -1,3 +1,4 @@
+import {menuItemHTML} from './ui-controls.js';
 import {lucideIcon} from './lucide.js';
 let menuEl = null;
 let menuTrigger = null;
@@ -14,13 +15,7 @@ export function showContextMenu(x, y, items, { trigger = null, role = 'menu', mi
   menuEl.setAttribute('role', role);
   if (minWidth) menuEl.style.minWidth = `${Math.min(minWidth, window.innerWidth - 16)}px`;
   if (trigger) menuEl.setAttribute('aria-label', trigger.getAttribute('aria-label') || trigger.title || 'Options');
-  menuEl.innerHTML = items
-    .map((it, i) => it === '-'
-      ? '<div class="menu-sep"></div>'
-      : `<button class="menu-item${it.disabled ? ' disabled' : ''}" data-i="${i}" role="${role === 'listbox' ? 'option' : 'menuitem'}"${role === 'listbox' ? ` aria-selected="${!!it.checked}"` : ''} aria-disabled="${!!it.disabled}" tabindex="-1">` +
-        `<span class="menu-check">${it.checked ? lucideIcon('check',12) : ''}</span><span class="menu-label">${esc(it.label)}</span>` +
-        `<span class="menu-shortcut">${esc(it.shortcut || '')}</span></button>`)
-    .join('');
+  menuEl.innerHTML=items.map((it,i)=>menuItemHTML(it,i,role)).join('');
   document.body.appendChild(menuEl);
   const r = menuEl.getBoundingClientRect();
   menuEl.style.left = `${Math.max(8, Math.min(x, window.innerWidth - r.width - 8))}px`;

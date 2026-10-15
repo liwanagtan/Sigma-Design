@@ -1,9 +1,10 @@
+import {UI_ICON_SIZES} from './ui-component-registry.js';
 import { findIcon, iconMarkup } from './icon-library.js';
 import {lucideIcon,lucideBody} from './lucide.js';
 import {UI_ICON_NAMES} from './ui-icon-map.js';
 export {UI_ICON_NAMES};
 const TOOL_SIZE=new Set(['move','hand','frame','rect','ellipse','line','text','image','comment']);
-export const icons=Object.fromEntries(Object.entries(UI_ICON_NAMES).map(([key,name])=>[key,lucideIcon(name,TOOL_SIZE.has(key)?24:key==='home'?20:key.startsWith('chevron')?8:key==='selectChevron'?12:16)]));
+export const icons=Object.fromEntries(Object.entries(UI_ICON_NAMES).map(([key,name])=>[key,lucideIcon(name,TOOL_SIZE.has(key)?UI_ICON_SIZES.tool:key==='home'?20:key.startsWith('chevron')?8:key==='selectChevron'?12:16)]));
 // The Sigma brand mark is artwork, separate from the Lucide interface glyphs.
 Object.assign(icons,{
   logo: `<svg width="20" height="20" viewBox="0 0 20 20"><rect width="20" height="20" rx="5" fill="#0D99FF"/><path d="M14 5.5H6.5L11 10l-4.5 4.5H14" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,

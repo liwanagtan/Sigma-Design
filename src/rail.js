@@ -1,3 +1,4 @@
+import {UI_ICON_SIZES} from './ui-component-registry.js';
 import {lucideIcon} from './lucide.js';
 import { toggleTerminal } from './terminal.js';
 // The file tools rail: a thin column of icon buttons at the left edge of every file (design, tokens and icons
@@ -16,10 +17,10 @@ import { openAuditDialog } from './audit-ui.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const RAIL_ICONS = {
-  tokens:lucideIcon('file-symlink',20),browse:lucideIcon('list-tree',20),audit:lucideIcon('search-check',20),components:lucideIcon('component',20),icons:lucideIcon('shapes',20),
+  tokens:lucideIcon('file-symlink',UI_ICON_SIZES.rail),browse:lucideIcon('list-tree',UI_ICON_SIZES.rail),audit:lucideIcon('search-check',UI_ICON_SIZES.rail),components:lucideIcon('component',UI_ICON_SIZES.rail),icons:lucideIcon('shapes',UI_ICON_SIZES.rail),
 };
 export const RAIL_TOOL_ICONS = {
-  linked:lucideIcon('link',20),import:lucideIcon('import',20),export:lucideIcon('upload',20),code:lucideIcon('code-xml',20),
+  linked:lucideIcon('link',UI_ICON_SIZES.rail),import:lucideIcon('import',UI_ICON_SIZES.rail),export:lucideIcon('upload',UI_ICON_SIZES.rail),code:lucideIcon('code-xml',UI_ICON_SIZES.rail),
 };
 
 // The tools, in order: { id, label, icon, open, state() → { detail, badge?, alert? }, sepBefore? }. The tooltip shows
@@ -76,7 +77,7 @@ const lastHTML = new WeakMap();
 export function renderRailTools(container, kind = container?.dataset.railKind) {
   if (!container || !state.doc || !KINDS[kind]) return;
   const tools = [...KINDS[kind]];
-  if (kind === 'design' || kind === 'tokens') tools.push({ id: 'terminal', label: 'Terminal', sepBefore: true, icon: lucideIcon('terminal',20) });
+  if (kind === 'design' || kind === 'tokens') tools.push({ id: 'terminal', label: 'Terminal', sepBefore: true, icon: lucideIcon('terminal',UI_ICON_SIZES.rail) });
   const html = tools.map((t) => {
     const st = t.state ? t.state() : {};
     return `${t.sepBefore ? '<div class="rail-sep"></div>' : ''}<button class="rail-btn" data-rail="${t.id}" aria-label="${esc(t.label)}"${st.detail ? ` data-tip-detail="${esc(st.detail)}"` : ''}>${t.icon}` +

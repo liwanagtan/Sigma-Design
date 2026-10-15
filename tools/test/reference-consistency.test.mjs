@@ -34,3 +34,9 @@ test('capture fingerprint changes with icon data and UI JavaScript, not only CSS
     assert.ok(CAPTURE_SOURCES.includes(changed));assert.notEqual(await captureSourceText(path=>path===changed?path+' edited':path),base);
   }
 });
+
+test('app token extraction retains data URLs and conditional stylesheet provenance',async()=>{
+  const {parseStylesheet}=await import('../design-system/css-source.mjs');
+  const rows=parseStylesheet('@import url("x.css"); .control{background:url("data:image/svg+xml;a,b");height:28px;} @media(max-width:600px){.control{height:24px;}}','app.css');
+  assert.equal(rows.length,2);assert.equal(rows[0].selector,'.control');assert.equal(rows[0].declarations.background,'url("data:image/svg+xml;a,b")');assert.equal(rows[0].declarations.height,'28px');assert.equal(rows[0].condition,'');assert.equal(rows[1].declarations.height,'24px');assert.ok(rows[1].condition.includes('@media'));assert.equal(rows[1].file,'app.css');
+});

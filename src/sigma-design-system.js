@@ -1,3 +1,4 @@
+import {UI_COMPONENTS,UI_ICON_SIZES} from './ui-component-registry.js';
 // Sigma's welcome library. Light values and component geometry are extracted from styles.css;
 // Both appearance palettes come from the CSS used by Sigma’s interface.
 import { UI_ICON_NAMES } from './ui-icon-map.js';
@@ -8,12 +9,12 @@ import { collection, group, token, modes, ref } from './sample-tokens.js';
 import { normalizeGroups } from './token-groups.js';
 import { createNode, uid, makePaint } from './store.js';
 
-export const SIGMA_SYSTEM_VERSION = 21;
+export const SIGMA_SYSTEM_VERSION = 24;
 const dark = Object.fromEntries(Object.entries(UI_SOURCE.dark).filter(([key])=>key.startsWith('--')).map(([key,value])=>[key.slice(2),value]));
 const slug = s => s.replace(/^\./, '').replace(/[^\w-]+/g, '-');
 const px = cssNumber;
 const hex = s => { const m = /^#([\da-f]{3}|[\da-f]{6}|[\da-f]{8})$/i.exec(s || ''); return m ? `#${m[1].length === 3 ? [...m[1]].map(x => x+x).join('') : m[1]}`.toUpperCase() : null; };
-const labels = { '.btn': 'Button', '.btn.primary': 'Primary button', '.btn.primary.destructive': 'Destructive button', '.icon-btn': 'Icon button', '.rail-btn': 'Rail button', '.tb-btn': 'Toolbar button', '.field': 'Input field', '.select': 'Select', '.seg': 'Segmented control', '.seg-item':'Segmented item', '.page-row': 'Page row', '.page-group': 'Page group', '.layer-row': 'Layer row', '.menu': 'Dropdown menu', '.menu-item': 'Dropdown item', '.panel-head': 'Panel heading', '.file-name': 'File name', '.preset': 'Preset', '.check-row': 'Checkbox row', '.rail-badge': 'Rail badge' };
+const labels=Object.fromEntries(UI_COMPONENTS.map(c=>[c.selector,c.name]));
 
 export function sigmaTokenDocument() {
   const colors = collection('Interface', ['Light', 'Dark']);
@@ -23,9 +24,20 @@ export function sigmaTokenDocument() {
     if (!key.startsWith('--') || !hex(value)) continue;
     const name = key.slice(2);
     ids[name] = token(colors, c, name, 'color', modes(hex(value), dark[name] || hex(value)), `styles.css :root ${key}. Dark: Sigma interface appearance value.`);
+    colors.variables.at(-1).codeSyntax={web:key};
+  }
+  const scopedNames=new Set(Object.values(UI_SOURCE.scoped||{}).flatMap(rule=>Object.keys(rule).filter(k=>k.startsWith('--'))));
+  const codeGroup=group(colors,'code');
+  for(const key of scopedNames){
+    const entries=Object.entries(UI_SOURCE.scoped).filter(([,rule])=>hex(rule[key]));
+    const light=entries.find(([selector])=>!selector.includes('data-theme="dark"'));
+    const alternate=entries.find(([selector])=>selector.includes('data-theme="dark"'));
+    if(!light)continue;
+    token(colors,codeGroup,key.replace(/^--code-/,''),'color',modes(hex(light[1][key]),hex(alternate?.[1][key])||hex(light[1][key])),`Scoped app CSS ${light[0]} ${key}; Dark: ${alternate?.[0]||light[0]}.`);
+    colors.variables.at(-1).codeSyntax={web:key};
   }
   const palette = group(colors, 'palette');
-  for (const value of [...new Set([...UI_SOURCE.palette,'#888888'].map(hex).filter(Boolean))]) token(colors, palette, value.slice(1).toLowerCase(), 'color', value, 'Literal color used in styles.css; fixed in both modes.');
+  for (const value of [...new Set([...UI_SOURCE.palette,'#888888'].map(hex).filter(Boolean))]) token(colors, palette, value.slice(1).toLowerCase(), 'color', value, 'Literal color collected from first-party app stylesheets; fixed in both modes.');
   const foundations = collection('Foundations', ['Light', 'Dark']);
   const foundationIds={};
   const styles=[['interface',11,400],['label',11,500],['heading',12,600],['badge',9,600]];
@@ -46,7 +58,7 @@ export function sigmaTokenDocument() {
         if(value!==null) values.add(value);
       }
     }
-    for(const value of [...values].sort((a,b)=>a-b)) foundationIds[`${name}/${value}`]=token(foundations,g,String(value),'number',value,`Sigma ${name} used by styles.css.`);
+    for(const value of [...values].sort((a,b)=>a-b)) foundationIds[`${name}/${value}`]=token(foundations,g,String(value),'number',value,`Sigma ${name} scale collected from ${UI_SOURCE.stylesheets.join(', ')}.`);
   }
   const typeGroup=group(foundations,'typography');
   for(const [name,size,weight] of styles) token(foundations,typeGroup,name,'typography',{
@@ -59,6 +71,16 @@ export function sigmaTokenDocument() {
     const colorRef=/var\(--([\w-]+)\)/.exec(shadow.color);if(colorRef&&ids[colorRef[1]]) shadow.color=ref(ids[colorRef[1]]);
     shadows.set(value,token(foundations,elevation,`shadow-${shadows.size+1}`,'shadow',shadow,`styles.css box-shadow: ${value}.`));
   }
+  const motionGroup=group(foundations,'motion');
+  const durationGroup=group(foundations,'duration',motionGroup),easingGroup=group(foundations,'easing',motionGroup);
+  const durations=new Set(),easings=new Set();
+  for(const {value} of UI_SOURCE.motion||[]){
+    for(const m of value.matchAll(/(?<![\w-])([\d.]+)(ms|s)\b/g))durations.add(Math.round(+m[1]*(m[2]==='s'?1000:1)));
+    const named=value.match(/\b(ease-in-out|ease-in|ease-out|linear|ease)\b/g);if(named)named.forEach(n=>easings.add(n));else easings.add('ease');
+  }
+  for(const ms of [...durations].sort((a,b)=>a-b))token(foundations,durationGroup,String(ms),'duration',ms,'Duration used by an app stylesheet transition or animation.');
+  const curves={'ease':[0.25,0.1,0.25,1],'ease-in':[0.42,0,1,1],'ease-out':[0,0,0.58,1],'ease-in-out':[0.42,0,0.58,1],'linear':[0,0,1,1]};
+  for(const name of easings)token(foundations,easingGroup,name,'easing',curves[name],'Timing function used by app CSS; omitted CSS timing functions use ease.');
   const components=collection('UI components',['Light','Dark']);
   for(const [selector,rule] of Object.entries(UI_SOURCE.rules)) {
     const g=group(components,slug(selector));
@@ -79,7 +101,11 @@ export function sigmaTokenDocument() {
       token(components,g,property,type,modes(light,alternate),`styles.css ${selector}: ${property}: ${value}.`);
     }
     const ring=/^(\d+(?:\.\d+)?)px\s+solid\s+var\(--([\w-]+)\)/.exec(rule.outline||'');
-    if(ring&&ids[ring[2]]) token(components,g,'focus-ring','shadow',{color:ref(ids[ring[2]]),x:0,y:0,blur:0,spread:+ring[1]+(px(rule['outline-offset'])||0)},'CSS focus outline and offset.');
+    if(ring&&ids[ring[2]]) {
+      token(components,g,'outline-color','color',ref(ids[ring[2]]),'CSS focus outline color.');
+      token(components,g,'outline-width','number',+ring[1],'CSS focus outline width.');
+      token(components,g,'focus-ring','shadow',{color:ref(ids[ring[2]]),x:0,y:0,blur:0,spread:+ring[1]+Math.max(0,px(rule['outline-offset'])||0)},'CSS external focus outline and offset.');
+    }
     const padding=cssPadding(rule);
     if(rule.padding && padding) {
       token(components,g,'padding-y','number',ref(foundationIds[`spacing/${padding[0]}`]));
@@ -118,6 +144,7 @@ export function sigmaFoundationsDocument(collections) {
         const specimen=K.bind(K.text('Sigma · The quick brown fox',290,y),'typography',c.name,v.name);specimen.modes=fixed;children.push(specimen);
         return;
       }
+      if (['duration','easing'].includes(v.type)){const specimen=K.text(v.type==='duration'?`${value} ms`:JSON.stringify(value),290,y);specimen.modes=fixed;children.push(specimen);return;}
       if (v.type === 'string') { const specimen=K.bind(K.text(value,290,y),'text',c.name,v.name);specimen.modes=fixed;children.push(specimen);return; }
       const n = createNode('rect', { name: v.name, x: 290, y, w: 160, h: 28, fills: [makePaint('#0D99FF')] });
       n.modes=fixed;
@@ -176,14 +203,17 @@ export function sigmaComponentsDocument(collections) {
         apply('fills.0.color', 'background'); apply('h', 'height'); apply('w', 'width'); apply('radius', 'border-radius');apply('opacity','opacity');
         if(cssShadow(rule['box-shadow'])) {node.effects=[{type:'drop-shadow',visible:true}];apply('effects.0','box-shadow');}
         if (rule.border && rule.border !== '0') { node.strokes = [makePaint('#E6E6E6')]; apply('strokes.0.color',rule['border-color']?'border-color':'border','border'); }
-        if(K.find('UI components',`${slug(stateSelector)}/focus-ring`)) {node.effects=[{type:'drop-shadow',visible:true}];K.bind(node,'effects.0','UI components',`${slug(stateSelector)}/focus-ring`);}
-        const label = K.text(selector === '.file-name' ? 'Untitled' : name, px(rule['padding-left']) || 8, Math.max(0, (h-14)/2), 'label');
+        if(K.find('UI components',`${slug(stateSelector)}/focus-ring`)) {
+          if((px(rule['outline-offset'])||0)<0){node.strokes=[makePaint('#0D99FF')];node.strokeAlign='inside';K.bind(node,'strokes.0.color','UI components',`${slug(stateSelector)}/outline-color`);K.bind(node,'strokeWidth','UI components',`${slug(stateSelector)}/outline-width`);}
+          else {node.effects=[{type:'drop-shadow',visible:true}];K.bind(node,'effects.0','UI components',`${slug(stateSelector)}/focus-ring`);}
+        }
+        const label = K.text(selector === '.file-name' ? 'Untitled' : name, px(rule['padding-left']) || 8, Math.max(0, (h-14)/2), 'interface');
         const fg = (state !== 'Default' && K.find('UI components', `${slug(stateSelector)}/color`)) || K.find('UI components', `${slug(selector)}/color`);
         if (fg) label.bindings['fills.0.color'] = fg.id;
         K.bind(label, 'fontWeight', 'UI components', `${slug(selector)}/font-weight`);
         K.bind(label, 'fontSize', 'UI components', `${slug(selector)}/font-size`);
         if (selector.startsWith('.btn') || selector === '.rail-badge') { label.textAlign = 'center'; label.autoResize = 'fixed'; label.w = Math.max(1, node.w-16); label.h = 18; }
-        if (['.icon-btn', '.rail-btn', '.tb-btn','.seg-item'].includes(selector)) {
+        if (['.icon-btn', '.rail-btn', '.tb-btn','.seg-item','.appearance-button'].includes(selector)) {
           label.text = '+'; delete label.bindings.typography; label.fontSize = 20; label.w = node.w; label.x = 0; label.y = (h-24)/2; label.autoResize = 'fixed'; label.textAlign = 'center';
         }
         if (selector === '.rail-badge') { label.text = '1'; label.w = node.w; label.x = 0; label.autoResize = 'fixed'; }
@@ -202,15 +232,43 @@ export function sigmaComponentsDocument(collections) {
           label.x=20;node.children.unshift(box);
         }
         node.props = { label: { name: 'Label', type: 'text', default: name } }; label.propRefs = { text: 'label' }; node.props.label.default = label.text;
-        if (['.icon-btn', '.rail-btn', '.tb-btn','.seg-item'].includes(selector)) {
-          const icon = createNode('icon', { name: 'Add', iconId:sigmaIconId(selector==='.seg-item'?'alignLeft':'plus'), x: (node.w-16)/2, y: (h-16)/2, w: 16, h: 16, fills: [makePaint('#1E1E1E')] });
+        if (['.icon-btn', '.rail-btn', '.tb-btn','.seg-item','.appearance-button'].includes(selector)) {
+          const size=selector==='.rail-btn'?UI_ICON_SIZES.rail:selector==='.tb-btn'?UI_ICON_SIZES.tool:UI_ICON_SIZES.control;
+          const icon = createNode('icon', { name: selector==='.appearance-button'?'Appearance':'Icon', iconId:sigmaIconId(selector==='.seg-item'?'alignLeft':selector==='.appearance-button'?'appearance':'plus'), x: (node.w-size)/2, y: (h-size)/2, w:size,h:size, fills: [makePaint('#1E1E1E')] });
           icon.bindings={'fills.0.color':fg?.id||K.find('Interface','color/text').id};
-          K.bind(icon,'w','Foundations','width/16');K.bind(icon,'h','Foundations','height/16');
+          K.bind(icon,'w','Foundations',`width/${size}`);K.bind(icon,'h','Foundations',`height/${size}`);
           node.children=[icon];node.props={icon:{name:'Icon',type:'icon',default:icon.iconId}};icon.propRefs={iconId:'icon'};
+        }
+        if(selector==='.field') {
+          const prefix=K.text('X',0,0,'interface');prefix.name='Prefix';prefix.propRefs={text:'prefix'};K.bind(prefix,'fills.0.color','Interface','color/muted');
+          const leading=createNode('frame',{name:'Field label',w:px(UI_SOURCE.parts['.field-label'].width),h:h-2,sizingV:'fill',fills:[],layout:{mode:'horizontal',gap:0,pt:0,pr:0,pb:0,pl:0,spacing:'packed',alignP:'center',alignC:'center'},children:[prefix]});
+          K.bind(leading,'w','Foundations',`width/${leading.w}`);
+          label.name='Value';label.text='10';label.autoResize='width';label.propRefs={text:'value'};
+          const value=createNode('frame',{name:'Input',w:Math.max(1,node.w-leading.w),h:h-2,sizingH:'fill',sizingV:'fill',fills:[],layout:{mode:'horizontal',gap:0,pt:0,pr:px(UI_SOURCE.parts['.field input']['padding-right'])||0,pb:0,pl:0,spacing:'packed',alignP:'start',alignC:'center'},children:[label]});
+          node.children=[leading,value];node.props={prefix:{name:'Prefix',type:'text',default:'X'},value:{name:'Value',type:'text',default:'10'}};
+        }
+        if(selector==='.menu-item') {
+          const glyph=createNode('icon',{name:'Check',iconId:sigmaIconId('check'),w:12,h:12,visible:state==='Selected',fills:[makePaint('#0D99FF')],propRefs:{visible:'checked'}});
+          K.bind(glyph,'w','Foundations','width/12');K.bind(glyph,'h','Foundations','height/12');K.bind(glyph,'fills.0.color','Interface','color/accent');
+          const check=createNode('frame',{name:'Check region',w:px(UI_SOURCE.parts['.menu-check'].width),h:12,fills:[],children:[glyph]});K.bind(check,'w','Foundations',`width/${check.w}`);K.bind(check,'h','Foundations','height/12');
+          label.name='Label';label.autoResize='width';
+          const labelBox=createNode('frame',{name:'Menu label',w:Math.max(1,node.w-96),h:14,sizingH:'fill',fills:[],layout:{mode:'horizontal',gap:0,pt:0,pr:0,pb:0,pl:0,spacing:'packed',alignP:'start',alignC:'center'},children:[label]});
+          const shortcut=K.text('⌘C',0,0,'interface');shortcut.name='Shortcut';shortcut.propRefs={text:'shortcut'};K.bind(shortcut,'fills.0.color','Interface','color/muted');
+          const shortcutBox=createNode('frame',{name:'Shortcut region',w:42,h:14,fills:[],layout:{mode:'horizontal',gap:0,pt:0,pr:0,pb:0,pl:px(UI_SOURCE.parts['.menu-shortcut']['margin-left'])||0,spacing:'packed',alignP:'end',alignC:'center'},children:[shortcut]});
+          node.children=[check,labelBox,shortcutBox];node.props.checked={name:'Checked',type:'boolean',default:state==='Selected'};node.props.shortcut={name:'Shortcut',type:'text',default:'⌘C'};
+        }
+        if(selector==='.switch') {
+          const trackRule=UI_SOURCE.parts['.switch span'],thumbRule=UI_SOURCE.parts['.switch span::after'];
+          node.radius=px(trackRule['border-radius']);K.bind(node,'radius','Foundations',`radius/${node.radius}`);
+          node.fills=[makePaint('#D9D9D9')];K.bind(node,'fills.0.color','Interface',state==='Selected'?`palette/${hex(UI_SOURCE.parts['.switch input:checked + span'].background).slice(1).toLowerCase()}`:'color/control-track');
+          const thumb=createNode('ellipse',{name:'Thumb',x:(px(thumbRule.left)||0)+(state==='Selected'?(parseFloat(UI_SOURCE.parts['.switch input:checked + span::after'].transform.replace('translateX(',''))||0):0),y:px(thumbRule.top)||0,w:px(thumbRule.width),h:px(thumbRule.height),fills:[makePaint('#FFFFFF')],absolute:true});
+          K.bind(thumb,'w','Foundations',`width/${thumb.w}`);K.bind(thumb,'h','Foundations',`height/${thumb.h}`);K.bind(thumb,'fills.0.color','Interface','color/on-accent');
+          const shadow=collections.find(c=>c.name==='Foundations').variables.find(v=>v.type==='shadow'&&v.description===`styles.css box-shadow: ${thumbRule['box-shadow']}.`);if(shadow){thumb.effects=[{type:'drop-shadow',visible:true}];(thumb.bindings||={})['effects.0']=shadow.id;}
+          node.children=[thumb];node.props=undefined;
         }
         if(['.menu','.seg'].includes(selector)) delete node.props;
         const padding=cssPadding(rule)||[0,0,0,0];
-        if(!['.select','.menu','.seg'].includes(selector)) {
+        if(!['.select','.menu','.seg','.switch'].includes(selector)) {
           node.layout={mode:'horizontal',gap:px(rule.gap)||0,pt:padding[0],pr:padding[1],pb:padding[2],pl:padding[3],spacing:'packed',alignP:selector.startsWith('.btn')?'center':'start',alignC:'center'};
           for(const [prop,css] of [['pt','padding-top'],['pr','padding-right'],['pb','padding-bottom'],['pl','padding-left'],['gap','gap']]) apply(`layout.${prop}`,css);
           if(selector.startsWith('.btn')&&!rule.width) {label.autoResize='width';node.sizingH='hug';}
@@ -263,5 +321,5 @@ export function sigmaComponentsDocument(collections) {
 export function sigmaTokenSignature(collections) {
   const names=new Map(collections.flatMap(c=>c.variables.map(v=>[v.id,`${c.name}/${v.name}`])));
   const normalize=value=>value&&typeof value==='object'?Array.isArray(value)?value.map(normalize):Object.fromEntries(Object.entries(value).map(([k,v])=>[k,k==='alias'?names.get(v)||v:normalize(v)])):value;
-  return JSON.stringify(collections.map(c=>({name:c.name,modes:c.modes.map(m=>m.name),tokens:c.variables.map(v=>({name:v.name,type:v.type,values:c.modes.map(m=>normalize(v.valuesByMode[m.id]))}))})));
+  return JSON.stringify(collections.map(c=>({name:c.name,modes:c.modes.map(m=>m.name),tokens:c.variables.map(v=>({name:v.name,type:v.type,codeSyntax:v.codeSyntax||null,description:v.description||'',values:c.modes.map(m=>normalize(v.valuesByMode[m.id]))}))})));
 }

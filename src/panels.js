@@ -1,3 +1,4 @@
+import {fieldLabelHTML} from './ui-controls.js';
 import {lucideIcon} from './lucide.js';
 import {
   state, page, view, emit, commit, select, selectedNodes, getNode, getParent, ancestors, isAncestor, isSlotArea, hiddenByWidth,
@@ -809,7 +810,7 @@ function numField(key, label, nodes, { icon } = {}) {
   const bound = path ? boundVar(nodes, path) : null;
   const fieldName=({rotation:'Rotation',radius:'Corner radius',minW:'Minimum width',maxW:'Maximum width',minH:'Minimum height',maxH:'Maximum height',gap:'Gap',padH:'Horizontal padding',padV:'Vertical padding'})[key]||label||key;
   const limit=/^(min|max)[WH]$/.test(key);
-  const head = `<label ${['gap','padH','padV'].includes(key)?`data-layout-preview="${key}"`:""} title="${esc(fieldName)}" class="field${path ? ' bindable' : ''}"><span class="field-label" data-scrub="${key}">${icon || label}</span>`;
+  const head = `<label ${['gap','padH','padV'].includes(key)?`data-layout-preview="${key}"`:""} title="${esc(fieldName)}" class="field${path ? ' bindable' : ''}">${fieldLabelHTML(icon || label, `data-scrub="${key}"`)}`;
   if (bound && bound !== MIXED) return `${head}${varChip(path, bound)}</label>`;
   const v = common(nodes, f.get);
   const shown = v === MIXED ? '' : fmtNum(v);

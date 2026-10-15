@@ -153,4 +153,6 @@ For implementation, name the milestone or checklist item, read its focused speci
 
 ### Reference consistency maintenance
 
+In progress: [Sigma source parity](sigma-source-parity.md). Verify icons first, app-derived tokens second, then real control anatomy/state parity. Primitive coverage does not imply all app composites are covered.
+
 The Optics rebuild uses the complete Lucide catalogue and validates serialized files before writing. Sigma Components and Foundations bind measured design decisions to tokens; intentional teaching examples remain separate. Canonical icon choices hide duplicate compatibility aliases while retaining stored IDs. Pages and UI captures fingerprint UI sources as well as CSS and remain captured references rather than fully component-based compositions.

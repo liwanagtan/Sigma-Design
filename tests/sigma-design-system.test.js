@@ -126,7 +126,7 @@ test('Sigma controls: current dropdown states, shared items, shadow and dark che
   eq(select.find(n=>n.name==='State=Focus').strokes[0].color,'#0D99FF');
   ok(select[0].children.some(n=>n.type==='icon'&&n.iconId==='sigma-ui-selectChevron'));
   const menu=mains('Dropdown menu')[0];eq(menu.children.length,4);
-  eq(menu.children.map(n=>n.children[0].text),['Copy','Paste','Duplicate','Delete'],'shared variant properties reach nested item instances');
+  eq(menu.children.map(n=>n.children.find(part=>part.name==='Menu label').children.find(part=>part.name==='Label').text),['Copy','Paste','Duplicate','Delete'],'shared variant properties reach nested item instances');
   ok(menu.children.every(n=>n.type==='instance'&&n.componentId===item[0].id));
   const segment=mains('Segmented item').find(n=>n.name==='State=Selected');eq(segment.effects[0].spread,1);eq(segment.effects[0].color,'#E6E6E6');
   eq(menu.effects[0].y,8);eq(menu.effects[0].blur,24);

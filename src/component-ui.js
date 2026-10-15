@@ -1,3 +1,4 @@
+import {switchHTML} from './ui-controls.js';
 import {lucideIcon} from './lucide.js';
 // Figma-style component UI in the right panel.
 //
@@ -245,7 +246,7 @@ function orphanNote(inst) {
     `the layers were renamed or removed in the main component. <button class="link-btn" data-clear-orphans="${inst.id}">Clear</button></div>`;
 }
 
-const toggle = (attrs, on) => `<label class="switch"><input type="checkbox" ${attrs} ${on ? 'checked' : ''}><span></span></label>`;
+const toggle = switchHTML;
 
 // One row per property. Controls carry data-target (one or more ids), so nested instances' rows work from
 // an outer panel, and several selected instances change together. Differing values show as Mixed.

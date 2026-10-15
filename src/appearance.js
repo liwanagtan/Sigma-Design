@@ -1,3 +1,4 @@
+import {appearanceControlHTML} from './ui-controls.js';
 import { icons } from './icons.js';
 import { showContextMenu, hideContextMenu } from './menu.js';
 
@@ -26,7 +27,7 @@ export function setAppearance(value, { persist = true } = {}) {
   return true;
 }
 export function appearanceButtonHTML() {
-  return `<button type="button" data-appearance class="icon-btn appearance-button" aria-label="Appearance: ${label()}" title="Appearance: ${label()}" aria-haspopup="menu" aria-expanded="false">${icon}</button>`;
+  return appearanceControlHTML(label());
 }
 
 document.addEventListener('click', event => {
