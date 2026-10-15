@@ -3,7 +3,7 @@
 import { commit, getParent, ancestors, insertNode, createNode, select, selectedNodes, editNode } from './store.js';
 import { isInsideInstance } from './components.js';
 import { isAutoLayout } from './layout.js';
-import { iconMarkup, iconMatches, iconScore, findIcon, iconLibraryOf, ICON_STYLES, libraryIconCache } from './icon-library.js';
+import { iconChoices, iconMarkup, iconMatches, iconScore, findIcon, iconLibraryOf, ICON_STYLES, libraryIconCache } from './icon-library.js';
 import { iconLibraries, openIconLibrariesDialog, loadIconLibraries, keepIcons } from './libraries.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -62,7 +62,8 @@ export async function openIconPicker({ anchor, currentId = null, groups = null, 
   const list = picker.querySelector('.icon-picker-list');
   // By library, then style, then group (A–Z, ungrouped last), so the picker reads like the icons file.
   const styleOrder = Object.keys(ICON_STYLES), libs = iconLibraries();
-  const found = availableIcons({ groups, withId: currentId });
+  const available=availableIcons({ groups, withId: currentId });
+  const found=libs.flatMap(lib=>iconChoices(available.filter(x=>x.lib===lib).map(x=>x.icon),currentId).map(icon=>({icon,lib})));
   const rank = (x) => [libs.indexOf(x.lib), styleOrder.indexOf(x.icon.style), x.icon.group ? 0 : 1];
   const all = found.map((x, i) => ({ ...x, i, r: rank(x) })).sort((a, b) => a.r.reduce((d, v, k) => d || v - b.r[k], 0) ||
     (a.icon.group || '').localeCompare(b.icon.group || '', undefined, { sensitivity: 'base' }) || a.i - b.i);

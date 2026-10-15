@@ -618,7 +618,7 @@ export async function openDesignTokensDialog(allScopes=false) {
   const rows = files.map((f) => {
     const lib = using.get(f.id);
     const action = lib
-      ? (several ? `<button class="btn primary" data-use="${f.id}">Keep only this one</button>` : '<span class="using-badge">✓ In use</span>')
+      ? (several ? `<button class="btn primary" data-use="${f.id}">Keep only this one</button>` : `<span class="using-badge">${lucideIcon('check',12)} In use</span>`)
       : `<button class="btn${using.size ? '' : ' primary'}" data-use="${f.id}" ${f.tokenVersion ? '' : 'disabled title="Publish it first"'}>${using.size ? 'Switch to this' : 'Use'}</button>`;
     return libraryRow(TOKEN_ICON, f.name, versionStatus(f.tokenVersion, lib), openBtn(f.id) + action);
   }).join('') + libraries().filter((l) => !files.some((f) => f.id === l.fileId)).map((l) =>

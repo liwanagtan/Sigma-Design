@@ -150,3 +150,7 @@ Superseded editor naming: **Inspect** is now **Code**; existing code inspection 
 Superseded Home decisions: project dropdown, Files sidebar group, Welcome file section, separate new-file buttons, project covers, large project heading area, and a separate file toolbar. Their history remains in [the archive](roadmap-history.md).
 
 For implementation, name the milestone or checklist item, read its focused specification/history if needed, and validate the affected behavior.
+
+### Reference consistency maintenance
+
+The Optics rebuild uses the complete Lucide catalogue and validates serialized files before writing. Sigma Components and Foundations bind measured design decisions to tokens; intentional teaching examples remain separate. Canonical icon choices hide duplicate compatibility aliases while retaining stored IDs. Pages and UI captures fingerprint UI sources as well as CSS and remain captured references rather than fully component-based compositions.

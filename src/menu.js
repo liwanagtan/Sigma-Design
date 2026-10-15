@@ -1,3 +1,4 @@
+import {lucideIcon} from './lucide.js';
 let menuEl = null;
 let menuTrigger = null;
 
@@ -17,7 +18,7 @@ export function showContextMenu(x, y, items, { trigger = null, role = 'menu', mi
     .map((it, i) => it === '-'
       ? '<div class="menu-sep"></div>'
       : `<button class="menu-item${it.disabled ? ' disabled' : ''}" data-i="${i}" role="${role === 'listbox' ? 'option' : 'menuitem'}"${role === 'listbox' ? ` aria-selected="${!!it.checked}"` : ''} aria-disabled="${!!it.disabled}" tabindex="-1">` +
-        `<span class="menu-check">${it.checked ? '✓' : ''}</span><span class="menu-label">${esc(it.label)}</span>` +
+        `<span class="menu-check">${it.checked ? lucideIcon('check',12) : ''}</span><span class="menu-label">${esc(it.label)}</span>` +
         `<span class="menu-shortcut">${esc(it.shortcut || '')}</span></button>`)
     .join('');
   document.body.appendChild(menuEl);

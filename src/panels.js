@@ -489,7 +489,7 @@ export function renderPages() {
   const collapsed = q ? new Set() : collapsedGroups(getCurrentFileId());
   const pageRow = (p, inGroup) =>
     `<div class="page-row${p.id === current ? ' active' : ''}${inGroup ? ' in-group' : ''}" data-page="${p.id}" draggable="${!q}">` +
-    `<span class="check">${p.id === current ? '✓' : ''}</span><span class="name">${esc(p.name)}</span>` +
+    `<span class="check">${p.id === current ? lucideIcon('check',12) : ''}</span><span class="name">${esc(p.name)}</span>` +
     (p.handoff ? '<span class="kind-badge handoff-badge" title="Marked for handoff">Handoff</span>' : '') +
     (many ? `<button class="icon-btn row-btn" data-del title="Delete page">${icons.close}</button>` : '') + '</div>';
   let html = '';

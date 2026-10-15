@@ -1301,3 +1301,7 @@ select:disabled { opacity: 0.45; cursor: default; }
 .constraint-diagram{position:relative;width:76px;height:76px;flex-shrink:0;border:1px solid var(--border);border-radius:6px;background:var(--subtle);}.constraint-diagram:before{content:'';position:absolute;inset:20px;border:1px solid var(--muted);border-radius:2px;pointer-events:none;}
 .constraint-pin{position:absolute;background:var(--border);border:0;border-radius:3px;padding:0;cursor:pointer;}.constraint-pin[aria-pressed=true],.constraint-center[aria-pressed=true]{background:var(--accent);color:var(--on-accent);}.pin-left,.pin-right{width:16px;height:5px;top:35px;}.pin-left{left:3px;}.pin-right{right:3px;}.pin-top,.pin-bottom{height:16px;width:5px;left:35px;}.pin-top{top:3px;}.pin-bottom{bottom:3px;}.constraint-center{position:absolute;inset:28px;border:0;border-radius:3px;padding:0;color:var(--muted);background:none;cursor:pointer;}
 .inspector-help{font-size:10px;line-height:1.6;color:var(--muted);margin:8px 0;}
+
+/* Shared Lucide status indicators align with text and retain keyboard targets. */
+.menu-check, .check-mark, .slot-limit, .matrix-tick { vertical-align: middle; }
+.menu-check svg, .check-mark svg, .slot-limit svg, .matrix-check svg { vertical-align: middle; flex: none; }

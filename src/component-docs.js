@@ -1,3 +1,4 @@
+import {lucideIcon} from './lucide.js';
 // Running the design system (Part D, Phase 18): each component's status, its readiness checklist ("definition
 // of ready") and its docs, and the component matrix that shows where every component of a library stands.
 //
@@ -132,7 +133,7 @@ export function openComponentMatrix() {
         const next = checks.find((c) => !c.ok);
         return `<tr data-row="${node.id}"><td><a href="#" data-go="${node.id}">${esc(node.name)}</a></td>
           <td>${s === 'deprecated' ? '<span class="deprecated-tag">Deprecated</span>' : `<select class="select" data-status="${node.id}">${Object.entries(STATUSES).map(([k, l]) => `<option value="${k}"${k === s ? ' selected' : ''}>${l}</option>`).join('')}</select>`}</td>
-          ${checks.map((c) => `<td class="matrix-check ${c.ok ? 'ok' : 'no'}" title="${esc(c.label)}: ${esc(c.ok ? 'done' : c.hint)}">${c.manual ? `<button class="matrix-tick" data-tick="${node.id}" data-key="${c.key}">${c.ok ? '✓' : '○'}</button>` : c.ok ? '✓' : '✗'}</td>`).join('')}
+          ${checks.map((c) => `<td class="matrix-check ${c.ok ? 'ok' : 'no'}" title="${esc(c.label)}: ${esc(c.ok ? 'done' : c.hint)}">${c.manual ? `<button class="matrix-tick" data-tick="${node.id}" data-key="${c.key}" aria-label="${esc(c.label)}" aria-pressed="${!!c.ok}">${c.ok ? lucideIcon('check',12) : lucideIcon('circle',12)}</button>` : c.ok ? lucideIcon('check',12) : lucideIcon('x',12)}</td>`).join('')}
           <td class="muted matrix-next">${next ? esc(next.hint) : s === 'ready' ? 'Ready.' : 'Everything’s done: mark it Ready.'}</td></tr>`;
       }).join('') + '</table>' : '';
   };

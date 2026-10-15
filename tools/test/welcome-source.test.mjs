@@ -4,12 +4,15 @@ test('welcome design system source matches the repository stylesheet', () => {
   execFileSync(process.execPath, ['tools/design-system/build.mjs', '--check'], { cwd: new URL('../../', import.meta.url) });
 });
 
-test('Pages and UI captures match the repository stylesheet and include four desktop screens', async () => {
+test('Pages and UI captures match current UI sources and include four desktop screens', async () => {
   const { readFileSync } = await import('node:fs');
   const { createHash } = await import('node:crypto');
   const { default:assert } = await import('node:assert/strict');
   const { PAGE_CAPTURES } = await import('../../src/sigma-page-captures.js');
-  assert.equal(PAGE_CAPTURES.sourceHash, createHash('sha256').update(readFileSync(new URL('../../styles.css', import.meta.url))).digest('hex'));
+  const {captureSourceText}=await import('../design-system/source-fingerprint.js');
+  assert.equal(PAGE_CAPTURES.sourceHash, createHash('sha256').update(await captureSourceText(path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8'))).digest('hex'));
+  const text=[];const scan=n=>{if(n.text)text.push(n.text);(n.children||[]).forEach(scan);};scan(PAGE_CAPTURES.captures.find(c=>c.name==='Icons').capture.tree);
+  assert.ok(text.includes('Lucide · Sigma UI'));assert.ok(text.includes('sun-moon'));assert.ok(!text.includes('selectChevron'));
   assert.match(PAGE_CAPTURES.captureHash, /^[a-f0-9]{64}$/, 'capture content has an identity independent of CSS');
   const { SIGMA_PAGES_SOURCE_HASH } = await import('../../src/sigma-pages.js');
   assert.equal(SIGMA_PAGES_SOURCE_HASH, `${PAGE_CAPTURES.sourceHash}:${PAGE_CAPTURES.captureHash}`);

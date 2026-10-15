@@ -300,3 +300,17 @@ export function usedIconIds(nodes) {
 }
 
 export const newIconsDocument = (name = 'Untitled icons') => ({ kind: 'icons', name, pages: [], currentPageId: null, icons: [] });
+
+// Display stock Sigma compatibility IDs once; never discard or rewrite stored assets.
+export function iconChoices(icons, preferredId=null) {
+  const out=[],seen=new Map();
+  for(const icon of icons){
+    if(!icon.id.startsWith('sigma-ui-')){out.push(icon);continue;}
+    const key=JSON.stringify([icon.name,icon.group,icon.style,icon.body,icon.viewBox,icon.strokeWidth,icon.cap,icon.join]);
+    if(!seen.has(key)){seen.set(key,out.length);out.push({...icon});continue;}
+    const at=seen.get(key),previous=out[at];
+    out[at]={...(icon.id===preferredId?icon:previous),keywords:[previous.keywords,icon.keywords].filter(Boolean).join(', ')};
+  }
+  return out;
+}
+export const isLegacyFilledIcon = icon => icon.style==='filled' && /^optics-.*-filled$/.test(icon.id);

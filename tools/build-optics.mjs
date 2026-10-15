@@ -6,20 +6,23 @@
 // built by the same code that adds Optics in the browser (src/optics-tokens.js, src/optics.js). They must pass
 // `sigma-design check` (CI runs it on every example). Open them with: npx sigma-design dev examples/optics
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { sampleIconsDocument } from '../src/sample-icons.js';
+import { lucideIconsDocument } from '../src/sample-icons.js';
 import { opticsTokenDocument } from '../src/optics-tokens.js';
 import { opticsIconsDocument, opticsComponentsDocument, opticsFoundationsDocument } from '../src/optics.js';
+import { validateFile } from '../src/validate.js';
+import { OPTICS_ICONS } from '../src/optics.js';
 import { serializeForProject, projectPath } from '../src/project-format.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const out = join(root, 'examples', 'optics');
+const outputIndex=process.argv.indexOf('--output');
+const out = outputIndex>=0 ? resolve(process.argv[outputIndex+1]) : join(root, 'examples', 'optics');
 const lucide = JSON.parse(readFileSync(join(root, 'icon-sets', 'lucide.json'), 'utf8'));
 
 const tokens = opticsTokenDocument();
 const tokensDoc = { kind: 'tokens', name: tokens.name, pages: [], variables: { collections: tokens.collections } };
-const sample = sampleIconsDocument(lucide);
+const sample = lucideIconsDocument(lucide);
 const iconsDoc = opticsIconsDocument(sample.icons, sample.source);
 const components = opticsComponentsDocument(tokens.collections);
 const foundations = opticsFoundationsDocument(tokens.collections, { icons: iconsDoc.icons });
@@ -33,8 +36,12 @@ const paths = {
 };
 const pathOf = (id) => paths[id] || null;
 
-for (const [doc, path] of [[tokensDoc, paths.tokens], [iconsDoc, paths.icons], [foundations, paths.foundations], [components, paths.components]]) {
-  const { text, warnings } = serializeForProject(doc, { pathOf, path });
+const outputs=[[tokensDoc, paths.tokens], [iconsDoc, paths.icons], [foundations, paths.foundations], [components, paths.components]].map(([doc,path])=>({path,...serializeForProject(doc,{pathOf,path})}));
+const files=Object.fromEntries(outputs.map(o=>[o.path,JSON.parse(o.text)]));
+const ids=new Set(iconsDoc.icons.map(i=>i.id));
+if(ids.size!==iconsDoc.icons.length || OPTICS_ICONS.some(id=>!ids.has(id))) throw new Error('Optics icons must have unique IDs and resolve every required glyph.');
+for(const {path} of outputs){const errors=validateFile(files[path],{path,files}).filter(i=>i.level==='error');if(errors.length)throw new Error(`${path}: ${JSON.stringify(errors.slice(0,5))}`);}
+for (const {path,text,warnings} of outputs) {
   for (const w of warnings) console.warn(`${path}: ${w}`);
   mkdirSync(dirname(join(out, path)), { recursive: true });
   writeFileSync(join(out, path), text);

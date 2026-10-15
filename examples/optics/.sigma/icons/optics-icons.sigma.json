@@ -2,6 +2,7 @@
   "format": 1,
   "kind": "icons",
   "name": "Optics Icons",
+  "opticsIconProvider": 1,
   "source": {
     "name": "Lucide",
     "license": "ISC",

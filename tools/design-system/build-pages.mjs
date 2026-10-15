@@ -2,10 +2,11 @@
 // Save its JSON as work/sigma-pages-captures.json, then run npm run build:pages.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import {captureSourceText} from './source-fingerprint.js';
 const input = process.argv[2] || '../work/sigma-pages-captures.json';
 const data = JSON.parse(readFileSync(input, 'utf8'));
-const hash = createHash('sha256').update(readFileSync(new URL('../../styles.css', import.meta.url))).digest('hex');
-if (data.sourceHash !== hash) throw new Error('Capture the current stylesheet before building Pages and UI.');
+const hash = createHash('sha256').update(await captureSourceText(path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8'))).digest('hex');
+if (data.sourceHash !== hash) throw new Error('Capture the current UI sources before building Pages and UI.');
 if (data.captures.length !== 4 || new Set(data.captures.map(p=>p.name)).size !== 4) throw new Error('Expected four different Sigma screens.');
 const required = { 'Files home':'Home-main', 'Design editor':'File name', Tokens:'Vars-work', Icons:'Icons-body' };
 for (const { name, capture } of data.captures) {

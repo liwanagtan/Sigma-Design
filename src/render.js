@@ -7,7 +7,7 @@ import { css, mul, apply, unionBoxes, cornersOf } from './geom.js';
 import { textStyle, caseText, wrapsAtMax, truncateStyle } from './text.js';
 import { isInsideInstance, componentContext } from './components.js';
 import { gridsOverlay } from './grids.js';
-import { componentSetSymbol } from './icons.js';
+import { lucideIcon } from './lucide.js';
 import { findIcon, iconMarkup } from './icon-library.js';
 
 export const ACCENT = '#0D99FF';
@@ -364,8 +364,9 @@ export function renderOverlay(svg) {
     const tl = toScreen(apply(W, { x: 0, y: 0 }));
     const tr = toScreen(apply(W, { x: n.w, y: 0 }));
     const maxW = Math.max(0, Math.hypot(tr.x - tl.x, tr.y - tl.y));
-    const iconWidth = n.type === 'componentSet' && maxW >= 12 ? 16 : 0;
-    let text = (n.type === 'component' ? '❖ ' : n.type === 'instance' ? '◇ ' : '') + n.name;
+    const labelIcon={componentSet:'layout-grid',component:'component',instance:'diamond'}[n.type];
+    const iconWidth = labelIcon && maxW >= 12 ? 16 : 0;
+    let text = n.name;
     const textWidth = Math.max(0, maxW - iconWidth);
     if (labelWidth(text) > textWidth) {
       while (text.length > 1 && labelWidth(text + '…') > textWidth) text = text.slice(0, -1);
@@ -373,7 +374,7 @@ export function renderOverlay(svg) {
     }
     const angle = Math.atan2(tr.y - tl.y, tr.x - tl.x) * 180 / Math.PI;
     const color = isComponentish(n) ? COMPONENT_ACCENT : sel.has(n.id) ? ACCENT : state.hoverId === n.id ? '#333' : '#8C8C8C';
-    if (iconWidth) out += `<g transform="translate(${tl.x},${tl.y}) rotate(${angle})" color="${color}"><svg x="0" y="-16" width="11" height="11" viewBox="0 0 12 12" aria-hidden="true">${componentSetSymbol}</svg></g>`;
+    if (iconWidth) out += `<g transform="translate(${tl.x},${tl.y}) rotate(${angle})" color="${color}">${lucideIcon(labelIcon,11).replace('<svg ', '<svg y="-16" ')}</g>`;
     out += `<text transform="translate(${tl.x},${tl.y}) rotate(${angle})" x="${iconWidth}" y="-6" fill="${color}" font-size="11" font-weight="500" font-family="Inter,system-ui,sans-serif">${esc(text)}</text>`;
     frameLabels.push({ id: n.id, x: tl.x, y: tl.y - 18, w: Math.max(iconWidth + labelWidth(text), 8), h: 16, angle });
   }

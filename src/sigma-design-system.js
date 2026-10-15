@@ -8,7 +8,7 @@ import { collection, group, token, modes, ref } from './sample-tokens.js';
 import { normalizeGroups } from './token-groups.js';
 import { createNode, uid, makePaint } from './store.js';
 
-export const SIGMA_SYSTEM_VERSION = 20;
+export const SIGMA_SYSTEM_VERSION = 21;
 const dark = Object.fromEntries(Object.entries(UI_SOURCE.dark).filter(([key])=>key.startsWith('--')).map(([key,value])=>[key.slice(2),value]));
 const slug = s => s.replace(/^\./, '').replace(/[^\w-]+/g, '-');
 const px = cssNumber;
@@ -124,7 +124,7 @@ export function sigmaFoundationsDocument(collections) {
       K.bind(n, 'fills.0.color', 'Interface', 'color/accent');
       if (v.type === 'color') K.bind(n, 'fills.0.color', c.name, v.name);
       else if (v.type === 'shadow') {
-        n.radius = 5;
+        n.radius = 5; K.bind(n,'radius','Foundations','radius/5');
         n.effects = [{ type: 'drop-shadow', color: '#000000', opacity: 0.25, x: 0, y: 4, blur: 16, spread: 0, visible: true }];
         K.bind(n, 'fills.0.color', 'Interface', 'color/panel'); K.bind(n, 'effects.0', c.name, v.name);
       } else {
@@ -230,6 +230,8 @@ export function sigmaComponentsDocument(collections) {
       const width = components.reduce((sum, component) => sum + component.w, 0) + gap * Math.max(0, components.length - 1) + padding * 2;
       const height = Math.max(...components.map(component => component.h)) + padding * 2;
       const set = createNode('componentSet', { name: `${name} · ${mi === 0 ? 'Current page mode' : 'Dark reference'}`, x: 0, y: 100, w: width, h: height, sizingH:'hug', sizingV:'hug', layout:{ mode:'horizontal', gap, pt:padding, pr:padding, pb:padding, pl:padding, spacing:'packed', alignP:'start', alignC:'center' }, fills: [], clip: false, children: components, props:components[0].props?structuredClone(components[0].props):undefined, variantProps: { State: variants }, ...(mi === 0 ? {} : { modes:Object.fromEntries(collections.map(c => [c.id, c.modes.find(m => m.name === mode).id])) }) });
+      K.bind(set,'layout.gap','Foundations','spacing/24');
+      for(const side of ['pt','pr','pb','pl']) K.bind(set,`layout.${side}`,'Foundations','spacing/16');
       return set;
     });
     sets[1].y = sets[0].y + sets[0].h + 64;
@@ -250,6 +252,10 @@ export function sigmaComponentsDocument(collections) {
       if(mode==='vertical') main.sizingV='hug';
     }
   }
+  const bindDefaults=nodes=>{for(const n of nodes){if(n.layout)for(const key of ['gap','pt','pr','pb','pl'])if(!n.bindings?.[`layout.${key}`]) K.bind(n,`layout.${key}`,'Foundations',`spacing/${n.layout[key]||0}`);
+    if(!n.bindings?.['fills.0.color'] && n.fills?.length===1 && (n.fills[0].opacity===0 || n.fills[0].color==='#00000000')) n.fills=[];
+    if(n.children)bindDefaults(n.children);}};
+  pages.forEach(p=>bindDefaults(p.children));
   return { name:'Components',pages,currentPageId:pages[0].id };
 }
 

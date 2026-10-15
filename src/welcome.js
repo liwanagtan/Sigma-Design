@@ -9,7 +9,7 @@ import { createNode, uid, makePaint } from './store.js';
 import { DEFAULT_LAYOUT } from './layout.js';
 import { sigmaIconId } from './sample-icons.js';
 
-export const WELCOME_VERSION = 51;
+export const WELCOME_VERSION = 52;
 // The sample icons the guide uses (outline unless marked filled).
 const GUIDE_ICONS=['plus','eye','text','rect','link','close','appearance','home','move','hand','frame'];
 export const WELCOME_ICONS=GUIDE_ICONS.map(sigmaIconId);

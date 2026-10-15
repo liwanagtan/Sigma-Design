@@ -302,7 +302,7 @@ function limitBadge(area) {
   const l = slotLimits(area);
   if (l.min == null && l.max == null) return `<span class="muted">${l.count} layer${l.count === 1 ? '' : 's'}</span>`;
   const range = `${l.min ?? 0}–${l.max ?? '∞'}`;
-  return `<span class="slot-limit ${l.ok ? 'ok' : 'warn'}" title="${l.ok ? 'Within the limits' : 'Outside the limits'}: ${range} layers">${l.ok ? '✓' : '⚠'} ${l.count} of ${range}</span>`;
+  return `<span class="slot-limit ${l.ok ? 'ok' : 'warn'}" title="${l.ok ? 'Within the limits' : 'Outside the limits'}: ${range} layers">${l.ok ? lucideIcon('check',12) : lucideIcon('triangle-alert',12)} ${l.count} of ${range}</span>`;
 }
 
 function slotRows(inst, main) {
@@ -1232,7 +1232,7 @@ function compMenu(btn, node) {
     { label: 'Edit description', action: () => { editingDescription = node.id; window.dispatchEvent(new CustomEvent('sigma:refresh-panel')); setTimeout(() => document.querySelector('.comp-desc-edit')?.focus(), 0); } },
     { label: 'Docs…', action: () => openDocsEditor(node) },
     '-',
-    ...Object.entries(STATUSES).map(([k, l]) => ({ label: `${statusOf(node) === k ? '✓ ' : ''}${l}`, action: () => {
+    ...Object.entries(STATUSES).map(([k, l]) => ({ label: l, checked: statusOf(node)===k, action: () => {
       const t = docsTarget(node);
       editNode(t, ['status'], () => (k === 'draft' ? delete t.status : (t.status = k)));
       commit();

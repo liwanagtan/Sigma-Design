@@ -1,3 +1,4 @@
+import {lucideIcon} from './lucide.js';
 // Check a component library against the code, from Sigma (Part F, Phase 35). The project's components page
 // (components[].page in sigma.config.json: a page of the app that renders every component and loads
 // sigma-design/bridge) is opened in a hidden frame; the bridge captures what the manifest lists, Sigma saves
@@ -27,7 +28,7 @@ function reportHTML(components, pages) {
     if (!rows.length) return '';
     const bad = rows.filter(([, d]) => d.length).length;
     return `<div class="check-section"><div class="check-head"><b>${title}</b><span class="${bad ? 'check-bad' : 'check-ok'}">${rows.length - bad} of ${rows.length} match the code</span></div>` +
-      rows.map(([key, diffs]) => `<div class="check-row ${diffs.length ? 'bad' : 'ok'}"><span class="check-mark">${diffs.length ? '✗' : '✓'}</span><span>${esc(key)}</span></div>` +
+      rows.map(([key, diffs]) => `<div class="check-row ${diffs.length ? 'bad' : 'ok'}"><span class="check-mark">${diffs.length ? lucideIcon('x',12) : lucideIcon('check',12)}</span><span>${esc(key)}</span></div>` +
         diffs.slice(0, 6).map((d) => `<div class="check-diff">${esc(d.layer)}: ${esc(d.what)} ${esc(String(d.sigma))} in Sigma, ${esc(String(d.code))} in code</div>`).join('') +
         (diffs.length > 6 ? `<div class="check-diff">…and ${diffs.length - 6} more</div>` : '')).join('') + '</div>';
   };

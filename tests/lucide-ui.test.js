@@ -43,3 +43,14 @@ test('Sigma reference project: Lucide names are searchable and iconography uses 
   const ids=new Set(icons.map(i=>i.id));
   for(const page of pages){const surface=page.children[0];ok(surface.bindings['fills.0.color']);ok(surface.modes);const glyphs=surface.children.filter(n=>n.type==='icon');eq(glyphs.length,16);for(const glyph of glyphs){ok(ids.has(glyph.iconId));ok(glyph.bindings['fills.0.color']);ok(glyph.bindings.w);ok(glyph.bindings.h);}}
 });
+
+test('Lucide canvas chrome and menu checks render SVG glyphs instead of font symbols',async()=>{
+  const {createNode}=await import('../src/store.js');const {useDoc}=await import('./core.test.js');const {renderOverlay}=await import('../src/render.js');
+  const main=createNode('component',{name:'Main',w:120,h:40,children:[]});
+  useDoc([main,createNode('instance',{name:'Instance',componentId:main.id,x:160,w:120,h:40,children:[]}),createNode('componentSet',{name:'Variants',y:100,w:120,h:80,children:[]})]);
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');renderOverlay(svg);
+  for(const name of ['component','diamond','layout-grid'])ok(svg.querySelector(`[data-lucide="${name}"]`),name);
+  ok(!/[❖◇]/.test(svg.textContent));
+  const {showContextMenu,hideContextMenu}=await import('../src/menu.js');
+  try{showContextMenu(20,20,[{label:'Checked',checked:true,action:()=>{}}]);ok(document.querySelector('.menu-check [data-lucide="check"]'));eq(document.querySelector('.menu-check').textContent,'');}finally{hideContextMenu();}
+});

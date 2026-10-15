@@ -11,7 +11,7 @@ import { showContextMenu } from './menu.js';
 import { icons as uiIcons } from './icons.js';
 import { modal } from './libraries.js';
 import {
-  parseSVGIcon, iconMarkup, iconGroups, iconMatches, iconNameFrom, diffIcons, ICON_STYLES,
+  iconChoices, isLegacyFilledIcon, parseSVGIcon, iconMarkup, iconGroups, iconMatches, iconNameFrom, diffIcons, ICON_STYLES,
 } from './icon-library.js';
 import { projectMenuItems } from './project-ui.js';
 import { ask, askText } from './dialogs.js';
@@ -345,7 +345,8 @@ function onInspectorClick(e) {
 }
 
 // ---------- rendering ----------
-const visible = () => list().filter((i) => (groupFilter === null || (i.group || '') === groupFilter) &&
+const choices = () => iconChoices(list(), [...selected][0]);
+const visible = () => choices().filter((i) => (groupFilter === null || (i.group || '') === groupFilter) &&
   (styleFilter === 'all' || i.style === styleFilter) && iconMatches(i, query));
 
 // Icons by style, then by group (A–Z, ungrouped last): [{ style, count, groups: [{ name, icons }] }].
@@ -406,8 +407,8 @@ function renderGroups() {
     return `<button class="nav-item${cls}${active ? ' active' : ''}" data-style="${style}" data-group="${esc(key)}" title="${key === '*' || key === '' ? '' : 'Double-click to rename'}">` +
       `<span class="icons-group-name">${esc(label)}</span><span class="muted">${count}</span></button>`;
   };
-  root.querySelector('[data-groups]').innerHTML = item('all', '*', 'All icons', list().length) +
-    sections(list()).map((s) => `<div class="nav-label icons-style-label">${ICON_STYLES[s.style]}</div>` + item(s.style, '*', `All ${ICON_STYLES[s.style].toLowerCase()}`, s.count) +
+  root.querySelector('[data-groups]').innerHTML = item('all', '*', 'All icons', choices().length) +
+    sections(choices()).map((s) => `<div class="nav-label icons-style-label">${ICON_STYLES[s.style]}</div>` + item(s.style, '*', `All ${ICON_STYLES[s.style].toLowerCase()}`, s.count) +
       s.groups.map((g) => item(s.style, g.name, groupLabel(g.name), g.icons.length, ' sub')).join('')).join('');
 }
 
@@ -428,7 +429,7 @@ function renderGrid() {
     return;
   }
   const tile = (i) => `<button class="icon-tile${selected.has(i.id) ? ' selected' : ''}" data-icon="${i.id}" title="${esc(i.name)}${i.keywords ? ` · ${esc(i.keywords)}` : ''}">` +
-    `${iconMarkup(i, { w: 24, h: 24 })}<span class="icon-tile-name">${esc(i.name)}</span></button>`;
+    `${iconMarkup(i, { w: 24, h: 24 })}<span class="icon-tile-name">${esc(i.name)}${isLegacyFilledIcon(i)?' · legacy filled':''}</span></button>`;
   grid.innerHTML = sections(shown).map((s) => `<div class="icons-style-title">${ICON_STYLES[s.style]} <span class="muted">${s.count}</span></div>` +
     s.groups.map((g) => `<section class="icons-section"><div class="icons-section-title">${esc(groupLabel(g.name))} <span class="muted">${g.icons.length}</span></div>` +
       `<div class="icons-tiles">${g.icons.map(tile).join('')}</div></section>`).join('')).join('');
@@ -443,13 +444,13 @@ function renderInspector() {
   const datalist = `<datalist id="icon-groups">${groups.map((g) => `<option value="${esc(g.name)}">`).join('')}</datalist>`;
   const styleSeg = (cur) => `<div class="seg">${Object.entries(ICON_STYLES).map(([k, v]) => `<button class="icon-btn${cur === k ? ' on' : ''}" data-set-style="${k}">${v}</button>`).join('')}</div>`;
   if (!sel.length) {
-    const outline = list().filter((i) => i.style === 'outline').length;
+    const outline = choices().filter((i) => i.style === 'outline').length;
     const src = state.doc.source; // a free icon set this file was made from
     const credit = src ? `<div class="icons-source"><b>${esc(src.name)} ${esc(src.version)}</b> · ${esc(src.license)} License<br>` +
       `<a href="${esc(src.url)}" target="_blank" rel="noopener">${esc(src.url.replace(/^https?:\/\//, ''))}</a> · <button class="link-btn" data-license>License</button>` +
       `${src.note ? `<div class="muted">${esc(src.note)}</div>` : ''}</div>` : '';
-    el.innerHTML = `<div class="inspector-title">Icons file</div>${credit}
-      <p class="muted icons-help">${list().length ? `${plural(list().length, 'icon')} in ${plural(groups.length, 'group')}: ${outline} outline, ${list().length - outline} filled.` : 'No icons yet.'}</p>
+    el.innerHTML = `<div class="inspector-title">Icons file</div>${credit}${list().some(isLegacyFilledIcon)?'<p class="muted icons-help">Legacy filled icons are Sigma derivatives of Lucide outlines, retained for compatibility with saved designs.</p>':''}
+      <p class="muted icons-help">${choices().length ? `${plural(choices().length, 'icon')} in ${plural(groups.length, 'group')}: ${outline} outline, ${choices().length - outline} filled.` : 'No icons yet.'}</p>
       ${isCurrentSample() ? '<p class="muted icons-help">Changes reset when you leave this file or refresh. Make an editable copy (Σ menu) to keep them.</p>' : ''}
       ${state.viewOnly ? `<p class="muted icons-help">Try editing these icons. Changes reset when you leave this file or refresh. Make an editable copy (Σ menu) to keep them.</p>`
     : `<p class="muted icons-help">Import SVGs, drop them anywhere here, or paste SVG code (⌘V). Icons go into the group you have open. Re-importing an icon with the same name, group and style updates it.</p>

@@ -9,6 +9,7 @@
 <textarea id="output" readonly aria-label="Captured pages JSON"></textarea>
 <iframe id="preview" title="Sigma screen preview"></iframe>
 <script type="module">
+import {captureSourceText} from './source-fingerprint.js';
 import { sigmaCapture } from '../capture/capture.js';
 import { listFiles } from '../../src/files.js';
 const frame = document.querySelector('iframe');
@@ -102,7 +103,7 @@ document.querySelector('#capture').onclick = async () => {
       inline(capture.tree);
       captures.push({ name, capture });
     }
-    const css = await (await fetch('/styles.css')).text();
+    const css = await captureSourceText(async path=>{const response=await fetch('/'+path,{cache:'no-store'});if(!response.ok)throw new Error(`Could not fingerprint ${path}`);return response.text();});
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(css));
     const sourceHash = [...new Uint8Array(digest)].map(n=>n.toString(16).padStart(2,'0')).join('');
     document.querySelector('#output').value = JSON.stringify({ sourceHash, captures });
