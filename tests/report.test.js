@@ -10,7 +10,9 @@ test('report UI: scope, findings, direct targets, search and filter controls rem
     host.querySelector('[data-report-open-finding]').click();eq(opened[0].fileId,'file');eq(opened[0].pageId,'page');eq(opened[0].nodeId,'node');
     const input=host.querySelector('[data-report-search]');input.value='no match';input.dispatchEvent(new Event('input'));ok(host.querySelector('[data-report-files]').textContent.includes('No files match'));eq(document.activeElement===input,false);
     input.value='';input.dispatchEvent(new Event('input'));ok(host.querySelector('[data-report-open-finding]'));
-    const kind=host.querySelector('[data-report-kind="color"]');kind.click();eq(host.querySelector('[data-report-findings]').value,'color');
+    const kind=host.querySelector('[data-report-kind="color"]');kind.click();eq(host.querySelector('[data-report-findings]').value,'color');eq(kind.getAttribute('aria-pressed'),'true');ok(host.querySelector('[data-report-active-filters]').textContent.includes('Colors'));
+    host.querySelector('[data-report-clear-details]').click();eq(host.querySelector('[data-report-findings]').value,'all');eq(kind.getAttribute('aria-pressed'),'false');eq(host.querySelector('[data-report-search]').value,'');
+    host.querySelector('[data-report-reset-scope]').click();eq(changes.at(-1),{patch:{fileId:'',days:0,handoff:false,includeHidden:false,includeSamples:true},recompute:true});
     const handoff=host.querySelector('[data-report-handoff]');handoff.checked=true;handoff.dispatchEvent(new Event('change'));eq(changes.at(-1),{patch:{handoff:true},recompute:true});
   }finally{host.remove();}
 });
@@ -66,4 +68,14 @@ test('report loading: unavailable designs fail explicitly; missing libraries rem
     const files=await reportFiles();ok(files.warnings.length>=1);eq(useReport(files).overall.unresolvedBindings,1);
     await renderHome();ok(host.querySelector('.report-notice').textContent.includes('Some source data is unavailable'));
   }finally{window.fetch=oldFetch;host.remove();for(const key of Object.keys(project))if(!(key in before))delete project[key];Object.assign(project,before);selectProject(previous,{notify:false});await db.delete('projects',identity);if(pref===null)localStorage.removeItem('sigma.home.prefs');else localStorage.setItem('sigma.home.prefs',pref);location.hash=hash;}
+});
+
+test('report UI prioritizes broken links while preserving exact finding targets',()=>{
+  const host=document.createElement('div'),opened=[];
+  const files=fixture();files[0].doc.pages[0].children.push({id:'broken',type:'rect',name:'Broken binding',fills:[{color:'#fff'}],bindings:{'fills.0.color':'missing'}});
+  try{
+    renderReportDashboard(host,files,{onOpen:t=>opened.push(t)});
+    ok(host.querySelector('.report-finding').textContent.includes('Missing token link'));
+    host.querySelector('[data-report-open-finding]').click();eq(opened[0].nodeId,'broken');
+  }finally{host.remove();}
 });

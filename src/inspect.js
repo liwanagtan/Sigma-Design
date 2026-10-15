@@ -232,12 +232,13 @@ function valueText(type, value) {
 }
 
 export function inspectHTML(nodes) {
+  const create = '<div class="section"><button class="btn wide" data-create-code>Create code…</button><p class="muted" style="font-size:11px;line-height:1.5;margin:8px 0 0">Generate editable HTML/CSS for a selection or the current page.</p></div>';
   if (!nodes.length) {
-    return '<div class="section"><div class="muted inspect-empty">Select a layer to see its CSS, the design tokens it uses and, for components, their code.</div></div>';
+    return create + '<div class="section"><div class="muted inspect-empty">Select a layer to see its CSS, the design tokens it uses and, for components, their code.</div></div>';
   }
-  if (nodes.length > 1) return '<div class="section"><div class="muted inspect-empty">Select one layer to inspect it.</div></div>';
+  if (nodes.length > 1) return create + '<div class="section"><div class="muted inspect-empty">Select one layer to inspect it.</div></div>';
   const n = nodes[0];
-  let html = '';
+  let html = create;
   const comp = n.type === 'component' ? (getParent(n.id)?.type === 'componentSet' ? getParent(n.id) : n) : n.type === 'componentSet' ? n : null;
   if (comp && !isInsideInstance(n)) {
     const rows = componentAPI(comp,n);

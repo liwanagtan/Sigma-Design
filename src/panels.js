@@ -1643,6 +1643,7 @@ function initProps() {
   });
   // Inspect: copy a block; edit a component's code names.
   panel.addEventListener('click', (e) => {
+    if (e.target.closest('[data-create-code]')) return import('./code-create-ui.js').then(m=>m.openCodeCreation());
     if (e.target.closest('[data-a11y-check]')) return import('./a11y-ui.js').then((m) => m.openAccessibilityCheck());
     const copy = e.target.closest('[data-copy]');
     if (!copy) return;

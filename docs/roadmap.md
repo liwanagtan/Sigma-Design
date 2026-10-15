@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Updated: **15 October 2026**. Status: core editor and design-system phases **1–39 are complete**; local Figma import is implemented with fidelity limitations. The built-in terminal is complete for macOS/Linux. Reports redesign is implemented for review; code creation, AI in the editor, full Figma interoperability, and live collaboration remain open.
+Updated: **15 October 2026**. Status: core editor and design-system phases **1–39 are complete**; local Figma import is implemented with fidelity limitations. The built-in terminal is complete for macOS/Linux. Reports redesign is complete; code creation, AI in the editor, full Figma interoperability, and live collaboration remain open.
 
 This is the current backlog. Detailed phase specifications, past decisions, and implementation notes are in [roadmap history](roadmap-history.md). Project storage and migration details are in [project architecture](projects-architecture.md).
 
@@ -14,9 +14,9 @@ This is the current backlog. Detailed phase specifications, past decisions, and 
 | Sigma reference files | Done | Tokens, Foundations, Components, Pages and UI, Icons, and Guide examples in Sigma. Actual Sigma styles/tokens/glyphs; temporary edits reset on leaving or refresh, while editable copies persist in Drafts. |
 | Optics | Done | Sample design system inspired by Polaris, in its own project with persistent editable files. |
 | Appearance | Done | Global Auto/Light/Dark and system preference tracking. Design canvas background always follows app appearance; the page background color control is removed. Reference content retains its applicable token modes. |
-| Code tab | Partial | Renamed from Inspect to **Code**. Collapsed component docs, separate variant values/code names, resolved accessibility labels, and syntax-colored CSS/snippets/token cards are implemented; code creation is planned in Phase 51. |
+| Code tab | Partial | Renamed from Inspect to **Code**. Collapsed docs, resolved properties/labels, syntax-colored inspection, and a Create code workspace for editable HTML/CSS with sandboxed preview and export. Phase 51 remains in progress. |
 | Local `.fig` import | Partial | Worker-based decoding, editable basic layers, import reports, bounded transfer/storage, and tested large-document reopening. Full conversion and round-trip support remain open. |
-| Reports | Partial | Project-scoped design-system report is accessible from the top bar, with **Go back to Files** to return. Phase 50 now has a scoped dashboard, verified metric definitions, searchable/paginated findings and library usage, exact layer/token links, and return navigation. User review remains before closing the phase. |
+| Reports | Done | Project-scoped design-system report is accessible from the top bar, with **Go back to Files** to return. Phase 50 now has a scoped dashboard, verified metric definitions, searchable/paginated findings and library usage, exact layer/token links, and return navigation. UI approved by the user on 15 October 2026; scope, navigation, and usability regressions are verified. |
 | Documentation | Partial | Navigation and page shell exist. Final content is deferred until before shipping. |
 
 ### Current Home decisions
@@ -34,12 +34,11 @@ This is the current backlog. Detailed phase specifications, past decisions, and 
 ## Next priorities
 
 1. **Release readiness:** validate the new Home/project flows and prepare Documentation before shipping.
-2. **Reports usability and design:** review the implemented report UI and wording with users, then close remaining acceptance issues (Phase 50).
-3. **Code creation:** turn selections, components, and pages into editable, previewable code using project tokens and existing components (Phase 51).
-4. **AI in the editor:** shared document tools, the Assistant panel, and visual feedback/open-editor MCP (Phases 40–42).
-5. **Live collaboration:** the shared document, live sessions, and collaborative undo/comments (Phases 47–49).
-6. **Publish and pilot:** complete the release checklist, publish the npm package, and work with two or three pilot teams.
-7. **Figma interoperability — lowest priority:** one consolidated phase covering native vector editing, reader validation, conversion/paste/CLI import, and `.fig` export. Existing local import remains available; completing this phase is not a release gate.
+2. **Code creation:** turn selections, components, and pages into editable, previewable code using project tokens and existing components (Phase 51).
+3. **AI in the editor:** shared document tools, the Assistant panel, and visual feedback/open-editor MCP (Phases 40–42).
+4. **Live collaboration:** the shared document, live sessions, and collaborative undo/comments (Phases 47–49).
+5. **Publish and pilot:** complete the release checklist, publish the npm package, and work with two or three pilot teams.
+6. **Figma interoperability — lowest priority:** one consolidated phase covering native vector editing, reader validation, conversion/paste/CLI import, and `.fig` export. Existing local import remains available; completing this phase is not a release gate.
 
 ## Remaining feature milestones
 
@@ -47,8 +46,8 @@ Milestones below follow feature priority. Phase 43 now consolidates the former F
 
 | Phase | Milestone | Status | Remaining outcome |
 | --- | --- | --- | --- |
-| 50 | Reports usability and design | Partial · review | A clearer project report UI, understandable and trustworthy metrics, filters/drill-down, and practical next steps linked to the affected files/layers. |
-| 51 | Code creation | Planned | Create editable code for selections/components/pages, reuse project components and tokens, preview and validate results, and copy/download or apply project files through an explicit action. |
+| 50 | Reports usability and design | Done | Scoped dashboard, explained metrics, searchable findings and usage, exact layer/token navigation, and user-approved UI. |
+| 51 | Code creation | In progress | Create editable code for selections/components/pages, reuse project components and tokens, preview and validate results, and copy/download or apply project files through an explicit action. |
 | 52 | Built-in terminal | Done | A shared resizable terminal dock in Design/Tokens, real workspace-bound PTY sessions through the local server, streaming output, keyboard isolation, reconnect, and process cleanup. |
 | 40 | Shared document tools | Planned | One validated registry for reading/editing documents through the Assistant and MCP, using normal edit functions and undo. |
 | 41 | Assistant panel | Planned | Streaming chat, selection/page context, tool activity, Stop, provider/key settings, and one undo step per turn. |
@@ -60,7 +59,7 @@ Milestones below follow feature priority. Phase 43 now consolidates the former F
 
 ### Phase 50: Reports usability and design
 
-Implemented for review: dashboard and scoped counts; local/linked/unresolved instances; resolved and type-checked token bindings; per-field typography; hidden/reference/handoff/date/file filters; no-data/error/offline states; bounded searchable findings and usage lists; exact layer/token drill-down and Back to Report. Proposals is restored to repository project top bars and its route guard is fixed. Acceptance still requires user review of the design/wording and any resulting refinements.
+Completed: dashboard and scoped counts; local/linked/unresolved instances; resolved and type-checked token bindings; per-field typography; hidden/reference/handoff/date/file filters; no-data/error/offline states; bounded searchable findings and usage lists; exact layer/token drill-down and Back to Report. Proposals is restored to repository project top bars and its route guard is fixed. A usability review added resettable scope/detail filters, visible active coverage filters, broken-link prioritization, and clearer findings-versus-values wording. The user approved the Reports UI on 15 October 2026. Validation: 88 Node tests passed for the implementation and 257 browser tests passed after the usability refinements.
 
 Help users answer **what is using the design system, where the gaps are, and what to do next**.
 
@@ -72,6 +71,8 @@ Help users answer **what is using the design system, where the gaps are, and wha
 - **Done when:** representative projects produce verified counts and understandable results, users can move from a finding to the relevant design and back, accessibility/appearance checks pass, and tests cover scope/filter changes, rounding/no-data cases, and navigation. Review the design and wording with users before closing the phase.
 
 ### Phase 51: Code creation
+
+First increment implemented: **HTML/CSS**, selected by the user, with selection/page generation, current-mode token snapshots, editable sources, sandboxed preview, viewport widths, copy/download, breakpoint CSS, and draft-discard protection. Verified on an Optics button; 261 browser tests and 88 Node tests pass. Repository Apply/ownership conflicts, framework mappings, broader fidelity, and responsive-page visual comparisons remain open. Implementation sequence and acceptance boundaries: [Code creation plan](code-creation-plan.md).
 
 Build on the **Code** tab and existing repository handoff/design-to-code workflow so users can create usable components and pages from their designs.
 
@@ -121,7 +122,7 @@ Build on the **Code** tab and existing repository handoff/design-to-code workflo
 - [ ] Finalize Documentation content before shipping; keep the current content unchanged until that work is scheduled.
 - [ ] Validate migration/idempotence, global Recents/search, Drafts ownership, grouped project pages, Create New/import destinations, moves, direct links, refresh, and back/forward navigation.
 - [x] Restore the project-scoped Report in the top bar, with **Go back to Files** to return to the workspace.
-- [ ] Validate Reports usability and metric correctness against Phase 50 acceptance criteria.
+- [x] Validate Reports usability and metric correctness against Phase 50 acceptance criteria; user approved the UI on 15 October 2026.
 - [x] Make repository Proposals discoverable from the new project UI and verify its project scope.
 - [ ] Validate repository offline/reconnect behavior, cached ownership, external library links, and failed moves retaining original drafts.
 - [ ] Keep Sigma Tokens/Foundations/Components/Icons and captured Pages and UI synchronized with shipped interface changes.

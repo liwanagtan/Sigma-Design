@@ -419,3 +419,5 @@ Documentation sits at the bottom of the sidebar; its contents will be prepared b
 Design canvas backgrounds follow the app’s Auto/Light/Dark appearance. Page settings keep token mode controls and no longer offer a canvas background color picker.
 
 Component documentation is collapsed by default in Design and Code. Code separates variant values and property defaults from editable code names, shows resolved accessibility labels, and highlights code snippets and token references for Light/Dark appearance.
+
+The Design editor’s **Code → Create code…** workspace generates an editable HTML/CSS draft from a selection or the current page. Update its sandboxed preview, choose a preview width, and copy or download a self-contained HTML file. Output includes referenced tokens resolved in the design’s current modes; scripts and external asset links are removed. Source edits last while the workspace is open, with confirmation before regeneration or closing. This first increment expands component instances into HTML; repository Apply and framework component imports remain planned.
