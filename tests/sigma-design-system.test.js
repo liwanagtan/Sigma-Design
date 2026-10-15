@@ -1,5 +1,5 @@
 import { test, eq, ok } from './harness.js';
-import { sigmaTokenDocument, sigmaFoundationsDocument, sigmaComponentsDocument } from '../src/sigma-design-system.js';
+import { sigmaTokenDocument, sigmaComponentsDocument } from '../src/sigma-design-system.js';
 import { state, loadDocument, walk } from '../src/store.js';
 import { aliasChain, collections, resolveVariables } from '../src/variables.js';
 import { exportDTCG, importTokens } from '../src/tokens-io.js';
@@ -26,7 +26,7 @@ test('Sigma UI tokens: both modes resolve all aliases, and export/import preserv
 test('Sigma UI specimens: all bindings exist, Light matches interface source and Dark resolves at each specimen', () => {
   const tokens = sigmaTokenDocument();
   const ids = new Set(tokens.collections.flatMap(c => c.variables.map(v => v.id)));
-  for (const make of [sigmaFoundationsDocument, sigmaComponentsDocument]) {
+  for (const make of [sigmaComponentsDocument]) {
     const doc = make(tokens.collections); doc.variables = { collections: tokens.collections };
     loadDocument(doc); resolveVariables();
     for (const pg of state.doc.pages) walk(pg.children, n => {
@@ -104,13 +104,7 @@ test('Sigma system: Foundation dependencies update component geometry and labell
   const spacing=foundation.variables.find(v=>v.name==='spacing/8');
   for(const mode of foundation.modes) spacing.valuesByMode[mode.id]=32;
   resolveVariables();applyLayouts();eq(button.layout.pl,32);eq(button.layout.pr,32);
-  const fd=sigmaFoundationsDocument(t.collections);fd.variables={collections:t.collections};loadDocument(fd);resolveVariables();
-  const dark=state.doc.pages.find(p=>p.group==='Dark'&&p.name==='color');
-  applyWelcomeAppearance(state.doc,t.collections,'light');resolveVariables();
-  eq(dark.children.find(n=>n.type==='frame').fills[0].color,'#1A1A1A','reference surface also stays Dark');
-  eq(dark.children.find(n=>n.type==='frame').children.find(n=>n.type==='rect'&&n.name==='color/panel').fills[0].color,'#242424');
-  const labelPage=state.doc.pages.find(p=>p.name==='spacing');
-  ok(labelPage.children.find(n=>n.type==='frame').children.some(n=>n.type==='text'&&n.text==='32'&&n.bindings.text===spacing.id),'value labels stay linked');
+
 });
 
 test('Sigma controls: current dropdown states, shared items, shadow and dark checkbox match the system',async()=> {

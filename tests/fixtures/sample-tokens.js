@@ -1,40 +1,7 @@
-// The sample token file: a small but complete design system, showing what token files can do.
-//
-//   Primitives  raw values: a color palette (with transparent colors), spacing, radii, type scales, motion, text
-//   Semantic    what colors and shadows mean, in Light and Dark modes; every value points at a primitive
-//   Brand B     an extension of Semantic that only changes the accent colors
-//   Typography  text styles whose parts point at the type primitives
-//   Components  tokens for buttons, inputs and cards, pointing at semantic tokens (three levels deep)
-import { uid } from './store.js';
-import { normalizeGroups } from './token-groups.js';
-
-export const ref = (id) => ({ alias: id });
-export const modes = (...values) => ({ perMode: values }); // a different value in each mode, in order
-
-export function collection(name, modeNames) {
-  const ms = modeNames.map((n) => ({ id: uid(), name: n }));
-  return { id: uid(), name, modes: ms, defaultModeId: ms[0].id, variables: [], groups: [] };
-}
-
-export function group(col, name, parentId = null, description = '') {
-  const g = { id: uid(), name, parentId };
-  if (description) g.description = description;
-  col.groups.push(g);
-  return g.id;
-}
-
-export function token(col, groupId, name, type, value, description = '') {
-  const v = { id: uid(), name, type, valuesByMode: {} };
-  if (groupId) v.groupId = groupId;
-  if (description) v.description = description;
-  col.modes.forEach((m, i) => {
-    const x = value?.perMode ? value.perMode[i] ?? value.perMode[0] : value;
-    v.valuesByMode[m.id] = structuredClone(x);
-  });
-  col.variables.push(v);
-  return v.id;
-}
-
+// Teaching data used by format, alias and token regression tests; not shipped as a Sigma project file.
+import {uid} from '../../src/store.js';
+import {collection,group,token,modes,ref} from '../../src/token-builders.js';
+import {normalizeGroups} from '../../src/token-groups.js';
 export function sampleTokenDocument() {
   // ---------- Primitives ----------
   const p = collection('Primitives', ['Value']);

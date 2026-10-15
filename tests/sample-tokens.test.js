@@ -1,10 +1,10 @@
 import { test, eq, ok } from './harness.js';
 import { useDoc } from './core.test.js';
 import { state, loadDocument, walk } from '../src/store.js';
-import { sampleTokenDocument } from '../src/sample-tokens.js';
+import { sampleTokenDocument } from './fixtures/sample-tokens.js';
 import { collections, findByReference, aliasChain, previewValue, groupTree, findVariable, snapshotForLibrary, resolveVariables } from '../src/variables.js';
 import { syncInstances } from '../src/components.js';
-import { welcomeDocument } from '../src/welcome.js';
+import { welcomeDocument } from './fixtures/welcome.js';
 import { exportDTCG, importTokens } from '../src/tokens-io.js';
 
 function loadSample() {

@@ -1,3 +1,4 @@
+// Legacy guide fixture for format/component regression tests; not part of the app.
 // "Welcome to Sigma": the file a new user starts with. Each page pairs a short guide with live examples,
 // Its examples use local teaching tokens (sample-tokens.js) and linked sample icons.
 // The separate Tokens, Foundations and Components files document Sigma’s interface. It replaces the old sample
@@ -5,9 +6,9 @@
 //
 // Bump WELCOME_VERSION whenever the content changes: "Open Welcome to Sigma" then makes a fresh copy
 // instead of reopening an older one.
-import { createNode, uid, makePaint } from './store.js';
-import { DEFAULT_LAYOUT } from './layout.js';
-import { sigmaIconId } from './sample-icons.js';
+import { createNode, uid, makePaint } from '../../src/store.js';
+import { DEFAULT_LAYOUT } from '../../src/layout.js';
+import { sigmaIconId } from '../../src/sample-icons.js';
 
 export const WELCOME_VERSION = 55;
 // The sample icons the guide uses (outline unless marked filled).
@@ -620,28 +621,4 @@ export function welcomeDocument(collections, { icons = null } = {}) {
     page('10 Icons files', iconPage, iconColumns),
   ].map((pg, i) => inGroup(i < 4 ? 'Get started' : i < 8 ? 'Design systems' : 'Sample files', pg));
   return { name: WELCOME_NAME, pages, currentPageId: pages[0].id };
-}
-
-// The first time the file is opened (when its text is measured and its layouts are done), stack each page's
-// example columns by their real heights. Returns whether anything moved.
-const COLUMN_GAP = 64;
-export function arrangeWelcome(doc) {
-  let moved = false;
-  for (const pg of doc.pages) {
-    if (!pg.welcomeColumns) continue;
-    const byId = new Map(pg.children.map((n) => [n.id, n]));
-    for (const column of pg.welcomeColumns) {
-      const nodes = column.map((id) => byId.get(id)).filter(Boolean);
-      for (let i = 1; i < nodes.length; i++) {
-        const y = nodes[i - 1].y + nodes[i - 1].h + COLUMN_GAP;
-        if (nodes[i].y !== y) {
-          nodes[i].y = y;
-          moved = true;
-        }
-      }
-    }
-    delete pg.welcomeColumns;
-    moved = true;
-  }
-  return moved;
 }

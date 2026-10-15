@@ -8,7 +8,7 @@
 //   Typography  the text styles (heading/xl, body/md…), made of font primitives
 //
 // Every token has a CSS variable (--optics-…) and the groups say what they're for.
-import { collection, group, token, ref, modes } from './sample-tokens.js';
+import { collection, group, token, ref, modes } from './token-builders.js';
 import { normalizeGroups } from './token-groups.js';
 import { defaultTokenCode } from './code-names.js';
 

@@ -63,20 +63,14 @@ node bin/sigma-design.mjs standalone --port 5173       # Sigma on its own
 node bin/sigma-design.mjs dev examples/css-app         # Sigma in the example project
 ```
 
-Welcome to Sigma includes **Tokens**, **Foundations**, **Components** and **Pages and UI** documenting Sigma’s interface.
+The Sigma project contains **Tokens**, **Icons**, and **Components** for the app's interface.
 Components’ main specimens inherit the page mode; fixed Dark references remain below for comparison.
+Tokens includes shared Foundation values used by the components, plus app-derived Light/Dark roles.
 
-Tokens has Light and Dark modes: Light comes from `styles.css`; Dark comes from the same stylesheet’s interface appearance tokens. The Guide keeps its alias and brand teaching examples as local tokens.
-Pages and UI contains full 1280 × 900 desktop designs of the files home, design editor, Tokens and Icons screens. Interface boxes and text are native layers; SVG artwork, including the editor’s canvas preview, is embedded. The welcome files are view-only, and editable copies remain your own files.
-
-After editing interface styles, run `npm run build:welcome` to regenerate `src/sigma-ui-source.js`.
-When shipped welcome content changes, bump `SIGMA_SYSTEM_VERSION` in `src/sigma-design-system.js` and
-`WELCOME_VERSION` in `src/welcome.js`; existing browsers receive new built-in files and keep the older
-versions in Archive. For Pages and UI, open `/tools/design-system/capture-pages.html` in the running app,
-click **Capture four screens**, save its JSON to `../work/sigma-pages-captures.json` (relative to the repository),
-and run `npm run build:pages`. Bump `SIGMA_PAGES_VERSION` in `src/sigma-pages.js` and `WELCOME_VERSION`
-when shipping changed screen designs. Capture only the built-in welcome files, not personal project content.
-The source freshness check catches a stylesheet change without regeneration.
+After editing interface sources, run `npm run build:icons` and `npm run build:welcome`.
+Bump `SIGMA_SYSTEM_VERSION` in `src/sigma-design-system.js` when shipping changed built-ins.
+The former Foundations, Pages and UI, and Guide examples files are permanently removed by a targeted migration,
+including their archived copies. User-created files and Optics are not part of that cleanup.
 
 Tests: with the server running, open `/tests/` (the in-browser tests); `npm run test:node` runs the Node
 tests (the server, the command line, `init`, adapters, live sync, the team workflow). See `CONTRIBUTING.md`
@@ -240,7 +234,7 @@ The pinned browser parser is [openfig-core](https://github.com/OpenFig-org/openf
   - apply an extension with the mode picker on a frame, page or instance to re-skin it (for example, a second brand); extensions can be extended again
   - copied layers remember their variables' names, so pasting into another file reconnects them to same-named variables there
   - a binding to a variable the other file doesn't have is dropped, and the layer keeps its value
-- **Sigma project:** built-in **Tokens**, **Foundations**, **Components**, **Pages and UI**, **Icons**, and **Guide examples** describe Sigma’s actual interface. Tokens provide Light/Dark modes; Icons contains the Lucide subset used by Sigma, with compatible IDs and searchable semantic aliases. Foundations includes token-bound Iconography references. Changes to these playground files reset on leaving or refreshing; **Make an editable copy** keeps a saved copy. New reference versions move old files to Archive. **Documentation** is a separate sidebar destination; Guide examples remains the editable teaching design file.
+- **Sigma project:** built-in **Tokens**, **Icons**, and **Components** describe Sigma’s actual interface. Foundations, Pages and UI, and Guide examples are retired from this project; existing built-in copies are permanently removed. The Foundations token collection remains in Tokens because components depend on it. Tokens provide Light/Dark modes; Icons contains the Lucide subset used by Sigma, with compatible IDs and searchable semantic aliases. Changes to these playground files reset on leaving or refreshing; **Make an editable copy** keeps a saved copy. New reference versions move old files to Archive. **Documentation** is a separate sidebar destination;
 - **Constraints:** layers placed freely in a frame have horizontal (Left, Right, Left & right, Center, Scale) and vertical (Top, Bottom, Top & bottom, Center, Scale) rules
   - the rules apply when the frame is resized by its handles or its W/H fields; hold ⌘ while dragging to ignore them
   - they also apply when an instance is sized differently from its main component
@@ -336,9 +330,9 @@ Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.
 | `src/icons-screen.js` | The icons file screen |
 | `src/icon-ui.js` | The icon picker and icon layers in components |
 | `src/libraries.js` | Token and component libraries: publishing, linking, updates, migration |
-| `src/sample-tokens.js` | The sample token file (a complete small design system) |
+| `src/token-builders.js` | Shared construction helpers for real design-system tokens |
 | `src/sample.js` | The blank design file |
-| `src/welcome.js` | Guide examples in the Sigma project, built on teaching tokens and Sigma UI icons |
+| `tests/fixtures/welcome.js`, `tests/fixtures/sample-tokens.js` | Legacy teaching fixtures used by format and token regression tests; not app files |
 | `src/sample-icons.js` | Separate Sigma UI subset and full Lucide catalogue factories; stable compatibility IDs |
 | `src/project-format.js` | Sigma files in a project: saving without derived data, opening (rebuilding it), stable JSON |
 | `src/validate.js` | Checks project files and says what's wrong (used by `tools/validate.js`) |
@@ -406,7 +400,7 @@ their own licenses (Lucide's icons: ISC; see `NOTICE`).
 
 ### Welcome system synchronization
 
-Welcome Tokens now publish Foundation aliases for spacing, dimensions, radii, typography, and elevation, including CSS shorthand zero values. Components bind their layouts to those tokens and show explicit control states. Dropdown menus and segmented controls compose reusable item instances. Foundations retain labelled Light/Dark references on matching surfaces while the editor follows global appearance, including an Iconography page with token-bound Lucide specimens. Icons includes a Lucide · Sigma UI group generated from the app’s shared Lucide registry, showing canonical Lucide names with searchable Sigma aliases; the multicolor brand mark remains separate from the monochrome icon library. Regeneration versions refresh existing Welcome files, and library reuse validates token values and Sigma icon content.
+Welcome Tokens now publish Foundation aliases for spacing, dimensions, radii, typography, and elevation, including CSS shorthand zero values. Components bind their layouts to those tokens and show explicit control states. Dropdown menus and segmented controls compose reusable item instances. Components retain labelled Light/Dark references while the editor follows global appearance. Icons includes a Lucide · Sigma UI group generated from the app’s shared Lucide registry, showing canonical Lucide names with searchable Sigma aliases; the multicolor brand mark remains separate from the monochrome icon library. Regeneration versions refresh existing Welcome files, and library reuse validates token values and Sigma icon content.
 
 ### Projects, Drafts, and Documentation
 
@@ -426,6 +420,6 @@ The Design editor’s **Code → Create code…** workspace generates an editabl
 
 Sigma’s interface uses pinned Lucide artwork through `src/lucide.js` and stable semantic aliases in `src/ui-icon-map.js`. Run `npm run build:icons` after adding an icon. The generated UI subset avoids loading the full catalogue at startup. Sigma’s brand logo remains separate. Existing Optics icon files and embedded component snapshots refresh in place, retaining IDs, custom icons and design edits. See `NOTICE` for attribution.
 
-Reference maintenance: run `npm run build:icons` and `npm run build:welcome` after changing interface sources, then capture the four screens with `tools/design-system/capture-pages.html` and run `npm run build:pages`. Capture freshness includes icon data, UI JavaScript, reference generators and CSS. Pages and UI is an editable captured reference with embedded SVG artwork; it is not fully composed from library instances, so artwork does not automatically follow every token edit. Intentional unbound examples in Guide examples demonstrate token auditing.
+Reference maintenance: run `npm run build:icons` and `npm run build:welcome` after changing interface sources. The retired screen-capture pipeline is removed. Teaching generators live under `tests/fixtures/`, used by regression tests and the schema sample-project builder.
 
 Sigma project source parity follows icons → tokens → components. The shared control inventory, first-party stylesheet extraction, scoped Code colors, motion tokens and browser parity fixtures are documented in `docs/sigma-source-parity.md`; remaining composite coverage is explicit rather than implied by token coverage.

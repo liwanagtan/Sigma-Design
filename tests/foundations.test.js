@@ -9,7 +9,7 @@ import { buildSVG } from '../src/io.js';
 import { auditDocument, applyToken, colorDistance } from '../src/audit.js';
 import { parseEasing, resolveVariables, shiftPaintBindings, resolveIn, addContrastPair, deleteVariable, setTokenDeprecated, diffCollections } from '../src/variables.js';
 import { contrastRatio, contrastLevel, formatRatio, isLargeText, backgroundBehind, textContrast } from '../src/contrast.js';
-import { sampleTokenDocument } from '../src/sample-tokens.js';
+import { sampleTokenDocument } from './fixtures/sample-tokens.js';
 import { nodeSVG, effectOverhang, cornerRadii, strokeSides } from '../src/render.js';
 import { setProps } from '../src/commands.js';
 import { applyLayouts, DEFAULT_LAYOUT } from '../src/layout.js';

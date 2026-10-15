@@ -1,8 +1,8 @@
 // Fixtures reuse live control renderers where controls have anatomy, not painted substitutes.
-import {menuItemHTML,switchHTML,fieldLabelHTML,appearanceControlHTML} from './ui-controls.js';
-import {icons} from './icons.js';
-import {lucideIcon} from './lucide.js';
-import {UI_ICON_SIZES} from './ui-component-registry.js';
+import {menuItemHTML,switchHTML,fieldLabelHTML,appearanceControlHTML} from '../../src/ui-controls.js';
+import {icons} from '../../src/icons.js';
+import {lucideIcon} from '../../src/lucide.js';
+import {UI_ICON_SIZES} from '../../src/ui-component-registry.js';
 export function componentFixtureHTML(selector,state='Default'){
   const disabled=state==='Disabled'?' disabled':'',selected=state==='Selected';
   if(selector==='.menu-item')return menuItemHTML({label:'Dropdown item',shortcut:'⌘C',checked:selected,disabled:!!disabled},0,'listbox');

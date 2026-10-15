@@ -17,7 +17,7 @@ import {
   isDeprecated, mainComponentOf, componentContext, mainTarget,
 } from './components.js';
 import { exportNodes, saveFile, pickImages } from './io.js';
-import { createFile, openFile, goHome, pickFilesToImport, welcomeFile, getCurrentFileId, makeEditableCopy, isCurrentSample } from './files.js';
+import { createFile, openFile, goHome, pickFilesToImport, ensureSigmaProject, getCurrentFileId, makeEditableCopy, isCurrentSample } from './files.js';
 import {
   pageRuns, pageLabel, groupNames, keepTogether, movePage, moveGroup, renameGroup, ungroup, newGroupName, collapsedGroups, setCollapsedGroups,
 } from './page-groups.js';
@@ -118,7 +118,7 @@ function initFileHeader() {
         const [id] = await pickFilesToImport();
         if (id) openFile(id);
       } },
-      { label: 'Open Welcome to Sigma', action: async () => openFile(await welcomeFile()) },
+      { label: 'Open Welcome to Sigma', action: async () => openFile(await ensureSigmaProject()) },
       { label: 'Download a copy (.sigma.json)', action: saveFile },
       ...(state.doc?.figmaImport ? [{label:'Figma import report…', action:()=>import('./figma-import-ui.js').then(m=>m.showFigmaImportReport(state.doc.figmaImport))}] : []),
       '-',

@@ -5,7 +5,7 @@ import {LUCIDE_GLYPHS} from '../src/lucide-ui-data.js';
 import {sampleIconsDocument,sigmaIconId} from '../src/sample-icons.js';
 import {ICON_SETS,loadIconSet} from '../src/icon-library.js';
 import {refreshOpticsIconDocument,refreshStoredOpticsIcons} from '../src/optics-icon-migration.js';
-import {sigmaTokenDocument,sigmaFoundationsDocument} from '../src/sigma-design-system.js';
+import {sigmaTokenDocument} from '../src/sigma-design-system.js';
 import {db} from '../src/db.js';
 import {createFile} from '../src/files.js';
 test('Lucide UI: all semantic glyphs and layer markers use the canonical shared provider',()=>{
@@ -31,17 +31,6 @@ test('Optics storage migration updates existing file IDs and consumer snapshots,
     const doc=(await db.get('docs',consumer)).doc;eq(doc.name,design.name);eq(doc.pages[0].children[0],design.pages[0].children[0]);eq(doc.iconLibraries[0].version,4);eq(doc.publishedComponents.iconFiles[0].version,4);ok(doc.publishedComponents.icons[0].body!==icon.body);
     const second=await refreshStoredOpticsIcons(db,catalogue);ok(!second.includes(id)&&!second.includes(consumer));
   }finally{await db.deleteFile(id);await db.deleteFile(consumer);}
-});
-
-test('Sigma reference project: Lucide names are searchable and iconography uses linked icons and theme tokens',()=>{
-  const icons=sampleIconsDocument().icons;
-  const radius=icons.find(i=>i.id===sigmaIconId('radius'));
-  eq(radius.name,'square-round-corner');ok(radius.keywords.includes('radius'));
-  const collections=sigmaTokenDocument().collections;
-  const doc=sigmaFoundationsDocument(collections);
-  const pages=doc.pages.filter(p=>p.name==='Iconography');eq(pages.length,2);
-  const ids=new Set(icons.map(i=>i.id));
-  for(const page of pages){const surface=page.children[0];ok(surface.bindings['fills.0.color']);ok(surface.modes);const glyphs=surface.children.filter(n=>n.type==='icon');eq(glyphs.length,16);for(const glyph of glyphs){ok(ids.has(glyph.iconId));ok(glyph.bindings['fills.0.color']);ok(glyph.bindings.w);ok(glyph.bindings.h);}}
 });
 
 test('Lucide canvas chrome and menu checks render SVG glyphs instead of font symbols',async()=>{

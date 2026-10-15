@@ -5,7 +5,7 @@ import { UI_ICON_NAMES } from './ui-icon-map.js';
 import { sigmaIconId } from './sample-icons.js';
 import { cssNumber, cssPadding, cssShadow } from './sigma-css.js';
 import { UI_SOURCE } from './sigma-ui-source.js';
-import { collection, group, token, modes, ref } from './sample-tokens.js';
+import { collection, group, token, modes, ref } from './token-builders.js';
 import { normalizeGroups } from './token-groups.js';
 import { createNode, uid, makePaint } from './store.js';
 
@@ -127,60 +127,6 @@ function kit(collections) {
   };
   const page = (name, children, modeName) => ({ id: uid(), name, background: modeName === 'Dark' ? dark.canvas : UI_SOURCE.root['--canvas'], modes: Object.fromEntries(collections.map(c => [c.id, c.modes.find(m => m.name === modeName).id])), children });
   return { find, bind, text, page };
-}
-
-export function sigmaFoundationsDocument(collections) {
-  const K = kit(collections);
-  const sections = collections.filter(c => c.name !== 'UI components').flatMap(c =>
-    [...new Set(c.variables.map(v => v.name.split('/')[0]))].map(name => ({ c, name, variables: c.variables.filter(v => v.name.split('/')[0] === name) })));
-  const pages = ['Light', 'Dark'].flatMap(mode => sections.map(({ c, name, variables }) => {
-    const children = [K.text(`Sigma foundations · ${name} · ${mode}`, 0, 0, 'heading'), K.text(mode === 'Dark' ? 'Dark interface appearance; fixed primitives retain their source values.' : 'Source: styles.css. Values used by Sigma’s interface.', 0, 36)];
-    variables.forEach((v, i) => {
-      const y = 90 + i*54;
-      const fixed=Object.fromEntries(collections.map(c=>[c.id,c.modes.find(m=>m.name===mode).id]));
-      const value = v.valuesByMode[c.modes[0].id];
-      children.push(K.text(v.name, 0, y));
-      if (v.type === 'typography') {
-        const specimen=K.bind(K.text('Sigma · The quick brown fox',290,y),'typography',c.name,v.name);specimen.modes=fixed;children.push(specimen);
-        return;
-      }
-      if (['duration','easing'].includes(v.type)){const specimen=K.text(v.type==='duration'?`${value} ms`:JSON.stringify(value),290,y);specimen.modes=fixed;children.push(specimen);return;}
-      if (v.type === 'string') { const specimen=K.bind(K.text(value,290,y),'text',c.name,v.name);specimen.modes=fixed;children.push(specimen);return; }
-      const n = createNode('rect', { name: v.name, x: 290, y, w: 160, h: 28, fills: [makePaint('#0D99FF')] });
-      n.modes=fixed;
-      K.bind(n, 'fills.0.color', 'Interface', 'color/accent');
-      if (v.type === 'color') K.bind(n, 'fills.0.color', c.name, v.name);
-      else if (v.type === 'shadow') {
-        n.radius = 5; K.bind(n,'radius','Foundations','radius/5');
-        n.effects = [{ type: 'drop-shadow', color: '#000000', opacity: 0.25, x: 0, y: 4, blur: 16, spread: 0, visible: true }];
-        K.bind(n, 'fills.0.color', 'Interface', 'color/panel'); K.bind(n, 'effects.0', c.name, v.name);
-      } else {
-        K.bind(n, v.name.startsWith('radius/') ? 'radius' : v.name.startsWith('height/') ? 'h' : 'w', c.name, v.name);
-        const valueLabel=K.text(String(value),480,y);valueLabel.modes=fixed;K.bind(valueLabel,'text',c.name,v.name);children.push(valueLabel);
-      }
-      children.push(n);
-    });
-    const fixed=Object.fromEntries(collections.map(c=>[c.id,c.modes.find(m=>m.name===mode).id]));
-    const reference=createNode('frame',{name:`${mode} reference`,x:-16,y:74,w:640,h:variables.length*54+40,modes:fixed,clip:false,children:children.splice(2),fills:[makePaint('#F5F5F5')]});
-    for(const child of reference.children) {child.x+=16;child.y-=74;}
-    K.bind(reference,'fills.0.color','Interface','color/canvas');children.push(reference);
-    return {...K.page(name,children,mode),group:mode};
-  }));
-  for (const mode of ['Light','Dark']) {
-    const fixed=Object.fromEntries(collections.map(c=>[c.id,c.modes.find(m=>m.name===mode).id]));
-    const children=[K.text(`Sigma iconography · Lucide · ${mode}`,24,24,'heading'),K.text('Lucide outline icons · 24 × 24 viewBox · 2 px stroke · round caps and joins',24,60)];
-    const aliases=['move','hand','frame','text','home','component','componentSet','instance','rotation','radius','aspectLocked','aspectUnlocked','appearance','selectChevron','plus','close'];
-    aliases.forEach((alias,i)=>{
-      const x=24+(i%4)*176,y=112+Math.floor(i/4)*88;
-      const icon=createNode('icon',{name:UI_ICON_NAMES[alias],iconId:sigmaIconId(alias),x,y,w:24,h:24,fills:[makePaint('#1E1E1E')]});
-      K.bind(icon,'fills.0.color','Interface','color/text');K.bind(icon,'w','Foundations','width/24');K.bind(icon,'h','Foundations','height/24');
-      children.push(icon,K.text(UI_ICON_NAMES[alias],x,y+34));
-    });
-    const surface=createNode('frame',{name:`${mode} icon reference`,x:0,y:0,w:752,h:488,modes:fixed,children,fills:[makePaint('#F5F5F5')]});
-    K.bind(surface,'fills.0.color','Interface','color/canvas');
-    pages.push({...K.page('Iconography',[surface],mode),group:mode});
-  }
-  return { name: 'Foundations', pages, currentPageId: pages[0].id };
 }
 
 export function sigmaComponentsDocument(collections) {

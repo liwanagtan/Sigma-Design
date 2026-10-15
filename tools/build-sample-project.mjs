@@ -5,9 +5,9 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { sampleTokenDocument } from '../src/sample-tokens.js';
+import { sampleTokenDocument } from '../tests/fixtures/sample-tokens.js';
 import { sampleIconsDocument } from '../src/sample-icons.js';
-import { welcomeDocument } from '../src/welcome.js';
+import { welcomeDocument } from '../tests/fixtures/welcome.js';
 import { serializeForProject, projectPath } from '../src/project-format.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');

@@ -23,14 +23,14 @@ import { resizerHTML } from './columns.js';
 import { initComments, renderCommentPins } from './comments.js';
 import {
   initFiles, loadFile, setCurrentFile, closeCurrentFile, discardCurrentFile, saveNow, getCurrentFileId, goHome, fileKind, isArchived,
-  welcomeOnFirstVisit, welcomeFile, refreshSigmaPages, openFile, isSampleFile, isCurrentSample,
+  welcomeOnFirstVisit, ensureSigmaProject, openFile, isSampleFile, isCurrentSample,
 } from './files.js';
 import { initHome, renderHome, setHomeNotice, showHomeSection } from './home.js';
 import { initTokensScreen, showTokensScreen, hideTokensScreen } from './tokens-screen.js';
 import { initIconsScreen, showIconsScreen, hideIconsScreen } from './icons-screen.js';
 import { checkLibraryUpdates, migrateLegacyTokens, usesLibrary, repairIcons } from './libraries.js';
 import { hideContextMenu } from './menu.js';
-import { arrangeWelcome } from './welcome.js';
+import {arrangeLegacyGuideColumns} from './document-storage.js';
 import { clearViewing, resetHistory } from './history.js';
 import { connectProject, saveToProject, project, syncOpenProjectFile } from './project.js';
 
@@ -230,9 +230,8 @@ async function showFile(id, { force = false, discard = false } = {}) {
   const target=state.doc.pages.find(p=>p.name===requestedPage);if(target)state.doc.currentPageId=target.id;
   syncWelcomeAppearance({ initial:true });
   remeasureAllText();
-  // "Welcome to Sigma": place its examples by their real sizes (each time it opens, since a sample is
-  // never saved).
-  if (arrangeWelcome(state.doc)) {
+  // Older user-owned imports may still need their legacy column metadata resolved.
+  if (arrangeLegacyGuideColumns(state.doc)) {
     commit();
     forgetUndo();
   }
@@ -344,9 +343,8 @@ initFiles({ onRemoteChange })
   .then(async () => {
     await connectProject();
     const firstVisit=await welcomeOnFirstVisit();
-    await welcomeFile();
+    await ensureSigmaProject();
     await initializeProjects(project);
-    await refreshSigmaPages();
     if(firstVisit&&!/^#\/(file|project|drafts|guide)\//.test(location.hash))location.hash='#/guide/getting-started';
     return route();
   })

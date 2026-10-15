@@ -5,9 +5,9 @@ import { syncInstances } from '../src/components.js';
 import { resolveVariables } from '../src/variables.js';
 import { applyLayouts } from '../src/layout.js';
 import { measureText } from '../src/text.js';
-import { sampleTokenDocument } from '../src/sample-tokens.js';
+import { sampleTokenDocument } from './fixtures/sample-tokens.js';
 import { sampleIconsDocument } from '../src/sample-icons.js';
-import { welcomeDocument } from '../src/welcome.js';
+import { welcomeDocument } from './fixtures/welcome.js';
 import { ICON_SETS, loadIconSet, parseXML } from '../src/icon-library.js';
 import {
   toProjectFile, fromProjectFile, formatProjectJSON, serializeForProject, projectPath,

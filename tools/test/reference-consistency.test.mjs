@@ -7,9 +7,8 @@ import {execFileSync} from 'node:child_process';
 import {OPTICS_ICONS} from '../../src/optics.js';
 import {sampleIconsDocument} from '../../src/sample-icons.js';
 import {iconChoices,iconMatches} from '../../src/icon-library.js';
-import {sigmaTokenDocument,sigmaComponentsDocument,sigmaFoundationsDocument} from '../../src/sigma-design-system.js';
+import {sigmaTokenDocument,sigmaComponentsDocument} from '../../src/sigma-design-system.js';
 import {useReport} from '../../src/use-report.js';
-import {captureSourceText,CAPTURE_SOURCES} from '../design-system/source-fingerprint.js';
 test('Optics real rebuild validates complete serialized libraries before writing',()=>{
   const output=mkdtempSync(join(tmpdir(),'sigma-optics-check-'));
   try{execFileSync(process.execPath,['tools/build-optics.mjs','--output',output],{cwd:new URL('../../',import.meta.url)});
@@ -25,16 +24,9 @@ test('Sigma icon choices deduplicate compatibility aliases without removing IDs 
   const edited={...alias,body:'<circle cx="12" cy="12" r="5"/>'};assert.equal(iconChoices([...icons.filter(i=>i.id!==alias.id),edited]).length,choices.length+1);
   assert.equal(icons.length,sampleIconsDocument().icons.length);
 });
-test('Sigma reusable Components and Foundations bind all measured design decisions',()=>{
-  const t=sigmaTokenDocument();for(const make of [sigmaComponentsDocument,sigmaFoundationsDocument]){const doc=make(t.collections);doc.variables={collections:t.collections};const report=useReport([{name:doc.name,doc}]);assert.equal(report.files[0].tokenShare,1,doc.name);assert.deepEqual(report.findings,[]);}
+test('Sigma reusable Components bind all measured design decisions',()=>{
+  const t=sigmaTokenDocument();for(const make of [sigmaComponentsDocument]){const doc=make(t.collections);doc.variables={collections:t.collections};const report=useReport([{name:doc.name,doc}]);assert.equal(report.files[0].tokenShare,1,doc.name);assert.deepEqual(report.findings,[]);}
 });
-test('capture fingerprint changes with icon data and UI JavaScript, not only CSS',async()=>{
-  const base=await captureSourceText(path=>path);
-  for(const changed of ['src/sample-icons.js','src/lucide-ui-data.js','src/icons-screen.js']){
-    assert.ok(CAPTURE_SOURCES.includes(changed));assert.notEqual(await captureSourceText(path=>path===changed?path+' edited':path),base);
-  }
-});
-
 test('app token extraction retains data URLs and conditional stylesheet provenance',async()=>{
   const {parseStylesheet}=await import('../design-system/css-source.mjs');
   const rows=parseStylesheet('@import url("x.css"); .control{background:url("data:image/svg+xml;a,b");height:28px;} @media(max-width:600px){.control{height:24px;}}','app.css');

@@ -2,14 +2,13 @@ import { test, eq, ok } from './harness.js';
 import { state, createNode, commit, loadDocument, flushSave, setPersistence, editNode } from '../src/store.js';
 import {
   initFiles, createFile, deleteFile, loadFile, listFiles, renameFile, setCurrentFile, saveNamedVersion, listVersions, updateThumbnail,
-  welcomeFile, createTokenFileWith, sampleTokenFile, sampleIconFile, appendToTokenFile, archiveFile, restoreFile, listArchivedFiles, listTokenFiles, duplicateCurrent, closeCurrentFile,
+  ensureSigmaProject, createTokenFileWith, sampleTokenFile, sampleIconFile, appendToTokenFile, archiveFile, restoreFile, listArchivedFiles, listTokenFiles, duplicateCurrent, closeCurrentFile,
 } from '../src/files.js';
-import { SIGMA_PAGES_VERSION } from '../src/sigma-pages.js';
 import { SIGMA_SYSTEM_VERSION } from '../src/sigma-design-system.js';
-import { sampleTokenDocument } from '../src/sample-tokens.js';
+import { sampleTokenDocument } from './fixtures/sample-tokens.js';
 import { sampleIconsDocument, SAMPLE_ICONS_VERSION } from '../src/sample-icons.js';
 import { loadIconSet, ICON_SETS } from '../src/icon-library.js';
-import { WELCOME_VERSION } from '../src/welcome.js';
+import { WELCOME_VERSION } from './fixtures/welcome.js';
 import { db } from '../src/db.js';
 
 const sampleDoc = () => ({
@@ -66,17 +65,17 @@ test('storage: an autosave that races with a delete never brings the file back',
   }
 });
 
-test('storage: Welcome to Sigma is reused, and links the sample tokens, skipping a copy that lost tokens it uses', async () => {
+test('storage: Sigma Components is reused and links the current app tokens and icons', async () => {
   const before = new Set((await listFiles()).map((f) => f.id));
   const archivedBefore = new Set((await listArchivedFiles()).map((f) => f.id));
   const linked = async (id) => (await loadFile(id)).doc.libraries.map((l) => l.fileId);
   try {
     // Start from no current Welcome file, so this test sees one being made.
     for (const f of await listFiles()) if (f.welcome) await archiveFile(f.id);
-    const a = await welcomeFile();
-    const b = await welcomeFile();
+    const a = await ensureSigmaProject();
+    const b = await ensureSigmaProject();
     eq(b, a); // the same Welcome file is reopened
-    eq((await loadFile(a)).meta.welcome, WELCOME_VERSION);
+    eq((await loadFile(a)).meta.name, 'Components');
     eq([(await sampleTokenFile()).id], await linked(a)); // Sample token file opens the same one
     const icons = (await loadFile(a)).doc.iconLibraries?.[0];
     ok(icons && (await loadFile(icons.fileId)).meta.sample, 'links the sample icons');
@@ -88,7 +87,7 @@ test('storage: Welcome to Sigma is reused, and links the sample tokens, skipping
     const { name, collections } = sampleTokenDocument();
     const broken = await createTokenFileWith(name, collections.filter((c) => c.name !== 'Components'), 'Broken', { meta: { sample: true } });
     await archiveFile(a); // the next one is new, and must skip the broken tokens
-    const c = await welcomeFile();
+    const c = await ensureSigmaProject();
     ok(c !== a, 'an archived Welcome file isn’t reopened');
     ok(!(await listFiles()).some((f) => f.id === broken.id), 'a new guide moves the other sample files to the Archive');
     ok((await listArchivedFiles()).some((f) => f.id === broken.id), '…where they stay, not deleted');
@@ -114,26 +113,21 @@ test('storage: old teaching tokens are archived intact, Sigma UI Tokens replace 
     // The sample tokens, named as before: a new guide reuses them, renamed, and links them by the new name.
     for (const f of await listFiles()) if (f.welcome) await archiveFile(f.id);
     const old = await createTokenFileWith('Sigma Tokens', sampleTokenDocument().collections, 'Before', { meta: { sample: true } });
-    const guide = await loadFile(await welcomeFile());
-    eq(guide.meta.name,'Guide examples');
+    const guide = await loadFile(await ensureSigmaProject());
+    eq(guide.meta.name,'Components');
     eq(guide.doc.libraries[0].name, 'Tokens');
     ok(guide.doc.libraries[0].fileId !== old.id, 'replaces teaching tokens with the interface system');
     eq((await loadFile(old.id)).meta.name, 'Sigma Tokens', 'old file preserved intact');
     ok((await listArchivedFiles()).some(f => f.id === old.id), 'old tokens remain recoverable');
     const system = (await listFiles()).filter(f => f.sample && f.sigmaSystem === SIGMA_SYSTEM_VERSION);
-    eq(system.map(f => f.name).sort(), ['Components', 'Foundations', 'Tokens']);
+    eq(system.map(f => f.name).sort(), ['Components', 'Tokens']);
     for (const meta of system.filter(f => f.kind === 'design')) {
       const file = await loadFile(meta.id);
       eq(file.doc.libraries[0].fileId, guide.doc.libraries[0].fileId);
     }
-    const pageFiles = (await listFiles()).filter(f=>f.sample && f.sigmaPages===SIGMA_PAGES_VERSION);
-    eq(pageFiles.length, 1, 'one Pages and UI welcome file');
-    const pageFile = await loadFile(pageFiles[0].id);
-    eq(pageFile.doc.name, 'Pages and UI');
-    eq(pageFile.doc.libraries[0].fileId, guide.doc.libraries[0].fileId);
-    await welcomeFile();
-    eq((await listFiles()).filter(f=>f.sample && f.sigmaPages===SIGMA_PAGES_VERSION).length, 1, 'Pages and UI reused');
-    eq((await listFiles()).filter(f => f.sample && f.sigmaSystem === SIGMA_SYSTEM_VERSION).length, 3, 'no duplicate welcome system');
+    eq((await listFiles()).filter(f=>f.sample && f.sigmaPages).length,0,'Pages and UI is not created');
+    await ensureSigmaProject();
+    eq((await listFiles()).filter(f=>f.sample && f.sigmaSystem===SIGMA_SYSTEM_VERSION).length,2,'no duplicate Sigma system');
   } finally {
     for (const f of [...await listFiles(), ...await listArchivedFiles()]) if (!before.has(f.id) && !archivedBefore.has(f.id)) await deleteFile(f.id);
     for (const f of await listArchivedFiles()) if (before.has(f.id) && !archivedBefore.has(f.id)) await restoreFile(f.id);
@@ -204,5 +198,28 @@ test('storage: a sample file (Welcome to Sigma) can be edited while open but is 
     await deleteFile(id);
     await deleteFile(tokens.id);
     if (keptCopy) await deleteFile(keptCopy);
+  }
+});
+
+test('Sigma setup permanently removes active and archived retired references without touching other files',async()=>{
+  const {GUIDE_CHAPTERS}=await import('../src/welcome-guide.js');
+  const before=new Set((await db.getAll('files')).map(f=>f.id));
+  const archivedBefore=new Set((await listArchivedFiles()).map(f=>f.id));
+  const refs=[];
+  try{
+    refs.push(await createFile({name:'Foundations',pages:[]},{},{sample:true,sigmaSystem:SIGMA_SYSTEM_VERSION}));
+    refs.push(await createFile({name:'Pages and UI',pages:[]},{},{sample:true,sigmaPages:15}));
+    refs.push(await createFile({name:'Guide examples',pages:[]},{},{welcome:WELCOME_VERSION}));
+    const custom=await createFile({name:'Foundations',pages:[]},{},{projectId:'project-sigma'});
+    const optics=await createFile({name:'Optics Foundations',pages:[]},{},{optics:1,projectId:'project-optics'});
+    await archiveFile(refs[1]);
+    const id=await ensureSigmaProject();await ensureSigmaProject();
+    const live=await listFiles();eq(live.filter(f=>f.sample||f.welcome).map(f=>f.name).sort(),['Components','Icons','Tokens']);
+    for(const ref of refs){ok(!live.some(f=>f.id===ref));ok(!(await listArchivedFiles()).some(f=>f.id===ref));eq(await db.get('docs',ref),undefined,'retired content is permanently removed');}
+    ok(live.some(f=>f.id===custom));ok(live.some(f=>f.id===optics));eq(id,await ensureSigmaProject());
+    for(const chapter of GUIDE_CHAPTERS)if(chapter.example)ok(['sigma:tokens','sigma:icons','sigma:components'].includes(chapter.example),'documentation links target retained files');
+  }finally{
+    for(const f of await db.getAll('files'))if(!before.has(f.id))await deleteFile(f.id);
+    for(const f of await listArchivedFiles())if(before.has(f.id)&&!archivedBefore.has(f.id))await restoreFile(f.id);
   }
 });

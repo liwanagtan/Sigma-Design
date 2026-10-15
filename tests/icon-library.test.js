@@ -268,8 +268,8 @@ test('icons: search ranks the exact name first, then names that start with it', 
 
 // ---------- the sample icons and the guide's icons page ----------
 import { sampleIconsDocument, lucideIconsDocument, sampleIconId, sigmaIconId } from '../src/sample-icons.js';
-import { welcomeDocument, WELCOME_ICONS } from '../src/welcome.js';
-import { sampleTokenDocument } from '../src/sample-tokens.js';
+import { welcomeDocument, WELCOME_ICONS } from './fixtures/welcome.js';
+import { sampleTokenDocument } from './fixtures/sample-tokens.js';
 import { snapshotForLibrary, resolveVariables } from '../src/variables.js';
 import { loadDocument, walk } from '../src/store.js';
 import { loadIconSet } from '../src/icon-library.js';

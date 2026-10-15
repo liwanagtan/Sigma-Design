@@ -28,9 +28,10 @@ export function ownerFor(meta) {
 export async function initializeProjects(repository) {
   const time=Date.now();
   await db.projectUpdate((projects,files)=> {
-    const builtins=[{id:SIGMA_PROJECT,name:'Sigma',description:'The design system behind Sigma’s interface: tokens, foundations, components, icons, and example pages.',kind:'builtin',source:'sigma',createdAt:time,updatedAt:time},{id:OPTICS_PROJECT,name:'Optics',description:'A sample design system inspired by Polaris, with reusable components, tokens, and icons.',kind:'builtin',source:'optics',createdAt:time,updatedAt:time}];
+    const builtins=[{id:SIGMA_PROJECT,name:'Sigma',description:'The design system behind Sigma’s interface: tokens, icons, and components.',kind:'builtin',source:'sigma',createdAt:time,updatedAt:time},{id:OPTICS_PROJECT,name:'Optics',description:'A sample design system inspired by Polaris, with reusable components, tokens, and icons.',kind:'builtin',source:'optics',createdAt:time,updatedAt:time}];
     const known=new Map(projects.map(p=>[p.id,p]));
     for(const p of builtins){if(!known.has(p.id))known.set(p.id,p);else if(known.get(p.id).description===undefined)known.set(p.id,{...known.get(p.id),description:p.description});}
+    if(known.get(SIGMA_PROJECT)?.description==='The design system behind Sigma’s interface: tokens, foundations, components, icons, and example pages.')known.set(SIGMA_PROJECT,{...known.get(SIGMA_PROJECT),description:builtins[0].description});
     if(repository?.name) {
       const id=repository.identity||`repository-legacy-${encodeURIComponent(repository.name)}`;
       known.set(id,{...known.get(id),id,name:known.get(id)?.name||repository.name,kind:'repository',source:repository.identity||repository.name,createdAt:known.get(id)?.createdAt||time,updatedAt:time});

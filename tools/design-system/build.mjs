@@ -59,5 +59,5 @@ const source = { stylesheets:UI_STYLESHEETS,responsive:entries.filter(e=>e.condi
 const target = new URL('../../src/sigma-ui-source.js', import.meta.url);
 const output = `// Generated from first-party app stylesheets by tools/design-system/build.mjs. Do not edit.\nexport const UI_SOURCE = ${JSON.stringify(source, null, 2)};\n`;
 if (process.argv.includes('--check')) {
-  if (readFileSync(target, 'utf8') !== output) throw new Error('Welcome UI source is stale. Run npm run build:welcome and bump SIGMA_SYSTEM_VERSION and WELCOME_VERSION.');
+  if (readFileSync(target, 'utf8') !== output) throw new Error('Welcome UI source is stale. Run npm run build:welcome and bump SIGMA_SYSTEM_VERSION.');
 } else writeFileSync(target, output);

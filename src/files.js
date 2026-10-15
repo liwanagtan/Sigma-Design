@@ -8,10 +8,8 @@ import {
 } from './store.js';
 import { buildSVG, download, toast } from './io.js';
 import { libraryEntry } from './variables.js';
-import { welcomeDocument, WELCOME_VERSION, WELCOME_ICONS } from './welcome.js';
 import { newIconsDocument, sanitizeIcons, iconMarkup, usedIconIds, ICON_SETS, loadIconSet } from './icon-library.js';
 import { sampleIconsDocument, lucideIconsDocument, SAMPLE_ICONS_NAME, SAMPLE_ICONS_VERSION, sigmaUIIcons } from './sample-icons.js';
-import { sigmaPagesDocument, SIGMA_PAGES_VERSION, SIGMA_PAGES_SOURCE_HASH } from './sigma-pages.js';
 import { opticsTokenDocument } from './optics-tokens.js';
 import { opticsComponentsDocument, opticsFoundationsDocument, opticsIconsDocument } from './optics.js';
 
@@ -53,41 +51,15 @@ async function archiveSamples(keep) {
   return n;
 }
 
-const currentGuide = async () => (await listFiles())
-  .filter((m) => m.welcome === WELCOME_VERSION && !m.sigmaSystem && fileKind(m) === 'design')
-  .sort((a, b) => b.updatedAt - a.updatedAt)[0] || null;
-
-// Once per guide version: make the Welcome to Sigma folder hold exactly the current guide
-// and the sample tokens it uses. If you've had sample files before but there's no current guide, one is
-// made with the current interface system; then older sample files move to the Archive.
-// A browser that never had sample files is left alone (the first visit makes them).
-async function setUpWelcomeFolder() {
-  const KEY = 'sigma.welcomeFolder';
-  try {
-    if (localStorage.getItem(KEY) === String(WELCOME_VERSION)) return;
-  } catch {
-    return;
-  }
-  if ((await db.getAll('files')).some(isSampleFile)) {
-    const guide = await currentGuide();
-    if (!guide) await welcomeFile(); // makes the current pair and archives the rest
-    else {
-      const keep = new Set([guide.id, ...(await listFiles()).filter(m => (m.sigmaSystem === SIGMA_SYSTEM_VERSION || m.sigmaPages === SIGMA_PAGES_VERSION)).map(m => m.id)]);
-      const doc = (await loadFile(guide.id))?.doc;
-      for (const l of doc?.libraries || []) {
-        keep.add(l.fileId);
-      }
-      for (const l of doc?.iconLibraries || []) keep.add(l.fileId);
-      await archiveSamples(keep);
-    }
-  }
-  try {
-    localStorage.setItem(KEY, String(WELCOME_VERSION));
-  } catch {}
+// The retained built-in design file is Components. Retired reference/teaching files are removed.
+const currentComponents = async () => (await listFiles())
+  .filter(m=>m.sample&&m.sigmaSystem===SIGMA_SYSTEM_VERSION&&fileKind(m)==='design'&&m.exampleKey==='sigma:components')
+  .sort((a,b)=>b.updatedAt-a.updatedAt)[0]||null;
+async function setUpSigmaProject() {
+  if((await db.getAll('files')).some(isSampleFile))await ensureSigmaProject();
 }
 
-import { sampleTokenDocument } from './sample-tokens.js';
-import { sigmaTokenDocument, sigmaFoundationsDocument, sigmaComponentsDocument, SIGMA_SYSTEM_VERSION, sigmaTokenSignature } from './sigma-design-system.js';
+import { sigmaTokenDocument, sigmaComponentsDocument, SIGMA_SYSTEM_VERSION, sigmaTokenSignature } from './sigma-design-system.js';
 import { importTokens } from './tokens-io.js';
 
 const TAB_ID = uid();
@@ -159,7 +131,7 @@ export async function initFiles(handlers = {}) {
   document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && stashPending());
   await migrateLegacyDocument();
   await migrateLegacySamples();
-  await setUpWelcomeFolder();
+  await setUpSigmaProject();
   if((await db.getAll('files')).some(m=>m.optics&&!m.archivedAt)){
     const {refreshStoredOpticsIcons}=await import('./optics-icon-migration.js');
     const changed=await refreshStoredOpticsIcons(db,await loadIconSet(ICON_SETS.find(s=>s.id==='lucide')));
@@ -493,7 +465,7 @@ export async function sampleIconFile() {
     const ids = new Set(published.icons.map((x) => x.id));
     if(published.icons.length!==sigmaUIIcons().length) continue;
     if(!sigmaUIIcons().every(expected=>{const actual=published.icons.find(i=>i.id===expected.id);return actual&&['body','viewBox','style','strokeWidth','cap','join'].every(k=>actual[k]===expected[k]);})) continue;
-    if (![...sigmaUIIcons().map(i=>i.id), ...WELCOME_ICONS].every((id) => ids.has(id))) continue; // icons the guide or Optics use are missing
+    if (!sigmaUIIcons().every(i=>ids.has(i.id))) continue;
     if ([PREVIOUS_SAMPLE_NAMES.icons, 'Sample icons'].includes(meta.name)) {
       // Earlier built-in names become Icons in place; keep the same file and icon IDs.
       await db.updateFile(meta.id, (m, rec) => ({ meta: { ...m, name: SAMPLE_ICONS_NAME }, doc: rec && { ...rec, doc: { ...rec.doc, name: SAMPLE_ICONS_NAME } } }));
@@ -513,49 +485,33 @@ export async function sampleIconFile() {
   return { id, name: SAMPLE_ICONS_NAME, published: doc.published };
 }
 
-// "Welcome to Sigma": the guide file a new user starts with, linking the sample tokens and icons. Reopens the most
-// recently edited copy of the current version (WELCOME_VERSION); otherwise makes a new one and moves the
-// older sample files to the Archive.
-export async function welcomeFile() {
-  const current = await currentGuide();
-  if (current) return current.id;
-  const lib = await sampleTokenFile();
-  const icons = await sampleIconFile();
-  // The Guide retains its educational alias/extension examples as local tokens.
-  // The shipped Tokens library now contains only Sigma's interface design system.
-  const teaching = sampleTokenDocument().collections;
-  const doc = welcomeDocument(teaching, { icons: icons?.published.icons || null });
-  doc.name='Guide examples';
-  doc.variables = { collections: teaching };
-  doc.libraries = [libraryEntry(lib.id, lib.name, lib.published)];
-  if (icons) {
-    // Like any design file, the guide keeps copies of just the icons it uses.
-    const used = usedIconIds(doc.pages.flatMap((pg) => pg.children));
-    doc.iconLibraries = [{
-      fileId: icons.id, name: icons.name, version: icons.published.version, count: icons.published.icons.length,
-      icons: structuredClone(icons.published.icons.filter((x) => used.has(x.id))),
-    }];
+// Kept as a compatibility entry point for setup: Sigma now contains only Tokens, Icons and Components.
+export async function removeRetiredSigmaFiles() {
+  const retired=new Set(['sigma:foundations','sigma:pages-and-ui','sigma:guide-examples']);
+  let count=0;
+  for(const meta of await db.getAll('files')){
+    const builtin=isSampleFile(meta);
+    if(builtin&&(meta.welcome||meta.sigmaPages||retired.has(meta.exampleKey)||meta.sigmaSystem&&meta.name==='Foundations'||meta.sampleLegacy&&LEGACY_SAMPLE_NAMES.design.includes(meta.name))){await deleteFile(meta.id);count++;}
   }
-  const systemIds = [];
-  for (const make of [sigmaFoundationsDocument, sigmaComponentsDocument]) {
-    const systemDoc = make(lib.published.collections);
-    systemDoc.libraries = [libraryEntry(lib.id, lib.name, lib.published)];
-    if (icons) {
-      const used = usedIconIds(systemDoc.pages.flatMap(pg => pg.children));
-      if (used.size) systemDoc.iconLibraries = [{ fileId: icons.id, name: icons.name, version: icons.published.version, count: icons.published.icons.length, icons: structuredClone(icons.published.icons.filter(x => used.has(x.id))) }];
-    }
-    systemIds.push(await createFile(systemDoc, {}, { sample: true, sigmaSystem: SIGMA_SYSTEM_VERSION }));
+  return count;
+}
+export async function ensureSigmaProject() {
+  await removeRetiredSigmaFiles();
+  const lib=await sampleTokenFile(),icons=await sampleIconFile();
+  let current=await currentComponents();
+  if(current){
+    const doc=(await loadFile(current.id))?.doc;
+    if(doc?.libraries?.[0]?.fileId!==lib.id||icons&&!doc?.iconLibraries?.some(l=>l.fileId===icons.id))current=null;
   }
-  const pagesDoc = sigmaPagesDocument(lib.published.collections);
-  pagesDoc.libraries = [libraryEntry(lib.id, lib.name, lib.published)];
-  systemIds.push(await createFile(pagesDoc, {}, {sample:true,sigmaPages:SIGMA_PAGES_VERSION,sigmaPagesSourceHash:SIGMA_PAGES_SOURCE_HASH}));
-  // Create the Guide last: an interrupted setup can safely retry without a partial current guide.
-  const id = await createFile(doc, {}, { welcome: WELCOME_VERSION });
+  if(!current){
+    const doc=sigmaComponentsDocument(lib.published.collections);
+    doc.libraries=[libraryEntry(lib.id,lib.name,lib.published)];
+    if(icons){const used=usedIconIds(doc.pages.flatMap(p=>p.children));doc.iconLibraries=[{fileId:icons.id,name:icons.name,version:icons.published.version,count:icons.published.icons.length,icons:structuredClone(icons.published.icons.filter(i=>used.has(i.id)))}];}
+    current={id:await createFile(doc,{}, {sample:true,sigmaSystem:SIGMA_SYSTEM_VERSION})};
+  }
   await opticsOnce(icons);
-  // The new guide replaces the old one: older sample files go to the Archive.
-  const moved = await archiveSamples(new Set([id, lib.id, ...systemIds, ...(icons ? [icons.id] : [])]));
-  if (moved) toast(`Moved ${moved === 1 ? 'the previous sample file' : `${moved} older sample files`} to the Archive`);
-  return id;
+  await archiveSamples(new Set([current.id,lib.id,...(icons?[icons.id]:[])]));
+  return current.id;
 }
 
 // Optics (Phase 36): a working design system as your own files (saved like any other): Optics Tokens, Optics
@@ -621,7 +577,7 @@ export async function welcomeOnFirstVisit() {
     return null; // no storage to remember it in: don't create a file on every visit
   }
   if ((await db.getAll('files')).length) return null; // files already here (archived ones too)
-  return welcomeFile();
+  return ensureSigmaProject();
 }
 
 // ---------- the open file ----------
@@ -933,14 +889,4 @@ export async function updateThumbnail() {
     return;
   }
   if (await db.updateFile(id, (meta) => ({ meta: { ...meta, thumbnail } }))) broadcast('thumbnail', id);
-}
-
-// Refresh interface reference screens in place: their bookmark and project owner survive.
-export async function refreshSigmaPages() {
-  const meta=(await listFiles()).filter(f=>f.sample&&f.sigmaPages).sort((a,b)=>b.updatedAt-a.updatedAt)[0];
-  if(!meta||meta.sigmaPagesSourceHash===SIGMA_PAGES_SOURCE_HASH)return;
-  const file=await loadFile(meta.id),lib=file.doc.libraries?.[0];
-  if(!lib)return;
-  const doc=sigmaPagesDocument(lib.collections);doc.libraries=file.doc.libraries;
-  await replaceFile(meta.id,doc,{sigmaPages:SIGMA_PAGES_VERSION,sigmaPagesSourceHash:SIGMA_PAGES_SOURCE_HASH});
 }

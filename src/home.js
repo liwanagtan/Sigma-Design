@@ -9,7 +9,7 @@ import { appearanceButtonHTML } from './appearance.js';
 import {
   listFiles, createFile, renameFile, duplicateFile, deleteFile, downloadFile, importFiles, pickFilesToImport,
   listArchivedFiles, archiveFile, restoreFile, emptyArchive,
-  storageSummary, openFile, fileHref, fileKind, newTokenDocument, newIconsDocument, welcomeFile, isSampleFile,
+  storageSummary, openFile, fileHref, fileKind, newTokenDocument, newIconsDocument, ensureSigmaProject, isSampleFile,
   loadFile,
 } from './files.js';
 import { blankDocument } from './sample.js';
@@ -155,7 +155,7 @@ export function initHome(el) {
   const list = root.querySelector('#home-files');
   list.addEventListener('click', async (e) => {
     const example=e.target.closest('[data-guide-example]');
-    if(example){await welcomeFile();await initializeProjects(project);const file=(await listFiles()).find(f=>f.exampleKey===example.dataset.guideExample);if(!file)return toast('This example is unavailable.');selectProject(SIGMA_PROJECT);location.hash=`#/file/${file.id}${example.dataset.examplePage?'?page='+encodeURIComponent(example.dataset.examplePage):''}`;return;}
+    if(example){await ensureSigmaProject();await initializeProjects(project);const file=(await listFiles()).find(f=>f.exampleKey===example.dataset.guideExample);if(!file)return toast('This example is unavailable.');selectProject(SIGMA_PROJECT);location.hash=`#/file/${file.id}${example.dataset.examplePage?'?page='+encodeURIComponent(example.dataset.examplePage):''}`;return;}
     if (e.target.closest('[data-propose-change]')&&project.connected&&selectedProjectId()===project.identity) return openProposeDialog();
     if (e.target.closest('[data-move-into-project]')) return moveIntoProjectDialog();
     const build = e.target.closest('[data-build-library]');
