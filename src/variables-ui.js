@@ -57,6 +57,13 @@ const GROUP_ICON = '<svg class="group-icon" width="12" height="12" viewBox="0 0 
 const RESET_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M2.5 6a3.5 3.5 0 1 0 1-2.5M2.5 1.5v2h2"/></svg>';
 
 // Fill `host` with the editor (token files). Stays until unmountTokenEditor().
+export function focusToken(id) {
+  const hit=findVariable(id);if(!hit||!modal)return false;
+  activeId=hit.collection.id;sideTab=null;activeGroup=null;selectedId=id;query='';typeFilter='';render();
+  const row=[...modal.querySelectorAll('[data-row]')].find(el=>el.dataset.row===id);
+  row?.scrollIntoView({block:'nearest'});return true;
+}
+
 export function mountTokenEditor(host) {
   close();
   modal = host;
@@ -92,6 +99,8 @@ export function openVariablesEditor(focusCollectionId) {
   }
   render();
 }
+
+export function closeVariablesEditor() { close(); }
 
 function close() {
   closeTokenPicker();

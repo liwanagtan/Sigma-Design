@@ -17,7 +17,7 @@ import {
 } from './project.js';
 import { openProposeDialog, changesetListing } from './propose.js';
 import { buildLibraryFromCode } from './code-check.js';
-import { useReport, REPORT_KINDS, formatShare } from './use-report.js';
+import { renderReportDashboard } from './report-ui.js';
 import { fromProjectFile } from './project-format.js';
 import { ICON_SETS, iconSetDocument, loadIconSet } from './icon-library.js';
 import { showContextMenu } from './menu.js';
@@ -95,6 +95,7 @@ export function initHome(el) {
       <header class="home-header">
         <div class="home-heading"><button class="icon-btn project-header-icon" id="project-header-icon" aria-label="Change project icon" hidden></button><h1 id="home-title"></h1></div>
         <div class="home-tools">
+          <button class="btn" id="home-proposals" hidden>Proposals</button>
           <button class="btn" id="home-report" title="Design system report" hidden>${NAV_REPORT} Report</button>
           <select id="home-sort" class="select" title="Sort">${Object.entries(SORTS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
           <div class="seg home-layout">
@@ -134,7 +135,8 @@ export function initHome(el) {
     savePrefs();
     renderHome();
   });
-  root.querySelector('#home-report').onclick=()=>{query='';location.hash=scopeHref(prefs.section==='report'?'workspace':'report');};
+  root.querySelector('#home-report').onclick=()=>{query='';location.hash=scopeHref(['report','proposals'].includes(prefs.section)?'workspace':'report');};
+  root.querySelector('#home-proposals').onclick=()=>{query='';location.hash=scopeHref('proposals');};
   root.querySelector('#home-create').onclick=()=>{
     const button=root.querySelector('#home-create'),box=button.getBoundingClientRect();
     const prepare=prepareCreationScope;
@@ -153,7 +155,7 @@ export function initHome(el) {
   list.addEventListener('click', async (e) => {
     const example=e.target.closest('[data-guide-example]');
     if(example){await welcomeFile();await initializeProjects(project);const file=(await listFiles()).find(f=>f.exampleKey===example.dataset.guideExample);if(!file)return toast('This example is unavailable.');selectProject(SIGMA_PROJECT);location.hash=`#/file/${file.id}${example.dataset.examplePage?'?page='+encodeURIComponent(example.dataset.examplePage):''}`;return;}
-    if (e.target.closest('[data-propose-change]')) return openProposeDialog();
+    if (e.target.closest('[data-propose-change]')&&project.connected&&selectedProjectId()===project.identity) return openProposeDialog();
     if (e.target.closest('[data-move-into-project]')) return moveIntoProjectDialog();
     const build = e.target.closest('[data-build-library]');
     if (build) return buildLibraryFromCode((project.config?.components || []).find((c) => c.sigma === build.dataset.buildLibrary));
@@ -191,7 +193,7 @@ export function initHome(el) {
       const r = more.getBoundingClientRect();
       fileMenu(more.closest('[data-id]').dataset.id, r.left, r.bottom + 4);
     }
-    if (e.target.closest('input')) e.preventDefault(); // typing a new name must not open the file
+    if (e.target.closest('[data-id]')&&e.target.closest('input')) e.preventDefault(); // only file-card renaming suppresses its link
   });
   list.addEventListener('contextmenu', (e) => {
     const archived = e.target.closest('[data-archived]');
@@ -322,7 +324,7 @@ function projectCard(f) {
   return `<a class="file-card${plain ? ' tokens' : ''}" href="#" data-project-path="${esc(f.path)}" draggable="false" title="${esc(f.path)}">
     <div class="file-thumb" style="background:${plain ? '#FFFFFF' : esc(f.meta?.background || '#F5F5F5')}">${thumb}</div>
     <div class="file-info"><div class="card-name" title="${esc(f.name)}">${esc(f.name)}</div>
-    <div class="file-time">${kindBadge(f.kind)}${f.package ? `<span class="kind-badge sample" title="From the design system package ${esc(f.package)}: read-only here; change it in the package">${esc(f.package)}${f.version ? ` ${esc(f.version)}` : ''}</span>` : ''}${f.kind === 'invalid' ? '<span class="kind-badge sample">Not readable</span>' : ''}${when || `<span>${esc(f.path.replace(/^\.sigma\//, ''))}</span>`}</div></div>
+    <div class="file-time">${f.package ? `<span class="kind-badge sample" title="From the design system package ${esc(f.package)}: read-only here; change it in the package">${esc(f.package)}${f.version ? ` ${esc(f.version)}` : ''}</span>` : ''}${f.kind === 'invalid' ? '<span class="kind-badge sample">Not readable</span>' : ''}${when || `<span>${esc(f.path.replace(/^\.sigma\//, ''))}</span>`}</div></div>
     <div class="file-created muted">${esc(f.path.replace(/^\.sigma\//, ''))}</div>
   </a>`;
 }
@@ -411,78 +413,65 @@ async function moveIntoProjectDialog() {
 // files a library change reaches (visual change review).
 export async function reportFiles() {
   if (projectMode()&&project.connected&&selectedProjectId()===project.identity) {
-    const texts = {};
+    const texts = {},warnings=[];
     for (const f of project.files.filter((x) => x.kind !== 'invalid')) {
       const r = await fetch(`/api/project/file?path=${encodeURIComponent(f.path)}`, { cache: 'no-store' });
-      if (r.ok) texts[f.path] = await r.json();
+      if (r.ok) { try { texts[f.path]=await r.json(); } catch { if(f.kind==='design')throw Error(`Could not read ${f.name}: invalid design JSON.`);warnings.push(`${f.name}: invalid library JSON.`); } }
+      else if(f.kind==='design')throw Error(`Could not read ${f.name} (${r.status}).`);
+      else warnings.push(`${f.name}: library unavailable (${r.status}).`);
     }
     const resolve = (p) => (texts[p] ? { fileId: p, file: texts[p] } : null);
-    return project.files.filter((f) => f.kind === 'design' && texts[f.path]).map((f) => ({
-      id: f.path, name: f.name, path: f.path, editedAt: Number(BigInt(f.mtime) / 1000000n),
-      doc: fromProjectFile(structuredClone(texts[f.path]), { path: f.path, resolve }).doc,
-    }));
+    const out=project.files.filter(f=>f.kind==='design'&&texts[f.path]).map(f=>{
+      const parsed=fromProjectFile(structuredClone(texts[f.path]),{path:f.path,resolve});
+      warnings.push(...parsed.warnings.map(w=>`${f.name}: ${w}`));
+      return {id:f.path,name:f.name,path:f.path,editedAt:Number(BigInt(f.mtime)/1000000n),doc:parsed.doc};
+    });
+    const invalid=project.files.filter(f=>f.kind==='invalid');if(invalid.length)warnings.push(`${invalid.length} invalid repository files could not be measured.`);
+    out.warnings=warnings;return out;
   }
   const out = [];
   for (const meta of (await listFiles()).filter((f) => fileKind(f)==='design'&&!f.project&&inScope(f))) {
     const file = await loadFile(meta.id);
-    if (file) out.push({ id: meta.id, name: meta.name, editedAt: meta.updatedAt, doc: file.doc });
+    if (!file) throw Error(`Could not read ${meta.name}. Refresh the project and try again.`);
+    out.push({id:meta.id,name:meta.name,editedAt:meta.updatedAt,sample:isSampleFile(meta),doc:file.doc});
   }
   return out;
 }
 
 let reportRun = 0;
 async function renderReport(list) {
-  const mine = ++reportRun;
-  list.innerHTML = '<div class="home-empty"><p class="muted">Measuring…</p></div>';
-  if(projectMode()&&(!project.connected||selectedProjectId()!==project.identity)){list.innerHTML='<div class="home-empty"><p>This repository is offline. Reconnect its Sigma server to view its report.</p></div>';return;}
-  const files = await reportFiles();
-  if (mine !== reportRun || prefs.section !== 'report' || query.trim()) return; // a newer report (or another section) is showing
-  const days = Number(prefs.reportDays || 0);
-  const r = useReport(files, { since: days ? Date.now() - days * 86400000 : null, handoff: !!prefs.reportHandoff });
-  const bar = (x) => `<span class="report-bar"><span style="width:${x === null ? 0 : Math.round(x * 100)}%"></span></span>`;
-  const kinds = Object.entries(r.overall.kinds).filter(([, x]) => x.total);
-  const filters = `<div class="report-filters">
-      <label>Edited <select class="select" data-report-days>${[[0, 'any time'], [7, 'in the last 7 days'], [30, 'in the last 30 days'], [90, 'in the last 90 days']].map(([v, l]) => `<option value="${v}"${v === days ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
-      <label><input type="checkbox" data-report-handoff${prefs.reportHandoff ? ' checked' : ''}> Only pages marked for handoff</label>
-    </div>`;
-  if (!files.length) {
-    list.innerHTML = `<div class="report">${filters}<div class="home-empty"><p>No design files to measure${selectedProject()?` in ${esc(selectedProject().name)}`:' in Drafts'} yet.</p></div></div>`;
-    return;
-  }
-  const rows = (items, cols) => items.map((it) => `<tr>${cols.map((c) => `<td${c.num ? ' class="num"' : ''}>${c.get(it)}</td>`).join('')}</tr>`).join('');
-  list.innerHTML = `<div class="report">
-    <p class="muted">How much of the design comes from the design system${selectedProject()?` in ${esc(selectedProject().name)}`:' in Drafts'}: ${files.length} design file${files.length === 1 ? '' : 's'}. ${projectMode()?'The same report on the command line: <code>npx sigma-design report</code>.':''}</p>
-    ${filters}
-    <div class="report-cards">
-      <div class="report-card"><div class="report-big">${formatShare(r.overall.componentShare)}</div><div>of layers are library components</div><div class="muted">${r.overall.instances} instances of ${r.overall.layers} layers on pages</div></div>
-      <div class="report-card"><div class="report-big">${formatShare(r.overall.tokenShare)}</div><div>of values use tokens</div>
-        <div class="report-kinds">${kinds.map(([k, x]) => `<div><span>${REPORT_KINDS[k]}</span>${bar(x.total ? x.bound / x.total : null)}<span class="num">${formatShare(x.total ? x.bound / x.total : null)}</span></div>`).join('')}</div></div>
-    </div>
-    <h3>Files</h3>
-    <table class="report-table"><tr><th>File</th><th class="num">Library components</th><th class="num">Tokens</th><th class="num">Layers</th></tr>
-      ${rows(r.files, [{ get: (f) => `${esc(f.name)}${f.path ? ` <span class="muted">${esc(f.path.replace(/^\.sigma\//, ''))}</span>` : ''}` }, { num: true, get: (f) => formatShare(f.componentShare) }, { num: true, get: (f) => formatShare(f.tokenShare) }, { num: true, get: (f) => f.layers }])}</table>
-    <div class="report-columns">
-      <div><h3>Most-used components</h3>${r.components.length ? `<table class="report-table">${rows(r.components.slice(0, 12), [{ get: (c) => esc(c.name) }, { num: true, get: (c) => c.uses }])}</table>` : '<p class="muted">None used yet.</p>'}
-        <h3>Components nobody uses</h3>${r.unusedComponents.length ? `<table class="report-table">${rows(r.unusedComponents, [{ get: (c) => `${esc(c.name)} <span class="muted">${esc(c.library)}</span>` }])}</table>` : '<p class="muted">Every component is used.</p>'}</div>
-      <div><h3>Most-used tokens</h3>${r.tokens.length ? `<table class="report-table">${rows(r.tokens.slice(0, 12), [{ get: (t) => esc(t.name) }, { num: true, get: (t) => t.uses }])}</table>` : '<p class="muted">None used yet.</p>'}
-        <h3>Tokens nobody uses</h3>${r.unusedTokens.length ? `<table class="report-table">${rows(r.unusedTokens.slice(0, 40), [{ get: (t) => `${esc(t.name)} <span class="muted">${esc(t.file)}</span>` }])}</table>${r.unusedTokens.length > 40 ? `<p class="muted">…and ${r.unusedTokens.length - 40} more</p>` : ''}` : '<p class="muted">Every token is used (directly, or by another token).</p>'}</div>
-    </div>
-  </div>`;
-  list.querySelector('[data-report-days]').addEventListener('change', (e) => {
-    prefs.reportDays = Number(e.target.value);
-    savePrefs();
-    renderHome();
-  });
-  list.querySelector('[data-report-handoff]').addEventListener('change', (e) => {
-    prefs.reportHandoff = e.target.checked;
-    savePrefs();
-    renderHome();
-  });
+  const mine=++reportRun,owner=selectedProjectId();
+  const current=()=>mine===reportRun&&prefs.section==='report'&&selectedProjectId()===owner&&!query.trim();
+  list.className='report-host';
+  list.innerHTML='<div class="home-empty" role="status"><p>Measuring design system usage…</p></div>';
+  if(projectMode()&&(!project.connected||owner!==project.identity)){list.innerHTML='<div class="home-empty"><h2>Repository offline</h2><p>Reconnect this repository’s Sigma server to measure its files. Unavailable data is not shown as zero.</p></div>';return;}
+  try {
+    const files=await reportFiles();if(!current())return;
+    prefs.reportViews ||= {};
+    const key=owner||'drafts',settings=prefs.reportViews[key] ||= {days:prefs.reportDays||0,handoff:!!prefs.reportHandoff};
+    const options={...settings,since:settings.days?Date.now()-settings.days*86400000:null};
+    renderReportDashboard(list,files,{options,projectName:selectedProject()?.name||'Drafts',repository:projectMode(),warnings:files.warnings||[],
+      onChange:(patch,recompute)=>{Object.assign(settings,patch);savePrefs();if(recompute)renderReport(list);},
+      onRefresh:()=>renderReport(list),
+      onOpen:async target=>{
+        const fileId=target.fileId||target.id;
+        const navigation={pageId:target.pageId,nodeId:target.nodeId,tokenId:target.tokenId,reportProjectId:owner||'drafts'};
+        const path=target.path||(projectMode()&&project.files.some(f=>f.path===fileId)?fileId:null);
+        if(path){if(!project.connected||project.identity!==owner)throw Error('Reconnect the repository to open this design.');await openProjectFile(path,navigation);}
+        else {if(!await loadFile(fileId))throw Error('This file is unavailable. Refresh the report to update its findings.');openFile(fileId,navigation);}
+      }
+    });
+  } catch(error){if(!current())return;list.innerHTML=`<div class="home-empty"><h2>Could not measure this project</h2><p>${esc(error.message)}</p><p>Unavailable files are not counted as zero.</p><button class="btn" data-report-retry>Try again</button></div>`;list.querySelector('[data-report-retry]').onclick=()=>renderReport(list);}
 }
 
 // The Proposals section: changes proposed from Sigma, with their status, pull request and ticket.
 async function renderProposals(list, q) {
-  const all = project.connected ? await changesetListing() : [];
+  const owner=selectedProjectId();
+  if(!project.connected||owner!==project.identity){list.innerHTML='<div class="home-empty"><h2>Repository offline</h2><p>Reconnect this repository’s Sigma server to view its Proposals.</p></div>';return;}
+  let all;
+  try { all=await changesetListing(); }
+  catch(error){if(prefs.section==='proposals'&&selectedProjectId()===owner)list.innerHTML=`<div class="home-empty"><h2>Could not load Proposals</h2><p>${esc(error.message)}</p><button class="btn" data-proposals-retry>Try again</button></div>`;list.querySelector('[data-proposals-retry]')?.addEventListener('click',()=>renderProposals(list,q));return;}
+  if(prefs.section!=='proposals'||selectedProjectId()!==owner||query.trim())return;
   const changesets = all.filter((c) => !q || `${c.title} ${c.note || ''}`.toLowerCase().includes(q));
   const intro = `<div class="welcome-intro"><p>Changes proposed from Sigma. <b>Propose change</b> picks edits that belong together; the sync skill turns each proposal into a ticket and a pull request, and its status follows the pull request.</p>
     ${project.connected ? '<button class="btn primary" data-propose-change>Propose change…</button>' : '<p class="muted">The project isn’t connected.</p>'}</div>`;
@@ -673,7 +662,7 @@ export async function renderHome() {
   const workspace=prefs.section==='workspace'&&selectedProjectId()&&!q;
   const pm = workspace&&projectMode();
   // Proposals only exist in a project; the Archive only standalone (git is the history of project files).
-  if (!SECTIONS[prefs.section] || (prefs.section === 'proposals' && !pm) || (prefs.section === 'archive' && pm)) prefs.section = 'recents';
+  if (!SECTIONS[prefs.section] || (prefs.section === 'proposals' && !projectMode()) || (prefs.section === 'archive' && pm)) prefs.section = 'recents';
   const section = prefs.section;
   const archive = !q&&section === 'archive';
   let files = await listFiles();
@@ -694,15 +683,16 @@ export async function renderHome() {
   root.querySelectorAll('[data-layout]').forEach((b) => b.classList.toggle('on', b.dataset.layout === prefs.layout));
   const recents = section === 'recents';
   const selected=(await projectList()).find(p=>p.id===selectedProjectId());
-  root.querySelector('#home-title').textContent=q?'Search results':welcome?'Documentation':drafts?'Drafts':workspace?selected.name:report&&selected?`${selected.name} · Report`:SECTIONS[section];
+  root.querySelector('#home-title').textContent=q?'Search results':welcome?'Documentation':drafts?'Drafts':workspace?selected.name:(report||proposals)&&selected?`${selected.name} · ${report?'Report':'Proposals'}`:SECTIONS[section];
   root.querySelector('.home-layout').hidden = proposals || report || welcome;
   root.querySelector('#home-search').hidden=false;
   root.querySelector('#home-search').value=query;
-  renderProjectHeader(workspace||report&&!q?selected:null,!!workspace);
+  renderProjectHeader((workspace||report||proposals)&&!q?selected:null,!!workspace);
   renderProjectDescription(workspace?selected:null);
-  const reportButton=root.querySelector('#home-report');reportButton.hidden=!selected||!!q||!(workspace||report);
-  reportButton.innerHTML=report?`${NAV_DESIGN} Go back to Files`:`${NAV_REPORT} Report`;
-  reportButton.title=report?'Back to project files':'Design system report';
+  const reportButton=root.querySelector('#home-report');reportButton.hidden=!selected||!!q||!(workspace||report||proposals);
+  root.querySelector('#home-proposals').hidden=!selected||selected.kind!=='repository'||!!q||!(workspace||report);
+  reportButton.innerHTML=(report||proposals)?`${NAV_DESIGN} Go back to Files`:`${NAV_REPORT} Report`;
+  reportButton.title=(report||proposals)?'Back to project files':'Design system report';
   const sortSel = root.querySelector('#home-sort');
   sortSel.hidden = recents || archive || proposals || welcome || report;
   sortSel.value = prefs.sort;
@@ -785,7 +775,7 @@ function archivedCard(f) {
   if (!thumb && tokens) thumb = `<span class="thumb-placeholder">${kind === 'icons' ? NAV_ICONS : NAV_TOKENS}</span>`;
   return `<div class="file-card archived${tokens ? ' tokens' : ''}" data-archived="${f.id}" title="Click for Restore or Delete forever">
     <div class="file-thumb" style="background:${tokens ? '#FFFFFF' : esc(f.background || '#F5F5F5')}">${thumb}</div>
-    <div class="file-info"><div class="card-name" title="${esc(f.name)}">${esc(f.name)}</div><div class="file-time">${kindBadge(kind)}Archived ${ago(f.archivedAt)}</div></div>
+    <div class="file-info"><div class="card-name" title="${esc(f.name)}">${esc(f.name)}</div><div class="file-time">Archived ${ago(f.archivedAt)}</div></div>
     <button class="btn archive-restore" data-restore>Restore</button>
     <button class="icon-btn file-more" data-more title="More actions">${MORE_ICON}</button>
   </div>`;
@@ -824,7 +814,7 @@ function card(f, { describe = false } = {}) {
   return `<a class="file-card${tokens ? ' tokens' : ''}" href="${fileHref(f.id)}" data-id="${f.id}" draggable="false">
     <div class="file-thumb" style="background:${tokens ? '#FFFFFF' : esc(f.background || '#F5F5F5')}">${thumb}</div>
     <div class="file-info">${name}${f.sourceName?`<div class="file-source">${esc(f.sourceName)}</div>`:''}${sample ? '' // Welcome to Sigma's files: just the name and what they are (no badges; never edited)
-      : `<div class="file-time">${kindBadge(kind)}Edited ${ago(f.updatedAt)}</div>`}${describe && sample && SAMPLE_DESCRIPTIONS[kind] ? `<div class="card-desc">${(WELCOME_DESIGN_DESCRIPTIONS[f.name] || SAMPLE_DESCRIPTIONS[kind])}</div>` : ''}</div>
+      : `<div class="file-time">Edited ${ago(f.updatedAt)}</div>`}${describe && sample && SAMPLE_DESCRIPTIONS[kind] ? `<div class="card-desc">${(WELCOME_DESIGN_DESCRIPTIONS[f.name] || SAMPLE_DESCRIPTIONS[kind])}</div>` : ''}</div>
     <div class="file-created">${sample ? '' : new Date(f.createdAt).toLocaleDateString()}</div>
     <button class="icon-btn file-more" data-more title="More actions">${MORE_ICON}</button>
   </a>`;

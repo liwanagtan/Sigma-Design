@@ -188,7 +188,7 @@ async function bring(path, { force = false, texts = new Map(), seen = new Set() 
 export const bringProjectFile = (path, options) => bring(path, options);
 
 // Open a project file in the editor.
-export async function openProjectFile(path) {
+export async function openProjectFile(path, target = {}) {
   if (!adapter) return toast('The project isn’t connected.');
   try {
     const meta = (await cachedFiles()).find((m) => m.project.path === path);
@@ -196,11 +196,11 @@ export async function openProjectFile(path) {
     if (meta && disk && disk.mtime !== meta.project.mtime && (await hasUnsavedProjectChanges(meta.id))) {
       const { text } = await adapter.read(path);
       if (textHash(text) !== meta.project.hash && await ask('It has changes here that aren’t saved to the project. Loading the version on disk loses them; keeping them opens the file as it is here.', { title: `“${meta.name}” changed on disk`, ok: 'Load the disk version', cancel: 'Keep the changes here', danger: true })) {
-        openFile(await bring(path, { force: true }));
+        openFile(await bring(path, { force: true }), target);
         return;
       }
     }
-    openFile(await bring(path));
+    openFile(await bring(path), target);
   } catch (err) {
     toast(`Couldn’t open ${path}: ${err.message}`);
   }

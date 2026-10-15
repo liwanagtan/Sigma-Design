@@ -129,9 +129,16 @@ let thumbTimer = null;
 export const getCurrentFileId = () => currentFileId;
 
 // ---------- navigation ----------
-export const fileHref = (id) => `#/file/${id}`;
-export function openFile(id) {
-  location.hash = fileHref(id);
+export function fileHref(id, { pageId, nodeId, tokenId, reportProjectId } = {}) {
+  const query=new URLSearchParams();
+  if(pageId)query.set('pageId',pageId);
+  if(nodeId)query.set('nodeId',nodeId);
+  if(tokenId)query.set('tokenId',tokenId);
+  if(reportProjectId)query.set('report',reportProjectId);
+  return `#/file/${id}${query.size?'?'+query:''}`;
+}
+export function openFile(id, target = {}) {
+  location.hash = fileHref(id, target);
 }
 export function goHome() {
   location.hash = '#/';

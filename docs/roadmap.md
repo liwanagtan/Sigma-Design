@@ -1,6 +1,6 @@
 # Sigma roadmap
 
-Updated: **15 October 2026**. Status: core editor and design-system phases **1–39 are complete**; local Figma import is implemented with fidelity limitations. Reports redesign, code creation, a built-in terminal, AI in the editor, full Figma interoperability, and live collaboration remain planned.
+Updated: **15 October 2026**. Status: core editor and design-system phases **1–39 are complete**; local Figma import is implemented with fidelity limitations. The built-in terminal is complete for macOS/Linux. Reports redesign is implemented for review; code creation, AI in the editor, full Figma interoperability, and live collaboration remain open.
 
 This is the current backlog. Detailed phase specifications, past decisions, and implementation notes are in [roadmap history](roadmap-history.md). Project storage and migration details are in [project architecture](projects-architecture.md).
 
@@ -16,7 +16,7 @@ This is the current backlog. Detailed phase specifications, past decisions, and 
 | Appearance | Done | Global Auto/Light/Dark and system preference tracking. Design canvas background always follows app appearance; the page background color control is removed. Reference content retains its applicable token modes. |
 | Code tab | Partial | Renamed from Inspect to **Code**. Collapsed component docs, separate variant values/code names, resolved accessibility labels, and syntax-colored CSS/snippets/token cards are implemented; code creation is planned in Phase 51. |
 | Local `.fig` import | Partial | Worker-based decoding, editable basic layers, import reports, bounded transfer/storage, and tested large-document reopening. Full conversion and round-trip support remain open. |
-| Reports | Partial | Project-scoped design-system report is accessible from the top bar, with **Go back to Files** to return. UI, metric clarity, and actionable guidance are planned in Phase 50. |
+| Reports | Partial | Project-scoped design-system report is accessible from the top bar, with **Go back to Files** to return. Phase 50 now has a scoped dashboard, verified metric definitions, searchable/paginated findings and library usage, exact layer/token links, and return navigation. User review remains before closing the phase. |
 | Documentation | Partial | Navigation and page shell exist. Final content is deferred until before shipping. |
 
 ### Current Home decisions
@@ -33,14 +33,13 @@ This is the current backlog. Detailed phase specifications, past decisions, and 
 
 ## Next priorities
 
-1. **Release readiness:** validate the new Home/project flows, restore discoverable access to repository Proposals, and prepare Documentation before shipping.
-2. **Reports usability and design:** redesign the report UI, clarify what metrics mean, and help users find and act on issues (Phase 50).
+1. **Release readiness:** validate the new Home/project flows and prepare Documentation before shipping.
+2. **Reports usability and design:** review the implemented report UI and wording with users, then close remaining acceptance issues (Phase 50).
 3. **Code creation:** turn selections, components, and pages into editable, previewable code using project tokens and existing components (Phase 51).
-4. **Built-in terminal:** a real local shell in a resizable dock for Design and Tokens files, bound to a connected workspace (Phase 52).
-5. **AI in the editor:** shared document tools, the Assistant panel, and visual feedback/open-editor MCP (Phases 40–42).
-6. **Live collaboration:** the shared document, live sessions, and collaborative undo/comments (Phases 47–49).
-7. **Publish and pilot:** complete the release checklist, publish the npm package, and work with two or three pilot teams.
-8. **Figma interoperability — lowest priority:** one consolidated phase covering native vector editing, reader validation, conversion/paste/CLI import, and `.fig` export. Existing local import remains available; completing this phase is not a release gate.
+4. **AI in the editor:** shared document tools, the Assistant panel, and visual feedback/open-editor MCP (Phases 40–42).
+5. **Live collaboration:** the shared document, live sessions, and collaborative undo/comments (Phases 47–49).
+6. **Publish and pilot:** complete the release checklist, publish the npm package, and work with two or three pilot teams.
+7. **Figma interoperability — lowest priority:** one consolidated phase covering native vector editing, reader validation, conversion/paste/CLI import, and `.fig` export. Existing local import remains available; completing this phase is not a release gate.
 
 ## Remaining feature milestones
 
@@ -48,7 +47,7 @@ Milestones below follow feature priority. Phase 43 now consolidates the former F
 
 | Phase | Milestone | Status | Remaining outcome |
 | --- | --- | --- | --- |
-| 50 | Reports usability and design | Planned | A clearer project report UI, understandable and trustworthy metrics, filters/drill-down, and practical next steps linked to the affected files/layers. |
+| 50 | Reports usability and design | Partial · review | A clearer project report UI, understandable and trustworthy metrics, filters/drill-down, and practical next steps linked to the affected files/layers. |
 | 51 | Code creation | Planned | Create editable code for selections/components/pages, reuse project components and tokens, preview and validate results, and copy/download or apply project files through an explicit action. |
 | 52 | Built-in terminal | Done | A shared resizable terminal dock in Design/Tokens, real workspace-bound PTY sessions through the local server, streaming output, keyboard isolation, reconnect, and process cleanup. |
 | 40 | Shared document tools | Planned | One validated registry for reading/editing documents through the Assistant and MCP, using normal edit functions and undo. |
@@ -60,6 +59,8 @@ Milestones below follow feature priority. Phase 43 now consolidates the former F
 | 43 | Figma interoperability (formerly 43–46) | Partial · lowest priority | Native vector/pen/boolean editing; broader reader validation; faithful conversion and library/token links; Figma paste and CLI import; best-effort `.fig` export and round-trip validation. |
 
 ### Phase 50: Reports usability and design
+
+Implemented for review: dashboard and scoped counts; local/linked/unresolved instances; resolved and type-checked token bindings; per-field typography; hidden/reference/handoff/date/file filters; no-data/error/offline states; bounded searchable findings and usage lists; exact layer/token drill-down and Back to Report. Proposals is restored to repository project top bars and its route guard is fixed. Acceptance still requires user review of the design/wording and any resulting refinements.
 
 Help users answer **what is using the design system, where the gaps are, and what to do next**.
 
@@ -121,7 +122,7 @@ Build on the **Code** tab and existing repository handoff/design-to-code workflo
 - [ ] Validate migration/idempotence, global Recents/search, Drafts ownership, grouped project pages, Create New/import destinations, moves, direct links, refresh, and back/forward navigation.
 - [x] Restore the project-scoped Report in the top bar, with **Go back to Files** to return to the workspace.
 - [ ] Validate Reports usability and metric correctness against Phase 50 acceptance criteria.
-- [ ] Make repository Proposals discoverable from the new project UI and verify its project scope.
+- [x] Make repository Proposals discoverable from the new project UI and verify its project scope.
 - [ ] Validate repository offline/reconnect behavior, cached ownership, external library links, and failed moves retaining original drafts.
 - [ ] Keep Sigma Tokens/Foundations/Components/Icons and captured Pages and UI synchronized with shipped interface changes.
 - [ ] Run release CI, browser/Node suites, schema checks, and example render-parity checks. Recent local tests are implementation evidence, not a substitute for release checks.

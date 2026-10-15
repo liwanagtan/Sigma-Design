@@ -1,11 +1,12 @@
+import { focusToken, openVariablesEditor, closeVariablesEditor } from './variables-ui.js';
 import { setTerminalContext } from './terminal.js';
-import { recordFileOpened, initializeProjects, selectedProjectId, selectProject, projectList, resolveProjectId } from './projects.js';
+import { recordFileOpened, initializeProjects, selectedProjectId, selectProject, projectList, resolveProjectId, scopeHref } from './projects.js';
 import './select.js';
 import { applyWelcomeAppearance } from './welcome-appearance.js';
 import { appearanceButtonHTML, appearance } from './appearance.js';
 import {
   state, page, view, subscribe, emit, normalizeDocument, addNormalizer, loadDocument, unloadDocument, walk, cancelPendingSave,
-  fixGroups, commit, forgetUndo,
+  fixGroups, commit, forgetUndo, select, getNode, pageOf,
 } from './store.js';
 import { applyLayouts } from './layout.js';
 import { syncInstances } from './components.js';
@@ -13,7 +14,7 @@ import { resolveVariables, normalizeTokenGroups, collections } from './variables
 import { renderScene, applyViewTransform, renderOverlay } from './render.js';
 import { initInteractions, refreshCursor } from './interact.js';
 import { initTextEditor, positionEditor, measureText, stopEditing } from './text.js';
-import { setViewportElement, zoomToFit } from './commands.js';
+import { setViewportElement, zoomToFit, zoomToSelection } from './commands.js';
 import {
   initPanels, renderLayers, renderProps, renderPages, renderToolbar, renderZoomLabel, renderFileHeader, highlightLayerHover,
   renderAssets, renderCommentsList,
@@ -140,6 +141,8 @@ window.addEventListener('sigma:figma-imported', async event => {
 // `discard`: drop unsaved local changes instead of writing them (reloading another tab's version).
 async function leaveEditor({ discard = false } = {}) {
   setTerminalContext(null);
+  closeVariablesEditor();
+  document.querySelectorAll('[data-report-return]').forEach(el=>el.remove());
   if (!getCurrentFileId()) return;
   clearViewing(); // an older version on screen is never saved over the file
   if (state.editingTextId) stopEditing();
@@ -171,7 +174,7 @@ async function showHome() {
 }
 
 async function showFile(id, { force = false, discard = false } = {}) {
-  if (!force && state.screen !== 'home' && getCurrentFileId() === id) return;
+  if (!force && state.screen !== 'home' && getCurrentFileId() === id) { applyReportTarget(); return; }
   const file = await loadFile(id);
   if (!file) {
     setHomeNotice('That file could not be found. It may have been deleted.');
@@ -202,6 +205,7 @@ async function showFile(id, { force = false, discard = false } = {}) {
     iconsEl.hidden = false;
     loadDocument(file.doc, file.views);
     showIconsScreen();
+    applyReportTarget();
     syncOpenProjectFile();
     return;
   }
@@ -213,6 +217,7 @@ async function showFile(id, { force = false, discard = false } = {}) {
     tokensEl.hidden = false;
     loadDocument(file.doc, file.views);
     showTokensScreen();
+    applyReportTarget();
     syncOpenProjectFile();
     checkLibraryUpdates(); // token files it points at may have published new versions
     return;
@@ -239,6 +244,25 @@ async function showFile(id, { force = false, discard = false } = {}) {
   checkLibraryUpdates();
   await syncOpenProjectFile();
   repairIcons(); // icons in use the file has no copy of (pasted from another file)
+  applyReportTarget();
+}
+
+// Report links select the actual page/layer and retain a direct route back to the measured scope.
+function applyReportTarget() {
+  const params=new URLSearchParams(location.hash.split('?')[1]||'');
+  document.querySelectorAll('[data-report-return]').forEach(el=>el.remove());
+  const owner=params.get('report');
+  if(owner&&/^[\w-]{1,128}$/.test(owner)){
+    const host=state.screen==='editor'?appEl.querySelector('.file-header'):state.screen==='tokens'?tokensEl.querySelector('.tokens-header'):iconsEl.querySelector('.tokens-header');
+    if(host){const button=document.createElement('button');button.className='btn';button.dataset.reportReturn='';button.textContent='Back to Report';button.onclick=()=>{location.hash=scopeHref('report',owner==='drafts'?null:owner);};host.insertBefore(button,host.firstElementChild?.nextSibling||null);}
+  }
+  if(params.get('tokenId')&&state.doc){if(state.screen==='editor')openVariablesEditor();focusToken(params.get('tokenId'));}
+  if(state.screen!=='editor'||!state.doc)return;
+  const id=params.get('nodeId'),targetPage=state.doc.pages.find(p=>p.id===params.get('pageId'))||pageOf(id);
+  if(targetPage&&state.doc.pages.includes(targetPage)){state.doc.currentPageId=targetPage.id;emit('doc');}
+  if(id&&getNode(id)&&pageOf(id)===page()){
+    select([id]);const file=getCurrentFileId();requestAnimationFrame(()=>{if(file===getCurrentFileId()&&state.screen==='editor')zoomToSelection();});
+  }
 }
 
 let routing = Promise.resolve();
