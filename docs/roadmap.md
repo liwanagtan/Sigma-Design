@@ -11,7 +11,7 @@ This is the current backlog. Detailed phase specifications, past decisions, and 
 | Editor and design systems | Done | Components, variants, properties, tokens/modes/aliases, linked libraries, auto layout, constraints, grids, effects, history, comments, branches, page groups, and code inspection. |
 | Repository workflow | Done | `.sigma/` files, CLI and workflow MCP, sync adapters, proposals, tickets/PRs, code capture, visual comparison, design-aware merging, and render-parity checks. |
 | Projects and Home | Done | Sigma and Optics projects, user projects, metadata ownership migration, repository compatibility, and moving Drafts into projects. |
-| Sigma reference files | Done | Tokens, Foundations, Components, Pages and UI, Icons, and Guide examples in Sigma. Actual Sigma styles/tokens/glyphs; temporary edits reset on leaving or refresh, while editable copies persist in Drafts. |
+| Sigma reference files | Done | Tokens, Foundations, Components, Pages and UI, Icons, and Guide examples in Sigma. Actual Sigma styles/tokens and Lucide UI icons; temporary edits reset on leaving or refresh, while editable copies persist in Drafts. |
 | Optics | Done | Sample design system inspired by Polaris, in its own project with persistent editable files. |
 | Appearance | Done | Global Auto/Light/Dark and system preference tracking. Design canvas background always follows app appearance; the page background color control is removed. Reference content retains its applicable token modes. |
 | Code tab | Partial | Renamed from Inspect to **Code**. Collapsed docs, resolved properties/labels, syntax-colored inspection, and a Create code workspace for editable HTML/CSS with sandboxed preview and export. Phase 51 remains in progress. |
@@ -26,19 +26,21 @@ This is the current backlog. Detailed phase specifications, past decisions, and 
 - Drafts contains every file without project ownership, across all file types. It is not a project.
 - Project pages group files into **Design, Tokens, and Icons**; empty groups are hidden.
 - Report opens for the selected project; **Go back to Files** returns to that project’s workspace.
-- The top bar has the project icon on the left of its editable title, with Report, sort, grid/list, and appearance controls on the right. Project icons support Sigma glyphs and emoji.
+- The top bar has the project icon on the left of its editable title, with Report, sort, grid/list, and appearance controls on the right. Project icons support Lucide glyphs and emoji.
 - Create New in the sidebar offers Design file, Tokens file, Icons file, and Import. The open project is the destination; creation outside a project goes to Drafts.
 - Covers and their controls are removed. An editable description appears below the project top bar and saves with project metadata. Grid/list preference is shared across Home views.
 - Existing IDs, contents, versions, and library links survive migration. Library pickers offer the current scope plus explicit access to other projects and Drafts.
 
 ## Next priorities
 
-1. **Release readiness:** validate the new Home/project flows and prepare Documentation before shipping.
-2. **Code creation:** turn selections, components, and pages into editable, previewable code using project tokens and existing components (Phase 51).
-3. **AI in the editor:** shared document tools, the Assistant panel, and visual feedback/open-editor MCP (Phases 40–42).
-4. **Live collaboration:** the shared document, live sessions, and collaborative undo/comments (Phases 47–49).
-5. **Publish and pilot:** complete the release checklist, publish the npm package, and work with two or three pilot teams.
-6. **Figma interoperability — lowest priority:** one consolidated phase covering native vector editing, reader validation, conversion/paste/CLI import, and `.fig` export. Existing local import remains available; completing this phase is not a release gate.
+1. **Design File reliability:** review the corrected Hug/Fill/min/max behavior, component authoring/navigation, inspector controls, and spacing overlays. Implementation and validation: [Design File reliability](design-file-reliability.md).
+
+2. **Release readiness:** validate the new Home/project flows and prepare Documentation before shipping.
+3. **Code creation:** turn selections, components, and pages into editable, previewable code using project tokens and existing components (Phase 51).
+4. **AI in the editor:** shared document tools, the Assistant panel, and visual feedback/open-editor MCP (Phases 40–42).
+5. **Live collaboration:** the shared document, live sessions, and collaborative undo/comments (Phases 47–49).
+6. **Publish and pilot:** complete the release checklist, publish the npm package, and work with two or three pilot teams.
+7. **Figma interoperability — lowest priority:** one consolidated phase covering native vector editing, reader validation, conversion/paste/CLI import, and `.fig` export. Existing local import remains available; completing this phase is not a release gate.
 
 ## Remaining feature milestones
 
@@ -125,6 +127,7 @@ Build on the **Code** tab and existing repository handoff/design-to-code workflo
 - [x] Validate Reports usability and metric correctness against Phase 50 acceptance criteria; user approved the UI on 15 October 2026.
 - [x] Make repository Proposals discoverable from the new project UI and verify its project scope.
 - [ ] Validate repository offline/reconnect behavior, cached ownership, external library links, and failed moves retaining original drafts.
+- [ ] Review the Design File reliability changes with the user; retain the new sizing, component and live-inspector regressions.
 - [ ] Keep Sigma Tokens/Foundations/Components/Icons and captured Pages and UI synchronized with shipped interface changes.
 - [ ] Run release CI, browser/Node suites, schema checks, and example render-parity checks. Recent local tests are implementation evidence, not a substitute for release checks.
 - [ ] Confirm import limitations, dependency notices, package contents, installation/start instructions, and release version.

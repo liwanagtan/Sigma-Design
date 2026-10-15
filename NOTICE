@@ -10,7 +10,7 @@ the Apache License 2.0 requires.
 
 Third-party parts keep their own licenses, which the Commons Clause doesn't change:
 - Lucide icons (https://lucide.dev), ISC License, some derived from Feather (MIT): the full license text is
-  in icon-sets/lucide.json ("licenseText"), and src/sample-icons.js uses icons from the same set.
+  in icon-sets/lucide.json ("licenseText"), and Sigma’s UI glyph registry, its reference files, and Optics use icons from the same set. Generated UI glyph data is in src/lucide-ui-data.js.
 
 - Figma file importer: openfig-core 0.4.1, fflate, fzstd and kiwi-schema, MIT licenses.
   Attribution and license terms: src/vendor/figma-parser.NOTICE.txt.

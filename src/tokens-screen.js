@@ -1,3 +1,4 @@
+import {lucideIcon} from './lucide.js';
 import { appearanceButtonHTML } from './appearance.js';
 // The screen for token files: no canvas, just the design token editor full-screen.
 import { state, commit, subscribe, undo, redo } from './store.js';
@@ -24,8 +25,8 @@ export function initTokensScreen(el) {
         <button class="project-status" data-project-status hidden></button>
         <span class="publish-status" data-publish-status></span>
         <button class="btn primary" data-publish>Publish…</button>
-        <button class="icon-btn" data-undo title="Undo  ⌘Z"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><path d="M5 3L2 6l3 3"/><path d="M2 6h7.5a4 4 0 0 1 0 8H7"/></svg></button>
-        <button class="icon-btn" data-redo title="Redo  ⇧⌘Z"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><path d="M11 3l3 3-3 3"/><path d="M14 6H6.5a4 4 0 0 0 0 8H9"/></svg></button>
+        <button class="icon-btn" data-undo title="Undo  ⌘Z">${lucideIcon('undo-2',16)}</button>
+        <button class="icon-btn" data-redo title="Redo  ⇧⌘Z">${lucideIcon('redo-2',16)}</button>
         ${appearanceButtonHTML()}
       </div>
     </header>

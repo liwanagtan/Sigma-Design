@@ -17,6 +17,8 @@ export const state = {
   marquee: null, // world box
   measure: null, // [{x1,y1,x2,y2,label}] world
   measureTarget: null,
+  spacingPreview: null,
+  spacingPinned: null,
   altDown: false,
   spaceDown: false,
   collapsed: new Set(),

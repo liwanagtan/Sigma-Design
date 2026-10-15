@@ -1,3 +1,4 @@
+import {lucideIcon} from './lucide.js';
 import { inScope, projectList } from './projects.js';
 // Libraries: a design file links
 //   - token files (doc.libraries): published design tokens
@@ -785,9 +786,9 @@ export async function migrateLegacyTokens(wasVersion) {
 export const hasLibraries = () => libraries().length > 0;
 export const libraryTokenCount = () => collections().filter((c) => c.fromLibrary).reduce((n, c) => n + (c.variables || []).length, 0);
 
-const TOKEN_ICON = '<svg width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 1.2l5 2.9v5.8L7 12.8 2 9.9V4.1z"/><circle cx="7" cy="7" r="1.6"/></svg>';
-export const ICONS_ICON = '<svg width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 1.5l1.6 3.3 3.6.5-2.6 2.5.6 3.6L7 9.7l-3.2 1.7.6-3.6L1.8 5.3l3.6-.5z" stroke-linejoin="round"/></svg>';
-const COMPONENT_ICON = '<svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M6 1.2l1.9 1.9L6 5 4.1 3.1zM6 7l1.9 1.9L6 10.8 4.1 8.9zM3.1 4.1L5 6 3.1 7.9 1.2 6zM8.9 4.1L10.8 6 8.9 7.9 7 6z"/></svg>';
+const TOKEN_ICON = lucideIcon('variable',16);
+export const ICONS_ICON = lucideIcon('shapes',16);
+const COMPONENT_ICON = lucideIcon('component',16);
 
 
 function libraryScopeButton(all) {return `<button class="btn" data-all-libraries>${all?'Current project only':'Other projects and Drafts'}</button>`;}

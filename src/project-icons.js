@@ -8,7 +8,7 @@ export function validateProjectIcon(icon) {
     const value=String(icon.value||'').trim();
     if(value.length<=32&&[...new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(value)].length===1&&/\p{Extended_Pictographic}|\p{Regional_Indicator}/u.test(value))return {type:'emoji',value};
   }
-  throw new Error('Choose a Sigma icon or one emoji.');
+  throw new Error('Choose a Lucide icon or one emoji.');
 }
 export function projectIconMarkup(icon) {
   try{icon=validateProjectIcon(icon||null);}catch{icon=null;}

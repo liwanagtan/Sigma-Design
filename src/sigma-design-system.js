@@ -1,5 +1,6 @@
 // Sigma's welcome library. Light values and component geometry are extracted from styles.css;
 // Both appearance palettes come from the CSS used by Sigma’s interface.
+import { UI_ICON_NAMES } from './ui-icon-map.js';
 import { sigmaIconId } from './sample-icons.js';
 import { cssNumber, cssPadding, cssShadow } from './sigma-css.js';
 import { UI_SOURCE } from './sigma-ui-source.js';
@@ -7,7 +8,7 @@ import { collection, group, token, modes, ref } from './sample-tokens.js';
 import { normalizeGroups } from './token-groups.js';
 import { createNode, uid, makePaint } from './store.js';
 
-export const SIGMA_SYSTEM_VERSION = 15;
+export const SIGMA_SYSTEM_VERSION = 20;
 const dark = Object.fromEntries(Object.entries(UI_SOURCE.dark).filter(([key])=>key.startsWith('--')).map(([key,value])=>[key.slice(2),value]));
 const slug = s => s.replace(/^\./, '').replace(/[^\w-]+/g, '-');
 const px = cssNumber;
@@ -138,6 +139,20 @@ export function sigmaFoundationsDocument(collections) {
     K.bind(reference,'fills.0.color','Interface','color/canvas');children.push(reference);
     return {...K.page(name,children,mode),group:mode};
   }));
+  for (const mode of ['Light','Dark']) {
+    const fixed=Object.fromEntries(collections.map(c=>[c.id,c.modes.find(m=>m.name===mode).id]));
+    const children=[K.text(`Sigma iconography · Lucide · ${mode}`,24,24,'heading'),K.text('Lucide outline icons · 24 × 24 viewBox · 2 px stroke · round caps and joins',24,60)];
+    const aliases=['move','hand','frame','text','home','component','componentSet','instance','rotation','radius','aspectLocked','aspectUnlocked','appearance','selectChevron','plus','close'];
+    aliases.forEach((alias,i)=>{
+      const x=24+(i%4)*176,y=112+Math.floor(i/4)*88;
+      const icon=createNode('icon',{name:UI_ICON_NAMES[alias],iconId:sigmaIconId(alias),x,y,w:24,h:24,fills:[makePaint('#1E1E1E')]});
+      K.bind(icon,'fills.0.color','Interface','color/text');K.bind(icon,'w','Foundations','width/24');K.bind(icon,'h','Foundations','height/24');
+      children.push(icon,K.text(UI_ICON_NAMES[alias],x,y+34));
+    });
+    const surface=createNode('frame',{name:`${mode} icon reference`,x:0,y:0,w:752,h:488,modes:fixed,children,fills:[makePaint('#F5F5F5')]});
+    K.bind(surface,'fills.0.color','Interface','color/canvas');
+    pages.push({...K.page('Iconography',[surface],mode),group:mode});
+  }
   return { name: 'Foundations', pages, currentPageId: pages[0].id };
 }
 

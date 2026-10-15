@@ -8,7 +8,7 @@ import { measureText } from './text.js';
 import { isAutoLayout, guessLayout, setSizing, layoutOf, directionOf } from './layout.js';
 import { applyConstraints } from './constraints.js';
 import {
-  isInsideInstance, owningInstance, createInstance, detachInstance, resetOverrides, mainComponentOf, canPlaceInside,
+  isInsideInstance, owningInstance, nearestInstance, mainTarget, createInstance, detachInstance, resetOverrides, mainComponentOf, canPlaceInside,
   parseVariantName, formatVariantName, variantsOf, variantDefs, libraryOfComponent, containingComponent, addComponentProp, setSlot,
 } from './components.js';
 import { ask } from './dialogs.js';
@@ -389,6 +389,13 @@ export function scaleKids(kids, kids0, sx, sy) {
 // Update props on all selected nodes (from the properties panel).
 export function setProps(props, { live = false, nodes = selectedNodes() } = {}) {
   for (const n of nodes) {
+    const invalidLimit=['W','H'].some(axis=>{
+      if(!Object.hasOwn(props,'min'+axis)&&!Object.hasOwn(props,'max'+axis))return false;
+      const min=Object.hasOwn(props,'min'+axis)?props['min'+axis]:n['min'+axis];
+      const max=Object.hasOwn(props,'max'+axis)?props['max'+axis]:n['max'+axis];
+      return min!=null&&max!=null&&min>max;
+    });
+    if(invalidLimit){hint('Minimum size cannot exceed maximum size. Clear or adjust the other limit first.');continue;}
     editNode(n, Object.keys(props), () => {
       for (const [k, v] of Object.entries(props)) {
         if (k.startsWith('layout.')) {
@@ -558,16 +565,15 @@ export function revealNode(node) {
   requestAnimationFrame(() => zoomToSelection());
 }
 
-export function goToMainComponent() {
-  const n = selectedNodes()[0];
-  const inst = n?.type === 'instance' && !isInsideInstance(n) ? n : n && owningInstance(n);
-  const main = mainComponentOf(inst);
+export function goToMainComponent(n = selectedNodes()[0]) {
+  const inst = n?.type === 'instance' ? n : n && nearestInstance(n);
+  const main = mainTarget(n);
   if (!main) return hint(inst ? 'The main component for this instance is missing.' : 'Select an instance first.');
   const lib = libraryOfComponent(main);
   if (lib) {
     // Library components live in another file: open it to edit them.
     ask(`“${main.name}” comes from the library “${lib.name}”. Open that file in a new tab to edit it?`, { title: 'A library component', ok: 'Open the library' })
-      .then((ok) => ok && window.open(`#/file/${lib.fileId}`, '_blank'));
+      .then((ok) => ok && window.open(`#/file/${encodeURIComponent(lib.fileId)}?nodeId=${encodeURIComponent(main.id)}`, '_blank'));
     return;
   }
   revealNode(main);

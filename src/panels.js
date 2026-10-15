@@ -1,18 +1,19 @@
+import {lucideIcon} from './lucide.js';
 import {
   state, page, view, emit, commit, select, selectedNodes, getNode, getParent, ancestors, isAncestor, isSlotArea, hiddenByWidth,
   uid, detach, insertNode, worldMatrix, setWorldMatrix, createNode, undo, redo, makePaint, isFrameLike, editNode, worldBounds, setShowGrids,
 } from './store.js';
 import { translate } from './geom.js';
-import { icons, layerIcon } from './icons.js';
+import { icons, layerIcon, UI_ICON_NAMES } from './icons.js';
 import {
   setTool, setProps, align, distribute, zoomIn, zoomOut, zoomTo100, zoomToFit, zoomToSelection, zoomAt,
   viewportSize, sortByZ, toggleVisible, toggleLocked, addAutoLayout, removeAutoLayout,
-  placeInstance, resetSelectionOverrides,
+  placeInstance, resetSelectionOverrides, goToMainComponent,
 } from './commands.js';
 import { isAutoLayout, getSizing, directionOf, activeBreakpoint } from './layout.js';
 import {
   isInsideInstance, owningInstance, canPlaceInside, listComponents, overrideCount, defaultVariant, setInstanceProp, componentMatches,
-  isDeprecated, mainComponentOf,
+  isDeprecated, mainComponentOf, componentContext, mainTarget,
 } from './components.js';
 import { exportNodes, saveFile, pickImages } from './io.js';
 import { createFile, openFile, goHome, pickFilesToImport, welcomeFile, getCurrentFileId, makeEditableCopy, isCurrentSample } from './files.js';
@@ -28,7 +29,7 @@ import {
 import { openInsertIcon, openSwapIcon, canInsertIcon, iconLayerInfo } from './icon-ui.js';
 import { findIcon } from './icon-library.js';
 import { openHistory, openSaveVersionDialog } from './history.js';
-import { H_CONSTRAINTS, V_CONSTRAINTS } from './constraints.js';
+import { H_CONSTRAINTS, V_CONSTRAINTS, togglePin } from './constraints.js';
 import { blankDocument } from './sample.js';
 import {
   collections, findVariable, typeForPath, previewValue, bindVariable, unbindVariable, shiftPaintBindings, createCollection,
@@ -558,6 +559,16 @@ function initLayers() {
     else if (e.shiftKey) select([n.id], { add: true });
     else select([n.id]);
   });
+  list.addEventListener('contextmenu',e=>{
+    const row=e.target.closest('.layer-row');if(!row)return;
+    e.preventDefault();const n=getNode(row.dataset.id);if(!n)return;select([n.id]);
+    const target=mainTarget(n),set=n.type==='component'&&getParent(n.id)?.type==='componentSet'?getParent(n.id):null;
+    showContextMenu(e.clientX,e.clientY,[
+      ...(target&&target!==n?[{label:'Go to main component',action:goToMainComponent}]:[]),
+      ...(set?[{label:'Go to component set',action:()=>{select([set.id]);zoomToSelection();}}]:[]),
+      {label:'Rename',action:()=>startRename(n.id)},
+    ]);
+  });
   list.addEventListener('dblclick', (e) => {
     const row = e.target.closest('.layer-row');
     if (row && e.target.closest('.name')) startRename(row.dataset.id);
@@ -669,6 +680,7 @@ export function renderLayers(force = false) {
       const open = kids && !state.collapsed.has(n.id);
       const cls = ['layer-row', n.type];
       if (inInstance) cls.push('in-instance');
+      if(componentContext(n))cls.push('component-context');
       if (n.type === 'component' || n.type === 'instance' || n.type === 'componentSet') cls.push('componentish');
       if (sel.has(n.id)) cls.push('selected');
       else if (inSelected) cls.push('in-selected');
@@ -795,11 +807,13 @@ function numField(key, label, nodes, { icon } = {}) {
   const f = FIELDS[key];
   const path = FIELD_BIND[key];
   const bound = path ? boundVar(nodes, path) : null;
-  const head = `<label class="field${path ? ' bindable' : ''}"><span class="field-label" data-scrub="${key}">${icon || label}</span>`;
+  const fieldName=({rotation:'Rotation',radius:'Corner radius',minW:'Minimum width',maxW:'Maximum width',minH:'Minimum height',maxH:'Maximum height',gap:'Gap',padH:'Horizontal padding',padV:'Vertical padding'})[key]||label||key;
+  const limit=/^(min|max)[WH]$/.test(key);
+  const head = `<label ${['gap','padH','padV'].includes(key)?`data-layout-preview="${key}"`:""} title="${esc(fieldName)}" class="field${path ? ' bindable' : ''}"><span class="field-label" data-scrub="${key}">${icon || label}</span>`;
   if (bound && bound !== MIXED) return `${head}${varChip(path, bound)}</label>`;
   const v = common(nodes, f.get);
   const shown = v === MIXED ? '' : fmtNum(v);
-  return `${head}<input data-key="${key}" value="${esc(shown)}"${v === MIXED ? ' placeholder="Mixed"' : ''} spellcheck="false">` +
+  return `${head}<input aria-label="${esc(fieldName)}" data-key="${key}" value="${esc(shown)}"${v === MIXED ? ' placeholder="Mixed"' : limit?' placeholder="None"':''} spellcheck="false">` +
     (path ? varButton(path) : '') + '</label>';
 }
 
@@ -844,7 +858,7 @@ function setMode(target, colId, modeId) {
 }
 
 // ---------- variable bindings ----------
-const VAR_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M6 1l4.3 2.5v5L6 11 1.7 8.5v-5z"/><circle cx="6" cy="6" r="1.4"/></svg>';
+const VAR_ICON = lucideIcon('variable',12);
 
 // The variable all `nodes` bind at `path`: a variable, MIXED, or null when unbound.
 function boundVar(nodes, path) {
@@ -951,8 +965,8 @@ function variableFromValue(nodes, path, type) {
 
 // ---------- paints (multiple fills / strokes) ----------
 const PAINT_KINDS = { fills: 'fill', strokes: 'stroke' };
-const CORNERS_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M1.5 4.5V3a1.5 1.5 0 0 1 1.5-1.5h1.5M7.5 1.5H9A1.5 1.5 0 0 1 10.5 3v1.5M10.5 7.5V9A1.5 1.5 0 0 1 9 10.5H7.5M4.5 10.5H3A1.5 1.5 0 0 1 1.5 9V7.5"/></svg>';
-const SIDES = [['top', 'M1.5 1.5h9', 'Top'], ['right', 'M10.5 1.5v9', 'Right'], ['bottom', 'M1.5 10.5h9', 'Bottom'], ['left', 'M1.5 1.5v9', 'Left']];
+const CORNERS_ICON = lucideIcon('scan',12);
+const SIDES = [['top', 'Top'], ['right', 'Right'], ['bottom', 'Bottom'], ['left', 'Left']];
 const canHavePaint = (n, kind) => (kind === 'fills' ? !['line', 'group'].includes(n.type) : !['group', 'text', 'icon'].includes(n.type));
 const defaultPaintColor = (n, kind) =>
   kind === 'strokes' ? '#000000' : n.type === 'text' ? '#000000' : n.type === 'icon' ? '#1E1E1E' : isFrameLike(n) ? '#FFFFFF' : '#D9D9D9';
@@ -1238,7 +1252,7 @@ function buildProps() {
   const lockAspect = common(nodes, (n) => !!n.lockAspect);
   let layout = `<div class="grid2">${numField('x', 'X', nodes)}${numField('y', 'Y', nodes)}</div>`;
   layout += `<div class="grid2 wh-row">${numField('w', 'W', nodes)}${showH ? numField('h', 'H', nodes) : '<span></span>'}` +
-    `<button class="icon-btn lock-aspect${lockAspect === true ? ' on' : ''}" data-action="lock-aspect" title="${lockAspect === true ? 'Unlock' : 'Lock'} aspect ratio">${lockAspect === true ? icons.linkOn : icons.link}</button></div>`;
+    `<button class="icon-btn lock-aspect${lockAspect === true ? ' on' : ''}" data-action="lock-aspect" aria-pressed="${lockAspect === true}" aria-label="${lockAspect === true ? 'Unlock' : 'Lock'} aspect ratio" title="${lockAspect === true ? 'Unlock' : 'Lock'} aspect ratio">${lockAspect === true ? icons.aspectLocked : icons.aspectUnlocked}</button></div>`;
 
   // Resizing: Fixed / Hug contents / Fill container
   const canHug = nodes.every((n) => isAutoLayout(n) || n.type === 'text');
@@ -1255,12 +1269,9 @@ function buildProps() {
     layout += `<div class="grid2">${sizingSelect('w')}${showH ? sizingSelect('h') : '<span></span>'}</div>`;
     // Min / max: limits for hug and fill sizes (and auto-width text, which wraps at its max width).
     const limited = nodes.some((n) => ['minW', 'maxW', 'minH', 'maxH'].some((k) => n[k] !== undefined && n[k] !== null));
-    if (limited || showLimits) {
-      layout += `<div class="constraint-label muted">Min / max</div>` +
-        `<div class="grid2">${numField('minW', 'W', nodes, { icon: '<span class="mini">W≥</span>' })}${numField('maxW', '', nodes, { icon: '<span class="mini">W≤</span>' })}</div>` +
-        (showH ? `<div class="grid2">${numField('minH', '', nodes, { icon: '<span class="mini">H≥</span>' })}${numField('maxH', '', nodes, { icon: '<span class="mini">H≤</span>' })}</div>` : '');
-    } else {
-      layout += '<button class="link-btn add-limits" data-action="show-limits">+ Min / max size</button>';
+    layout += `<button class="link-btn add-limits" data-action="show-limits" aria-expanded="${showLimits}" title="${showLimits?'Collapse':'Expand'} size limits">${showLimits?icons.chevronDown:icons.chevronRight} Size limits${limited?' · Active':''}</button>`;
+    if (showLimits) {
+      layout += `<div class="size-limits"><div class="size-limits-head"><span>Size limits</span><span>px</span></div>`+['W',...(showH?['H']:[])].map(axis=>`<div class="size-limit-axis"><span>${axis==='W'?'Width':'Height'}</span><div class="grid2">${['min','max'].map(prefix=>{const key=prefix+axis;return `<div class="size-limit-control"><span class="muted">${prefix==='min'?'Min':'Max'}</span>${numField(key,'',nodes)}<button class="icon-btn" data-clear-limit="${key}" title="Remove ${prefix==='min'?'minimum':'maximum'} ${axis==='W'?'width':'height'}" aria-label="Remove ${prefix==='min'?'minimum':'maximum'} ${axis==='W'?'width':'height'}">${icons.close}</button></div>`;}).join('')}</div></div>`).join('')+'</div>';
     }
   }
   const hasRadius = has((n) => isFrameLike(n) || ['rect', 'image'].includes(n.type));
@@ -1268,9 +1279,9 @@ function buildProps() {
   layout += `<div class="grid2 wh-row">${numField('rotation', '', nodes, { icon: icons.rotation })}${hasRadius ? numField('radius', '', nodes, { icon: icons.radius }) : '<span></span>'}` +
     (hasRadius ? `<button class="icon-btn lock-aspect${corners ? ' on' : ''}" data-action="independent-corners" title="${corners ? 'One radius for all corners' : 'Set each corner separately'}">${CORNERS_ICON}</button>` : '') + '</div>';
   if (corners) {
-    const c = (key, d) => numField(key, '', nodes, { icon: `<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.2"><path d="${d}"/></svg>` });
-    layout += `<div class="grid2">${c('radiusTL', 'M1.5 9V5a3.5 3.5 0 0 1 3.5-3.5H9')}${c('radiusTR', 'M1 1.5h4A3.5 3.5 0 0 1 8.5 5v4')}</div>` +
-      `<div class="grid2">${c('radiusBL', 'M1.5 1v4A3.5 3.5 0 0 0 5 8.5h4')}${c('radiusBR', 'M1 8.5h4A3.5 3.5 0 0 0 8.5 5V1')}</div>`;
+    const c = (key) => numField(key, '', nodes, {icon:lucideIcon(UI_ICON_NAMES[{radiusTL:'cornerTL',radiusTR:'cornerTR',radiusBR:'cornerBR',radiusBL:'cornerBL'}[key]],10)});
+    layout += `<div class="grid2">${c('radiusTL')}${c('radiusTR')}</div>` +
+      `<div class="grid2">${c('radiusBL')}${c('radiusBR')}</div>`;
   }
   if (nodes.every(isFrameLike)) {
     const clip = common(nodes, (n) => !!n.clip);
@@ -1288,7 +1299,9 @@ function buildProps() {
         (cur === MIXED ? '<option selected disabled>Mixed</option>' : '') +
         Object.entries(options).map(([k, l]) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${l}</option>`).join('') + '</select>';
     };
-    layout += `<div class="constraint-label muted">Constraints</div><div class="grid2">${pick('h', H_CONSTRAINTS, 'left')}${pick('v', V_CONSTRAINTS, 'top')}</div>`;
+    const h=common(nodes,n=>n.constraints?.h||'left'),v=common(nodes,n=>n.constraints?.v||'top');
+    const pin=(axis,edge,active)=>`<button class="constraint-pin pin-${edge}" data-pin-axis="${axis}" data-pin-edge="${edge}" aria-label="Pin ${edge}" aria-pressed="${active}"></button>`;
+    layout += `<div class="constraint-label">Constraints</div><div class="constraints-editor"><div class="constraint-diagram" aria-label="Resize pins">${pin('h','left',h==='left'||h==='leftRight')}${pin('h','right',h==='right'||h==='leftRight')}${pin('v','top',v==='top'||v==='topBottom')}${pin('v','bottom',v==='bottom'||v==='topBottom')}<button class="constraint-center" data-pin-center aria-label="Center horizontally and vertically" aria-pressed="${h==='center'&&v==='center'}">+</button></div><div class="constraint-axes"><label>Horizontal${pick('h',H_CONSTRAINTS,'left')}</label><label>Vertical${pick('v',V_CONSTRAINTS,'top')}</label></div></div><p class="inspector-help">Pins follow the parent when it resizes. Auto-layout flow children use Fill and Hug instead.</p>`;
   }
   if (nodes.every((n) => isAutoLayout(getParent(n.id)))) {
     const abs = common(nodes, (n) => !!n.absolute);
@@ -1375,10 +1388,10 @@ function buildProps() {
       // Sides: rectangles, frames and images can have a stroke on only some sides.
       const boxes = strokeNodes.filter((n) => isFrameLike(n) || ['rect', 'image'].includes(n.type));
       if (boxes.length === strokeNodes.length) {
-        body += `<div class="text-case-row"><span class="muted">Sides</span><div class="seg stroke-sides">${SIDES.map(([side, d, label]) => {
+        body += `<div class="text-case-row"><span class="muted">Sides</span><div class="seg stroke-sides">${SIDES.map(([side, label]) => {
           const on = common(boxes, (n) => strokeSides(n)[side]);
           return `<button class="icon-btn${on === true ? ' on' : ''}" data-stroke-side="${side}" title="${label} ${on === true ? '(on)' : '(off)'}">` +
-            `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><rect x="1.5" y="1.5" width="9" height="9" stroke-opacity=".3"/><path d="${d}" stroke-width="2"/></svg></button>`;
+            `${lucideIcon(UI_ICON_NAMES[{top:'strokeTop',right:'strokeRight',bottom:'strokeBottom',left:'strokeLeft'}[side]],12)}</button>`;
         }).join('')}</div></div>`;
       }
     }
@@ -1428,7 +1441,9 @@ function autoLayoutSection(nodes) {
     `<div class="al-fields">${numField('padH', '', nodes, { icon: icons.padH })}${numField('padV', '', nodes, { icon: icons.padV })}</div></div>` +
     `<div class="al-dir-row"><span class="muted">Direction</span><div class="seg">${dirSeg}</div></div>` +
     (nodes.length === 1 ? breakpointsHTML(nodes[0]) : '');
-  return section('Auto layout', body, fromMain ? '' : `<button class="icon-btn" data-action="remove-al" title="Remove auto layout  ⌥⇧A">${icons.minus}</button>`);
+  const hints=nodes.length===1?`<button class="btn wide" data-spacing-pin aria-pressed="${state.spacingPinned===nodes[0].id}">Preview padding and gaps</button><p class="inspector-help">Hover empty space in this selected frame to inspect spacing.</p>`:'';
+  const warning=state.layoutWarnings?.length?`<p class="warn">${esc(state.layoutWarnings.join(' '))}</p>`:'';
+  return section('Auto layout', body+hints+warning, fromMain ? '' : `<button class="icon-btn" data-action="remove-al" title="Remove auto layout  ⌥⇧A">${icons.minus}</button>`);
 }
 
 // Breakpoints: the frame lays out differently at a width or narrower (layout.breakpoints).
@@ -1508,6 +1523,7 @@ function initAssets() {
     showContextMenu(e.clientX, e.clientY, [
       { label: 'Insert instance', action: () => placeInstance(getNode(tile.dataset.component), toWorld({ x: width / 2, y: height / 2 })) },
       { label: 'Open in playground…', action: () => openPlayground(tile.dataset.component) },
+      {label:'Go to main component',action:()=>goToMainComponent(getNode(tile.dataset.component))},
     ]);
   });
   // "Insert instance" from the playground: with the variant and property values chosen there.
@@ -1527,8 +1543,8 @@ function initAssets() {
   });
 }
 
-const ASSET_INFO_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><circle cx="6" cy="6" r="4.8"/><path d="M6 5.4v3M6 3.6v.1"/></svg>';
-const COMPONENT_LIB_ICON = '<svg class="lib-glyph" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M6 1.2l1.9 1.9L6 5 4.1 3.1zM6 7l1.9 1.9L6 10.8 4.1 8.9zM3.1 4.1L5 6 3.1 7.9 1.2 6zM8.9 4.1L10.8 6 8.9 7.9 7 6z"/></svg> ';
+const ASSET_INFO_ICON = lucideIcon('info',12);
+const COMPONENT_LIB_ICON = lucideIcon('component',11,{className:'lib-glyph'});
 
 export function renderCommentsList() {
   if (leftTab !== 'comments' || !state.doc) return;
@@ -1643,6 +1659,10 @@ function initProps() {
   });
   // Inspect: copy a block; edit a component's code names.
   panel.addEventListener('click', (e) => {
+    const clearLimit=e.target.closest('[data-clear-limit]');if(clearLimit)return setProps({[clearLimit.dataset.clearLimit]:undefined});
+    const pin=e.target.closest('[data-pin-axis]');if(pin){for(const n of selectedNodes()){const axis=pin.dataset.pinAxis;editNode(n,['constraints'],()=>{n.constraints={...n.constraints,[axis]:togglePin(n.constraints?.[axis],axis,pin.dataset.pinEdge)};});}return commit();}
+    if(e.target.closest('[data-pin-center]'))return setProps({'constraints.h':'center','constraints.v':'center'});
+    if(e.target.closest('[data-spacing-pin]')){const n=selectedNodes()[0];state.spacingPinned=state.spacingPinned===n?.id?null:n?.id;emit('selection');return emit('overlay');}
     if (e.target.closest('[data-create-code]')) return import('./code-create-ui.js').then(m=>m.openCodeCreation());
     if (e.target.closest('[data-a11y-check]')) return import('./a11y-ui.js').then((m) => m.openAccessibilityCheck());
     const copy = e.target.closest('[data-copy]');
@@ -1708,9 +1728,15 @@ function initProps() {
     if (f.auto?.test(raw)) return setProps(f.autoValue);
     const v = evalNum(raw);
     if (v === null) return emit('selection');
+    if(/^(min|max)[WH]$/.test(key)){
+      const other=(key.startsWith('min')?'max':'min')+key.at(-1);
+      if(selectedNodes().some(n=>n[other]!=null&&(key.startsWith('min')?v>n[other]:v<n[other]))){window.dispatchEvent(new CustomEvent('sigma:toast',{detail:'Minimum size cannot exceed maximum size. Clear or adjust the other limit first.'}));return emit('selection');}
+    }
     setProps(f.set(v));
   };
 
+  panel.addEventListener('pointerover',e=>{const key=e.target.closest('[data-layout-preview]')?.dataset.layoutPreview;if(!['gap','padH','padV'].includes(key))return;const n=selectedNodes()[0];if(!isAutoLayout(n))return;state.spacingPreview={id:n.id,kind:key};emit('overlay');});
+  panel.addEventListener('pointerout',e=>{if(e.target.closest('.field')?.contains(e.relatedTarget))return;if(state.spacingPreview){state.spacingPreview=null;emit('overlay');}});
   bindPropertyDrag(panel);
   window.addEventListener('sigma:refresh-panel', () => emit('selection'));
 
@@ -1930,9 +1956,12 @@ function initProps() {
       case 'remove-al':
         return removeAutoLayout();
       case 'show-limits':
-        showLimits = true;
+        showLimits = !showLimits;
+        document.activeElement?.blur();
         renderProps();
-        return document.querySelector('[data-key="minW"]')?.focus();
+        if(showLimits)document.querySelector('[data-key="minW"]')?.focus();
+        else document.querySelector('[data-action="show-limits"]')?.focus();
+        return;
       case 'independent-corners': {
         // Toggle between one radius and four: going back keeps the top-left corner's value for all.
         const split = !nodes.every((n) => Array.isArray(n.radii));

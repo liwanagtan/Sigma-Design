@@ -505,6 +505,7 @@
         "synced": {
           "type": "object"
         },
+        "layoutBasis": {"type":"object","properties":{"w":{"type":"number"},"h":{"type":"number"}},"additionalProperties":false},
         "exposed": {
           "type": "boolean"
         },

@@ -33,6 +33,7 @@ export const OPTICS_CATEGORIES = ['Actions', 'Feedback and status', 'Forms', 'La
 export function opticsIconsDocument(sampleIcons, source = null) {
   const doc = newIconsDocument(OPTICS_ICONS_NAME);
   doc.icons = sampleIcons.map((icon) => ({ ...structuredClone(icon), id: I(icon.name, icon.style === 'filled') }));
+  doc.opticsIconProvider=1;
   if (source) doc.source = { ...structuredClone(source), note: 'Optics’ icons: the whole Lucide set, outline and filled.' };
   doc.published = { version: 1, publishedAt: Date.now(), notes: 'Optics Icons v1', icons: structuredClone(doc.icons) };
   return doc;

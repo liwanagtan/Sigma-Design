@@ -1,3 +1,4 @@
+import {lucideIcon} from './lucide.js';
 import {codeBlock,highlightCode} from './code-highlight.js';
 // The Inspect panel (code handoff): for the selected layer, its CSS with tokens as their code names, the
 // tokens it uses with their values in its modes, and for components their code: how an instance is
@@ -174,7 +175,7 @@ function componentAPI(host,component=host) {
 // ---------- the panel ----------
 const block = (title, body, copy) => `<div class="section inspect-section"><div class="section-title"><span>${title}</span>` +
   `${copy ? `<button class="icon-btn inspect-copy" data-copy="${esc(copy)}" title="Copy">${COPY_ICON}</button>` : ''}</div>${body}</div>`;
-const COPY_ICON = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><rect x="4.5" y="4.5" width="7" height="7" rx="1"/><path d="M9.5 4.5v-2a1 1 0 0 0-1-1h-5a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h2"/></svg>';
+const COPY_ICON = lucideIcon('copy',14);
 
 // Breakpoints as CSS: a frame on the page is a screen (media queries); one inside another reflows with its own
 // width (container queries: its parent needs container-type: inline-size).

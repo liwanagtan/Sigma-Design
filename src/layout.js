@@ -63,6 +63,7 @@ export function getSizing(n, axis) {
 }
 
 export function setSizing(n, axis, value) {
+  if (value === 'fill' && getSizing(n, axis) !== 'fill') (n.layoutBasis ||= {})[axis] = n[axis];
   if (n.type === 'text') {
     if (axis === 'w') {
       if (value === 'hug') n.autoResize = 'width';
@@ -94,25 +95,47 @@ export function clampSize(n, axis, v) {
   return v;
 }
 
-// Size a node contributes on an axis, resolving nested "hug" frames.
+// Intrinsic measurement is independent of a previous Fill allocation. Empty/leaf Fill
+// nodes retain a serialized preferred basis; content-bearing frames measure their content.
 function childSize(k, axis) {
-  if (getSizing(k, axis) === 'hug' && isAutoLayout(k)) return clampSize(k, axis, hugSize(k)[axis]);
-  return k[axis];
+  const sizing=getSizing(k,axis);
+  if(isAutoLayout(k)&&sizing!=='fixed'&&k.children.some(inFlow))return clampSize(k,axis,hugSize(k)[axis]);
+  if(sizing==='fill') {
+    if(k.type==='text') {
+      if(axis==='h')return clampSize(k,axis,k.h);
+      const probe={...k,autoResize:'width'};measureText(probe);return clampSize(k,axis,probe.w);
+    }
+    const basis=(k.layoutBasis ||= {});
+    if(k.bindings?.[axis]||!Number.isFinite(basis[axis]))basis[axis]=Math.max(1,k[axis]||1);
+    return clampSize(k,axis,basis[axis]);
+  }
+  return clampSize(k,axis,k[axis]);
 }
 
 export function hugSize(f) {
   applyHidden(f);
-  const L = layoutOf(f);
-  const kids = f.children.filter(inFlow);
-  const P = L.mode === 'horizontal' ? 'w' : 'h';
-  const C = P === 'w' ? 'h' : 'w';
-  let sumP = 0, maxC = 0;
-  for (const k of kids) {
-    sumP += childSize(k, P);
-    maxC = Math.max(maxC, childSize(k, C));
+  const L=layoutOf(f),kids=f.children.filter(inFlow);
+  const P=L.mode==='horizontal'?'w':'h',C=P==='w'?'h':'w';
+  const anchored=kids.filter(k=>getSizing(k,C)!=='fill');
+  const cross=anchored.length?anchored:kids;
+  const sumP=kids.reduce((sum,k)=>sum+childSize(k,P),0);
+  const minKey=C==='w'?'minW':'minH';
+  const maxC=Math.max(0,...cross.map(k=>childSize(k,C)),...kids.filter(k=>getSizing(k,C)==='fill').map(k=>Number(k[minKey])||0));
+  const gaps=L.spacing==='auto'?0:L.gap*Math.max(0,kids.length-1);
+  return {[P]:Math.max(1,pad(L,P)+sumP+gaps),[C]:Math.max(1,pad(L,C)+maxC)};
+}
+
+// Find an equal share whose clamped sum fits the budget. Unlike freezing all
+// violations at once, this also handles simultaneous lower and upper bounds.
+export function distributeFill(nodes,axis,space) {
+  const minimum=nodes.map(n=>Math.max(1,clampSize(n,axis,1)));
+  if(minimum.reduce((a,b)=>a+b,0)>=space)return minimum;
+  let lo=0,hi=Math.max(1,space);
+  for(let i=0;i<60;i++) {
+    const mid=(lo+hi)/2,total=nodes.reduce((sum,n)=>sum+Math.max(1,clampSize(n,axis,mid)),0);
+    if(total>space)hi=mid;else lo=mid;
   }
-  const gaps = L.spacing === 'auto' ? 0 : L.gap * Math.max(0, kids.length - 1);
-  return { [P]: Math.max(1, pad(L, P) + sumP + gaps), [C]: Math.max(1, pad(L, C) + maxC) };
+  return nodes.map(n=>Math.max(1,clampSize(n,axis,lo)));
 }
 
 // Fix sizing values that aren't valid in the node's current context.
@@ -149,8 +172,10 @@ function layoutChildren(f, dir = 'ltr') {
   // 1. Sizes: hug, counter-axis fill, then share leftover primary space among fill children.
   for (const k of kids) {
     const w0 = k.w;
+    for(const axis of ['w','h'])if(getSizing(k,axis)==='fill'&&k.type!=='text'&&(!isAutoLayout(k)||!k.children.some(inFlow)))childSize(k,axis);
     for (const axis of ['w', 'h']) {
       const s = getSizing(k, axis);
+      if(s==='fixed'&&!(k.type==='line'&&axis==='h'))k[axis]=round(Math.max(0.01,clampSize(k,axis,k[axis])));
       if (s === 'hug' && isAutoLayout(k)) k[axis] = round(clampSize(k, axis, hugSize(k)[axis]));
       if (s === 'fill' && axis === C && !(k.type === 'line' && axis === 'h')) k[axis] = round(Math.max(1, clampSize(k, axis, innerC)));
     }
@@ -160,23 +185,9 @@ function layoutChildren(f, dir = 'ltr') {
   const fills = kids.filter((k) => getSizing(k, P) === 'fill' && !(k.type === 'line' && P === 'h'));
   if (fills.length) {
     const fixed = kids.filter((k) => !fills.includes(k)).reduce((s, k) => s + k[P], 0);
-    let free = innerP - fixed - gap * Math.max(0, kids.length - 1);
-    // Share the space; a layer that hits its min or max keeps that, and the rest is shared again.
-    let open = [...fills];
-    const size = new Map();
-    for (let guard = 0; open.length && guard < fills.length + 1; guard++) {
-      const each = Math.max(1, free / open.length);
-      const clamped = open.filter((k) => clampSize(k, P, each) !== each);
-      if (!clamped.length) {
-        for (const k of open) size.set(k, each);
-        break;
-      }
-      for (const k of clamped) {
-        size.set(k, clampSize(k, P, each));
-        free -= size.get(k);
-      }
-      open = open.filter((k) => !clamped.includes(k));
-    }
+    const free=innerP-fixed-gap*Math.max(0,kids.length-1);
+    const allocation=distributeFill(fills,P,free);
+    const size=new Map(fills.map((k,i)=>[k,allocation[i]]));
     for (const k of fills) {
       const w0 = k.w;
       k[P] = round(Math.max(1, size.get(k) ?? 1));
@@ -213,6 +224,7 @@ function layoutChildren(f, dir = 'ltr') {
 function layoutPlain(nodes, dir = 'ltr') {
   for (const n of nodes) {
     normalize(n, false);
+    for(const axis of ['w','h'])if(getSizing(n,axis)==='fixed'&&!(n.type==='line'&&axis==='h'))n[axis]=round(Math.max(0.01,clampSize(n,axis,n[axis])));
     const own = n.dir === 'rtl' || n.dir === 'ltr' ? n.dir : dir;
     if (isAutoLayout(n)) {
       if (getSizing(n, 'w') === 'hug') n.w = round(clampSize(n, 'w', hugSize(n).w));
@@ -225,21 +237,26 @@ function layoutPlain(nodes, dir = 'ltr') {
   }
 }
 
-// A text given a new width can wrap onto more (or fewer) lines. Frames above it that hug were sized before
-// it was, so when a height changes the layout runs again: by then every width is settled.
-let rewrapped = false;
-function remeasure(k) {
-  const h0 = k.h;
-  measureText(k);
-  if (k.h !== h0) rewrapped = true;
-}
+// Width changes remeasure text before geometry convergence propagates its height.
+function remeasure(k) { measureText(k); }
 
+export function layoutGeometry() {
+  const values=[];const visit=nodes=>{for(const n of nodes){values.push(n.id,n.x,n.y,n.w,n.h,hiddenByWidth.has(n));if(n.children)visit(n.children);}};
+  for(const pg of state.doc.pages)visit(pg.children);
+  return JSON.stringify(values);
+}
 export function applyLayouts() {
-  for (let pass = 0; pass < 3; pass++) {
-    rewrapped = false;
-    for (const pg of state.doc.pages) layoutPlain(pg.children);
-    if (!rewrapped) break;
+  let depth=0;const visit=(nodes,d)=>{depth=Math.max(depth,d);for(const n of nodes)if(n.children)visit(n.children,d+1);};
+  for(const pg of state.doc.pages)visit(pg.children,1);
+  const seen=new Set();state.layoutWarnings=[];
+  const check=nodes=>{for(const n of nodes){for(const axis of ['W','H'])if(n['min'+axis]!=null&&n['max'+axis]!=null&&n['min'+axis]>n['max'+axis])state.layoutWarnings.push(`${n.name}: minimum ${axis==='W'?'width':'height'} exceeds maximum; minimum takes precedence.`);if(n.children)check(n.children);}};for(const pg of state.doc.pages)check(pg.children);
+  for(let pass=0;pass<Math.min(128,depth*2+4);pass++) {
+    const before=layoutGeometry();seen.add(before);
+    for(const pg of state.doc.pages)layoutPlain(pg.children);
+    const after=layoutGeometry();if(after===before)return;
+    if(seen.has(after)){state.layoutWarnings=['Layout has a sizing/breakpoint cycle. Use a fixed size or adjust the breakpoint.'];return;}
   }
+  state.layoutWarnings=['Layout could not settle within its nesting budget. Review cyclic sizing or breakpoints.'];
 }
 
 // ---------- helpers for editing ----------

@@ -1,10 +1,11 @@
+import { spacingOverlay } from './layout-overlay.js';
 import {
   state, page, view, getNode, getParent, selectedNodes, localMatrix, worldMatrix, worldCorners, worldBounds, isFrameLike, walk,
   ancestors, hiddenByWidth,
 } from './store.js';
 import { css, mul, apply, unionBoxes, cornersOf } from './geom.js';
 import { textStyle, caseText, wrapsAtMax, truncateStyle } from './text.js';
-import { isInsideInstance } from './components.js';
+import { isInsideInstance, componentContext } from './components.js';
 import { gridsOverlay } from './grids.js';
 import { componentSetSymbol } from './icons.js';
 import { findIcon, iconMarkup } from './icon-library.js';
@@ -12,7 +13,7 @@ import { findIcon, iconMarkup } from './icon-library.js';
 export const ACCENT = '#0D99FF';
 export const COMPONENT_ACCENT = '#9747FF';
 export const SLOT_ACCENT = '#EE46BC'; // Figma shows slots in pink
-const isComponentish = (n) => n && (n.type === 'component' || n.type === 'componentSet' || n.type === 'instance');
+const isComponentish = n => !!componentContext(n);
 export const GUIDE = '#F24822';
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -424,6 +425,8 @@ export function renderOverlay(svg) {
       `<path d="M${cx - 4.5} ${cy}h9M${cx} ${cy - 4.5}v9" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></g>`;
   }
 
+  const spacing=state.spacingPreview||(state.selection.includes(state.spacingPinned)?{id:state.spacingPinned,kind:'all'}:null);
+  if(spacing&&state.selection.includes(spacing.id)) {const frame=getNode(spacing.id);if(frame)out+=spacingOverlay(frame,toScreen,spacing.kind);}
   // Hover outline
   const hover = state.hoverId && !sel.has(state.hoverId) ? getNode(state.hoverId) : null;
   if (hover && !state.marquee) out += outline(hover, 2, isComponentish(hover) ? COMPONENT_ACCENT : ACCENT);

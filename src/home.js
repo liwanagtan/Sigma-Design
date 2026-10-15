@@ -1,3 +1,4 @@
+import {lucideIcon} from './lucide.js';
 import { initializeProjects, projectList, selectedProjectId, selectedProject, selectProject, createProject, setProjectIcon, updateProjectDetails, inScope, moveDrafts, scopeHref, SIGMA_PROJECT } from './projects.js';
 import {PROJECT_GLYPHS,PROJECT_EMOJI,projectIconMarkup} from './project-icons.js';
 import { guideHTML } from './welcome-guide.js';
@@ -236,15 +237,15 @@ export function initHome(el) {
   setInterval(() => !root.hidden && renderHome(), 60_000); // keep "Edited … ago" fresh
 }
 
-const GRID_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1"/><rect x="9" y="2.5" width="4.5" height="4.5" rx="1"/><rect x="2.5" y="9" width="4.5" height="4.5" rx="1"/><rect x="9" y="9" width="4.5" height="4.5" rx="1"/></svg>';
-const LIST_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg>';
+const GRID_ICON = lucideIcon('layout-grid',16);
+const LIST_ICON = lucideIcon('list',16);
 
 export function setHomeNotice(msg) {
   notice = msg || '';
 }
 
 // ---------- the project ----------
-const NAV_PROJECT = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1.5 3.5a1 1 0 0 1 1-1h3l1.5 1.5h4.5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z"/><path d="M5 8.5l1.5-1.5L5 5.5M7.5 9.5h2"/></svg>';
+const NAV_PROJECT = lucideIcon('folder-check',14);
 
 // In a project, Sigma works on its files: the sections list them, and new files go into it.
 const projectMode=()=>selectedProject()?.kind==='repository';
@@ -820,16 +821,16 @@ function card(f, { describe = false } = {}) {
   </a>`;
 }
 
-const NAV_DESIGN = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4.5 1.5v11M9.5 1.5v11M1.5 4.5h11M1.5 9.5h11"/></svg>';
-const NAV_WELCOME = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><circle cx="7" cy="7" r="5.5"/><path d="M5.6 5.4a1.5 1.5 0 1 1 2 1.4c-.4.2-.6.5-.6.9v.4M7 10v.1"/></svg>';
-const NAV_REPORT = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M2 12.5h10M3.5 10V7M7 10V3.5M10.5 10V5.5"/></svg>';
-const NAV_PROPOSALS = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><circle cx="3.5" cy="3" r="1.5"/><circle cx="3.5" cy="11" r="1.5"/><circle cx="10.5" cy="11" r="1.5"/><path d="M3.5 4.5v5M10.5 9.5V6a2 2 0 0 0-2-2H6.5M8 2.5 6.5 4 8 5.5"/></svg>';
-const NAV_RECENTS = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M7 3.5V7l2.5 1.5"/></svg>';
-const NAV_DRAFTS = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 1.5H3v11h8V4z"/><path d="M8.5 1.5V4H11M5 7h4M5 9.5h3"/></svg>';
-const NAV_ARCHIVE = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><rect x="1.5" y="2" width="11" height="3" rx=".5"/><path d="M2.5 5v6.5h9V5M5.5 7.5h3"/></svg>';
+const NAV_DESIGN = lucideIcon('frame',14);
+const NAV_WELCOME = lucideIcon('book-open',14);
+const NAV_REPORT = lucideIcon('chart-no-axes-column',14);
+const NAV_PROPOSALS = lucideIcon('git-pull-request',14);
+const NAV_RECENTS = lucideIcon('rotate-ccw-clock',14);
+const NAV_DRAFTS = lucideIcon('file',14);
+const NAV_ARCHIVE = lucideIcon('archive',14);
 const kindBadge = (kind) => (kind === 'tokens' ? '<span class="kind-badge">Tokens</span>' : kind === 'icons' ? '<span class="kind-badge">Icons</span>' : '');
 
-const NAV_ICONS = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 1.5l1.6 3.3 3.6.5-2.6 2.5.6 3.6L7 9.7l-3.2 1.7.6-3.6L1.8 5.3l3.6-.5z" stroke-linejoin="round"/></svg>';
-const NAV_TOKENS = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 1.2l5 2.9v5.8L7 12.8 2 9.9V4.1z"/><circle cx="7" cy="7" r="1.6"/></svg>';
+const NAV_ICONS = lucideIcon('shapes',14);
+const NAV_TOKENS = lucideIcon('variable',14);
 
-const MORE_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="3.5" cy="8" r="1.25"/><circle cx="8" cy="8" r="1.25"/><circle cx="12.5" cy="8" r="1.25"/></svg>';
+const MORE_ICON = lucideIcon('ellipsis',16);

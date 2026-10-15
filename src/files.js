@@ -160,6 +160,11 @@ export async function initFiles(handlers = {}) {
   await migrateLegacyDocument();
   await migrateLegacySamples();
   await setUpWelcomeFolder();
+  if((await db.getAll('files')).some(m=>m.optics&&!m.archivedAt)){
+    const {refreshStoredOpticsIcons}=await import('./optics-icon-migration.js');
+    const changed=await refreshStoredOpticsIcons(db,await loadIconSet(ICON_SETS.find(s=>s.id==='lucide')));
+    for(const id of changed)broadcast('saved',id);
+  }
 }
 
 function broadcast(type, id) {
@@ -478,7 +483,7 @@ export async function sampleTokenFile() {
   return createTokenFileWith(name, collections, 'Sigma interface tokens; Light and Dark from styles.css.', { meta: { sample: true, sigmaSystem: SIGMA_SYSTEM_VERSION } });
 }
 
-// The sample icons (the whole Lucide set, made the first time). Reuses one of the current kind
+// Sigma’s Lucide UI subset. Reuses one of the current kind
 // (SAMPLE_ICONS_VERSION) that still has every icon the guide uses; null if the Lucide data can't be read (the
 // guide is then made without icons).
 export async function sampleIconFile() {

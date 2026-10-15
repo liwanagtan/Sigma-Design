@@ -2485,6 +2485,37 @@ export const UI_SOURCE = {
       "padding-left": "0px"
     },
     {
+      "font-size": "11px",
+      "font-weight": "500"
+    },
+    {
+      "padding-left": "6px",
+      "padding-right": "18px",
+      "padding-top": "0px",
+      "padding-bottom": "0px"
+    },
+    {
+      "width": "76px",
+      "height": "76px",
+      "border-radius": "6px"
+    },
+    {
+      "border-radius": "3px",
+      "padding": "0",
+      "padding-top": "0px",
+      "padding-right": "0px",
+      "padding-bottom": "0px",
+      "padding-left": "0px"
+    },
+    {
+      "width": "16px",
+      "height": "5px"
+    },
+    {
+      "height": "16px",
+      "width": "5px"
+    },
+    {
       "width": "auto",
       "height": "24px",
       "border-radius": "5px"
@@ -2704,7 +2735,7 @@ export const UI_SOURCE = {
       "padding-left": "8px",
       "padding-right": "28px",
       "cursor": "pointer",
-      "background-image": "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%23888888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")",
+      "background-image": "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23888888%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E\")",
       "background-repeat": "no-repeat",
       "background-position": "right 8px center",
       "padding-top": "0px",

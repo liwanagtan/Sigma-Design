@@ -6,13 +6,13 @@ import {readFileSync} from 'node:fs';
 test('Sigma UI icons: actual app glyphs are published with stable IDs and inherited paints',()=> {
   const published=sampleIconsDocument(JSON.parse(readFileSync(new URL('../../icon-sets/lucide.json',import.meta.url)))).published.icons;
   assert.equal(published.length,sigmaUIIcons().length);
-  assert.ok(published.every(i=>i.id.startsWith('sigma-ui-')&&i.group==='Sigma UI'));
+  assert.ok(published.every(i=>i.id.startsWith('sigma-ui-')&&i.group==='Lucide · Sigma UI'));
   for(const [name,svg] of Object.entries(icons)) {
     if(name==='logo')continue; // brand mark is multicolor, outside the monochrome icon model
     const icon=published.find(i=>i.id===sigmaIconId(name));assert.ok(icon,name);
     assert.equal(icon.viewBox,/viewBox="([^"]+)"/.exec(svg)[1]);
   }
-  assert.match(sigmaUIIcons().find(i=>i.name==='appearance').body,/fill="none" stroke="currentColor"/);
+  assert.match(sigmaUIIcons().find(i=>i.id===sigmaIconId('appearance')).body,/fill="none" stroke="currentColor"/);
 });
 
 test('icon library: instance icon-property choices are retained in linked assets',async()=> {

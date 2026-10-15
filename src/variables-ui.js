@@ -1,3 +1,4 @@
+import {lucideIcon} from './lucide.js';
 // The design token editor: collections on the left, a table of tokens × modes on the right.
 // Extended collections show their parent's tokens; inherited values are greyed, overrides are highlighted.
 // It opens as a modal for a design file's local tokens, or fills the screen for a token file.
@@ -37,24 +38,24 @@ const openCollections = new Map(); // collection id → expanded in the sidebar 
 let rendering = false;
 
 const TYPE_ICON = {
-  color: '<svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor"/><path d="M6 1.5a4.5 4.5 0 0 1 0 9z" fill="currentColor"/></svg>',
-  number: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M4.5 1.5l-1 9M8.5 1.5l-1 9M2 4.5h8.5M1.5 7.5H10"/></svg>',
-  string: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M2 3V2h8v1M6 2v8M4.5 10h3"/></svg>',
-  boolean: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><rect x="1" y="3.5" width="10" height="5" rx="2.5"/><circle cx="8.5" cy="6" r="1.5" fill="currentColor"/></svg>',
-  typography: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M1.5 10L4.5 2l3 8M2.6 7.2h3.8M8.5 6.5h2.5M9.75 6.5V10"/></svg>',
-  duration: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><circle cx="6" cy="6.5" r="4.5"/><path d="M6 4v2.5l1.6 1M4.5 1h3"/></svg>',
-  easing: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M1.5 10.5C6 10.5 6 1.5 10.5 1.5"/></svg>',
-  shadow: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><rect x="1.5" y="1.5" width="7" height="7" rx="1"/><path d="M10.5 4v6.5H4" stroke-opacity=".55"/></svg>',
+  color:lucideIcon('palette',12),
+  number:lucideIcon('hash',12),
+  string:lucideIcon('type',12),
+  boolean:lucideIcon('toggle-right',12),
+  typography:lucideIcon('case-sensitive',12),
+  duration:lucideIcon('timer',12),
+  easing:lucideIcon('spline',12),
+  shadow:lucideIcon('layers-2',12),
 };
 const FIELD_LABELS = {
   fontFamily: 'Family', fontWeight: 'Weight', fontSize: 'Size', lineHeight: 'Line height', letterSpacing: 'Letter spacing',
   color: 'Color', x: 'X', y: 'Y', blur: 'Blur', spread: 'Spread',
 };
-const LINK_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M5 7l2-2M5.5 3.5l.8-.8a2 2 0 0 1 2.8 2.8l-.8.8M6.5 8.5l-.8.8a2 2 0 0 1-2.8-2.8l.8-.8"/></svg>';
-const LIB_ICON = '<svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 1.2l5 2.9v5.8L7 12.8 2 9.9V4.1z"/></svg>';
-const CHEVRON = '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2.5 1.5L5.5 4l-3 2.5"/></svg>';
-const GROUP_ICON = '<svg class="group-icon" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M1.5 3.5h3l1 1h5v5h-9z"/></svg>';
-const RESET_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"><path d="M2.5 6a3.5 3.5 0 1 0 1-2.5M2.5 1.5v2h2"/></svg>';
+const LINK_ICON = lucideIcon('link',12);
+const LIB_ICON = lucideIcon('library',10);
+const CHEVRON = lucideIcon('chevron-right',8);
+const GROUP_ICON = lucideIcon('folder',12,{className:'group-icon'});
+const RESET_ICON = lucideIcon('rotate-ccw',12);
 
 // Fill `host` with the editor (token files). Stays until unmountTokenEditor().
 export function focusToken(id) {

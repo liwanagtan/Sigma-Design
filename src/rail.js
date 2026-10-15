@@ -1,3 +1,4 @@
+import {lucideIcon} from './lucide.js';
 import { toggleTerminal } from './terminal.js';
 // The file tools rail: a thin column of icon buttons at the left edge of every file (design, tokens and icons
 // files). At the top, the Σ menu and Home; then the tools for that kind of file. A design file's
@@ -14,30 +15,11 @@ import { openVariablesEditor } from './variables-ui.js';
 import { openAuditDialog } from './audit-ui.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const svg = (body) => `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
 const RAIL_ICONS = {
-  // A token (the hexagon tokens files use), with a swap arrow: change the file.
-  tokens: svg('<path d="M9 2.5l5.2 3v6L9 14.5l-5.2-3v-6z"/><circle cx="9" cy="8.5" r="1.7"/><path d="M14 15.5h3.5M16 14l1.5 1.5L16 17"/>'),
-  // Rows of swatches: browse the tokens.
-  browse: svg('<rect x="3" y="3.5" width="4" height="4" rx="1"/><path d="M9.5 5.5h7.5"/><rect x="3" y="8.5" width="4" height="4" rx="1"/><path d="M9.5 10.5h7.5"/><rect x="3" y="13.5" width="4" height="4" rx="1"/><path d="M9.5 15.5h5"/>'),
-  // A magnifier with a check: audit.
-  audit: svg('<circle cx="8.5" cy="8.5" r="5.5"/><path d="M12.5 12.5l4.5 4.5"/><path d="M6.2 8.6l1.6 1.6 3-3.2"/>'),
-  // Four diamonds, as Assets draws components.
-  components: svg('<path d="M10 2.2l2.6 2.6L10 7.4 7.4 4.8zM10 12.6l2.6 2.6-2.6 2.6-2.6-2.6zM4.8 7.4L7.4 10l-2.6 2.6L2.2 10zM15.2 7.4l2.6 2.6-2.6 2.6-2.6-2.6z"/>'),
-  // A star, as icons files are drawn.
-  icons: svg('<path d="M10 2.8l2.2 4.5 5 .7-3.6 3.5.9 4.9L10 14.1l-4.5 2.3.9-4.9L2.8 8l5-.7z"/>'),
+  tokens:lucideIcon('file-symlink',20),browse:lucideIcon('list-tree',20),audit:lucideIcon('search-check',20),components:lucideIcon('component',20),icons:lucideIcon('shapes',20),
 };
-
-// Icons for the token and icon screens' tools.
 export const RAIL_TOOL_ICONS = {
-  // Two chain links: linked files.
-  linked: svg('<path d="M8.5 11.5l3-3"/><path d="M9.5 6l1.6-1.6a3 3 0 0 1 4.2 4.2L13.7 10.2"/><path d="M10.5 14l-1.6 1.6a3 3 0 0 1-4.2-4.2L6.3 9.8"/>'),
-  // An arrow into a tray: import.
-  import: svg('<path d="M10 3v9M6.5 8.5L10 12l3.5-3.5"/><path d="M3.5 13v2.5a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V13"/>'),
-  // An arrow out of a tray: export.
-  export: svg('<path d="M10 12V3M6.5 6.5L10 3l3.5 3.5"/><path d="M3.5 13v2.5a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V13"/>'),
-  // Code brackets: CSS.
-  code: svg('<path d="M7 5.5L2.8 10 7 14.5M13 5.5l4.2 4.5-4.2 4.5"/>'),
+  linked:lucideIcon('link',20),import:lucideIcon('import',20),export:lucideIcon('upload',20),code:lucideIcon('code-xml',20),
 };
 
 // The tools, in order: { id, label, icon, open, state() → { detail, badge?, alert? }, sepBefore? }. The tooltip shows
@@ -94,7 +76,7 @@ const lastHTML = new WeakMap();
 export function renderRailTools(container, kind = container?.dataset.railKind) {
   if (!container || !state.doc || !KINDS[kind]) return;
   const tools = [...KINDS[kind]];
-  if (kind === 'design' || kind === 'tokens') tools.push({ id: 'terminal', label: 'Terminal', sepBefore: true, icon: svg('<path d="M4 5l5 5-5 5M11 15h5"/>') });
+  if (kind === 'design' || kind === 'tokens') tools.push({ id: 'terminal', label: 'Terminal', sepBefore: true, icon: lucideIcon('terminal',20) });
   const html = tools.map((t) => {
     const st = t.state ? t.state() : {};
     return `${t.sepBefore ? '<div class="rail-sep"></div>' : ''}<button class="rail-btn" data-rail="${t.id}" aria-label="${esc(t.label)}"${st.detail ? ` data-tip-detail="${esc(st.detail)}"` : ''}>${t.icon}` +

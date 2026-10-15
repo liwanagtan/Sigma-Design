@@ -46,6 +46,21 @@ export function owningInstance(node) {
   }
   return owner;
 }
+// Component ownership, shared by Layers and every canvas decoration. Slot content
+// belongs to its author; the slot area itself still belongs to the component.
+export function componentContext(node) {
+  if(!node)return null;
+  for(const n of [node,...ancestors(node)]) {
+    if(n!==node&&isSlotArea(n))return null;
+    if(n.type==='instance')return {kind:n===node?'instance':'instance-child',owner:n};
+    if(n.type==='component'||n.type==='componentSet')return {kind:n===node?'main':'definition-child',owner:n};
+  }
+  return null;
+}
+export function mainTarget(node) {
+  const inst=node?.type==='instance'?node:nearestInstance(node);
+  return inst?mainComponentOf(inst):['component','componentSet'].includes(node?.type)?node:containingComponent(node);
+}
 export const isInsideInstance = (n) => !!n && !!owningInstance(n);
 
 // The closest instance that contains `node` (excluding node itself).
@@ -868,7 +883,7 @@ export function layersUsingProp(comp, pid) {
 
 // Nested instances in a main component (or set) that could show their properties on its instances.
 export function nestedInstances(comp) {
-  const host = propsHost(comp);
+  const host = comp;
   const out = [];
   walk(host.children || [], (n) => {
     if (n.type !== 'instance') return;

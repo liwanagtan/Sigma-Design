@@ -48,3 +48,12 @@ export function applyConstraints(parent, kids0, w0, h0, { ignore = false } = {})
     }
   });
 }
+
+// Toggle an edge without losing the opposing pin. No pins means center.
+export function togglePin(current,axis,edge) {
+  const start=axis==='h'?'left':'top',end=axis==='h'?'right':'bottom',both=axis==='h'?'leftRight':'topBottom';
+  current ||= start;
+  const pins=new Set(current===both?[start,end]:[start,end].includes(current)?[current]:[]);
+  pins.has(edge)?pins.delete(edge):pins.add(edge);
+  return pins.size===2?both:pins.size?[...pins][0]:'center';
+}

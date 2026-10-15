@@ -1,3 +1,4 @@
+import {lucideIcon} from './lucide.js';
 import {
   state, page, view, emit, commit, select, selectedNodes, getNode, getParent, walk, createNode, insertNode,
   detach, cloneNode, worldMatrix, worldBounds, setWorldMatrix, isAncestor, siblingsOf, reparent,
@@ -31,7 +32,7 @@ let lastScreen = { x: 0, y: 0 };
 const DRAG_THRESHOLD = 3;
 
 const ROTATE_CURSOR = (() => {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M6 15a8 8 0 0 1 9-9" fill="none" stroke="white" stroke-width="4"/><path d="M6 15a8 8 0 0 1 9-9" fill="none" stroke="black" stroke-width="1.5"/><path d="M14 3l3 3-3 3M3 14l3 3 3-3" fill="none" stroke="black" stroke-width="1.5"/></svg>`;
+  const svg = lucideIcon('rotate-cw',24).replace('stroke="currentColor"','stroke="black"');
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 10 10, crosshair`;
 })();
 
@@ -42,8 +43,8 @@ export function initInteractions(el) {
   el.addEventListener('pointerup', onPointerUp);
   el.addEventListener('pointercancel', onPointerUp);
   el.addEventListener('pointerleave', () => {
-    if (!drag && state.hoverId) {
-      state.hoverId = null;
+    if (!drag && (state.hoverId||state.spacingPreview)) {
+      state.spacingPreview=null;state.hoverId = null;
       emit('overlay');
     }
   });
@@ -419,10 +420,15 @@ function updateHover(sp, e = {}) {
   const label = labelAt(sp);
   const target = label || (h ? null : pickFromPath(hitPath(wp), { deep: e.metaKey || e.ctrlKey }));
   const id = target?.id || null;
+  const selected=state.selection.length===1?getNode(state.selection[0]):null;
+  const path=h?[]:hitPath(wp);
+  const preview=isAutoLayout(selected)&&!label&&!h&&path.at(-1)===selected?{id:selected.id,kind:'all'}:null;
+  const previewChanged=JSON.stringify(preview)!==JSON.stringify(state.spacingPreview||null);
+  state.spacingPreview=preview;
   const changed = id !== state.hoverId;
   state.hoverId = id;
   const measureChanged = computeMeasure();
-  if (changed || measureChanged) emit('overlay');
+  if (changed || measureChanged || previewChanged) emit('overlay');
 }
 
 function computeMeasure() {

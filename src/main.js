@@ -1,3 +1,4 @@
+import { layOutDocument } from './lay-out.js';
 import { focusToken, openVariablesEditor, closeVariablesEditor } from './variables-ui.js';
 import { setTerminalContext } from './terminal.js';
 import { recordFileOpened, initializeProjects, selectedProjectId, selectProject, projectList, resolveProjectId, scopeHref } from './projects.js';
@@ -6,11 +7,9 @@ import { applyWelcomeAppearance } from './welcome-appearance.js';
 import { appearanceButtonHTML, appearance } from './appearance.js';
 import {
   state, page, view, subscribe, emit, normalizeDocument, addNormalizer, loadDocument, unloadDocument, walk, cancelPendingSave,
-  fixGroups, commit, forgetUndo, select, getNode, pageOf,
+  commit, forgetUndo, select, getNode, pageOf,
 } from './store.js';
-import { applyLayouts } from './layout.js';
-import { syncInstances } from './components.js';
-import { resolveVariables, normalizeTokenGroups, collections } from './variables.js';
+import { collections } from './variables.js';
 import { renderScene, applyViewTransform, renderOverlay } from './render.js';
 import { initInteractions, refreshCursor } from './interact.js';
 import { initTextEditor, positionEditor, measureText, stopEditing } from './text.js';
@@ -312,12 +311,7 @@ function onRemoteChange(msg) {
 
 // ---------- boot ----------
 // The normalize pipeline, in order (see store.normalizeDocument).
-addNormalizer(normalizeTokenGroups);
-addNormalizer(syncInstances);
-addNormalizer(resolveVariables);
-addNormalizer(fixGroups);
-addNormalizer(applyLayouts);
-addNormalizer(fixGroups);
+addNormalizer(layOutDocument);
 initTextEditor(canvas);
 setViewportElement(canvas);
 initPanels();

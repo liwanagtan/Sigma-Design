@@ -1,3 +1,4 @@
+import {lucideIcon} from './lucide.js';
 // Figma-style component UI in the right panel.
 //
 //   Main component / component set / variant: a header (name, description, ⋯), the variant's own values,
@@ -10,7 +11,7 @@
 //     Visibility and Text content, and nested instances from "Apply instance swap property"; a bound
 //     layer shows a purple pill (see propBinding / propMenuItems, used by panels.js).
 import {
-  state, getNode, getParent, commit, select, editNode, emit, walk, worldBounds, subscribe, createNode, insertNode, detach, reindex,
+  state, getNode, getParent, ancestors, commit, select, editNode, emit, walk, worldBounds, subscribe, createNode, insertNode, detach, reindex,
   isSlotArea, isFrameLike,
 } from './store.js';
 import { findVariable, previewValue } from './variables.js';
@@ -41,14 +42,13 @@ const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').
 const toast = (msg) => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
 
 // ---------- icons ----------
-const SVG = (d, extra = '') => `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" ${extra}>${d}</svg>`;
 export const PROP_ICONS = {
-  variant: SVG('<path d="M6 .9l2 2-2 2-2-2zM6 7.1l2 2-2 2-2-2zM2.9 4l2 2-2 2-2-2zM9.1 4l2 2-2 2-2-2z"/>'),
-  boolean: SVG('<rect x="1" y="3.5" width="10" height="5" rx="2.5"/><circle cx="8.5" cy="6" r="1.4" fill="currentColor"/>'),
-  text: SVG('<path d="M2.5 3V2h7v1M6 2v8M4.5 10h3"/>'),
-  instance: SVG('<path d="M6 1.5L10.5 6 6 10.5 1.5 6z"/><path d="M4.5 6h3M6.5 5l1 1-1 1"/>'),
-  slot: SVG('<rect x="1.2" y="1.2" width="9.6" height="9.6" rx="2" stroke-dasharray="2 1.5"/><path d="M6 4v4M4 6h4"/>'),
-  icon: SVG('<path d="M6 1.2l1.4 2.9 3.2.5-2.3 2.2.5 3.2L6 8.5 3.2 10l.5-3.2-2.3-2.2 3.2-.5z" stroke-linejoin="round"/>'),
+  variant:lucideIcon('component',12),
+  boolean:lucideIcon('toggle-right',12),
+  text:lucideIcon('type',12),
+  instance:lucideIcon('replace',12),
+  slot:lucideIcon('square-dashed',12),
+  icon:lucideIcon('shapes',12),
 };
 // A button showing an icon and its name, which opens the icon picker.
 const iconChoice = (id, attrs, mixed = false) => {
@@ -56,16 +56,16 @@ const iconChoice = (id, attrs, mixed = false) => {
   return `<button class="select swap-btn icon-choice" ${attrs}><span class="icon-choice-glyph">${icon ? iconMarkup(icon, { w: 14, h: 14 }) : ''}</span>` +
     `<span class="swap-name">${mixed ? 'Mixed' : esc(icon ? icon.name : 'Choose an icon…')}</span>${CHEVRON}</button>`;
 };
-const COMPONENT_ICON = SVG('<path d="M6 .9l2 2-2 2-2-2zM6 7.1l2 2-2 2-2-2zM2.9 4l2 2-2 2-2-2zM9.1 4l2 2-2 2-2-2z"/>');
-const INSTANCE_ICON = SVG('<path d="M6 1.2L10.8 6 6 10.8 1.2 6z"/>');
-const SET_ICON = SVG('<rect x=".8" y=".8" width="10.4" height="10.4" rx="2" stroke-dasharray="2 1.4"/><path d="M6 3l1.5 1.5L6 6 4.5 4.5zM6 6l1.5 1.5L6 9 4.5 7.5z"/>');
-const EDIT_ICON = SVG('<path d="M2 9.8l.3-2L8 2.1l1.9 1.9-5.7 5.7z"/>');
-const SETTINGS_ICON = SVG('<path d="M2 3.5h4M8.5 3.5H10M2 8.5h1.5M6 8.5h4"/><circle cx="7.2" cy="3.5" r="1.2"/><circle cx="4.7" cy="8.5" r="1.2"/>');
-const MORE_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><circle cx="2.5" cy="6" r="1.1"/><circle cx="6" cy="6" r="1.1"/><circle cx="9.5" cy="6" r="1.1"/></svg>';
-const RESET_ICON = SVG('<path d="M2.5 6a3.5 3.5 0 1 0 1-2.5M2.5 1.5v2h2"/>');
-const GRIP_ICON = '<svg width="6" height="10" viewBox="0 0 6 10" fill="currentColor"><circle cx="1.5" cy="2" r=".9"/><circle cx="4.5" cy="2" r=".9"/><circle cx="1.5" cy="5" r=".9"/><circle cx="4.5" cy="5" r=".9"/><circle cx="1.5" cy="8" r=".9"/><circle cx="4.5" cy="8" r=".9"/></svg>';
-export const APPLY_PROP_ICON = SVG('<path d="M6 1.2L10.8 6 6 10.8 1.2 6z"/><path d="M6 4v4M4 6h4"/>');
-const CHEVRON = '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1.5 3l2.5 2.5L6.5 3"/></svg>';
+const COMPONENT_ICON = lucideIcon('component',12);
+const INSTANCE_ICON = lucideIcon('diamond',12);
+const SET_ICON = lucideIcon('layout-grid',12);
+const EDIT_ICON = lucideIcon('pencil',12);
+const SETTINGS_ICON = lucideIcon('sliders-horizontal',12);
+const MORE_ICON = lucideIcon('ellipsis',12);
+const RESET_ICON = lucideIcon('rotate-ccw',12);
+const GRIP_ICON = lucideIcon('grip-vertical',10);
+export const APPLY_PROP_ICON = lucideIcon('diamond-plus',12);
+const CHEVRON = lucideIcon('chevron-down',8);
 
 const section = (title, body, action = '', cls = '') =>
   `<div class="section ${cls}"><div class="section-title"><span>${title}</span>${action}</div>${body}</div>`;
@@ -140,7 +140,7 @@ function variantPanel(variant) {
   }).join('');
   const head = `<div class="comp-head"><span class="comp-icon">${COMPONENT_ICON}</span><span class="comp-name">${esc(set.name)}</span>${deprecatedTag(set)}` +
     `<button class="link-btn comp-up" data-select-node="${set.id}" title="Select the component set">Select set</button>${headActions(variant)}</div>`;
-  return `<div class="section comp-panel">${head}${deprecatedNote(set)}${description(variant)}<div class="comp-sub">Variant</div>${rows}${conflictNote(set)}</div>` + propertiesSection(variant);
+  return `<div class="section comp-panel">${head}${deprecatedNote(set)}${description(variant)}<div class="comp-sub">Variant values</div>${rows}${conflictNote(set)}<button class="link-btn" data-select-node="${set.id}">Edit component properties…</button><p class="muted prop-empty">Property definitions are shared by the component set. Configure this variant’s layer bindings on its children.</p></div>` + nestedSection(variant);
 }
 
 // ---------- Properties ----------
@@ -181,17 +181,19 @@ function propertiesSection(comp) {
       `<button class="icon-btn prop-edit" data-prop-edit="${pid}" title="Edit property">${SETTINGS_ICON}</button>` +
       `<button class="icon-btn prop-remove" data-prop-remove="${pid}" title="Delete property">${icons.minus}</button></div>`);
   }
-  const nested = nestedInstances(comp);
-  const exposed = nested.filter((n) => n.exposed);
-  const nestedRow = nested.length
-    ? `<div class="prop-sub">Nested instances</div>` +
-      exposed.map((n) => `<div class="prop-row exposed"><span class="prop-icon instance">${INSTANCE_ICON}</span><span class="prop-row-name">${esc(n.name)}</span>` +
-        `<span class="prop-row-value">Properties shown</span><button class="icon-btn prop-remove" data-unexpose="${n.id}" title="Stop showing its properties">${icons.minus}</button></div>`).join('') +
-      `<button class="link-btn prop-expose" data-expose-menu>${exposed.length ? 'Choose nested instances…' : 'Show properties of nested instances…'}</button>`
-    : '';
-  const empty = rows.length ? '' : '<div class="muted prop-empty">Properties let instances change variants, show or hide layers, change text, choose icons and swap nested instances.</div>';
-  return section('Properties', rows.join('') + empty + nestedRow,
-    `<button class="icon-btn" data-prop-add title="Create component property">${icons.plus}</button>`);
+  const empty = rows.length ? '' : '<div class="muted prop-empty">Define text, visibility, icon, swap and slot controls for instances.</div>';
+  return section('Component properties',rows.join('')+empty,`<button class="icon-btn" data-prop-add title="Create component property">${icons.plus}</button>`)+nestedSection(comp);
+}
+function nestedSection(comp) {
+  const nested=nestedInstances(comp);if(!nested.length){let hasNested=false;walk(comp.children||[],n=>{if(n.type==='instance'){hasNested=true;return false;}});return hasNested?section('Nested controls','<p class="muted prop-empty">No nested components with editable properties in this variant. Add properties to their main components to expose them here.</p>'):'';}
+  const exposed=nested.filter(n=>n.exposed);
+  return section('Nested controls',`<p class="muted prop-empty">Expose a nested component’s controls on instances of this ${comp.type==='componentSet'?'set':'variant'}. Layer bindings remain unchanged.</p>`+
+    exposed.map(n=>`<div class="prop-row exposed"><span class="prop-icon instance">${INSTANCE_ICON}</span><span class="prop-row-name">${esc(exposureLabel(n,comp))}</span><span class="prop-row-value">Exposed</span><button class="icon-btn" data-unexpose="${n.id}" title="Stop exposing controls">${icons.minus}</button></div>`).join('')+
+    '<button class="link-btn prop-expose" data-expose-menu>Expose nested controls…</button>');
+}
+function exposureLabel(n,comp) {
+  const path=[...ancestors(n)].reverse();const start=path.indexOf(comp);
+  return [...path.slice(start+1),n].map(x=>x.name).join(' / ');
 }
 
 // ---------- Instances ----------
@@ -1267,9 +1269,9 @@ function exposeMenu(btn, comp) {
   const r = btn.getBoundingClientRect();
   const nested = nestedInstances(comp);
   showContextMenu(r.left, r.bottom + 4, [
-    { label: 'Show properties of', disabled: true },
+    { label: 'Expose controls on outer instances', disabled: true },
     ...nested.map((n) => ({
-      label: `   ${n.name}`, checked: !!n.exposed,
+      label: exposureLabel(n,comp), checked: !!n.exposed,
       action: () => {
         if (n.exposed) delete n.exposed;
         else n.exposed = true;

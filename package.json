@@ -29,6 +29,7 @@
   ],
   "scripts": {
     "start": "node bin/sigma-design.mjs standalone",
+    "build:icons": "node tools/icons/build-ui.mjs",
     "build:welcome": "node tools/design-system/build.mjs",
     "build:pages": "node tools/design-system/build-pages.mjs",
     "test:node": "node --test tools/test/*.test.mjs",

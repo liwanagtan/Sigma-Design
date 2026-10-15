@@ -1,17 +1,23 @@
-// Welcome Icons publishes only Sigma’s own interface glyphs. Lucide is separate for Optics.
-export const SAMPLE_ICONS_VERSION = 5; // 5: Sigma glyphs only
-import { icons as uiIcons, componentSetSymbol } from './icons.js';
+import {LUCIDE_GLYPHS,LUCIDE_VERSION} from './lucide-ui-data.js';
+import {lucideIcon} from './lucide.js';
+import {UI_ICON_NAMES} from './ui-icon-map.js';
+// Sigma Icons publishes the Lucide glyphs used by Sigma’s interface. Optics has the full catalogue.
+export const SAMPLE_ICONS_VERSION = 8; // 8: canonical Lucide names with stable Sigma IDs and searchable aliases
+import { icons as uiIcons } from './icons.js';
 import { newIconsDocument, sanitizeIcons, parseSVGIcon } from './icon-library.js';
 
 export const SAMPLE_ICONS_NAME = 'Icons';
 export const sigmaIconId = name => `sigma-ui-${name}`;
 export function sigmaUIIcons() {
-  return Object.entries({...Object.fromEntries(Object.entries(uiIcons).filter(([name])=>name!=='logo')),componentSet:`<svg viewBox="0 0 12 12" fill="currentColor">${componentSetSymbol}</svg>`}).map(([name,svg])=>{
+  const mapped=new Set(Object.values(UI_ICON_NAMES));
+  const entries=[...Object.entries(uiIcons).filter(([name])=>name!=='logo'),...Object.keys(LUCIDE_GLYPHS).filter(name=>!mapped.has(name)).map(name=>[name,lucideIcon(name)])];
+  return entries.map(([name,svg])=>{
     const attrs=svg.match(/^<svg([^>]*)>/)[1];
     const fill=/fill="([^"]*)"/.exec(attrs)?.[1]||'none';
     const stroke=/stroke="([^"]*)"/.exec(attrs)?.[1]||'none';
     const wrapped=svg.replace(/(<svg[^>]*>)([\s\S]*)(<\/svg>)/,`$1<g fill="${fill}" stroke="${stroke}">$2</g>$3`);
-    return {...parseSVGIcon(wrapped,{name,group:'Sigma UI'}),id:sigmaIconId(name)};
+    const lucideName=UI_ICON_NAMES[name]||name;
+    return {...parseSVGIcon(wrapped,{name:lucideName,group:'Lucide · Sigma UI'}),id:sigmaIconId(name),keywords:[name,lucideName,'Lucide','Sigma'].join(', ')};
   });
 }
 
@@ -71,7 +77,7 @@ export function lucideIconsDocument(lucide) {
 export function sampleIconsDocument() {
   const doc=newIconsDocument(SAMPLE_ICONS_NAME);
   doc.icons=sanitizeIcons(sigmaUIIcons());
-  doc.source={name:'Sigma UI',version:String(SAMPLE_ICONS_VERSION),url:'https://github.com/liwanagtan/Sigma-Design',license:'Project license (LICENSE)',note:'Glyphs from Sigma’s own interface. The multicolor brand mark remains separate.'};
+  doc.source={name:'Lucide · Sigma UI',version:LUCIDE_VERSION,url:'https://lucide.dev',license:'ISC (Feather-derived icons MIT; see NOTICE and icon-sets/lucide.json)',note:'Lucide glyphs used by Sigma’s interface, with stable Sigma IDs. The Sigma brand mark remains separate.'};
   doc.published={version:1,publishedAt:Date.now(),notes:'Sigma UI glyphs',icons:structuredClone(doc.icons)};
   return doc;
 }
