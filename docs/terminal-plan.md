@@ -1,6 +1,6 @@
 # Phase 52: Built-in terminal
 
-Status: **In progress**. Added 15 October 2026. Scope: Design and Tokens files.
+Status: **Done for macOS/Linux local workspaces**. Added 15 October 2026. Scope: Design and Tokens files.
 
 ## Purpose and UI
 
@@ -69,5 +69,5 @@ Code creation (Phase 51) can export or apply files independently; this terminal 
 - Pinned MIT dependencies: xterm.js 6.0.0, fit addon 0.11.0, node-pty 1.1.0, ws 8.22.0. `tools/build-terminal.mjs` reproduces checked-in browser assets/licenses. Postinstall repairs the packaged Unix PTY helper's executable bit.
 - Supported shells: zsh/bash/sh/dash, selected from server `SHELL`. Interactive startup scripts are skipped to preserve memory-only history. The inherited environment/PATH is retained. Unsupported or missing shells give a panel error; there is no command-log fallback.
 - Verified locally on macOS arm64: real Design/Tokens commands and shared environment, hide/reopen, server restart, Ctrl+C, resize, output limits, origin/capability rejection, concurrent session limits, stale-save protection, child cleanup, and fresh npm package installation. Browser regression covers event isolation, safe text rendering, project separation, and restart without automatic execution.
-- Release gate remaining: Linux CI execution and broader platform validation. Node CI installs runtime dependencies; a macOS terminal job is added. Windows terminal execution is deliberately unavailable with guidance until its process lifecycle is validated.
+- CI verified on commit `d152978`: Linux Node 20/22 (78 tests each), browser regression/render parity, Sigma examples, and the macOS terminal lifecycle job all passed. Run: https://github.com/liwanagtan/Sigma-Design/actions/runs/38679281591. Windows terminal execution remains outside the first release scope with guidance until its process lifecycle is validated.
 - User instructions and operational limits are in the README. No terminal commands are initiated by document content or Assistant tools. Code-generation integration remains dependent on Phase 51.

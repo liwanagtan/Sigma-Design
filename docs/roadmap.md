@@ -50,7 +50,7 @@ Milestones below follow feature priority. Phase 43 now consolidates the former F
 | --- | --- | --- | --- |
 | 50 | Reports usability and design | Planned | A clearer project report UI, understandable and trustworthy metrics, filters/drill-down, and practical next steps linked to the affected files/layers. |
 | 51 | Code creation | Planned | Create editable code for selections/components/pages, reuse project components and tokens, preview and validate results, and copy/download or apply project files through an explicit action. |
-| 52 | Built-in terminal | Partial | A shared resizable terminal dock in Design/Tokens, real workspace-bound PTY sessions through the local server, streaming output, keyboard isolation, reconnect, and process cleanup. |
+| 52 | Built-in terminal | Done | A shared resizable terminal dock in Design/Tokens, real workspace-bound PTY sessions through the local server, streaming output, keyboard isolation, reconnect, and process cleanup. |
 | 40 | Shared document tools | Planned | One validated registry for reading/editing documents through the Assistant and MCP, using normal edit functions and undo. |
 | 41 | Assistant panel | Planned | Streaming chat, selection/page context, tool activity, Stop, provider/key settings, and one undo step per turn. |
 | 42 | Visual feedback and open-editor MCP | Planned | Render frames/selections for inspection and let an external agent edit the open document through the local server. |
@@ -83,7 +83,7 @@ Build on the **Code** tab and existing repository handoff/design-to-code workflo
 
 ### Phase 52: Built-in terminal
 
-- **Implemented:** Design/Tokens dock, explicit workspace connection, real PTY sessions, keyboard isolation, Light/Dark rendering, bounded streaming, reconnect/restart, session limits, and job cleanup. Browser and Node regressions pass; macOS arm64 package installation and real commands verified. Remaining release gate: Linux CI and broader platform validation; Windows is unavailable with guidance.
+- **Implemented:** Design/Tokens dock, explicit workspace connection, real PTY sessions, keyboard isolation, Light/Dark rendering, bounded streaming, reconnect/restart, session limits, and job cleanup. Browser and Node regressions pass locally and in CI, including Linux Node 20/22 and the macOS terminal lifecycle job. macOS arm64 package installation and real commands are verified. Windows remains outside the first release scope with clear guidance.
 
 - **UI:** Terminal icon in Design and Tokens rails opens a resizable bottom dock, closed by default, with session tabs, workspace/shell context, copy/paste, and clear connection/exit status. Hiding preserves running commands; End session terminates them.
 - **Workspace:** sessions belong to a connected local workspace and are reused across its Design/Tokens files. Browser-only projects and Drafts must connect a workspace before execution; project switches never silently reuse another project's shell.

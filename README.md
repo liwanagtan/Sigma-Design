@@ -48,8 +48,8 @@ memory. Detached sessions expire after 15 minutes. Shell history is not saved by
 are skipped so they cannot silently re-enable history persistence. The inherited environment/PATH remains
 available. Supported shell choices are zsh, bash, sh, and dash via the server's `SHELL` environment variable.
 
-The macOS arm64 workflow and fresh-package PTY installation are verified. Linux has CI coverage configured
-but has not yet been verified for this change; Windows execution is explicitly unavailable pending validation.
+The macOS arm64 workflow and fresh-package PTY installation are verified. Linux Node 20/22 and macOS terminal lifecycle checks pass in CI. Windows execution is explicitly
+unavailable pending validation.
 If native PTY installation is unavailable, the editor still starts and the panel reports how to rebuild
 `node-pty`. The terminal does not belong to the design document, published libraries, or undo history.
 
