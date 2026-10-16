@@ -271,9 +271,10 @@ const NAV_PROJECT = lucideIcon('folder-check',14);
 const projectMode=()=>selectedProject()?.kind==='repository';
 
 // Project navigation stays alongside Recents, Drafts, and file filters.
-async function renderProjectNav() {
+async function renderProjectNav(isCurrent=()=>true) {
   const el=root.querySelector('#home-project');
   const projects=await projectList();
+  if(!isCurrent())return;
   el.innerHTML=`<div class="project-group-heading"><span class="nav-label">Projects</span><button class="icon-btn" data-new-project title="New project" aria-label="New project">${icons.plus}</button></div>${projects.map(p=>`<div class="project-nav-row ${p.id===selectedProjectId()?'active':''}"><button class="icon-btn project-icon" data-project-icon="${esc(p.id)}" title="Change icon for ${esc(p.name)}" aria-label="Change icon for ${esc(p.name)}">${projectIconMarkup(p.icon)}</button><button class="nav-item project-nav-item ${p.id===selectedProjectId()?'active':''}" data-project-id="${esc(p.id)}" ${p.id===selectedProjectId()?'aria-current="true"':''}>${esc(p.name)}${p.kind==='repository'&&(!project.connected||p.id!==project.identity)?'<span class="muted"> · Offline</span>':''}</button></div>`).join('')}`;
   el.querySelectorAll('[data-project-icon]').forEach(button=>button.onclick=()=>projectIconDialog(projects.find(p=>p.id===button.dataset.projectIcon)));
   el.querySelector('[data-new-project]').onclick=()=>newProjectDialog();
@@ -677,8 +678,10 @@ function renderProjectHeader(p,editable=true) {
 }
 
 // ---------- render ----------
+let homeRenderRun=0;
 export async function renderHome() {
-  if (!root) return;
+  if (!root?.isConnected) return;
+  const mine=++homeRenderRun,target=root,owner=selectedProjectId();
   if(selectedProjectId()&&['design','tokens','icons','recents'].includes(prefs.section))prefs.section='workspace';
   const drafts=prefs.section==='drafts';
   const q=query.trim().toLowerCase();
@@ -687,26 +690,31 @@ export async function renderHome() {
   // Proposals only exist in a project; the Archive only standalone (git is the history of project files).
   if (!SECTIONS[prefs.section] || (prefs.section === 'proposals' && !projectMode()) || (prefs.section === 'archive' && pm)) prefs.section = 'recents';
   const section = prefs.section;
+  const isCurrent=()=>mine===homeRenderRun&&root===target&&target.isConnected&&selectedProjectId()===owner&&prefs.section===section&&query.trim().toLowerCase()===q;
   const archive = !q&&section === 'archive';
   let files = await listFiles();
-  files=files.filter(f=>q||prefs.section==='recents'||inScope(f,drafts?null:selectedProjectId()));
+  if(!isCurrent())return;
+  files=files.filter(f=>q||section==='recents'||inScope(f,drafts?null:owner));
   const total = files.length;
   const welcome = !q&&section === 'welcome';
   const proposals = !q&&section === 'proposals';
   const report = !q&&section === 'report';
   const projectFiles = pm && !welcome && !proposals && !report; // Recents and the kind sections list the project's files
-  if (archive) files=(await listArchivedFiles()).filter(f=>inScope(f));
+  if (archive) files=(await listArchivedFiles()).filter(f=>inScope(f,owner));
   else if(welcome) files=[];
   else if (projectFiles || proposals || report) files = [];
   else if (section !== 'recents' && !drafts && !workspace && !q) files = files.filter(f=>fileKind(f)===section&&inScope(f)); // samples have their own section
-  await renderProjectNav();
+  if(!isCurrent())return;
+  await renderProjectNav(isCurrent);
+  if(!isCurrent())return;
   const inSection = files.length;
 
   root.querySelectorAll('.nav-item[data-section]').forEach((b) => b.classList.toggle('active', b.dataset.section === section));
   root.querySelectorAll('[data-layout]').forEach((b) => b.classList.toggle('on', b.dataset.layout === prefs.layout));
   const recents = section === 'recents';
-  const selected=(await projectList()).find(p=>p.id===selectedProjectId());
-  root.querySelector('#home-title').textContent=q?'Search results':welcome?'Documentation':drafts?'Drafts':workspace?selected.name:(report||proposals)&&selected?`${selected.name} · ${report?'Report':'Proposals'}`:SECTIONS[section];
+  const selected=(await projectList()).find(p=>p.id===owner);
+  if(!isCurrent())return;
+  root.querySelector('#home-title').textContent=q?'Search results':welcome?'Documentation':drafts?'Drafts':workspace?(selected?.name||'Project'):(report||proposals)&&selected?`${selected.name} · ${report?'Report':'Proposals'}`:SECTIONS[section];
   root.querySelector('.home-layout').hidden = proposals || report || welcome;
   root.querySelector('#home-search').hidden=false;
   root.querySelector('#home-search').value=query;
@@ -758,7 +766,7 @@ export async function renderHome() {
       (files.length ? '<button class="btn" data-empty-archive>Empty Archive…</button>' : '') + '</div>' +
       (files.length ? files.map(archivedCard).join('') : `<div class="home-empty"><p>${q ? `No archived files match “${esc(query)}”.` : 'The Archive is empty.'}</p></div>`);
   } else if(q) {
-    const ps=await projectList();list.innerHTML=files.length?files.map(f=>card({...f,sourceName:ps.find(p=>p.id===f.projectId)?.name||'Drafts'})).join(''):'<div class="home-empty">No matching files.</div>';
+    const ps=await projectList();if(!isCurrent())return;list.innerHTML=files.length?files.map(f=>card({...f,sourceName:ps.find(p=>p.id===f.projectId)?.name||'Drafts'})).join(''):'<div class="home-empty">No matching files.</div>';
   } else if (!total) {
     list.innerHTML = `<div class="home-empty"><div class="home-empty-title">Create your first file</div>
       <p>Files are saved in this browser. You can also drag <b>.sigma.json</b> files here to import them.</p>
@@ -780,11 +788,12 @@ export async function renderHome() {
   } else if (!files.length) {
     list.innerHTML = `<div class="home-empty"><p>No files match “${esc(query)}”.</p></div>`;
   } else {
-    const ps=await projectList();list.innerHTML = files.map(f=>card(recents?{...f,sourceName:ps.find(p=>p.id===f.projectId)?.name||'Drafts'}:f)).join('');
+    const ps=await projectList();if(!isCurrent())return;list.innerHTML = files.map(f=>card(recents?{...f,sourceName:ps.find(p=>p.id===f.projectId)?.name||'Drafts'}:f)).join('');
   }
-  root.querySelector('#home-storage').textContent = pm
+  const summary = pm
     ? `${project.files.length} Sigma file${project.files.length === 1 ? '' : 's'} in the project’s .sigma/ folder`
     : await storageSummary();
+  if(isCurrent())root.querySelector('#home-storage').textContent=summary;
 }
 
 function archivedCard(f) {

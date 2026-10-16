@@ -89,3 +89,20 @@ test('projects Home: selector, scoped cards, creation dialog and documentation r
     selectProject(before,{notify:false});if(prefs===null)localStorage.removeItem('sigma.home.prefs');else localStorage.setItem('sigma.home.prefs',prefs);location.hash=hash;
   }
 });
+
+test('Home rendering: delayed project reads cannot overwrite a newer Drafts scope',async()=>{
+  const {initHome,renderHome,showHomeSection}=await import('../src/home.js');
+  const owner=selectedProjectId(),prefs=localStorage.getItem('sigma.home.prefs'),host=document.createElement('div');document.body.append(host);
+  const project=await createProject('Render race '+crypto.randomUUID());let release;
+  const getAll=db.getAll;
+  try {
+    selectProject(project,{notify:false});initHome(host);showHomeSection('workspace');await renderHome();
+    const files=await getAll('files');let start;
+    const started=new Promise(resolve=>start=resolve),held=new Promise(resolve=>release=()=>resolve(files));let hold=true;
+    db.getAll=(store,...args)=>{if(store==='files'&&hold){hold=false;start();return held;}return getAll(store,...args);};
+    const stale=renderHome();await started;
+    selectProject(null,{notify:false});showHomeSection('drafts');await renderHome();eq(host.querySelector('#home-title').textContent,'Drafts');
+    release();await stale;eq(host.querySelector('#home-title').textContent,'Drafts');
+    selectProject('unavailable-project',{notify:false});showHomeSection('workspace');await renderHome();eq(host.querySelector('#home-title').textContent,'Project');
+  }finally{release?.();db.getAll=getAll;host.remove();await db.delete('projects',project);selectProject(owner,{notify:false});if(prefs===null)localStorage.removeItem('sigma.home.prefs');else localStorage.setItem('sigma.home.prefs',prefs);}
+});

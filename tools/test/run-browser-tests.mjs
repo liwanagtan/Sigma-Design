@@ -20,7 +20,7 @@ let failed = true;
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   const errors = [];
-  page.on('pageerror', (err) => errors.push(err.message));
+  page.on('pageerror', (err) => errors.push(err.stack || err.message));
   await page.goto(`${url}/tests/`);
   // The runner sets the title to "✓ 197/197 – Sigma tests" (or ✗) when it's done.
   await page.waitForFunction(() => /^[✓✗] \d+\/\d+/.test(document.title), null, { timeout: 180000 });
