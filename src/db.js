@@ -1,43 +1,14 @@
+import {createDatabaseConnection} from './database-connection.js';
 import { encodeDocumentRecord, decodeDocumentRecord } from './document-storage.js';
+import {linkedFileIds} from './project-backup.js';
 // Minimal promise wrapper around IndexedDB.
 // Stores: `files` holds small metadata records (listed by the files home),
 //         `docs` holds full documents, loaded only when a file is opened,
 //         `versions` holds each file's version history (small records, indexed by fileId); the document
 //         of a version lives in `docs` under the key `v:<version id>`.
-const DB_NAME = 'sigma';
-const DB_VERSION = 3;
-
-let dbPromise = null;
-
-function openDB() {
-  if (!dbPromise) {
-    dbPromise = new Promise((resolve, reject) => {
-      const req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = () => {
-        const db = req.result;
-        if (!db.objectStoreNames.contains('files')) db.createObjectStore('files', { keyPath: 'id' });
-        const files=req.transaction.objectStore('files');
-        if(!files.indexNames.contains('projectId')) files.createIndex('projectId','projectId');
-        if(!db.objectStoreNames.contains('projects')) db.createObjectStore('projects',{keyPath:'id'});
-        if (!db.objectStoreNames.contains('docs')) db.createObjectStore('docs', { keyPath: 'id' });
-        if (!db.objectStoreNames.contains('versions')) db.createObjectStore('versions', { keyPath: 'id' }).createIndex('fileId', 'fileId');
-      };
-      req.onsuccess = () => {
-        const db = req.result;
-        // A newer Sigma in another tab needs to upgrade storage: let it, and reconnect on next use.
-        db.onversionchange = () => {
-          db.close();
-          dbPromise = null;
-        };
-        resolve(db);
-      };
-      req.onerror = () => reject(req.error);
-      // An older Sigma in another tab still has storage open: the upgrade finishes once it reloads or closes.
-      req.onblocked = () => window.dispatchEvent(new CustomEvent('sigma:toast', { detail: 'Sigma was updated. Reload or close other Sigma tabs to continue.' }));
-    });
-  }
-  return dbPromise;
-}
+const openDB = createDatabaseConnection({
+  blocked: () => window.dispatchEvent(new CustomEvent('sigma:toast', {detail:'Sigma was updated. Reload or close other Sigma tabs to continue.'})),
+});
 
 // Run `fn(tx)` in a transaction over `stores`; resolves with the result of the request `fn` returns.
 async function transact(stores, mode, fn) {
@@ -45,11 +16,13 @@ async function transact(stores, mode, fn) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(stores, mode);
     let result;
-    const req = fn(tx);
-    if (req) req.onsuccess = () => void (result = req.result);
     tx.oncomplete = () => resolve(result);
     tx.onerror = () => reject(tx.error);
     tx.onabort = () => reject(tx.error || new Error('Storage transaction aborted'));
+    try {
+      const req = fn(tx);
+      if (req) req.onsuccess = () => void (result = req.result);
+    } catch(error) {tx.abort();reject(error);}
   });
 }
 
@@ -59,7 +32,7 @@ async function transact(stores, mode, fn) {
 async function updateFile(id, update) {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(['files', 'docs'], 'readwrite');
+    const tx = db.transaction(['files', 'docs', 'versions'], 'readwrite');
     const files = tx.objectStore('files'), docs = tx.objectStore('docs');
     let exists = false, meta, rec, pending = 2;
     const ready = () => {
@@ -68,8 +41,13 @@ async function updateFile(id, update) {
       exists = true;
       try {
         const out = update(meta, decodeDocumentRecord(rec));
+        if (out?.doc && out.contentChanged !== false) out.meta = {...(out.meta || meta), docRevision:(meta.docRevision || 0) + 1};
         if (out?.meta) files.put(out.meta);
         if (out?.doc) docs.put(encodeDocumentRecord(out.doc));
+        if (out?.version) {
+          tx.objectStore('versions').add(out.version.record);
+          docs.add(encodeDocumentRecord({id:'v:'+out.version.record.id,doc:out.version.doc}));
+        }
       } catch(error) {tx.abort();reject(error);}
     };
     files.get(id).onsuccess = (e) => { meta = e.target.result; ready(); };
@@ -82,6 +60,60 @@ async function updateFile(id, update) {
 
 export const db = {
   updateFile,
+  // A consistent read across ownership, content and all historical dependency snapshots.
+  backupProject: async projectId => {
+    const database=await openDB();
+    return new Promise((resolve,reject)=>{
+      const tx=database.transaction(['projects','files','docs','versions'],'readonly');
+      const entries=new Map(),missing=new Set();let metadata,project;
+      const fail=error=>{tx.abort();reject(error);};
+      function include(id) {
+        if(entries.has(id)||missing.has(id))return;
+        const meta=metadata.find(f=>f.id===id);
+        if(!meta){missing.add(id);return;}
+        if(meta.project&&(meta.projectId||null)===(projectId||null))throw new Error('Repository files must be backed up through their repository.');
+        const entry={meta,versions:[]};entries.set(id,entry);
+        tx.objectStore('docs').get(id).onsuccess=e=>{try{
+          const rec=decodeDocumentRecord(e.target.result);
+          if(!rec?.doc)throw new Error(`Cannot back up ${meta.name}: document is missing.`);
+          entry.doc=rec.doc;entry.views=rec.views;
+          for(const linked of linkedFileIds(rec.doc))include(linked);
+        }catch(error){fail(error);}};
+        tx.objectStore('versions').index('fileId').getAll(id).onsuccess=e=>{try{
+          for(const record of e.target.result)tx.objectStore('docs').get('v:'+record.id).onsuccess=v=>{try{
+            const rec=decodeDocumentRecord(v.target.result);if(!rec?.doc)throw new Error(`Cannot back up ${meta.name}: a historical document is missing.`);
+            entry.versions.push({record,doc:rec.doc});for(const linked of linkedFileIds(rec.doc))include(linked);
+          }catch(error){fail(error);}};
+        }catch(error){fail(error);}};
+      }
+      if(projectId)tx.objectStore('projects').get(projectId).onsuccess=e=>{project=e.target.result;};
+      tx.objectStore('files').getAll().onsuccess=e=>{try{
+        metadata=e.target.result;
+        for(const f of metadata)if((f.projectId||null)===(projectId||null))include(f.id);
+      }catch(error){fail(error);}};
+      tx.oncomplete=()=>resolve({project:project||{name:'Drafts'},files:[...entries.values()],missingDependencies:[...missing]});
+      tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Backup snapshot aborted.'));
+    });
+  },
+  restoreProject: async prepared => {
+    // Encode before opening the transaction: preparation failures never leave partial imports.
+    const records=prepared.files.map(f=>({...f,stored:encodeDocumentRecord({id:f.meta.id,doc:f.doc,views:f.views}),history:f.versions.map(v=>({record:v.record,stored:encodeDocumentRecord({id:'v:'+v.record.id,doc:v.doc})}))}));
+    const database=await openDB();
+    return new Promise((resolve,reject)=>{
+      const tx=database.transaction(['projects','files','docs','versions'],'readwrite');
+      tx.objectStore('projects').getAll().onsuccess=e=>{
+        const used=new Set(e.target.result.filter(p=>typeof p.name==='string').map(p=>p.name.toLowerCase()));
+        const base=prepared.project.name;let name=base+' (restored)',i=2;
+        while(used.has(name.toLowerCase()))name=base+` (restored ${i++})`;
+        prepared.project.name=name;tx.objectStore('projects').add(prepared.project);
+        for(const f of records){
+          tx.objectStore('files').add(f.meta);tx.objectStore('docs').add(f.stored);
+          for(const v of f.history){tx.objectStore('versions').add(v.record);tx.objectStore('docs').add(v.stored);}
+        }
+      };
+      tx.oncomplete=()=>resolve(prepared.project.id);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Restore aborted; no files imported.'));
+    });
+  },
   delete:(store,id)=>transact(store,'readwrite',tx=>tx.objectStore(store).delete(id)),
   // Ownership migrations and batch moves operate on metadata only, atomically.
   projectUpdate: async (update) => {

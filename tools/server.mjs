@@ -1,5 +1,5 @@
 // Sigma's local server (Part F, Phase 32): serves the editor and, when Sigma runs in a project, the project
-// API the editor uses to read and write its Sigma files, plus the local terminal service (Node 18+).
+// API the editor uses to read and write its Sigma files, plus the local terminal service (Node 22+).
 //
 //   GET  /api/project                    the project: { name, files: [{ path, kind, name, mtime, size }], config }
 //   GET  /api/project/file?path=P        a file's text (header X-Sigma-Mtime: its modification time)
@@ -126,7 +126,7 @@ export function sigmaHandler({ root = EDITOR_ROOT, project = null, log = () => {
 
   const reply = (res, status, body = '', type = 'application/json', headers = {}) => {
     const data = Buffer.isBuffer(body) ? body : Buffer.from(typeof body === 'string' ? body : JSON.stringify(body));
-    res.writeHead(status, { 'Content-Type': type, 'Content-Length': data.length, 'Cache-Control': 'no-store', ...headers });
+    res.writeHead(status, { 'Content-Type': type, 'Content-Length': data.length, 'Cache-Control': 'no-store', 'X-Content-Type-Options':'nosniff', ...headers });
     res.end(data);
   };
   const isLocal = (req) => {
@@ -268,11 +268,17 @@ export function sigmaHandler({ root = EDITOR_ROOT, project = null, log = () => {
     }
     if (!existsSync(full) || !statSync(full).isFile()) return reply(res, 404, 'Not found', 'text/plain');
     const data = readFileSync(full);
+    // The pinned Figma decoder compiles its binary schema. Its dedicated worker can
+    // evaluate that schema, but cannot fetch external data or create nested workers.
+    const securityHeaders = full === join(root,'src','figma-import-worker.js') ? {
+      'Content-Security-Policy': "default-src 'none'; script-src 'self' 'unsafe-eval'; connect-src 'none'; worker-src 'none'; object-src 'none'",
+      'X-Content-Type-Options':'nosniff',
+    } : {'X-Content-Type-Options':'nosniff'};
     if (req.method === 'HEAD') {
-      res.writeHead(200, { 'Content-Type': TYPES[extname(full).toLowerCase()] || 'application/octet-stream', 'Content-Length': data.length, 'Cache-Control': 'no-store' });
+      res.writeHead(200, { 'Content-Type': TYPES[extname(full).toLowerCase()] || 'application/octet-stream', 'Content-Length': data.length, 'Cache-Control': 'no-store', ...securityHeaders });
       return res.end();
     }
-    return reply(res, 200, data, TYPES[extname(full).toLowerCase()] || 'application/octet-stream');
+    return reply(res, 200, data, TYPES[extname(full).toLowerCase()] || 'application/octet-stream', securityHeaders);
   }
 
   return async (req, res) => {

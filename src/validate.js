@@ -20,7 +20,7 @@ const isAlias = (v) => !!v && typeof v === 'object' && typeof v.alias === 'strin
 const num = (v) => typeof v === 'number' && Number.isFinite(v);
 
 // The kind of value each token type holds (a value or { alias: tokenId } of the same type).
-function checkValue(type, value, say) {
+export function checkValue(type, value, say) {
   if (isAlias(value)) return;
   if (COMPOSITE_FIELDS[type]) {
     if (!value || typeof value !== 'object') return say(`should be a ${type} object (${Object.keys(COMPOSITE_FIELDS[type]).join(', ')})`);

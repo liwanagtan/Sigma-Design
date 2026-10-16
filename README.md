@@ -1,11 +1,13 @@
 # Sigma
 
-An open design tool for AI-native teams: a design canvas installed in your project, working on your real design system. It runs in the browser, with no dependencies and no build step: plain ES modules render the document to SVG.
+An open design tool for AI-native teams: a design canvas installed in your project, working on your real design system. It runs in the browser through a local Node server; plain ES modules render documents to SVG without a frontend build step. Runtime dependencies are installed through npm.
+
+Project assessment: [Codebase and product review — 15 October 2026](docs/codebase-review-2026-10-15.md), including evidence, known risks, recommended priorities, and open product questions.
 
 ## Install in a project
 
 Sigma installs into an existing project, like a dev tool, and works on that project's real design system: its
-token files, icons and components. Node 18 or later; no other dependencies.
+token files, icons and components. Node 22 or later; Node 24 LTS is the recommended release target.
 
 ```bash
 npx sigma-design init      # once: finds the project's tokens and icons, writes sigma.config.json and .sigma/
@@ -26,6 +28,14 @@ Sigma is also a design tool on its own, with files saved in the browser:
 ```bash
 npx sigma-design standalone
 ```
+
+Use **Backup and restore** in the Home sidebar to download the selected browser project (or Drafts), including archived files, linked browser-library dependencies and full saved version history. **Restore project backup…** validates the backup and creates a new editable project without replacing existing work. File links are remapped to the restored copies; unavailable source libraries retain their embedded snapshots and are reported. Backups are limited to 256 MiB and remain local downloads. Browser storage/history alone is not an independent backup.
+
+If saved file data cannot be opened, Sigma keeps the original and offers **Recover saved file**. You can also find this action in a file's Home or Archive menu. Copy a readable saved version into Drafts, check unsaved recovery, or restore an independent project backup. Recovery never replaces the damaged original; versions that are also unreadable cannot be copied.
+
+Design, Tokens and Icons headers show **Unsaved changes**, **Saving…**, **Saved in browser**, or **Save failed**. Built-in Sigma examples show **Temporary edits**, and historical previews show **Viewing history**. Save/recovery options sit beside the status. Failed saves preserve the open edits and offer retry/download; stale tabs cannot silently overwrite newer saved content.
+
+**Recover unsaved edits…** is available under Backup and restore, with a separate Home indicator when recovery entries exist. Each tab/file keeps its own recovery checkpoint; older `sigma.pending` records are still listed. Opening a file never automatically applies recovered edits. Open a recovered copy in Drafts, download it, or explicitly discard the reviewed entry. Recovery is limited by browser storage and does not replace downloaded backups.
 
 ## Built-in terminal
 
@@ -48,7 +58,7 @@ memory. Detached sessions expire after 15 minutes. Shell history is not saved by
 are skipped so they cannot silently re-enable history persistence. The inherited environment/PATH remains
 available. Supported shell choices are zsh, bash, sh, and dash via the server's `SHELL` environment variable.
 
-The macOS arm64 workflow and fresh-package PTY installation are verified. Linux Node 20/22 and macOS terminal lifecycle checks pass in CI. Windows execution is explicitly
+Earlier validation covered the macOS arm64 workflow, fresh-package PTY installation, Linux Node 20/22 and macOS terminal lifecycle. The current Node 22/24 release matrix still requires a fresh CI run. Windows execution is explicitly
 unavailable pending validation.
 If native PTY installation is unavailable, the editor still starts and the panel reports how to rebuild
 `node-pty`. The terminal does not belong to the design document, published libraries, or undo history.
@@ -64,6 +74,7 @@ node bin/sigma-design.mjs dev examples/css-app         # Sigma in the example pr
 ```
 
 The Sigma project contains **Tokens**, **Icons**, and **Components** for the app's interface.
+Design components are derived from the actual code components, tokens, and icons, then verified against browser-rendered controls. The agreed workflow, acceptance criteria, and current coverage are documented in [Sigma source parity](docs/sigma-source-parity.md).
 Components’ main specimens inherit the page mode; fixed Dark references remain below for comparison.
 Tokens includes shared Foundation values used by the components, plus app-derived Light/Dark roles.
 
@@ -287,7 +298,7 @@ Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.
 - **Safety:** the server (`tools/server.mjs`) listens on 127.0.0.1, answers only requests addressed to localhost, reads and writes only `.sigma/` files and `sigma.config.json` (never through a link leading outside the project), and writes only for requests from Sigma (they carry a header other websites can't send). Writes are logged.
 - **Propose change** (a file's menu, or the Proposals section): Sigma lists the edits since the last commit (it asks the server for the committed versions) as tokens, icons, components, pages and file settings, leaving out ones already proposed. Pick those that belong together, add a title and a note, and Sigma saves a changeset in `.sigma/changesets/` with before and after pictures of each changed component, page and icon. The rest can go in another proposal. The Proposals section lists them with their status. `node tools/sigma.mjs changeset list | show | apply | status` work with them; `apply --to <folder>` writes a pull request's files: the base with only that changeset's changes.
 - **Proposals become pull requests** through the sync skill (`skills/sigma-sync/reference/workflow.md`): a ticket (Notion or GitHub Issues), a branch named by `workflow.branch` in a worktree, `changeset prepare` (the changeset applied to the Sigma files, the code written for tokens and icons, the changeset and pictures copied in, checked), the project's own checks, then a draft pull request in the repo's template with `changeset pr-body` (what changed, before and after pictures). `changeset sync` reads pull requests with `gh` and sets each proposal's status (In review, Changes requested, Merged, Closed), which the Proposals section shows.
-- **Check files** with `node tools/validate.js <project folder>` (Node 18+, no dependencies): it reports each problem with where it is and what to do, and exits with 1 when there are errors.
+- **Check files** with `node tools/validate.js <project folder>` (Node 22+, no additional validator dependencies): it reports each problem with where it is and what to do, and exits with 1 when there are errors.
 - **Sync tokens with the code** (`skills/sigma-sync/SKILL.md`, a skill any agent can follow, with `node tools/sigma.mjs`): the agent works out the stack and records its decisions in `sigma.config.json`. CSS variables are read and written by the tool itself: `tokens import` (code → Sigma, merging so ids, descriptions and order stay and importing twice changes nothing), `tokens diff` (what changed since a git revision), `tokens write` (Sigma → CSS as minimal edits that keep each value's unit and color format), `check` (valid, and no drift). Other stacks (theme objects, Tailwind config…) go through a DTCG tokens.json the agent writes (`tokens import --from`), and the agent applies write-backs from `tokens diff`. Proven on `examples/css-app` (CSS variables) and `examples/mui-app` (an MUI theme).
 - **Sync icons** the same way (`skills/sigma-sync/reference/icons.md`): an icon folder becomes an icons file (folders are groups, file names are icon names). `icons import`, `icons diff` and `icons write` handle SVG files themselves; writing only rewrites files whose shapes changed, in each file's own style, and deletes icons deleted in Sigma. Icon components (React, Vue…) go through SVGs the agent extracts (`icons import --from`), and the agent writes components from `icons write`.
 - **Bring components in** (`skills/sigma-sync/reference/components.md`): `tools/capture/capture.js` captures a rendered component in each variant and state (hover, focus, pressed, disabled applied from the CSS); a manifest says what each capture is (variants, properties, nested components, code names); `node tools/sigma.mjs library build` turns captures into a library file with auto layout, token bindings and icon layers; `tools/capture/compare.html` lays the library out in Sigma and compares every layer with the real render. Proven on `examples/css-app` (Button, Input and Card: 11 of 11 match).
@@ -342,7 +353,7 @@ Sigma files can live in a project's repo, in `.sigma/` (see [docs/schema/README.
 | `src/token-sync.js` | Tokens between code and Sigma: CSS variables in and out, merging, diffs |
 | `src/icon-sync.js` | Icons between code and Sigma: SVG folders in and out, merging, diffs, writing in the project's style |
 | `bin/sigma-design.mjs` | The `sigma-design` command (the npm package's): `init`, `dev`, `standalone`, and the sync tools |
-| `tools/server.mjs` | Sigma's local server: the editor and, in a project, the project API (Node, no dependencies) |
+| `tools/server.mjs` | Sigma's local server: the editor, optional project API, and terminal transport (Node and packaged dependencies) |
 | `tools/init.mjs` | `sigma-design init`: finds a project's tokens and icons and sets Sigma up |
 | `src/use-report.js` | The design system use report: component and token shares, most-used and unused components and tokens |
 | `src/component-docs.js` | Component status, docs and the readiness checklist; the component status matrix and docs editor |

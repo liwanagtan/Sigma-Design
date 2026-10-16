@@ -498,6 +498,7 @@ export function flushSave() {
 
 // True while a change is waiting for the debounced autosave.
 export const hasUnsavedChanges = () => saveTimer !== null || pendingEdit;
+export const hasUnsavedDocumentEdits = () => pendingEdit;
 
 // Drop any unsaved change (used when reloading a file that another tab changed).
 export function cancelPendingSave() {

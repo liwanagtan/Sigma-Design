@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Sigma's command line, for the sync skill (skills/sigma-sync) and for people. Node 18+, no dependencies.
+// Sigma's command line, for the sync skill (skills/sigma-sync) and for people. Node 22+, no dependencies.
 //
 //   node tools/sigma.mjs validate [project]                 check the project's Sigma files
 //   node tools/sigma.mjs check [project]                    validate, and check code and Sigma agree

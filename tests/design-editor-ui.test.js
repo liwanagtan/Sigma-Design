@@ -15,9 +15,10 @@ test('Design editor UI: min/max clear, constraint pins, component colors and spa
     frame.src=`/index.html?reliability-fixture=1#/file/${id}`;
     await wait(()=>frame.contentDocument?.querySelector(`.layer-row[data-id="${main.id}"]`));
     const d=frame.contentDocument,w=frame.contentWindow;
+    let blocked=false;try{w.Function('return 1')();}catch(error){blocked=error.name==='EvalError';}ok(blocked,'the actual editor forbids dynamic JavaScript compilation');
     const choose=async node=>{d.querySelector(`.layer-row[data-id="${node.id}"] .name`).click();await wait(()=>d.querySelector(`.layer-row.selected[data-id="${node.id}"]`));await new Promise(r=>w.requestAnimationFrame(()=>w.requestAnimationFrame(r)));};
     await choose(main);ok(!d.querySelector('[data-key="minW"]'),'limits start collapsed');d.querySelector('[data-action="show-limits"]').click();await wait(()=>d.querySelector('[data-key="minW"]'));
-    const minimum=d.querySelector('[data-key="minW"]');eq(minimum.getAttribute('aria-label'),'Minimum width');minimum.value='140';minimum.dispatchEvent(new w.Event('change',{bubbles:true}));
+    const minimum=d.querySelector('[data-key="minW"]');eq(minimum.getAttribute('aria-label'),'Minimum width');minimum.value='70 * 2';minimum.dispatchEvent(new w.Event('change',{bubbles:true}));
     await wait(()=>d.querySelector('[data-key="w"]')?.value==='140');
     d.querySelector('[data-action="show-limits"]').click();await wait(()=>!d.querySelector('[data-key="minW"]'));ok(d.querySelector('[data-action="show-limits"]').textContent.includes('Active'),'configured limits remain discoverable');d.querySelector('[data-action="show-limits"]').click();await wait(()=>d.querySelector('[data-key="minW"]'));
     d.querySelector('[data-clear-limit="minW"]').click();await wait(()=>d.querySelector('[data-key="w"]')?.value==='112');

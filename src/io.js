@@ -10,6 +10,7 @@ import { toWorld } from './render.js';
 import { measureText } from './text.js';
 import { createInstance, canPlaceInside } from './components.js';
 import { findVariable, allVariables } from './variables.js';
+import { inspectImportedData, MAX_JSON_IMPORT_BYTES } from './document-safety.js';
 
 export function toast(msg) {
   window.dispatchEvent(new CustomEvent('sigma:toast', { detail: msg }));
@@ -65,6 +66,7 @@ function visibleWorldBox() {
 
 // `at`: a world point for "Paste here": the pasted layers' top-left goes there, inside the frame there.
 function pasteSigma(json, { at = null } = {}) {
+  if (json.length > MAX_JSON_IMPORT_BYTES) { toast('Clipboard content is too large.'); return true; }
   let data;
   try {
     data = JSON.parse(json);
@@ -72,6 +74,8 @@ function pasteSigma(json, { at = null } = {}) {
     return false;
   }
   if (!data?.sigma || !Array.isArray(data.nodes)) return false;
+  try { inspectImportedData(data); }
+  catch (error) { toast(`Could not paste: ${error.message}`); return true; }
   const sel = selectedNodes();
   let parent = null;
   if (at) parent = frameAt(at);

@@ -1,0 +1,83 @@
+{
+  "yogaVersion": "3.2.1",
+  "units": "pixels; [parent width, ...child widths]",
+  "rows": [
+    {
+      "fixture": "Hug row / fixed children",
+      "sigma": [
+        152,
+        80,
+        40
+      ],
+      "naiveYoga": [
+        152,
+        80,
+        40
+      ],
+      "sigmaAwareYoga": [
+        152,
+        80,
+        40
+      ],
+      "naiveMatches": true
+    },
+    {
+      "fixture": "Fixed row / equal Fill allocation",
+      "sigma": [
+        300,
+        134,
+        134
+      ],
+      "naiveYoga": [
+        300,
+        134,
+        134
+      ],
+      "sigmaAwareYoga": [
+        300,
+        134,
+        134
+      ],
+      "naiveMatches": true
+    },
+    {
+      "fixture": "Fixed row / clamped Fill allocation",
+      "sigma": [
+        300,
+        90,
+        178
+      ],
+      "naiveYoga": [
+        300,
+        90,
+        178
+      ],
+      "sigmaAwareYoga": [
+        300,
+        90,
+        178
+      ],
+      "naiveMatches": true
+    },
+    {
+      "fixture": "Hug row / intrinsic Fill preference",
+      "sigma": [
+        152,
+        80,
+        40
+      ],
+      "naiveYoga": [
+        152,
+        80,
+        40
+      ],
+      "sigmaAwareYoga": [
+        152,
+        80,
+        40
+      ],
+      "naiveMatches": true
+    }
+  ],
+  "note": "Four rectangular rows only. No text, nesting, variants, breakpoints, RTL, undo or browser performance proof."
+}

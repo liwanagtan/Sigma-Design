@@ -32,7 +32,7 @@ try {
   console.log(title.replace(/ – Sigma tests$/, ' in-browser tests passed'));
   for (const f of failures) console.log(`\n${f}`);
   for (const e of errors) console.log(`\npage error: ${e}`);
-  failed = title.startsWith('✗') || failures.length > 0;
+  failed = title.startsWith('✗') || failures.length > 0 || errors.length > 0;
 } catch (err) {
   console.error(`The in-browser tests didn’t finish: ${err.message}`);
 } finally {

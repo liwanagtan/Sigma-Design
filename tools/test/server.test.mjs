@@ -11,6 +11,20 @@ import { startServer } from '../server.mjs';
 let dir, server, base;
 const logs = [];
 
+test('standalone CSP: editor blocks dynamic evaluation and the decoder alone has a restricted worker policy',async()=>{
+  const editor=await fetch(base+'/index.html');const html=await editor.text();
+  const policy=html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/)[1];
+  assert.ok(policy.includes("script-src 'self';"));assert.ok(!policy.includes('unsafe-eval'));
+  const worker=await fetch(base+'/src/figma-import-worker.js?protocol=2');
+  assert.equal(worker.status,200);assert.ok(worker.headers.get('content-security-policy').includes("script-src 'self' 'unsafe-eval'"));
+  assert.ok(worker.headers.get('content-security-policy').includes("connect-src 'none'"));
+  assert.ok(worker.headers.get('content-security-policy').includes("worker-src 'none'"));
+  assert.equal(worker.headers.get('x-content-type-options'),'nosniff');
+  const encoded=await fetch(base+'/src/%66igma-import-worker.js');
+  assert.equal(encoded.headers.get('content-security-policy'),worker.headers.get('content-security-policy'));
+  assert.equal((await fetch(base+'/api/project')).headers.get('x-content-type-options'),'nosniff');
+});
+
 before(async () => {
   dir = mkdtempSync(join(tmpdir(), 'sigma-server-'));
   mkdirSync(join(dir, '.sigma', 'tokens'), { recursive: true });

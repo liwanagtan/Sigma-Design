@@ -577,17 +577,30 @@ function reviewUpdates() {
 
 // ---------- dialogs ----------
 export function modal(title, body, footer = '') {
+  const previous=document.activeElement;
   const wrap = document.createElement('div');
   wrap.className = 'modal-backdrop';
-  wrap.innerHTML = `<div class="modal lib-modal"><div class="modal-head">${title}<button class="icon-btn" data-close>${icons.close}</button></div>` +
+  wrap.innerHTML = `<div class="modal lib-modal"><div class="modal-head"><span data-modal-title>${title}</span><button class="icon-btn" data-close>${icons.close}</button></div>` +
     `<div class="lib-body">${body}</div>${footer ? `<div class="lib-footer">${footer}</div>` : ''}</div>`;
+  const dialog=wrap.querySelector('.modal'),heading=wrap.querySelector('[data-modal-title]');
+  heading.id='sigma-dialog-'+crypto.randomUUID();dialog.role='dialog';dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-labelledby',heading.id);dialog.tabIndex=-1;
+  wrap.querySelector('.modal-head [data-close]').setAttribute('aria-label','Close dialog');
+  const remove=wrap.remove.bind(wrap);
   const close = () => {
-    wrap.remove();
+    remove();
     window.removeEventListener('keydown', onKey, true);
+    if(previous?.isConnected)previous.focus();
   };
+  wrap.remove=close; // programmatic success paths receive the same cleanup/focus restoration
   const onKey = (e) => {
     if([...document.querySelectorAll('.modal-backdrop')].at(-1)!==wrap)return;
     if (isAsking()) return; // Escape is the open dialog's
+    if(e.key==='Tab'){
+      const focus=[...wrap.querySelectorAll('button,input,select,textarea,a[href],[tabindex="0"]')].filter(el=>!el.disabled&&el.getClientRects().length);
+      if(!focus.length){e.preventDefault();dialog.focus();return;}
+      if(e.shiftKey&&(document.activeElement===focus[0]||!wrap.contains(document.activeElement))){e.preventDefault();focus.at(-1).focus();}
+      else if(!e.shiftKey&&(document.activeElement===focus.at(-1)||!wrap.contains(document.activeElement))){e.preventDefault();focus[0].focus();}
+    }
     if (e.key === 'Escape') {
       e.stopImmediatePropagation();
       close();
@@ -598,6 +611,7 @@ export function modal(title, body, footer = '') {
   });
   window.addEventListener('keydown', onKey, true);
   document.body.appendChild(wrap);
+  queueMicrotask(()=>{if(wrap.isConnected&&!wrap.contains(document.activeElement))(wrap.querySelector('input:not([disabled]),textarea:not([disabled]),button:not([disabled])')||dialog).focus();});
   return wrap;
 }
 

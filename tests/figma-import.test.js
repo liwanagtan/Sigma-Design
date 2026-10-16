@@ -3,7 +3,23 @@ import { importFiles, loadFile, deleteFile, createFile } from '../src/files.js';
 import { readFigmaFile } from '../src/figma-import-file.js';
 import { loadDocument, state, commit, undo, redo, createNode } from '../src/store.js';
 import { db } from '../src/db.js';
-import { encodeFigmaResult, decodeFigmaResult } from '../src/figma-import-transfer.js';
+import { encodeFigmaResult, decodeFigmaResult, FIG_TRANSFER_VERSION } from '../src/figma-import-transfer.js';
+
+test('Figma import: strict editor CSP still permits its isolated decoder worker',async()=>{
+  const frame=document.createElement('iframe');frame.style.cssText='position:absolute;left:-5000px;width:1000px;height:700px';document.body.append(frame);let worker;
+  try{
+    await new Promise((resolve,reject)=>{frame.onload=resolve;frame.onerror=()=>reject(Error('Editor failed to load'));frame.src='/index.html#/drafts/drafts';});
+    const w=frame.contentWindow;let blocked=false;try{w.Function('return 1')();}catch(error){blocked=error.name==='EvalError';}ok(blocked);
+    const bytes=await(await fetch('./fixtures/figma-basic.fig')).arrayBuffer();
+    worker=new w.Worker(new URL('/src/figma-import-worker.js',location.href),{type:'module'});
+    const response=await new Promise((resolve,reject)=>{
+      const timer=setTimeout(()=>reject(Error('CSP worker decode timed out')),10000);
+      worker.onmessage=event=>{clearTimeout(timer);resolve(event.data);};worker.onerror=event=>{clearTimeout(timer);reject(Error(event.message));};
+      worker.postMessage({protocol:FIG_TRANSFER_VERSION,file:new w.File([bytes],'CSP.fig'),name:'CSP'});
+    });
+    ok(!response.error,response.error);const result=decodeFigmaResult(response.chunks.map(chunk=>new Uint8Array(chunk).slice().buffer));eq(result.doc.pages[0].name,'Landing page');
+  }finally{worker?.terminate();frame.remove();}
+});
 
 test('Figma import: large repeated artwork saves, reloads, updates and supports undo',async()=> {
   const src='data:image/svg+xml;charset=utf-8,'+'A'.repeat(65536);

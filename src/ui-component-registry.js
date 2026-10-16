@@ -11,6 +11,8 @@ export const UI_COMPONENTS=[
 ].map(([selector,name])=>({selector,name,kind:['.menu','.seg','.field','.check-row','.switch'].includes(selector)?'composite':'primitive'}));
 // Explicit remaining scope, rather than an implicit claim that primitive coverage is app coverage.
 export const UI_COMPOSITE_BACKLOG=[
+ {name:'Save status and recovery',source:'src/save-status.js'}, {name:'Recovery dialog',source:'src/recovery-ui.js'},
+ {name:'Saved file recovery dialog',source:'src/saved-file-recovery.js'},
  {name:'Dialogs',source:'src/dialogs.js'}, {name:'Token picker',source:'src/token-picker.js'},
  {name:'Project navigation and icon picker',source:'src/home.js'}, {name:'File cards',source:'src/home.js'},
  {name:'Reports',source:'src/report-ui.js'}, {name:'Terminal',source:'src/terminal.js'},

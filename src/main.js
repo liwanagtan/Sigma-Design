@@ -1,4 +1,6 @@
 import { layOutDocument } from './lay-out.js';
+import {installSaveStatus} from './save-status.js';
+import {openSavedFileRecovery} from './saved-file-recovery.js';
 import { focusToken, openVariablesEditor, closeVariablesEditor } from './variables-ui.js';
 import { setTerminalContext } from './terminal.js';
 import { recordFileOpened, initializeProjects, selectedProjectId, selectProject, projectList, resolveProjectId, scopeHref } from './projects.js';
@@ -103,8 +105,11 @@ function remeasureAllText() {
 // `extra`: more buttons after the main one, [{ label, action }].
 function showBanner(text, actionLabel, action, extra = []) {
   const actions = [{ label: actionLabel, action }, ...extra];
-  banner.innerHTML = `<span>${text}</span>${actions.map((a) => `<button class="btn">${a.label}</button>`).join('')}`;
-  banner.querySelectorAll('button').forEach((b, i) => (b.onclick = actions[i].action));
+  const message = document.createElement('span'); message.textContent = text;
+  banner.replaceChildren(message, ...actions.map(a => {
+    const button = document.createElement('button'); button.className = 'btn';
+    button.textContent = a.label; button.onclick = a.action; return button;
+  }));
   banner.hidden = false;
 }
 const hideBanner = () => void (banner.hidden = true);
@@ -174,7 +179,13 @@ async function showHome() {
 
 async function showFile(id, { force = false, discard = false } = {}) {
   if (!force && state.screen !== 'home' && getCurrentFileId() === id) { applyReportTarget(); return; }
-  const file = await loadFile(id);
+  let file;
+  try {file = await loadFile(id);}
+  catch(error) {
+    if(!error.savedFileId)throw error;
+    await openSavedFileRecovery(id);
+    window.dispatchEvent(new CustomEvent('sigma:toast',{detail:error.message}));return;
+  }
   if (!file) {
     setHomeNotice('That file could not be found. It may have been deleted.');
     return goHome();
@@ -320,6 +331,7 @@ initComments(canvas);
 initHome(homeEl);
 initTokensScreen(tokensEl);
 initIconsScreen(iconsEl);
+installSaveStatus();
 
 document.fonts?.ready.then(remeasureAllText);
 document.fonts?.addEventListener?.('loadingdone', remeasureAllText);
@@ -327,7 +339,7 @@ window.addEventListener('resize', () => emit('view'));
 window.addEventListener('hashchange', route);
 // Save promptly when the tab is hidden or closed.
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') void saveNow();
+  if (document.visibilityState === 'hidden') void saveNow().catch(() => {}); // persistent recovery banner owns the error
 });
 
 // ⌘S saves the open file to the project (Sigma autosaves to the browser anyway).
@@ -351,7 +363,8 @@ initFiles({ onRemoteChange })
   .catch((err) => {
     console.error(err);
     homeEl.hidden = false;
-    homeEl.innerHTML = `<div class="home-empty"><div class="home-empty-title">Sigma can't open its storage</div><p>${err.message}</p></div>`;
+    homeEl.innerHTML = `<div class="home-empty"><div class="home-empty-title">Sigma can't open its storage</div><p></p></div>`;
+    homeEl.querySelector('p').textContent = err.message;
   });
 
 // Handy for debugging from the console.

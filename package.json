@@ -21,9 +21,10 @@
     "!tools/test/",
     "!tools/build-*",
     "skills/",
-    "docs/schema/",
+    "docs/",
     "examples/optics/",
     "README.md",
+    "CONTRIBUTING.md",
     "LICENSE",
     "NOTICE"
   ],
@@ -32,12 +33,13 @@
     "build:icons": "node tools/icons/build-ui.mjs",
     "build:welcome": "node tools/design-system/build.mjs",
     "test:node": "node --test tools/test/*.test.mjs",
+    "test:package": "node tools/test/package-smoke.mjs",
     "build:figma": "node tools/figma/build.mjs",
     "postinstall": "node tools/terminal-install.mjs",
     "build:terminal": "node tools/build-terminal.mjs"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "keywords": [
     "design",

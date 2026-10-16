@@ -1303,5 +1303,10 @@ select:disabled { opacity: 0.45; cursor: default; }
 .inspector-help{font-size:10px;line-height:1.6;color:var(--muted);margin:8px 0;}
 
 /* Shared Lucide status indicators align with text and retain keyboard targets. */
+.save-state {display:flex;align-items:center;gap:4px;flex-shrink:0;font-size:11px;color:var(--muted);}
+.save-state[data-state="error"],.save-state[data-state="unavailable"] {color:var(--danger-text);}
+.save-state .icon-btn {width:24px;height:24px;}
+.recovery-entry {padding:12px 0;border-bottom:1px solid var(--border);}
+.recovery-entry:last-child {border-bottom:0;}
 .menu-check, .check-mark, .slot-limit, .matrix-tick { vertical-align: middle; }
 .menu-check svg, .check-mark svg, .slot-limit svg, .matrix-check svg { vertical-align: middle; flex: none; }

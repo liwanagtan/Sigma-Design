@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [20, 22]
+        node: [22, 24]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -38,6 +38,23 @@ jobs:
       # Render parity: Sigma lays the example's library and pages out the same as its code renders them.
       - run: node tools/test/run-render-parity.mjs examples/css-app
 
+  package:
+    name: Standalone installed package (${{ matrix.os }}, Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      # Pack the checkout, then install/launch it outside the checkout with no
+      # optional native dependency. The smoke script uses only Node built-ins.
+      - run: npm run test:package
+
   sigma:
     name: Sigma files match the code
     runs-on: ubuntu-latest
@@ -55,6 +72,24 @@ jobs:
               node bin/sigma-design.mjs check "$project"
             fi
           done
+
+  architecture-prototype:
+    name: Standalone architecture prototype
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: experiments/standalone-architecture
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test:layout
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
 
   terminal-macos:
     name: Terminal lifecycle (macOS)

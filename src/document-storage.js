@@ -1,5 +1,26 @@
 import { encodeFigmaResult, decodeFigmaResult } from './figma-import-transfer.js';
 
+// A conservative read guard for legacy browser documents, before editor state
+// changes. Import validation is stricter; this only rejects unusable structure.
+export function assertStoredDocumentShape(doc) {
+  if(!doc||typeof doc!=='object'||Array.isArray(doc)||!Array.isArray(doc.pages))throw new Error('Saved document has no readable page list.');
+  const ancestors=new Set();let count=0;
+  function layers(nodes,depth=0) {
+    if(!Array.isArray(nodes)||depth>256)throw new Error('Saved document has invalid layer structure.');
+    for(const node of nodes) {
+      if(!node||typeof node!=='object'||Array.isArray(node)||ancestors.has(node)||++count>1000000)throw new Error('Saved document has invalid layer structure.');
+      ancestors.add(node);if(node.children!==undefined)layers(node.children,depth+1);ancestors.delete(node);
+    }
+  }
+  for(const page of doc.pages) {
+    if(!page||typeof page!=='object'||Array.isArray(page))throw new Error('Saved document has an invalid page.');
+    layers(page.children);
+  }
+  if(doc.kind==='tokens'&&(!doc.variables||!Array.isArray(doc.variables.collections)))throw new Error('Saved token collections are unreadable.');
+  if(doc.kind==='icons'&&!Array.isArray(doc.icons))throw new Error('Saved icon list is unreadable.');
+  return doc;
+}
+
 // IndexedDB otherwise clones a repeated image source for every layer using it.
 // Keep the public document shape unchanged; share artwork in stored records.
 export function encodeDocumentRecord(record) {

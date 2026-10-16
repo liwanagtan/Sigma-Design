@@ -1,4 +1,5 @@
 import {fieldLabelHTML} from './ui-controls.js';
+import {parseNumberExpression as evalNum} from './number-expression.js';
 import {lucideIcon} from './lucide.js';
 import {
   state, page, view, emit, commit, select, selectedNodes, getNode, getParent, ancestors, isAncestor, isSlotArea, hiddenByWidth,
@@ -777,17 +778,6 @@ function common(nodes, get) {
 }
 
 const fmtNum = (v) => (typeof v === 'number' ? String(Math.round(v * 100) / 100) : v);
-
-function evalNum(str) {
-  const s = String(str).replace(/[%°px\s]/g, '').replace(/,/g, '.');
-  if (!s || !/^[-+*/().\d]+$/.test(s)) return null;
-  try {
-    const v = Function(`"use strict";return (${s})`)();
-    return Number.isFinite(v) ? v : null;
-  } catch {
-    return null;
-  }
-}
 
 function normHex(str) {
   let h = String(str).trim().replace(/^#/, '');

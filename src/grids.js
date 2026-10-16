@@ -1,3 +1,4 @@
+const escapeAttribute = value => String(value).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 // Layout grids on frames, like Figma's: a square grid, columns or rows.
 //
 // frame.layoutGrids = [{ type: 'grid' | 'columns' | 'rows', size, count, gutter, margin, align, color, opacity, visible }]
@@ -109,17 +110,17 @@ export function gridsOverlay(viewMatrix, mul, css) {
           ...gridLines(g, n.w).map((x) => `M${x} 0V${n.h}`),
           ...gridLines(g, n.h).map((y) => `M0 ${y}H${n.w}`),
         ];
-        body += `<path d="${lines.join('')}" stroke="${color}" stroke-opacity="${Math.min(1, op * 2.5)}" stroke-width="1" vector-effect="non-scaling-stroke" fill="none"/>`;
+        body += `<path d="${lines.join('')}" stroke="${escapeAttribute(color)}" stroke-opacity="${Math.min(1, op * 2.5)}" stroke-width="1" vector-effect="non-scaling-stroke" fill="none"/>`;
         continue;
       }
       const horizontal = g.type === 'columns';
       for (const band of gridBands(g, horizontal ? n.w : n.h)) {
         body += horizontal
-          ? `<rect x="${band.start}" y="0" width="${band.size}" height="${n.h}" fill="${color}" fill-opacity="${op}"/>`
-          : `<rect x="0" y="${band.start}" width="${n.w}" height="${band.size}" fill="${color}" fill-opacity="${op}"/>`;
+          ? `<rect x="${band.start}" y="0" width="${band.size}" height="${n.h}" fill="${escapeAttribute(color)}" fill-opacity="${op}"/>`
+          : `<rect x="0" y="${band.start}" width="${n.w}" height="${band.size}" fill="${escapeAttribute(color)}" fill-opacity="${op}"/>`;
       }
     }
-    if (body) out += `<g class="layout-grid" transform="${css(M)}"><clipPath id="grid-clip-${n.id}"><rect width="${n.w}" height="${n.h}"/></clipPath><g clip-path="url(#grid-clip-${n.id})">${body}</g></g>`;
+    if (body) out += `<g class="layout-grid" transform="${css(M)}"><clipPath id="grid-clip-${escapeAttribute(n.id)}"><rect width="${n.w}" height="${n.h}"/></clipPath><g clip-path="url(#grid-clip-${escapeAttribute(n.id)})">${body}</g></g>`;
   });
   return out;
 }

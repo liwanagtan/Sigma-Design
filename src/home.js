@@ -1,4 +1,8 @@
 import {lucideIcon} from './lucide.js';
+import {downloadProjectBackup,pickProjectBackup} from './backup-ui.js';
+import {openRecovery} from './recovery-ui.js';
+import {recoveryEntries} from './recovery.js';
+import {openSavedFileRecovery} from './saved-file-recovery.js';
 import { initializeProjects, projectList, selectedProjectId, selectedProject, selectProject, createProject, setProjectIcon, updateProjectDetails, inScope, moveDrafts, scopeHref, SIGMA_PROJECT } from './projects.js';
 import {PROJECT_GLYPHS,PROJECT_EMOJI,projectIconMarkup} from './project-icons.js';
 import { guideHTML } from './welcome-guide.js';
@@ -90,6 +94,8 @@ export function initHome(el) {
         <section class="home-project" id="home-project" aria-label="Projects"></section>
       </nav>
       <div class="home-storage" id="home-storage"></div>
+      <button class="nav-item" id="home-backup" aria-haspopup="menu">${lucideIcon('archive',14)} Backup and restore</button>
+      <button class="nav-item" id="home-recovery" hidden></button>
       <button class="nav-item nav-welcome" data-section="welcome" title="Documentation">${NAV_WELCOME} Documentation</button>
     </aside>
     <main class="home-main">
@@ -120,6 +126,20 @@ export function initHome(el) {
     savePrefs();
     location.hash=b.dataset.section==='welcome'?'#/guide/getting-started':b.dataset.section==='drafts'?'#/drafts/drafts':b.dataset.section==='recents'?'#/recents':scopeHref(b.dataset.section);
   });
+  root.querySelector('#home-backup').onclick=()=>{
+    const button=root.querySelector('#home-backup'),box=button.getBoundingClientRect();
+    const id=selectedProjectId();
+    showContextMenu(box.left,box.bottom+4,[
+      {label:id?`Back up ${selectedProject()?.name||'project'}…`:'Back up Drafts…',disabled:selectedProject()?.kind==='repository',action:()=>downloadProjectBackup(id)},
+      {label:'Restore project backup…',action:pickProjectBackup},
+      {label:'Recover unsaved edits…',action:()=>openRecovery()},
+    ],{trigger:button});
+  };
+  root.querySelector('#home-recovery').onclick=()=>openRecovery();
+  const refreshRecovery=()=>{try{const count=recoveryEntries(localStorage).length,button=root?.querySelector('#home-recovery');if(button){button.hidden=!count;button.textContent=`Unsaved recovery (${count})`;}}catch{}};
+  window.addEventListener('sigma:recovery',refreshRecovery);
+  window.addEventListener('storage',event=>{if(event.key===null||event.key?.startsWith('sigma.pending'))refreshRecovery();});
+  refreshRecovery();
   root.querySelector('#home-search').addEventListener('input', (e) => {
     query = e.target.value;
     renderHome();
@@ -557,6 +577,7 @@ async function fileMenu(id, x, y) {
       renderHome();
     } },
     { label: 'Download .sigma.json', action: () => downloadFile(id) },
+    { label: 'Recover saved file…', action: () => openSavedFileRecovery(id) },
     ...(sample ? [] : ['-', { label: 'Move to Archive', action: () => moveToArchive(id) }]),
   ]);
 }
@@ -573,6 +594,7 @@ function archivedMenu(id, x, y) {
   showContextMenu(x, y, [
     { label: 'Restore', action: () => restore(id) },
     { label: 'Download .sigma.json', action: () => downloadFile(id) },
+    { label: 'Recover saved file…', action: () => openSavedFileRecovery(id) },
     '-',
     { label: 'Delete forever…', action: () => deleteForever(id) },
   ]);

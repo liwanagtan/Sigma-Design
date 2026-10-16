@@ -26,7 +26,7 @@ export function hexToRgba(hex, a = 1) {
 
 function paint(color, opacity, attr = 'fill') {
   if (!color) return `${attr}="none"`;
-  return `${attr}="${color}"${opacity < 1 ? ` ${attr}-opacity="${opacity}"` : ''}`;
+  return `${attr}="${esc(color)}"${opacity < 1 ? ` ${attr}-opacity="${esc(opacity)}"` : ''}`;
 }
 
 const visiblePaints = (list) => (list || []).filter((p) => p.visible !== false);
@@ -127,7 +127,7 @@ function effectsFilter(n, id) {
   let body = '';
   const under = [], over = [];
   fx.forEach((e, i) => {
-    const flood = `<feFlood flood-color="${e.color || '#000000'}" flood-opacity="${e.opacity ?? 1}" result="c${i}"/>`;
+    const flood = `<feFlood flood-color="${esc(e.color || '#000000')}" flood-opacity="${esc(e.opacity ?? 1)}" result="c${i}"/>`;
     const spread = Number(e.spread) || 0;
     if (e.type === 'drop-shadow') {
       const src = spread ? `<feMorphology in="SourceAlpha" operator="${spread > 0 ? 'dilate' : 'erode'}" radius="${Math.abs(spread)}" result="m${i}"/>` : '';
@@ -147,19 +147,24 @@ function effectsFilter(n, id) {
   body += `<feMerge result="all">${[...under, 'SourceGraphic', ...over].map((r) => `<feMergeNode in="${r}"/>`).join('')}</feMerge>`;
   const blur = fx.filter((e) => e.type === 'layer-blur').reduce((m, e) => Math.max(m, sd(e)), 0);
   if (blur) body += `<feGaussianBlur in="all" stdDeviation="${blur}"/>`;
-  return `<filter id="${id}" filterUnits="userSpaceOnUse" x="${-pad}" y="${-pad}" width="${n.w + pad * 2}" height="${Math.max(n.h, 0) + pad * 2}" color-interpolation-filters="sRGB">${body}</filter>`;
+  return `<filter id="${esc(id)}" filterUnits="userSpaceOnUse" x="${-pad}" y="${-pad}" width="${n.w + pad * 2}" height="${Math.max(n.h, 0) + pad * 2}" color-interpolation-filters="sRGB">${body}</filter>`;
 }
 
 // Renders a node in its parent's coordinate space.
 export function nodeSVG(n, opts = {}) {
   if (!n.visible || hiddenByWidth.has(n)) return '';
+  // Old browser records may predate import validation. Do not let malformed geometry
+  // become markup through arithmetic that concatenates strings.
+  for (const key of ['x','y','w','h','rotation','opacity','strokeWidth','fontSize','fontWeight','letterSpacing']) {
+    if (n[key] != null && (typeof n[key] !== 'number' || !Number.isFinite(n[key]))) n = {...n, [key]:Number.isFinite(Number(n[key])) ? Number(n[key]) : 0};
+  }
   let inner = '';
   switch (n.type) {
     case 'frame':
     case 'component':
     case 'componentSet':
     case 'instance': {
-      const cid = `clip-${n.id}`;
+      const cid = `clip-${esc(n.id)}`;
       const kids = n.children.map((c) => nodeSVG(c, opts)).join('');
       inner = fillLayers(n, (a) => shapeRect(n, a));
       inner += n.clip
@@ -179,13 +184,13 @@ export function nodeSVG(n, opts = {}) {
       break;
     case 'line':
       inner = visiblePaints(n.strokes).map((p) =>
-        `<line x1="0" y1="0" x2="${n.w}" y2="0" ${paint(p.color, p.opacity, 'stroke')} stroke-width="${n.strokeWidth}" stroke-linecap="${n.cap || 'butt'}"/>`).join('');
+        `<line x1="0" y1="0" x2="${esc(n.w)}" y2="0" ${paint(p.color, p.opacity, 'stroke')} stroke-width="${esc(n.strokeWidth)}" stroke-linecap="${esc(n.cap || 'butt')}"/>`).join('');
       break;
     case 'image': {
-      const cid = `clip-${n.id}`;
+      const cid = `clip-${esc(n.id)}`;
       inner = fillLayers(n, (a) => shapeRect(n, a)) +
         `<clipPath id="${cid}">${shapeRect(n, '')}</clipPath>` +
-        `<image href="${esc(n.src)}" width="${n.w}" height="${n.h}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${cid})"/>` +
+        `<image href="${esc(n.src)}" width="${esc(n.w)}" height="${esc(n.h)}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${cid})"/>` +
         strokeLayers(n, 'rect');
       break;
     }
@@ -194,7 +199,7 @@ export function nodeSVG(n, opts = {}) {
       // unlinked) shows as a dashed box.
       const icon = findIcon(n.iconId);
       const p = visiblePaints(n.fills).at(-1);
-      inner = !icon ? `<rect width="${n.w}" height="${n.h}" fill="none" stroke="#B3B3B3" stroke-dasharray="2 2" vector-effect="non-scaling-stroke"/>`
+      inner = !icon ? `<rect width="${esc(n.w)}" height="${esc(n.h)}" fill="none" stroke="#B3B3B3" stroke-dasharray="2 2" vector-effect="non-scaling-stroke"/>`
         : p ? iconMarkup(icon, { w: n.w, h: n.h, color: p.color, opacity: p.opacity ?? 1, strokeWidth: n.iconStroke ?? undefined }) : '';
       break;
     }
@@ -213,8 +218,8 @@ export function nodeSVG(n, opts = {}) {
     }
   }
   const filter = effectsFilter(n, `fx-${n.id}`);
-  if (filter) inner = `${filter}<g filter="url(#fx-${n.id})">${inner}</g>`;
-  const op = n.opacity < 1 ? ` opacity="${n.opacity}"` : '';
+  if (filter) inner = `${filter}<g filter="url(#fx-${esc(n.id)})">${inner}</g>`;
+  const op = n.opacity < 1 ? ` opacity="${esc(n.opacity)}"` : '';
   return `<g transform="${css(localMatrix(n))}"${op}>${inner}</g>`;
 }
 
@@ -248,8 +253,8 @@ function svgText(n, paints, hidden) {
   const anchor = n.textAlign === 'center' ? 'middle' : n.textAlign === 'right' ? 'end' : 'start';
   const x = anchor === 'middle' ? n.w / 2 : anchor === 'end' ? n.w : 0;
   const spans = lines.map((line, i) => `<tspan x="${x}" y="${(baseline + i * lineH).toFixed(2)}">${esc(line)}</tspan>`).join('');
-  const attrs = `font-family="${esc(`'${n.fontFamily}', system-ui, sans-serif`)}" font-size="${n.fontSize}" font-weight="${n.fontWeight}"` +
-    (n.letterSpacing ? ` letter-spacing="${n.letterSpacing}"` : '') + ` text-anchor="${anchor}" style="white-space:pre"` +
+  const attrs = `font-family="${esc(`'${n.fontFamily}', system-ui, sans-serif`)}" font-size="${esc(n.fontSize)}" font-weight="${esc(n.fontWeight)}"` +
+    (n.letterSpacing ? ` letter-spacing="${esc(n.letterSpacing)}"` : '') + ` text-anchor="${anchor}" style="white-space:pre"` +
     (hidden ? ' visibility="hidden"' : '');
   return paints.map((p) => `<text ${attrs} ${paint(p.color, p.opacity)}>${spans}</text>`).join('');
 }
@@ -374,8 +379,8 @@ export function renderOverlay(svg) {
     }
     const angle = Math.atan2(tr.y - tl.y, tr.x - tl.x) * 180 / Math.PI;
     const color = isComponentish(n) ? COMPONENT_ACCENT : sel.has(n.id) ? ACCENT : state.hoverId === n.id ? '#333' : '#8C8C8C';
-    if (iconWidth) out += `<g transform="translate(${tl.x},${tl.y}) rotate(${angle})" color="${color}">${lucideIcon(labelIcon,11).replace('<svg ', '<svg y="-16" ')}</g>`;
-    out += `<text transform="translate(${tl.x},${tl.y}) rotate(${angle})" x="${iconWidth}" y="-6" fill="${color}" font-size="11" font-weight="500" font-family="Inter,system-ui,sans-serif">${esc(text)}</text>`;
+    if (iconWidth) out += `<g transform="translate(${tl.x},${tl.y}) rotate(${angle})" color="${esc(color)}">${lucideIcon(labelIcon,11).replace('<svg ', '<svg y="-16" ')}</g>`;
+    out += `<text transform="translate(${tl.x},${tl.y}) rotate(${angle})" x="${iconWidth}" y="-6" fill="${esc(color)}" font-size="11" font-weight="500" font-family="Inter,system-ui,sans-serif">${esc(text)}</text>`;
     frameLabels.push({ id: n.id, x: tl.x, y: tl.y - 18, w: Math.max(iconWidth + labelWidth(text), 8), h: 16, angle });
   }
 
@@ -492,21 +497,21 @@ export function renderOverlay(svg) {
 }
 
 function handle(p, color = ACCENT) {
-  return `<rect x="${p.x - 4}" y="${p.y - 4}" width="8" height="8" rx="1.5" fill="#fff" stroke="${color}" stroke-width="1"/>`;
+  return `<rect x="${p.x - 4}" y="${p.y - 4}" width="8" height="8" rx="1.5" fill="#fff" stroke="${esc(color)}" stroke-width="1"/>`;
 }
 
 function outline(n, width, color = ACCENT) {
   if (n.type === 'line') {
     const W = worldMatrix(n);
     const a = toScreen(apply(W, { x: 0, y: 0 })), b = toScreen(apply(W, { x: n.w, y: 0 }));
-    return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${color}" stroke-width="${width}"/>`;
+    return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${esc(color)}" stroke-width="${width}"/>`;
   }
   if (n.type === 'ellipse') {
     const v = view();
     const M = mul([v.zoom, 0, 0, v.zoom, v.x, v.y], worldMatrix(n));
-    return `<ellipse transform="${css(M)}" cx="${n.w / 2}" cy="${n.h / 2}" rx="${n.w / 2}" ry="${n.h / 2}" fill="none" stroke="${color}" stroke-width="${width / v.zoom}"/>`;
+    return `<ellipse transform="${css(M)}" cx="${n.w / 2}" cy="${n.h / 2}" rx="${n.w / 2}" ry="${n.h / 2}" fill="none" stroke="${esc(color)}" stroke-width="${width / v.zoom}"/>`;
   }
-  return poly(worldCorners(n).map(toScreen), `fill="none" stroke="${color}" stroke-width="${width}"`);
+  return poly(worldCorners(n).map(toScreen), `fill="none" stroke="${esc(color)}" stroke-width="${width}"`);
 }
 
 // Used by export: render nodes in world space.

@@ -3,7 +3,7 @@
 //
 // With a folder, checks every .sigma/**/*.sigma.json in it (links between files included) and
 // sigma.config.json. Prints one line per problem, errors first, and exits with 1 when there are errors.
-// No dependencies: Node 18 or later. The same checks run in the browser (src/validate.js).
+// No dependencies: Node 22 or later. The same checks run in the browser (src/validate.js).
 import { readFileSync, statSync, existsSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import { validateProject, formatIssues } from '../src/validate.js';

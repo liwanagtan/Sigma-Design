@@ -4,7 +4,7 @@ Thanks for helping. Sigma is plain ES modules with no build step: what's in `src
 
 ## Set up
 
-You need Node 20 or newer.
+Use Node 22 or newer; Node 24 LTS is recommended. The release CI matrix targets Node 22 and 24.
 
 ```bash
 node bin/sigma-design.mjs standalone --port 5173       # Sigma on its own, files in the browser
@@ -18,12 +18,13 @@ ES modules need a server.
 
 - **In the browser:** with the server running, open `/tests/`. The title shows the result (`✓ 204/204`).
 - **In Node:** `npm run test:node` (the server, the command line, `init`, adapters, live sync, workflow).
+- **Installed standalone package:** `npm run test:package` packs this checkout, installs it into a temporary consumer with optional native dependencies omitted, checks shipped module dependencies/assets and launches its CLI. It needs npm registry access or a populated npm cache; it never publishes. Temporary installs are removed afterward.
 - **The examples:** `node bin/sigma-design.mjs check examples/<name>` for each project in `examples/`.
 
-CI (`.github/workflows/ci.yml`) runs all three: Node 20 and 22, the browser tests in headless Chromium, and
+CI (`.github/workflows/ci.yml`) runs all three: Node 22 and 24, the browser tests in headless Chromium, and
 `check` on every example. It also checks render parity: `node tools/test/run-render-parity.mjs examples/css-app`
 captures the example's components as its code renders them and compares Sigma's layout with them. A pull
-request needs them green.
+request needs them green. Installed-package checks also target Linux/macOS on Node 22/24; configuration alone is not evidence those jobs passed.
 
 Add tests with your change: browser tests in `tests/*.test.js` (registered in `tests/index.html`), Node tests
 in `tools/test/*.test.mjs`.

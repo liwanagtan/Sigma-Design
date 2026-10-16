@@ -4,6 +4,8 @@ Archived on 15 October 2026. This is the previous roadmap, preserved for phase s
 
 Use [the current roadmap](roadmap.md) for status and priorities, and [project architecture](projects-architecture.md) for project behavior. The numbered phases below retain their original identifiers.
 
+The later [roadmap snapshot before the Standalone-first reset](history/roadmap-before-standalone-first-2026-10-15.md) preserves subsequent milestones, acceptance details and completed checkboxes. Both archives are historical; the current roadmap defines the active release scope.
+
 ---
 
 # Sigma roadmap

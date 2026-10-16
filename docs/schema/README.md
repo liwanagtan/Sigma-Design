@@ -3,7 +3,7 @@
 How Sigma files are stored in a project, so that a person or an agent can read and write them without
 Sigma's source. Format **1**.
 
-- Check files with `node tools/validate.js <project folder>` (Node 18+, no dependencies). It reports every
+- Check files with `node tools/validate.js <project folder>` (Node 22+, no dependencies). It reports every
   problem with where it is and what to do, and exits with 1 when there are errors.
 - `examples/sample-project/` holds Sigma's sample files in this format (built by
   `node tools/build-sample-project.mjs`). Copy from them.

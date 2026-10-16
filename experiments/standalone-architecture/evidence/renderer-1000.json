@@ -1,0 +1,43 @@
+{
+  "count": 1000,
+  "width": 640,
+  "height": 460,
+  "freshSceneObjects": true,
+  "svgCacheReset": true,
+  "devicePixelRatio": 2,
+  "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "measuredAt": "2026-10-16T07:40:35.623Z",
+  "rows": [
+    {
+      "renderer": "Sigma SVG",
+      "initialSetupAndDrawMs": 9.799999982118607,
+      "medianUpdateCallMs": 1.4000000059604645,
+      "medianPickMs": 0.19999998807907104,
+      "exportFormat": "SVG",
+      "exportCharacters": 103723,
+      "hitIdentity": "benchmark-0",
+      "samples": 20
+    },
+    {
+      "renderer": "Fabric 7.4.0",
+      "initialSetupAndDrawMs": 27.400000005960464,
+      "medianUpdateCallMs": 2.5,
+      "medianPickMs": 0.30000001192092896,
+      "exportFormat": "SVG",
+      "exportCharacters": 317042,
+      "hitIdentity": "benchmark-0",
+      "samples": 20
+    },
+    {
+      "renderer": "Konva 10.9.0",
+      "initialSetupAndDrawMs": 12.900000005960464,
+      "medianUpdateCallMs": 2.199999988079071,
+      "medianPickMs": 0,
+      "exportFormat": "PNG data URL",
+      "exportCharacters": 19898,
+      "hitIdentity": "benchmark-0",
+      "samples": 20
+    }
+  ],
+  "scope": "One mount per renderer, 20 update/pick samples. Synchronous call times only; SVG browser paint is deferred, canvas drawing differs. No end-to-end latency, memory or renderer ranking claim. No text, nesting, clipping, icons or interaction/editor parity proof."
+}

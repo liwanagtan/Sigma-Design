@@ -3,6 +3,8 @@ import { state, createNode, commit, loadDocument, flushSave, setPersistence, edi
 import {
   initFiles, createFile, deleteFile, loadFile, listFiles, renameFile, setCurrentFile, saveNamedVersion, listVersions, updateThumbnail,
   ensureSigmaProject, createTokenFileWith, sampleTokenFile, sampleIconFile, appendToTokenFile, archiveFile, restoreFile, listArchivedFiles, listTokenFiles, duplicateCurrent, closeCurrentFile,
+  saveNow, currentSaveFailure, discardCurrentFile,
+  restoreVersion,
 } from '../src/files.js';
 import { SIGMA_SYSTEM_VERSION } from '../src/sigma-design-system.js';
 import { sampleTokenDocument } from './fixtures/sample-tokens.js';
@@ -10,6 +12,7 @@ import { sampleIconsDocument, SAMPLE_ICONS_VERSION } from '../src/sample-icons.j
 import { loadIconSet, ICON_SETS } from '../src/icon-library.js';
 import { WELCOME_VERSION } from './fixtures/welcome.js';
 import { db } from '../src/db.js';
+import {recoveryEntries} from '../src/recovery.js';
 
 const sampleDoc = () => ({
   name: 'Storage test (temporary)',
@@ -17,6 +20,81 @@ const sampleDoc = () => ({
   currentPageId: 'p1',
 });
 const exists = async (id) => (await listFiles()).some((f) => f.id === id);
+const cleanupRecovery=id=>{for(const entry of recoveryEntries(localStorage,{fileId:id}))localStorage.removeItem(entry.key);};
+
+test('storage safety: synchronous quota failure rolls back an already queued document write',async()=>{
+  const id='quota-fixture-'+crypto.randomUUID(),put=IDBObjectStore.prototype.put;
+  try {
+    IDBObjectStore.prototype.put=function(value,...args){
+      if(this.name==='files'&&value.id===id)throw new DOMException('Injected quota failure','QuotaExceededError');
+      return put.call(this,value,...args);
+    };
+    let failure;try{await db.putFile({id,name:'Unstored'},{id,doc:sampleDoc()});}catch(error){failure=error;}
+    eq(failure.name,'QuotaExceededError');
+    IDBObjectStore.prototype.put=put;
+    eq(await db.get('files',id),undefined);eq(await db.get('docs',id),undefined);
+    await db.putFile({id,name:'Retry'},{id,doc:sampleDoc()});ok(await db.get('docs',id));
+  }finally{IDBObjectStore.prototype.put=put;await db.deleteFile(id);}
+});
+
+test('storage safety: a concurrent writer cannot silently replace either document', async () => {
+  await initFiles();const id=await createFile(sampleDoc());
+  try {
+    const local=await loadFile(id);setCurrentFile(id);loadDocument(local.doc);
+    await db.updateFile(id,(meta,rec)=>({doc:{...rec,doc:{...rec.doc,name:'Other tab'}}}));
+    state.doc.name='My edits';commit();await flushSave();
+    ok(currentSaveFailure());eq((await db.get('docs',id)).doc.name,'Other tab');eq(state.doc.name,'My edits');
+    let blocked=false;try{await closeCurrentFile();}catch{blocked=true;}ok(blocked);
+  }finally{discardCurrentFile();cleanupRecovery(id);await deleteFile(id);}
+});
+
+test('storage safety: a failed save keeps edits, blocks leaving, and can be retried', async () => {
+  await initFiles();const id=await createFile(sampleDoc());const update=db.updateFile;
+  try {
+    const local=await loadFile(id);setCurrentFile(id);loadDocument(local.doc);
+    db.updateFile=async()=>{throw new Error('Storage unavailable');};
+    state.doc.name='Recoverable edits';commit();await flushSave();ok(currentSaveFailure());
+    let blocked=false;try{await closeCurrentFile();}catch{blocked=true;}ok(blocked);eq(state.doc.name,'Recoverable edits');
+    db.updateFile=update;await saveNow();eq(currentSaveFailure(),null);eq((await db.get('docs',id)).doc.name,'Recoverable edits');
+  }finally{db.updateFile=update;discardCurrentFile();cleanupRecovery(id);await deleteFile(id);}
+});
+
+test('storage safety: recovered edits never overwrite a newer stored revision', async () => {
+  const id=await createFile(sampleDoc());
+  try {
+    await db.updateFile(id,(meta,rec)=>({doc:{...rec,doc:{...rec.doc,name:'Newer saved work'}}}));
+    localStorage.setItem('sigma.pending',JSON.stringify({id,revision:0,t:Date.now()+1000,doc:{...sampleDoc(),name:'Recovered older edits'},views:{}}));
+    const recovered=await loadFile(id);
+    eq(recovered.doc.name,'Newer saved work');eq((await db.get('docs',id)).doc.name,'Newer saved work');
+    eq(recoveryEntries(localStorage,{fileId:id})[0].record.doc.name,'Recovered older edits');
+  }finally{localStorage.removeItem('sigma.pending');discardCurrentFile();cleanupRecovery(id);await deleteFile(id);}
+});
+
+test('storage safety: rename and named-history mutations stop when current edits conflict',async()=>{
+  await initFiles();const id=await createFile(sampleDoc());
+  try{
+    const file=await loadFile(id);setCurrentFile(id);loadDocument(file.doc);
+    await db.updateFile(id,(meta,rec)=>({doc:{...rec,doc:{...rec.doc,name:'Other writer'}}}));
+    state.doc.name='Local edit';commit();await flushSave();
+    for(const action of [()=>renameFile(id,'Rename'),()=>saveNamedVersion(id,'Unstored')]){
+      let failed=false;try{await action();}catch{failed=true;}ok(failed);
+    }
+    eq((await db.get('docs',id)).doc.name,'Other writer');eq((await listVersions(id)).filter(v=>v.title==='Unstored').length,0);
+  }finally{discardCurrentFile();cleanupRecovery(id);await deleteFile(id);}
+});
+
+test('storage safety: concurrent history restore rolls back without replacing newer work or adding history',async()=>{
+  const id=await createFile(sampleDoc());const update=db.updateFile;
+  try{
+    const version=await saveNamedVersion(id,'Original');const count=(await listVersions(id)).length;let raced=false;
+    db.updateFile=async(fileId,fn)=>{
+      if(fileId===id&&!raced){raced=true;await update(id,(meta,rec)=>({doc:{...rec,doc:{...rec.doc,name:'Concurrent edit'}}}));}
+      return update(fileId,fn);
+    };
+    let failed=false;try{await restoreVersion(id,version);}catch{failed=true;}ok(failed);
+    eq((await db.get('docs',id)).doc.name,'Concurrent edit');eq((await listVersions(id)).length,count);
+  }finally{db.updateFile=update;cleanupRecovery(id);await deleteFile(id);}
+});
 
 test('storage: a guarded update writes nothing once the file is deleted', async () => {
   const id = await createFile(sampleDoc());
@@ -49,7 +127,7 @@ test('storage: an autosave that races with a delete never brings the file back',
       const result = await realGet(store, key);
       if (store === 'files' && key === id) {
         db.get = realGet;
-        await deleteFile(id);
+        cleanupRecovery(id);await deleteFile(id);
       }
       return result;
     };
@@ -148,10 +226,10 @@ test('storage: deleting moves a file to the Archive; it can be restored, and onl
     ok(await exists(id), 'back in the file lists');
     eq((await loadFile(id)).meta.archivedAt, undefined);
     await archiveFile(id);
-    await deleteFile(id);
+    cleanupRecovery(id);await deleteFile(id);
     ok(!(await loadFile(id)), 'Delete forever erases it');
   } finally {
-    await deleteFile(id);
+    cleanupRecovery(id);await deleteFile(id);
     await deleteFile(tokens.id);
   }
 });
@@ -195,7 +273,7 @@ test('storage: a sample file (Welcome to Sigma) can be edited while open but is 
   } finally {
     setCurrentFile(null);
     state.screen = 'home';
-    await deleteFile(id);
+    cleanupRecovery(id);await deleteFile(id);
     await deleteFile(tokens.id);
     if (keptCopy) await deleteFile(keptCopy);
   }

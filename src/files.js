@@ -1,10 +1,13 @@
 // File management: every Sigma file is a record in IndexedDB (see db.js). This module owns
 // the currently open file, autosave, thumbnails, cross-tab notifications and migration.
-import { serializeDocument, deserializeDocument } from './document-storage.js';
+import { serializeDocument, deserializeDocument, assertStoredDocumentShape } from './document-storage.js';
+import { prepareImportedDocument, MAX_JSON_IMPORT_BYTES } from './document-safety.js';
+import {writeRecovery,recoveryKey} from './recovery.js';
 import { ownerFor, inScope, selectedProject } from './projects.js';
 import { db } from './db.js';
 import {
   state, uid, setPersistence, flushSave, hasUnsavedChanges, LEGACY_STORAGE_KEY, migrateDocument,
+  hasUnsavedDocumentEdits,
 } from './store.js';
 import { buildSVG, download, toast } from './io.js';
 import { libraryEntry } from './variables.js';
@@ -74,26 +77,33 @@ export const isCurrentSample = () => currentSample;
 const SAMPLE_READONLY = 'Sample files keep their original content. Duplicate it to make your own copy.';
 let saving = Promise.resolve();
 let inFlight = 0; // autosaves started but not yet written
+let inFlightEdits = 0;
+const loadedRevisions = new Map();
+let currentRevision = null, saveFailure = null;
+export const currentSaveFailure = () => saveFailure;
+const saveStateChanged=()=>window.dispatchEvent(new CustomEvent('sigma:save-state'));
+export function currentSaveState() {
+  if(!currentFileId)return {status:'closed'};
+  if(currentDeleted)return {status:'unavailable'};
+  if(state.readOnly)return {status:'readonly'};
+  if(currentSample)return {status:'temporary'};
+  if(saveFailure)return {status:'error',message:saveFailure.message};
+  return {status:inFlightEdits?'saving':hasUnsavedDocumentEdits()?'pending':'saved'};
+}
 
 // IndexedDB writes can't finish while a page unloads, so unsaved work is also stashed synchronously in
 // localStorage when the page is hidden or closed, and applied the next time the file is opened.
-const PENDING_KEY = 'sigma.pending';
-
-function stashPending() {
-  if (!currentFileId || currentDeleted || currentSample || !state.doc || state.readOnly) return;
-  if (!hasUnsavedChanges() && !inFlight) return;
+export function stashPending() {
+  if (!currentFileId || currentSample || !state.doc || state.readOnly) return true;
+  if (!hasUnsavedDocumentEdits() && !inFlightEdits && !saveFailure) return true;
   try {
-    localStorage.setItem(PENDING_KEY, JSON.stringify({ id: currentFileId, doc: state.doc, views: state.pageViews, t: Date.now() }));
+    writeRecovery(localStorage,TAB_ID,{id:currentFileId,doc:state.doc,views:state.pageViews,revision:currentRevision});
+    window.dispatchEvent(new CustomEvent('sigma:recovery'));
+    return true;
   } catch {
-    // Too large for localStorage (e.g. big images); the regular autosave is still attempted.
-  }
-}
-
-function readPending() {
-  try {
-    return JSON.parse(localStorage.getItem(PENDING_KEY) || 'null');
-  } catch {
-    return null;
+    // Quota/permissions can also prevent recovery. Keep the document open and offer download.
+    if(saveFailure)toast('Recovery storage is unavailable. Download your current edits before closing Sigma.');
+    return false;
   }
 }
 let thumbTimer = null;
@@ -123,11 +133,17 @@ export async function initFiles(handlers = {}) {
   channel?.addEventListener('message', (e) => {
     const msg = e.data;
     if (!msg || msg.from === TAB_ID) return;
-    if ((msg.type === 'deleted' || msg.type === 'archived') && msg.id === currentFileId) currentDeleted = true;
+    if ((msg.type === 'deleted' || msg.type === 'archived') && msg.id === currentFileId) {currentDeleted = true;stashPending();}
+    saveStateChanged();
     handlers.onRemoteChange?.(msg);
   });
   navigator.storage?.persist?.().catch(() => {});
   window.addEventListener('pagehide', stashPending);
+  window.addEventListener('beforeunload', event => {
+    if(currentSample||state.readOnly||!currentFileId)return;
+    const protectedEdits=stashPending();
+    if(saveFailure||!protectedEdits){event.preventDefault();event.returnValue='';}
+  });
   document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && stashPending());
   await migrateLegacyDocument();
   await migrateLegacySamples();
@@ -201,20 +217,16 @@ export async function emptyArchive() {
 }
 
 export async function loadFile(id) {
-  const [meta, rec] = await Promise.all([db.get('files', id), db.get('docs', id)]);
-  if (!meta || !rec?.doc) return null;
-  const pending = readPending();
-  if (pending?.id === id) {
-    if (pending.t > meta.updatedAt && !isSampleFile(meta)) { // a sample is never saved, not even this way
-      // Changes from the last session that didn't reach IndexedDB before the page closed.
-      meta.updatedAt = pending.t;
-      localStorage.removeItem(PENDING_KEY);
-      const exists = await db.updateFile(id, (cur) => ({ meta: { ...cur, updatedAt: pending.t }, doc: { id, doc: pending.doc, views: pending.views || {} } }));
-      if (!exists) return null;
-      return { meta, doc: pending.doc, views: pending.views || {} };
-    }
-    localStorage.removeItem(PENDING_KEY);
+  const meta = await db.get('files', id);
+  if (!meta) return null;
+  let rec;
+  try {rec=await db.get('docs',id);assertStoredDocumentShape(rec?.doc);}
+  catch(cause) {
+    const error=new Error(`“${meta.name||'Untitled'}” has saved data that cannot be opened. The original file and history have been kept.`,{cause});
+    error.savedFileId=id;throw error;
   }
+  loadedRevisions.set(id, meta.docRevision || 0);
+  // Recovery is explicit: listing/reporting/opening a file must never write old edits over it.
   return { meta, doc: rec.doc, views: rec.views || {} };
 }
 
@@ -278,6 +290,7 @@ export async function createFile(doc, views = {}, extra = {}) {
   if(meta.sigmaSystem||meta.sigmaPages||meta.sampleIcons) meta.exampleKey=meta.sigmaSystem?(doc.kind==='tokens'?'sigma:tokens':`sigma:${doc.name.toLowerCase()}`):meta.sigmaPages?'sigma:pages-and-ui':'sigma:icons';
   if(meta.welcome)meta.exampleKey='sigma:guide-examples';
   await db.putFile(meta,{id,doc,views});
+  loadedRevisions.set(id, 0);
   broadcast('created', id);
   return id;
 }
@@ -285,10 +298,18 @@ export async function createFile(doc, views = {}, extra = {}) {
 export async function renameFile(id, name) {
   name = name.trim() || 'Untitled';
   if (isSampleFile(await db.get('files', id))) return toast(SAMPLE_READONLY);
-  if (id === currentFileId && state.doc) {
-    state.doc.name = name; // the open editor saves it (and the meta) on its next autosave
+  const open=id===currentFileId&&!!state.doc;
+  if(open)await saveNow();
+  let revision;
+  const renamed = await db.updateFile(id, (meta, rec) => {
+    if(open&&currentRevision!==null&&(meta.docRevision||0)!==currentRevision)throw new Error('This file changed elsewhere. Reload before renaming.');
+    revision=(meta.docRevision||0)+1;
+    return {meta:{...meta,name},doc:rec&&{...rec,doc:{...rec.doc,name}}};
+  });
+  if (renamed && id === currentFileId) {
+    currentRevision = revision; loadedRevisions.set(id, revision);
+    if(state.doc)state.doc.name=name;
   }
-  const renamed = await db.updateFile(id, (meta, rec) => ({ meta: { ...meta, name }, doc: rec && { ...rec, doc: { ...rec.doc, name } } }));
   if (renamed) broadcast('renamed', id);
 }
 
@@ -330,6 +351,7 @@ export async function importFiles(fileList) {
         if (report.warnings.length) toast('Figma file imported. Review simplified features in Σ → Figma import report.');
         continue;
       }
+      if (f.size > MAX_JSON_IMPORT_BYTES) throw new Error('JSON import accepts files up to 64 MiB.');
       const json = JSON.parse(await f.text());
       const name = f.name.replace(/(\.sigma|\.tokens)?\.json$/i, ''); // the name you see in Finder wins
       let doc = json;
@@ -344,6 +366,7 @@ export async function importFiles(fileList) {
         if (skipped) toast(`${skipped} token${skipped === 1 ? '' : 's'} of unsupported types (like shadows) were skipped.`);
       }
       doc.name = name || doc.name || 'Untitled';
+      prepareImportedDocument(doc);
       ids.push(await createFile(doc));
     } catch (err) {
       toast(`Couldn't import ${f.name}: ${err.message}`);
@@ -585,6 +608,9 @@ export function setCurrentFile(id, { sample = false } = {}) {
   currentFileId = id;
   currentDeleted = false;
   currentSample = sample;
+  currentRevision = loadedRevisions.get(id) ?? null;
+  saveFailure = null;
+  saveStateChanged();
 }
 
 // A copy of the open file as a file of your own (Make an editable copy, for a Welcome to Sigma file).
@@ -611,13 +637,15 @@ function persistCurrent(doc, views, { edited }) {
   if (!id || currentDeleted || state.readOnly) return saving; // read-only: viewing an older version
   if (currentSample) return saving; // a sample is never saved: it's the same every time it opens
   inFlight++;
+  if(edited)inFlightEdits++;
+  saveStateChanged();
   saving = saving.then(async () => {
     // Every write below checks, in the same transaction, that the file still exists: a file deleted
     // elsewhere (or just now) is never brought back.
-    const gone = () => void (currentDeleted = true);
+    const gone = () => {currentDeleted = true;saveStateChanged();};
     if (!edited) {
       // View-only change (pan/zoom): never rewrite the document, which another tab may have updated.
-      if (!(await db.updateFile(id, (meta, rec) => rec && { doc: { ...rec, views } }))) gone();
+      if (!(await db.updateFile(id, (meta, rec) => rec && { doc: { ...rec, views }, contentChanged:false }))) gone();
       return;
     }
     const before = await db.get('files', id);
@@ -625,6 +653,9 @@ function persistCurrent(doc, views, { edited }) {
     await autosaveVersion(id, before);
     let publishedBefore = '0/0';
     const written = await db.updateFile(id, (meta) => {
+      if (currentRevision !== null && (meta.docRevision || 0) !== currentRevision) {
+        throw new Error('This file changed elsewhere. Download your edits before reloading the newer version.');
+      }
       publishedBefore = `${meta.tokenVersion || 0}/${meta.componentVersion || 0}`;
       const next = {
         ...meta, name: doc.name || 'Untitled', background: doc.pages?.[0]?.background || meta.background,
@@ -635,6 +666,14 @@ function persistCurrent(doc, views, { edited }) {
       return { meta: next, doc: { id, doc, views } };
     });
     if (!written) return gone();
+    currentRevision = (before.docRevision || 0) + 1;
+    loadedRevisions.set(id, currentRevision);
+    if (saveFailure) window.dispatchEvent(new CustomEvent('sigma:banner', {detail:null}));
+    saveFailure = null;
+    if(!hasUnsavedChanges()&&inFlight===1)try{
+      const key=recoveryKey(id,TAB_ID);
+      if(localStorage.getItem(key)!==null){localStorage.removeItem(key);window.dispatchEvent(new CustomEvent('sigma:recovery'));}
+    }catch{}
     broadcast('saved', id);
     scheduleThumbnail();
     const tokenVersion = doc.published?.version || 0, componentVersion = doc.publishedComponents?.version || 0;
@@ -650,9 +689,21 @@ function persistCurrent(doc, views, { edited }) {
     }
   }).catch((err) => {
     console.error(err);
+    saveFailure = err;
+    stashPending(); // checkpoint immediately; a crash may not deliver pagehide/beforeunload
+    window.dispatchEvent(new CustomEvent('sigma:banner', {detail:{
+      text:`Your edits are not saved: ${err.message}`,
+      label:'Retry save', action:() => saveNow().catch(() => {}),
+      extra:[{label:'Download current edits',action:() => {
+        if (getCurrentFileId() !== id || !state.doc) return;
+        download(new Blob([JSON.stringify(state.doc)], {type:'application/json'}), 'Sigma-recovery.sigma.json');
+      }}],
+    }}));
     toast(`Autosave failed: ${err.message}. Use Save file… to keep a copy.`);
   }).finally(() => {
     inFlight--;
+    if(edited)inFlightEdits--;
+    saveStateChanged();
   });
   return saving;
 }
@@ -660,8 +711,10 @@ function persistCurrent(doc, views, { edited }) {
 // Write pending changes and refresh the thumbnail right away (tab hidden, leaving the file).
 export async function saveNow() {
   if (!currentFileId) return;
+  if (saveFailure && state.doc) await persistCurrent(state.doc, state.pageViews, {edited:true});
   await flushSave();
   await saving;
+  if (saveFailure) throw saveFailure;
   clearTimeout(thumbTimer);
   if (!currentDeleted) await updateThumbnail();
 }
@@ -670,6 +723,9 @@ export async function saveNow() {
 export function discardCurrentFile() {
   clearTimeout(thumbTimer);
   currentFileId = null;
+  saveFailure = null;
+  currentRevision = null;
+  saveStateChanged();
 }
 
 // Save, then forget the open file (when going back to the files home).
@@ -677,6 +733,7 @@ export async function closeCurrentFile() {
   if (!currentFileId) return;
   await saveNow();
   currentFileId = null;
+  saveStateChanged();
 }
 
 // ---------- version history ----------
@@ -723,7 +780,7 @@ async function autosaveVersion(id, meta) {
 
 // Run `fn` in the open file's save queue, after any pending change is written.
 async function afterSave(fn) {
-  await flushSave();
+  await saveNow(); // a failed/conflicting save must not be followed by a history mutation
   const run = saving.then(fn);
   saving = run.catch(() => {});
   return run;
@@ -765,7 +822,6 @@ export async function restoreVersion(fileId, version) {
     const [meta, rec, old] = await Promise.all([db.get('files', fileId), db.get('docs', fileId), loadVersionDoc(version.id)]);
     if (!meta || !rec?.doc || !old) throw new Error('That version could not be found.');
     if (isSampleFile(meta)) throw new Error(SAMPLE_READONLY);
-    await addVersion(fileId, rec.doc, { kind: 'auto', title: `Before restoring ${versionLabel(version)}` });
     const doc = migrateDocument(structuredClone(old));
     doc.name = rec.doc.name;
     for (const key of ['published', 'publishedComponents']) {
@@ -773,8 +829,17 @@ export async function restoreVersion(fileId, version) {
       else delete doc[key];
     }
     const now = Date.now();
-    const exists = await db.updateFile(fileId, (m, cur) => ({ meta: { ...m, updatedAt: now, lastVersionAt: now }, doc: { id: fileId, doc, views: cur?.views || {} } }));
+    let revision;
+    const exists = await db.updateFile(fileId, (m, cur) => {
+      if((m.docRevision||0)!==(meta.docRevision||0))throw new Error('This file changed while restoring. Refresh history and try again.');
+      revision=(m.docRevision||0)+1;
+      return {meta:{...m,updatedAt:now,lastVersionAt:now},doc:{id:fileId,doc,views:cur?.views||{}},
+        version:{record:{id:uid()+uid(),fileId,kind:'auto',title:`Before restoring ${versionLabel(version)}`,description:'',name:cur.doc.name,createdAt:now},doc:cur.doc}};
+    });
     if (!exists) throw new Error('This file was deleted.');
+    loadedRevisions.set(fileId,revision);
+    if(fileId===currentFileId)currentRevision=revision;
+    versionsChanged(fileId);
     broadcast('saved', fileId);
   };
   return fileId === currentFileId ? afterSave(write) : write();

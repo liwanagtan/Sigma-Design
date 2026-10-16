@@ -6,6 +6,7 @@ const channel=typeof BroadcastChannel!=='undefined'?new BroadcastChannel('sigma.
 channel?.unref?.();
 channel?.addEventListener('message',()=>window.dispatchEvent(new CustomEvent('sigma:projects')));
 const changed=()=>{window.dispatchEvent(new CustomEvent('sigma:projects'));channel?.postMessage({changed:true});};
+export const notifyProjectsChanged = changed;
 let active=null,hasPreference=false;
 try {const saved=sessionStorage.getItem(KEY);hasPreference=saved!==null;active=JSON.parse(saved||'null');}catch{}
 export const selectedProjectId=()=>active;

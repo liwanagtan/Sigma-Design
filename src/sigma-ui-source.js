@@ -6183,6 +6183,36 @@ export const UI_SOURCE = {
       "condition": ""
     },
     {
+      "selector": ".save-state",
+      "file": "styles.css",
+      "condition": ""
+    },
+    {
+      "selector": ".save-state[data-state=\"error\"]",
+      "file": "styles.css",
+      "condition": ""
+    },
+    {
+      "selector": ".save-state[data-state=\"unavailable\"]",
+      "file": "styles.css",
+      "condition": ""
+    },
+    {
+      "selector": ".save-state .icon-btn",
+      "file": "styles.css",
+      "condition": ""
+    },
+    {
+      "selector": ".recovery-entry",
+      "file": "styles.css",
+      "condition": ""
+    },
+    {
+      "selector": ".recovery-entry:last-child",
+      "file": "styles.css",
+      "condition": ""
+    },
+    {
       "selector": ".menu-check",
       "file": "styles.css",
       "condition": ""
@@ -9708,6 +9738,10 @@ export const UI_SOURCE = {
     {
       "height": "16px",
       "width": "5px"
+    },
+    {
+      "gap": "4px",
+      "font-size": "11px"
     },
     {
       "gap": "8px",
